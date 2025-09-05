@@ -1,0 +1,2148 @@
+{
+  "nodes": [
+    {
+      "architecture": "x86_64",
+      "burstbuffer_network_address": "",
+      "boards": 1,
+      "boot_time": {
+        "set": true,
+        "infinite": false,
+        "number": 1767287468
+      },
+      "cluster_name": "",
+      "cores": 24,
+      "specialized_cores": 0,
+      "cpu_binding": 0,
+      "cpu_load": 0.1,
+      "free_mem": {
+        "set": true,
+        "infinite": false,
+        "number": 0
+      },
+      "cpus": 24,
+      "effective_cpus": 24,
+      "specialized_cpus": 24,
+      "energy": {
+        "average_watts": 0,
+        "base_consumed_energy": 0,
+        "consumed_energy": 0,
+        "current_watts": {
+          "set": true,
+          "infinite": false,
+          "number": 0
+        },
+        "previous_consumed_energy": 0,
+        "last_collected": 0
+      },
+      "external_sensors": {
+      },
+      "extra": "",
+      "power": {
+      },
+      "features": [
+      ],
+      "active_features": [
+      ],
+      "gpu_spec": "",
+      "gres": "gpu:8",
+      "gres_drained": "N\/A",
+      "gres_used": "gpu:8",
+      "instance_id": "",
+      "instance_type": "",
+      "last_busy": {
+        "set": true,
+        "infinite": false,
+        "number": 1768507100
+      },
+      "mcs_label": "",
+      "specialized_memory": 0,
+      "name": "node-01",
+      "next_state_after_reboot": [
+        "INVALID"
+      ],
+      "address": "node-01",
+      "hostname": "node-01",
+      "state": [
+        "ALLOCATED"
+      ],
+      "operating_system": "Linux 5.15.0 Ubuntu SMP Fri Aug 9 17:13:45 UTC 2024",
+      "owner": "",
+      "partitions":
+      [
+        "test"
+      ],
+      "port": 6818,
+      "real_memory": 128000,
+      "res_cores_per_gpu": 0,
+      "comment": "",
+      "reason": "",
+      "reason_changed_at": {
+        "set": true,
+        "infinite": false,
+        "number": 0
+      },
+      "reason_set_by_user": "",
+      "resume_after": {
+        "set": true,
+        "infinite": false,
+        "number": 0
+      },
+      "reservation": "",
+      "alloc_memory": 1280000,
+      "alloc_cpus": 24,
+      "alloc_idle_cpus": 24,
+      "tres_used": "cpu=0,mem=0G,billing=0,gres\/gpu=0",
+      "tres_weighted": 256.0,
+      "slurmd_start_time": {
+        "set": true,
+        "infinite": false,
+        "number": 1769037845
+      },
+      "sockets": 2,
+      "threads": 2,
+      "temporary_disk": 0,
+      "weight": 10,
+      "tres": "cpu=24,mem=128G,billing=0,gres\/gpu=0",
+      "version": "24.05.5"
+    },
+    {
+      "architecture": "x86_64",
+      "burstbuffer_network_address": "",
+      "boards": 1,
+      "boot_time": {
+        "set": true,
+        "infinite": false,
+        "number": 1768057096
+      },
+      "cluster_name": "",
+      "cores": 24,
+      "specialized_cores": 0,
+      "cpu_binding": 0,
+      "cpu_load": 0.1,
+      "free_mem": {
+        "set": true,
+        "infinite": false,
+        "number": 0
+      },
+      "cpus": 24,
+      "effective_cpus": 24,
+      "specialized_cpus": 24,
+      "energy": {
+        "average_watts": 0,
+        "base_consumed_energy": 0,
+        "consumed_energy": 0,
+        "current_watts": {
+          "set": true,
+          "infinite": false,
+          "number": 0
+        },
+        "previous_consumed_energy": 0,
+        "last_collected": 0
+      },
+      "external_sensors": {
+      },
+      "extra": "",
+      "power": {
+      },
+      "features": [
+      ],
+      "active_features": [
+      ],
+      "gpu_spec": "",
+      "gres": "gpu:8",
+      "gres_drained": "N\/A",
+      "gres_used": "gpu:5",
+      "instance_id": "",
+      "instance_type": "",
+      "last_busy": {
+        "set": true,
+        "infinite": false,
+        "number": 1768513240
+      },
+      "mcs_label": "",
+      "specialized_memory": 0,
+      "name": "node-02",
+      "next_state_after_reboot": [
+        "INVALID"
+      ],
+      "address": "node-02",
+      "hostname": "node-02",
+      "state": [
+        "ALLOCATED"
+      ],
+      "operating_system": "Linux 5.15.0 Ubuntu SMP Fri Aug 9 17:13:45 UTC 2024",
+      "owner": "",
+      "partitions":
+      [
+        "test"
+      ],
+      "port": 6818,
+      "real_memory": 128000,
+      "res_cores_per_gpu": 0,
+      "comment": "",
+      "reason": "",
+      "reason_changed_at": {
+        "set": true,
+        "infinite": false,
+        "number": 0
+      },
+      "reason_set_by_user": "",
+      "resume_after": {
+        "set": true,
+        "infinite": false,
+        "number": 0
+      },
+      "reservation": "",
+      "alloc_memory": 756000,
+      "alloc_cpus": 24,
+      "alloc_idle_cpus": 24,
+      "tres_used": "cpu=0,mem=0G,billing=0,gres\/gpu=0",
+      "tres_weighted": 256.0,
+      "slurmd_start_time": {
+        "set": true,
+        "infinite": false,
+        "number": 1769037845
+      },
+      "sockets": 2,
+      "threads": 2,
+      "temporary_disk": 0,
+      "weight": 10,
+      "tres": "cpu=24,mem=128G,billing=0,gres\/gpu=0",
+      "version": "24.05.5"
+    },
+    {
+      "architecture": "x86_64",
+      "burstbuffer_network_address": "",
+      "boards": 1,
+      "boot_time": {
+        "set": true,
+        "infinite": false,
+        "number": 1769655797
+      },
+      "cluster_name": "",
+      "cores": 24,
+      "specialized_cores": 0,
+      "cpu_binding": 0,
+      "cpu_load": 0.1,
+      "free_mem": {
+        "set": true,
+        "infinite": false,
+        "number": 0
+      },
+      "cpus": 24,
+      "effective_cpus": 24,
+      "specialized_cpus": 24,
+      "energy": {
+        "average_watts": 0,
+        "base_consumed_energy": 0,
+        "consumed_energy": 0,
+        "current_watts": {
+          "set": true,
+          "infinite": false,
+          "number": 0
+        },
+        "previous_consumed_energy": 0,
+        "last_collected": 0
+      },
+      "external_sensors": {
+      },
+      "extra": "",
+      "power": {
+      },
+      "features": [
+      ],
+      "active_features": [
+      ],
+      "gpu_spec": "",
+      "gres": "gpu:8",
+      "gres_drained": "N\/A",
+      "gres_used": "gpu:0",
+      "instance_id": "",
+      "instance_type": "",
+      "last_busy": {
+        "set": true,
+        "infinite": false,
+        "number": 1769037845
+      },
+      "mcs_label": "",
+      "specialized_memory": 0,
+      "name": "node-03",
+      "next_state_after_reboot": [
+        "INVALID"
+      ],
+      "address": "node-03",
+      "hostname": "node-03",
+      "state": [
+        "DOWN",
+        "RESERVED",
+        "DRAIN"
+      ],
+      "operating_system": "Linux 5.15.0 Ubuntu SMP Fri Aug 9 17:13:45 UTC 2024",
+      "owner": "",
+      "partitions":
+      [
+        "test"
+      ],
+      "port": 6818,
+      "real_memory": 128000,
+      "res_cores_per_gpu": 0,
+      "comment": "",
+      "reason": "BUG: Throttling",
+      "reason_changed_at": {
+        "set": true,
+        "infinite": false,
+        "number": 1769700020
+      },
+      "reason_set_by_user": "root",
+      "resume_after": {
+        "set": true,
+        "infinite": false,
+        "number": 0
+      },
+      "reservation": "test_reservation",
+      "alloc_memory": 0,
+      "alloc_cpus": 24,
+      "alloc_idle_cpus": 24,
+      "tres_used": "cpu=0,mem=0G,billing=0,gres\/gpu=0",
+      "tres_weighted": 0.0,
+      "slurmd_start_time": {
+        "set": true,
+        "infinite": false,
+        "number": 1769656208
+      },
+      "sockets": 2,
+      "threads": 2,
+      "temporary_disk": 0,
+      "weight": 10,
+      "tres": "cpu=24,mem=128G,billing=0,gres\/gpu=0",
+      "version": "24.05.5"
+    },
+    {
+      "architecture": "x86_64",
+      "burstbuffer_network_address": "",
+      "boards": 1,
+      "boot_time": {
+        "set": true,
+        "infinite": false,
+        "number": 1769697854
+      },
+      "cluster_name": "",
+      "cores": 24,
+      "specialized_cores": 0,
+      "cpu_binding": 0,
+      "cpu_load": 0.1,
+      "free_mem": {
+        "set": true,
+        "infinite": false,
+        "number": 0
+      },
+      "cpus": 24,
+      "effective_cpus": 24,
+      "specialized_cpus": 24,
+      "energy": {
+        "average_watts": 0,
+        "base_consumed_energy": 0,
+        "consumed_energy": 0,
+        "current_watts": {
+          "set": true,
+          "infinite": false,
+          "number": 0
+        },
+        "previous_consumed_energy": 0,
+        "last_collected": 0
+      },
+      "external_sensors": {
+      },
+      "extra": "",
+      "power": {
+      },
+      "features": [
+      ],
+      "active_features": [
+      ],
+      "gpu_spec": "",
+      "gres": "gpu:8",
+      "gres_drained": "N\/A",
+      "gres_used": "gpu:0",
+      "instance_id": "",
+      "instance_type": "",
+      "last_busy": {
+        "set": true,
+        "infinite": false,
+        "number": 1768051546
+      },
+      "mcs_label": "",
+      "specialized_memory": 0,
+      "name": "node-04",
+      "next_state_after_reboot": [
+        "INVALID"
+      ],
+      "address": "node-04",
+      "hostname": "node-04",
+      "state": [
+        "DOWN",
+        "RESERVED",
+        "DRAIN"
+      ],
+      "operating_system": "Linux 5.15.0 Ubuntu SMP Fri Aug 9 17:13:45 UTC 2024",
+      "owner": "",
+      "partitions":
+      [
+        "test"
+      ],
+      "port": 6818,
+      "real_memory": 128000,
+      "res_cores_per_gpu": 0,
+      "comment": "",
+      "reason": "BUG: ECC error [root@2025-12-02T09:44:28]",
+      "reason_changed_at": {
+        "set": true,
+        "infinite": false,
+        "number": 1769699190
+      },
+      "reason_set_by_user": "root",
+      "resume_after": {
+        "set": true,
+        "infinite": false,
+        "number": 0
+      },
+      "reservation": "test_reservation",
+      "alloc_memory": 0,
+      "alloc_cpus": 24,
+      "alloc_idle_cpus": 24,
+      "tres_used": "cpu=0,mem=0G,billing=0,gres\/gpu=0",
+      "tres_weighted": 0.0,
+      "slurmd_start_time": {
+        "set": true,
+        "infinite": false,
+        "number": 1769698140
+      },
+      "sockets": 2,
+      "threads": 2,
+      "temporary_disk": 0,
+      "weight": 10,
+      "tres": "cpu=24,mem=128G,billing=0,gres\/gpu=0",
+      "version": "24.05.5"
+    },
+    {
+      "architecture": "x86_64",
+      "burstbuffer_network_address": "",
+      "boards": 1,
+      "boot_time": {
+        "set": true,
+        "infinite": false,
+        "number": 1767287339
+      },
+      "cluster_name": "",
+      "cores": 24,
+      "specialized_cores": 0,
+      "cpu_binding": 0,
+      "cpu_load": 0.1,
+      "free_mem": {
+        "set": true,
+        "infinite": false,
+        "number": 0
+      },
+      "cpus": 24,
+      "effective_cpus": 24,
+      "specialized_cpus": 24,
+      "energy": {
+        "average_watts": 0,
+        "base_consumed_energy": 0,
+        "consumed_energy": 0,
+        "current_watts": {
+          "set": true,
+          "infinite": false,
+          "number": 0
+        },
+        "previous_consumed_energy": 0,
+        "last_collected": 0
+      },
+      "external_sensors": {
+      },
+      "extra": "",
+      "power": {
+      },
+      "features": [
+      ],
+      "active_features": [
+      ],
+      "gpu_spec": "",
+      "gres": "gpu:8",
+      "gres_drained": "N\/A",
+      "gres_used": "gpu:8",
+      "instance_id": "",
+      "instance_type": "",
+      "last_busy": {
+        "set": true,
+        "infinite": false,
+        "number": 1769602790
+      },
+      "mcs_label": "",
+      "specialized_memory": 0,
+      "name": "node-05",
+      "next_state_after_reboot": [
+        "INVALID"
+      ],
+      "address": "node-05",
+      "hostname": "node-05",
+      "state": [
+        "MIXED"
+      ],
+      "operating_system": "Linux 5.15.0 Ubuntu SMP Fri Aug 9 17:13:45 UTC 2024",
+      "owner": "",
+      "partitions":
+      [
+        "test"
+      ],
+      "port": 6818,
+      "real_memory": 128000,
+      "res_cores_per_gpu": 0,
+      "comment": "",
+      "reason": "",
+      "reason_changed_at": {
+        "set": true,
+        "infinite": false,
+        "number": 0
+      },
+      "reason_set_by_user": "",
+      "resume_after": {
+        "set": true,
+        "infinite": false,
+        "number": 0
+      },
+      "reservation": "",
+      "alloc_memory": 1664000,
+      "alloc_cpus": 24,
+      "alloc_idle_cpus": 24,
+      "tres_used": "cpu=0,mem=0G,billing=0,gres\/gpu=0",
+      "tres_weighted": 176.0,
+      "slurmd_start_time": {
+        "set": true,
+        "infinite": false,
+        "number": 1769037845
+      },
+      "sockets": 2,
+      "threads": 2,
+      "temporary_disk": 0,
+      "weight": 10,
+      "tres": "cpu=24,mem=128G,billing=0,gres\/gpu=0",
+      "version": "24.05.5"
+    },
+    {
+      "architecture": "x86_64",
+      "burstbuffer_network_address": "",
+      "boards": 1,
+      "boot_time": {
+        "set": true,
+        "infinite": false,
+        "number": 1767287317
+      },
+      "cluster_name": "",
+      "cores": 24,
+      "specialized_cores": 0,
+      "cpu_binding": 0,
+      "cpu_load": 0.1,
+      "free_mem": {
+        "set": true,
+        "infinite": false,
+        "number": 0
+      },
+      "cpus": 24,
+      "effective_cpus": 24,
+      "specialized_cpus": 24,
+      "energy": {
+        "average_watts": 0,
+        "base_consumed_energy": 0,
+        "consumed_energy": 0,
+        "current_watts": {
+          "set": true,
+          "infinite": false,
+          "number": 0
+        },
+        "previous_consumed_energy": 0,
+        "last_collected": 0
+      },
+      "external_sensors": {
+      },
+      "extra": "",
+      "power": {
+      },
+      "features": [
+      ],
+      "active_features": [
+      ],
+      "gpu_spec": "",
+      "gres": "gpu:8",
+      "gres_drained": "N\/A",
+      "gres_used": "gpu:8",
+      "instance_id": "",
+      "instance_type": "",
+      "last_busy": {
+        "set": true,
+        "infinite": false,
+        "number": 1768507208
+      },
+      "mcs_label": "",
+      "specialized_memory": 0,
+      "name": "node-06",
+      "next_state_after_reboot": [
+        "INVALID"
+      ],
+      "address": "node-06",
+      "hostname": "node-06",
+      "state": [
+        "MIXED"
+      ],
+      "operating_system": "Linux 5.15.0 Ubuntu SMP Fri Aug 9 17:13:45 UTC 2024",
+      "owner": "",
+      "partitions":
+      [
+        "test"
+      ],
+      "port": 6818,
+      "real_memory": 128000,
+      "res_cores_per_gpu": 0,
+      "comment": "",
+      "reason": "",
+      "reason_changed_at": {
+        "set": true,
+        "infinite": false,
+        "number": 0
+      },
+      "reason_set_by_user": "",
+      "resume_after": {
+        "set": true,
+        "infinite": false,
+        "number": 0
+      },
+      "reservation": "",
+      "alloc_memory": 1344000,
+      "alloc_cpus": 24,
+      "alloc_idle_cpus": 24,
+      "tres_used": "cpu=0,mem=0G,billing=0,gres\/gpu=0",
+      "tres_weighted": 192.0,
+      "slurmd_start_time": {
+        "set": true,
+        "infinite": false,
+        "number": 1769037845
+      },
+      "sockets": 2,
+      "threads": 2,
+      "temporary_disk": 0,
+      "weight": 10,
+      "tres": "cpu=24,mem=128G,billing=0,gres\/gpu=0",
+      "version": "24.05.5"
+    },
+    {
+      "architecture": "x86_64",
+      "burstbuffer_network_address": "",
+      "boards": 1,
+      "boot_time": {
+        "set": true,
+        "infinite": false,
+        "number": 1767544450
+      },
+      "cluster_name": "",
+      "cores": 24,
+      "specialized_cores": 0,
+      "cpu_binding": 0,
+      "cpu_load": 0.1,
+      "free_mem": {
+        "set": true,
+        "infinite": false,
+        "number": 0
+      },
+      "cpus": 24,
+      "effective_cpus": 24,
+      "specialized_cpus": 24,
+      "energy": {
+        "average_watts": 0,
+        "base_consumed_energy": 0,
+        "consumed_energy": 0,
+        "current_watts": {
+          "set": true,
+          "infinite": false,
+          "number": 0
+        },
+        "previous_consumed_energy": 0,
+        "last_collected": 0
+      },
+      "external_sensors": {
+      },
+      "extra": "",
+      "power": {
+      },
+      "features": [
+      ],
+      "active_features": [
+      ],
+      "gpu_spec": "",
+      "gres": "gpu:8",
+      "gres_drained": "N\/A",
+      "gres_used": "gpu:1",
+      "instance_id": "",
+      "instance_type": "",
+      "last_busy": {
+        "set": true,
+        "infinite": false,
+        "number": 1769723187
+      },
+      "mcs_label": "",
+      "specialized_memory": 0,
+      "name": "node-07",
+      "next_state_after_reboot": [
+        "UNKNOWN",
+        "RESUME"
+      ],
+      "address": "node-07",
+      "hostname": "node-07",
+      "state": [
+        "MIXED",
+        "DRAIN",
+        "REBOOT_REQUESTED"
+      ],
+      "operating_system": "Linux 5.15.0 Ubuntu SMP Fri Aug 9 17:13:45 UTC 2024",
+      "owner": "",
+      "partitions":
+      [
+        "test"
+      ],
+      "port": 6818,
+      "real_memory": 128000,
+      "res_cores_per_gpu": 0,
+      "comment": "",
+      "reason": "BUG: ECC error",
+      "reason_changed_at": {
+        "set": true,
+        "infinite": false,
+        "number": 1769793441
+      },
+      "reason_set_by_user": "root",
+      "resume_after": {
+        "set": true,
+        "infinite": false,
+        "number": 0
+      },
+      "reservation": "",
+      "alloc_memory": 256000,
+      "alloc_cpus": 24,
+      "alloc_idle_cpus": 24,
+      "tres_used": "cpu=0,mem=0G,billing=0,gres\/gpu=0",
+      "tres_weighted": 32.0,
+      "slurmd_start_time": {
+        "set": true,
+        "infinite": false,
+        "number": 1769037845
+      },
+      "sockets": 2,
+      "threads": 2,
+      "temporary_disk": 0,
+      "weight": 10,
+      "tres": "cpu=24,mem=128G,billing=0,gres\/gpu=0",
+      "version": "24.05.5"
+    },
+    {
+      "architecture": "x86_64",
+      "burstbuffer_network_address": "",
+      "boards": 1,
+      "boot_time": {
+        "set": true,
+        "infinite": false,
+        "number": 1767473696
+      },
+      "cluster_name": "",
+      "cores": 24,
+      "specialized_cores": 0,
+      "cpu_binding": 0,
+      "cpu_load": 0.1,
+      "free_mem": {
+        "set": true,
+        "infinite": false,
+        "number": 0
+      },
+      "cpus": 24,
+      "effective_cpus": 24,
+      "specialized_cpus": 24,
+      "energy": {
+        "average_watts": 0,
+        "base_consumed_energy": 0,
+        "consumed_energy": 0,
+        "current_watts": {
+          "set": true,
+          "infinite": false,
+          "number": 0
+        },
+        "previous_consumed_energy": 0,
+        "last_collected": 0
+      },
+      "external_sensors": {
+      },
+      "extra": "",
+      "power": {
+      },
+      "features": [
+      ],
+      "active_features": [
+      ],
+      "gpu_spec": "",
+      "gres": "gpu:8",
+      "gres_drained": "N\/A",
+      "gres_used": "gpu:8",
+      "instance_id": "",
+      "instance_type": "",
+      "last_busy": {
+        "set": true,
+        "infinite": false,
+        "number": 1769228337
+      },
+      "mcs_label": "",
+      "specialized_memory": 0,
+      "name": "node-08",
+      "next_state_after_reboot": [
+        "INVALID"
+      ],
+      "address": "node-08",
+      "hostname": "node-08",
+      "state": [
+        "MIXED"
+      ],
+      "operating_system": "Linux 5.15.0 Ubuntu SMP Fri Aug 9 17:13:45 UTC 2024",
+      "owner": "",
+      "partitions":
+      [
+        "test"
+      ],
+      "port": 6818,
+      "real_memory": 128000,
+      "res_cores_per_gpu": 0,
+      "comment": "",
+      "reason": "",
+      "reason_changed_at": {
+        "set": true,
+        "infinite": false,
+        "number": 0
+      },
+      "reason_set_by_user": "",
+      "resume_after": {
+        "set": true,
+        "infinite": false,
+        "number": 0
+      },
+      "reservation": "",
+      "alloc_memory": 1088000,
+      "alloc_cpus": 24,
+      "alloc_idle_cpus": 24,
+      "tres_used": "cpu=0,mem=0G,billing=0,gres\/gpu=0",
+      "tres_weighted": 208.0,
+      "slurmd_start_time": {
+        "set": true,
+        "infinite": false,
+        "number": 1769037845
+      },
+      "sockets": 2,
+      "threads": 2,
+      "temporary_disk": 0,
+      "weight": 10,
+      "tres": "cpu=24,mem=128G,billing=0,gres\/gpu=0",
+      "version": "24.05.5"
+    },
+    {
+      "architecture": "x86_64",
+      "burstbuffer_network_address": "",
+      "boards": 1,
+      "boot_time": {
+        "set": true,
+        "infinite": false,
+        "number": 1767382157
+      },
+      "cluster_name": "",
+      "cores": 24,
+      "specialized_cores": 0,
+      "cpu_binding": 0,
+      "cpu_load": 0.1,
+      "free_mem": {
+        "set": true,
+        "infinite": false,
+        "number": 0
+      },
+      "cpus": 24,
+      "effective_cpus": 24,
+      "specialized_cpus": 24,
+      "energy": {
+        "average_watts": 0,
+        "base_consumed_energy": 0,
+        "consumed_energy": 0,
+        "current_watts": {
+          "set": true,
+          "infinite": false,
+          "number": 0
+        },
+        "previous_consumed_energy": 0,
+        "last_collected": 0
+      },
+      "external_sensors": {
+      },
+      "extra": "",
+      "power": {
+      },
+      "features": [
+      ],
+      "active_features": [
+      ],
+      "gpu_spec": "",
+      "gres": "gpu:8",
+      "gres_drained": "N\/A",
+      "gres_used": "gpu:4",
+      "instance_id": "",
+      "instance_type": "",
+      "last_busy": {
+        "set": true,
+        "infinite": false,
+        "number": 1768507208
+      },
+      "mcs_label": "",
+      "specialized_memory": 0,
+      "name": "node-09",
+      "next_state_after_reboot": [
+        "INVALID"
+      ],
+      "address": "node-09",
+      "hostname": "node-09",
+      "state": [
+        "MIXED",
+        "DRAIN"
+      ],
+      "operating_system": "Linux 5.15.0 Ubuntu SMP Fri Aug 9 17:13:45 UTC 2024",
+      "owner": "",
+      "partitions":
+      [
+        "test"
+      ],
+      "port": 6818,
+      "real_memory": 128000,
+      "res_cores_per_gpu": 0,
+      "comment": "",
+      "reason": "BUG: ECC error",
+      "reason_changed_at": {
+        "set": true,
+        "infinite": false,
+        "number": 1769748778
+      },
+      "reason_set_by_user": "root",
+      "resume_after": {
+        "set": true,
+        "infinite": false,
+        "number": 0
+      },
+      "reservation": "",
+      "alloc_memory": 256000,
+      "alloc_cpus": 24,
+      "alloc_idle_cpus": 24,
+      "tres_used": "cpu=0,mem=0G,billing=0,gres\/gpu=0",
+      "tres_weighted": 194.0,
+      "slurmd_start_time": {
+        "set": true,
+        "infinite": false,
+        "number": 1769037845
+      },
+      "sockets": 2,
+      "threads": 2,
+      "temporary_disk": 0,
+      "weight": 10,
+      "tres": "cpu=24,mem=128G,billing=0,gres\/gpu=0",
+      "version": "24.05.5"
+    },
+    {
+      "architecture": "x86_64",
+      "burstbuffer_network_address": "",
+      "boards": 1,
+      "boot_time": {
+        "set": true,
+        "infinite": false,
+        "number": 1767376845
+      },
+      "cluster_name": "",
+      "cores": 24,
+      "specialized_cores": 0,
+      "cpu_binding": 0,
+      "cpu_load": 0.1,
+      "free_mem": {
+        "set": true,
+        "infinite": false,
+        "number": 0
+      },
+      "cpus": 24,
+      "effective_cpus": 24,
+      "specialized_cpus": 24,
+      "energy": {
+        "average_watts": 0,
+        "base_consumed_energy": 0,
+        "consumed_energy": 0,
+        "current_watts": {
+          "set": true,
+          "infinite": false,
+          "number": 0
+        },
+        "previous_consumed_energy": 0,
+        "last_collected": 0
+      },
+      "external_sensors": {
+      },
+      "extra": "",
+      "power": {
+      },
+      "features": [
+      ],
+      "active_features": [
+      ],
+      "gpu_spec": "",
+      "gres": "gpu:8",
+      "gres_drained": "N\/A",
+      "gres_used": "gpu:8",
+      "instance_id": "",
+      "instance_type": "",
+      "last_busy": {
+        "set": true,
+        "infinite": false,
+        "number": 1768507208
+      },
+      "mcs_label": "",
+      "specialized_memory": 0,
+      "name": "node-10",
+      "next_state_after_reboot": [
+        "INVALID"
+      ],
+      "address": "node-10",
+      "hostname": "node-10",
+      "state": [
+        "MIXED"
+      ],
+      "operating_system": "Linux 5.15.0 Ubuntu SMP Fri Aug 9 17:13:45 UTC 2024",
+      "owner": "",
+      "partitions":
+      [
+        "test"
+      ],
+      "port": 6818,
+      "real_memory": 128000,
+      "res_cores_per_gpu": 0,
+      "comment": "",
+      "reason": "",
+      "reason_changed_at": {
+        "set": true,
+        "infinite": false,
+        "number": 0
+      },
+      "reason_set_by_user": "",
+      "resume_after": {
+        "set": true,
+        "infinite": false,
+        "number": 0
+      },
+      "reservation": "",
+      "alloc_memory": 829600,
+      "alloc_cpus": 24,
+      "alloc_idle_cpus": 24,
+      "tres_used": "cpu=0,mem=0G,billing=0,gres\/gpu=0",
+      "tres_weighted": 192.0,
+      "slurmd_start_time": {
+        "set": true,
+        "infinite": false,
+        "number": 1769037845
+      },
+      "sockets": 2,
+      "threads": 2,
+      "temporary_disk": 0,
+      "weight": 10,
+      "tres": "cpu=24,mem=128G,billing=0,gres\/gpu=0",
+      "version": "24.05.5"
+    },
+    {
+      "architecture": "x86_64",
+      "burstbuffer_network_address": "",
+      "boards": 1,
+      "boot_time": {
+        "set": true,
+        "infinite": false,
+        "number": 1768313316
+      },
+      "cluster_name": "",
+      "cores": 24,
+      "specialized_cores": 0,
+      "cpu_binding": 0,
+      "cpu_load": 0.1,
+      "free_mem": {
+        "set": true,
+        "infinite": false,
+        "number": 0
+      },
+      "cpus": 24,
+      "effective_cpus": 24,
+      "specialized_cpus": 24,
+      "energy": {
+        "average_watts": 0,
+        "base_consumed_energy": 0,
+        "consumed_energy": 0,
+        "current_watts": {
+          "set": true,
+          "infinite": false,
+          "number": 0
+        },
+        "previous_consumed_energy": 0,
+        "last_collected": 0
+      },
+      "external_sensors": {
+      },
+      "extra": "",
+      "power": {
+      },
+      "features": [
+      ],
+      "active_features": [
+      ],
+      "gpu_spec": "",
+      "gres": "gpu:8",
+      "gres_drained": "N\/A",
+      "gres_used": "gpu:4",
+      "instance_id": "",
+      "instance_type": "",
+      "last_busy": {
+        "set": true,
+        "infinite": false,
+        "number": 1769674634
+      },
+      "mcs_label": "",
+      "specialized_memory": 0,
+      "name": "node-11",
+      "next_state_after_reboot": [
+        "INVALID"
+      ],
+      "address": "node-11",
+      "hostname": "node-11",
+      "state": [
+        "ALLOCATED"
+      ],
+      "operating_system": "Linux 5.15.0 Ubuntu SMP Fri Aug 9 17:13:45 UTC 2024",
+      "owner": "",
+      "partitions":
+      [
+        "test"
+      ],
+      "port": 6818,
+      "real_memory": 128000,
+      "res_cores_per_gpu": 0,
+      "comment": "",
+      "reason": "",
+      "reason_changed_at": {
+        "set": true,
+        "infinite": false,
+        "number": 0
+      },
+      "reason_set_by_user": "",
+      "resume_after": {
+        "set": true,
+        "infinite": false,
+        "number": 0
+      },
+      "reservation": "",
+      "alloc_memory": 256000,
+      "alloc_cpus": 24,
+      "alloc_idle_cpus": 24,
+      "tres_used": "cpu=0,mem=0G,billing=0,gres\/gpu=0",
+      "tres_weighted": 256.0,
+      "slurmd_start_time": {
+        "set": true,
+        "infinite": false,
+        "number": 1769037845
+      },
+      "sockets": 2,
+      "threads": 2,
+      "temporary_disk": 0,
+      "weight": 10,
+      "tres": "cpu=24,mem=128G,billing=0,gres\/gpu=0",
+      "version": "24.05.5"
+    },
+    {
+      "architecture": "x86_64",
+      "burstbuffer_network_address": "",
+      "boards": 1,
+      "boot_time": {
+        "set": true,
+        "infinite": false,
+        "number": 1769663729
+      },
+      "cluster_name": "",
+      "cores": 24,
+      "specialized_cores": 0,
+      "cpu_binding": 0,
+      "cpu_load": 0.1,
+      "free_mem": {
+        "set": true,
+        "infinite": false,
+        "number": 0
+      },
+      "cpus": 24,
+      "effective_cpus": 24,
+      "specialized_cpus": 24,
+      "energy": {
+        "average_watts": 0,
+        "base_consumed_energy": 0,
+        "consumed_energy": 0,
+        "current_watts": {
+          "set": true,
+          "infinite": false,
+          "number": 0
+        },
+        "previous_consumed_energy": 0,
+        "last_collected": 0
+      },
+      "external_sensors": {
+      },
+      "extra": "",
+      "power": {
+      },
+      "features": [
+      ],
+      "active_features": [
+      ],
+      "gpu_spec": "",
+      "gres": "gpu:8",
+      "gres_drained": "N\/A",
+      "gres_used": "gpu:4",
+      "instance_id": "",
+      "instance_type": "",
+      "last_busy": {
+        "set": true,
+        "infinite": false,
+        "number": 1769674798
+      },
+      "mcs_label": "",
+      "specialized_memory": 0,
+      "name": "node-12",
+      "next_state_after_reboot": [
+        "INVALID"
+      ],
+      "address": "node-12",
+      "hostname": "node-12",
+      "state": [
+        "ALLOCATED"
+      ],
+      "operating_system": "Linux 5.15.0 Ubuntu SMP Fri Aug 9 17:13:45 UTC 2024",
+      "owner": "",
+      "partitions":
+      [
+        "test"
+      ],
+      "port": 6818,
+      "real_memory": 128000,
+      "res_cores_per_gpu": 0,
+      "comment": "",
+      "reason": "",
+      "reason_changed_at": {
+        "set": true,
+        "infinite": false,
+        "number": 0
+      },
+      "reason_set_by_user": "",
+      "resume_after": {
+        "set": true,
+        "infinite": false,
+        "number": 0
+      },
+      "reservation": "",
+      "alloc_memory": 256000,
+      "alloc_cpus": 24,
+      "alloc_idle_cpus": 24,
+      "tres_used": "cpu=0,mem=0G,billing=0,gres\/gpu=0",
+      "tres_weighted": 256.0,
+      "slurmd_start_time": {
+        "set": true,
+        "infinite": false,
+        "number": 1769663979
+      },
+      "sockets": 2,
+      "threads": 2,
+      "temporary_disk": 0,
+      "weight": 10,
+      "tres": "cpu=24,mem=128G,billing=0,gres\/gpu=0",
+      "version": "24.05.5"
+    },
+    {
+      "architecture": "x86_64",
+      "burstbuffer_network_address": "",
+      "boards": 1,
+      "boot_time": {
+        "set": true,
+        "infinite": false,
+        "number": 1767382081
+      },
+      "cluster_name": "",
+      "cores": 24,
+      "specialized_cores": 0,
+      "cpu_binding": 0,
+      "cpu_load": 0.1,
+      "free_mem": {
+        "set": true,
+        "infinite": false,
+        "number": 0
+      },
+      "cpus": 24,
+      "effective_cpus": 24,
+      "specialized_cpus": 24,
+      "energy": {
+        "average_watts": 0,
+        "base_consumed_energy": 0,
+        "consumed_energy": 0,
+        "current_watts": {
+          "set": true,
+          "infinite": false,
+          "number": 0
+        },
+        "previous_consumed_energy": 0,
+        "last_collected": 0
+      },
+      "external_sensors": {
+      },
+      "extra": "",
+      "power": {
+      },
+      "features": [
+      ],
+      "active_features": [
+      ],
+      "gpu_spec": "",
+      "gres": "gpu:8",
+      "gres_drained": "N\/A",
+      "gres_used": "gpu:4",
+      "instance_id": "",
+      "instance_type": "",
+      "last_busy": {
+        "set": true,
+        "infinite": false,
+        "number": 1769674677
+      },
+      "mcs_label": "",
+      "specialized_memory": 0,
+      "name": "node-13",
+      "next_state_after_reboot": [
+        "INVALID"
+      ],
+      "address": "node-13",
+      "hostname": "node-13",
+      "state": [
+        "ALLOCATED"
+      ],
+      "operating_system": "Linux 5.15.0 Ubuntu SMP Fri Aug 9 17:13:45 UTC 2024",
+      "owner": "",
+      "partitions":
+      [
+        "production"
+      ],
+      "port": 6818,
+      "real_memory": 128000,
+      "res_cores_per_gpu": 0,
+      "comment": "",
+      "reason": "",
+      "reason_changed_at": {
+        "set": true,
+        "infinite": false,
+        "number": 0
+      },
+      "reason_set_by_user": "",
+      "resume_after": {
+        "set": true,
+        "infinite": false,
+        "number": 0
+      },
+      "reservation": "",
+      "alloc_memory": 256000,
+      "alloc_cpus": 24,
+      "alloc_idle_cpus": 24,
+      "tres_used": "cpu=0,mem=0G,billing=0,gres\/gpu=0",
+      "tres_weighted": 256.0,
+      "slurmd_start_time": {
+        "set": true,
+        "infinite": false,
+        "number": 1769037845
+      },
+      "sockets": 2,
+      "threads": 2,
+      "temporary_disk": 0,
+      "weight": 10,
+      "tres": "cpu=24,mem=128G,billing=0,gres\/gpu=0",
+      "version": "24.05.5"
+    },
+    {
+      "architecture": "x86_64",
+      "burstbuffer_network_address": "",
+      "boards": 1,
+      "boot_time": {
+        "set": true,
+        "infinite": false,
+        "number": 1769011161
+      },
+      "cluster_name": "",
+      "cores": 24,
+      "specialized_cores": 0,
+      "cpu_binding": 0,
+      "cpu_load": 0.1,
+      "free_mem": {
+        "set": true,
+        "infinite": false,
+        "number": 0
+      },
+      "cpus": 24,
+      "effective_cpus": 24,
+      "specialized_cpus": 24,
+      "energy": {
+        "average_watts": 0,
+        "base_consumed_energy": 0,
+        "consumed_energy": 0,
+        "current_watts": {
+          "set": true,
+          "infinite": false,
+          "number": 0
+        },
+        "previous_consumed_energy": 0,
+        "last_collected": 0
+      },
+      "external_sensors": {
+      },
+      "extra": "",
+      "power": {
+      },
+      "features": [
+      ],
+      "active_features": [
+      ],
+      "gpu_spec": "",
+      "gres": "gpu:8",
+      "gres_drained": "N\/A",
+      "gres_used": "gpu:5",
+      "instance_id": "",
+      "instance_type": "",
+      "last_busy": {
+        "set": true,
+        "infinite": false,
+        "number": 1769630351
+      },
+      "mcs_label": "",
+      "specialized_memory": 0,
+      "name": "node-14",
+      "next_state_after_reboot": [
+        "INVALID"
+      ],
+      "address": "node-14",
+      "hostname": "node-14",
+      "state": [
+        "ALLOCATED"
+      ],
+      "operating_system": "Linux 5.15.0 Ubuntu SMP Fri Aug 9 17:13:45 UTC 2024",
+      "owner": "",
+      "partitions":
+      [
+        "production"
+      ],
+      "port": 6818,
+      "real_memory": 128000,
+      "res_cores_per_gpu": 0,
+      "comment": "",
+      "reason": "",
+      "reason_changed_at": {
+        "set": true,
+        "infinite": false,
+        "number": 0
+      },
+      "reason_set_by_user": "",
+      "resume_after": {
+        "set": true,
+        "infinite": false,
+        "number": 0
+      },
+      "reservation": "",
+      "alloc_memory": 1524000,
+      "alloc_cpus": 24,
+      "alloc_idle_cpus": 24,
+      "tres_used": "cpu=0,mem=0G,billing=0,gres\/gpu=0",
+      "tres_weighted": 256.0,
+      "slurmd_start_time": {
+        "set": true,
+        "infinite": false,
+        "number": 1769037845
+      },
+      "sockets": 2,
+      "threads": 2,
+      "temporary_disk": 0,
+      "weight": 10,
+      "tres": "cpu=24,mem=128G,billing=0,gres\/gpu=0",
+      "version": "24.05.5"
+    },
+    {
+      "architecture": "x86_64",
+      "burstbuffer_network_address": "",
+      "boards": 1,
+      "boot_time": {
+        "set": true,
+        "infinite": false,
+        "number": 1769697713
+      },
+      "cluster_name": "",
+      "cores": 24,
+      "specialized_cores": 0,
+      "cpu_binding": 0,
+      "cpu_load": 0.1,
+      "free_mem": {
+        "set": true,
+        "infinite": false,
+        "number": 0
+      },
+      "cpus": 24,
+      "effective_cpus": 24,
+      "specialized_cpus": 24,
+      "energy": {
+        "average_watts": 0,
+        "base_consumed_energy": 0,
+        "consumed_energy": 0,
+        "current_watts": {
+          "set": true,
+          "infinite": false,
+          "number": 0
+        },
+        "previous_consumed_energy": 0,
+        "last_collected": 0
+      },
+      "external_sensors": {
+      },
+      "extra": "",
+      "power": {
+      },
+      "features": [
+      ],
+      "active_features": [
+      ],
+      "gpu_spec": "",
+      "gres": "gpu:8",
+      "gres_drained": "N\/A",
+      "gres_used": "gpu:0",
+      "instance_id": "",
+      "instance_type": "",
+      "last_busy": {
+        "set": true,
+        "infinite": false,
+        "number": 1769698804
+      },
+      "mcs_label": "",
+      "specialized_memory": 0,
+      "name": "node-15",
+      "next_state_after_reboot": [
+        "INVALID"
+      ],
+      "address": "node-15",
+      "hostname": "node-15",
+      "state": [
+        "IDLE"
+      ],
+      "operating_system": "Linux 5.15.0 Ubuntu SMP Fri Aug 9 17:13:45 UTC 2024",
+      "owner": "",
+      "partitions":
+      [
+        "production"
+      ],
+      "port": 6818,
+      "real_memory": 128000,
+      "res_cores_per_gpu": 0,
+      "comment": "",
+      "reason": "",
+      "reason_changed_at": {
+        "set": true,
+        "infinite": false,
+        "number": 0
+      },
+      "reason_set_by_user": "",
+      "resume_after": {
+        "set": true,
+        "infinite": false,
+        "number": 0
+      },
+      "reservation": "",
+      "alloc_memory": 1912000,
+      "alloc_cpus": 24,
+      "alloc_idle_cpus": 24,
+      "tres_used": "cpu=0,mem=0G,billing=0,gres\/gpu=0",
+      "tres_weighted": 248.0,
+      "slurmd_start_time": {
+        "set": true,
+        "infinite": false,
+        "number": 1769037845
+      },
+      "sockets": 2,
+      "threads": 2,
+      "temporary_disk": 0,
+      "weight": 10,
+      "tres": "cpu=24,mem=128G,billing=0,gres\/gpu=0",
+      "version": "24.05.5"
+    },
+    {
+      "architecture": "x86_64",
+      "burstbuffer_network_address": "",
+      "boards": 1,
+      "boot_time": {
+        "set": true,
+        "infinite": false,
+        "number": 1767560823
+      },
+      "cluster_name": "",
+      "cores": 24,
+      "specialized_cores": 0,
+      "cpu_binding": 0,
+      "cpu_load": 0.1,
+      "free_mem": {
+        "set": true,
+        "infinite": false,
+        "number": 0
+      },
+      "cpus": 24,
+      "effective_cpus": 24,
+      "specialized_cpus": 24,
+      "energy": {
+        "average_watts": 0,
+        "base_consumed_energy": 0,
+        "consumed_energy": 0,
+        "current_watts": {
+          "set": true,
+          "infinite": false,
+          "number": 0
+        },
+        "previous_consumed_energy": 0,
+        "last_collected": 0
+      },
+      "external_sensors": {
+      },
+      "extra": "",
+      "power": {
+      },
+      "features": [
+      ],
+      "active_features": [
+      ],
+      "gpu_spec": "",
+      "gres": "gpu:8",
+      "gres_drained": "N\/A",
+      "gres_used": "gpu:4",
+      "instance_id": "",
+      "instance_type": "",
+      "last_busy": {
+        "set": true,
+        "infinite": false,
+        "number": 1769674665
+      },
+      "mcs_label": "",
+      "specialized_memory": 0,
+      "name": "node-20",
+      "next_state_after_reboot": [
+        "INVALID"
+      ],
+      "address": "node-20",
+      "hostname": "node-20",
+      "state": [
+        "ALLOCATED"
+      ],
+      "operating_system": "Linux 5.15.0 Ubuntu SMP Fri Aug 9 17:13:45 UTC 2024",
+      "owner": "",
+      "partitions":
+      [
+        "production"
+      ],
+      "port": 6818,
+      "real_memory": 128000,
+      "res_cores_per_gpu": 0,
+      "comment": "",
+      "reason": "",
+      "reason_changed_at": {
+        "set": true,
+        "infinite": false,
+        "number": 0
+      },
+      "reason_set_by_user": "",
+      "resume_after": {
+        "set": true,
+        "infinite": false,
+        "number": 0
+      },
+      "reservation": "",
+      "alloc_memory": 256000,
+      "alloc_cpus": 24,
+      "alloc_idle_cpus": 24,
+      "tres_used": "cpu=0,mem=0G,billing=0,gres\/gpu=0",
+      "tres_weighted": 256.0,
+      "slurmd_start_time": {
+        "set": true,
+        "infinite": false,
+        "number": 1769037845
+      },
+      "sockets": 2,
+      "threads": 2,
+      "temporary_disk": 0,
+      "weight": 10,
+      "tres": "cpu=24,mem=128G,billing=0,gres\/gpu=0",
+      "version": "24.05.5"
+    },
+    {
+      "architecture": "x86_64",
+      "burstbuffer_network_address": "",
+      "boards": 1,
+      "boot_time": {
+        "set": true,
+        "infinite": false,
+        "number": 1767287255
+      },
+      "cluster_name": "",
+      "cores": 24,
+      "specialized_cores": 0,
+      "cpu_binding": 0,
+      "cpu_load": 0.1,
+      "free_mem": {
+        "set": true,
+        "infinite": false,
+        "number": 0
+      },
+      "cpus": 24,
+      "effective_cpus": 24,
+      "specialized_cpus": 24,
+      "energy": {
+        "average_watts": 0,
+        "base_consumed_energy": 0,
+        "consumed_energy": 0,
+        "current_watts": {
+          "set": true,
+          "infinite": false,
+          "number": 0
+        },
+        "previous_consumed_energy": 0,
+        "last_collected": 0
+      },
+      "external_sensors": {
+      },
+      "extra": "",
+      "power": {
+      },
+      "features": [
+      ],
+      "active_features": [
+      ],
+      "gpu_spec": "",
+      "gres": "gpu:8",
+      "gres_drained": "N\/A",
+      "gres_used": "gpu:8",
+      "instance_id": "",
+      "instance_type": "",
+      "last_busy": {
+        "set": true,
+        "infinite": false,
+        "number": 1769211509
+      },
+      "mcs_label": "",
+      "specialized_memory": 0,
+      "name": "node-21",
+      "next_state_after_reboot": [
+        "INVALID"
+      ],
+      "address": "node-21",
+      "hostname": "node-21",
+      "state": [
+        "ALLOCATED"
+      ],
+      "operating_system": "Linux 5.15.0 Ubuntu SMP Fri Aug 9 17:13:45 UTC 2024",
+      "owner": "",
+      "partitions":
+      [
+        "production"
+      ],
+      "port": 6818,
+      "real_memory": 128000,
+      "res_cores_per_gpu": 0,
+      "comment": "",
+      "reason": "",
+      "reason_changed_at": {
+        "set": true,
+        "infinite": false,
+        "number": 0
+      },
+      "reason_set_by_user": "",
+      "resume_after": {
+        "set": true,
+        "infinite": false,
+        "number": 0
+      },
+      "reservation": "",
+      "alloc_memory": 512000,
+      "alloc_cpus": 24,
+      "alloc_idle_cpus": 24,
+      "tres_used": "cpu=0,mem=0G,billing=0,gres\/gpu=0",
+      "tres_weighted": 256.0,
+      "slurmd_start_time": {
+        "set": true,
+        "infinite": false,
+        "number": 1769037845
+      },
+      "sockets": 2,
+      "threads": 2,
+      "temporary_disk": 0,
+      "weight": 10,
+      "tres": "cpu=24,mem=128G,billing=0,gres\/gpu=0",
+      "version": "24.05.5"
+    },
+    {
+      "architecture": "x86_64",
+      "burstbuffer_network_address": "",
+      "boards": 1,
+      "boot_time": {
+        "set": true,
+        "infinite": false,
+        "number": 1767292016
+      },
+      "cluster_name": "",
+      "cores": 24,
+      "specialized_cores": 0,
+      "cpu_binding": 0,
+      "cpu_load": 0.1,
+      "free_mem": {
+        "set": true,
+        "infinite": false,
+        "number": 0
+      },
+      "cpus": 24,
+      "effective_cpus": 24,
+      "specialized_cpus": 24,
+      "energy": {
+        "average_watts": 0,
+        "base_consumed_energy": 0,
+        "consumed_energy": 0,
+        "current_watts": {
+          "set": true,
+          "infinite": false,
+          "number": 0
+        },
+        "previous_consumed_energy": 0,
+        "last_collected": 0
+      },
+      "external_sensors": {
+      },
+      "extra": "",
+      "power": {
+      },
+      "features": [
+      ],
+      "active_features": [
+      ],
+      "gpu_spec": "",
+      "gres": "gpu:8",
+      "gres_drained": "N\/A",
+      "gres_used": "gpu:8",
+      "instance_id": "",
+      "instance_type": "",
+      "last_busy": {
+        "set": true,
+        "infinite": false,
+        "number": 1769155396
+      },
+      "mcs_label": "",
+      "specialized_memory": 0,
+      "name": "node-22",
+      "next_state_after_reboot": [
+        "INVALID"
+      ],
+      "address": "node-22",
+      "hostname": "node-22",
+      "state": [
+        "ALLOCATED"
+      ],
+      "operating_system": "Linux 5.15.0 Ubuntu SMP Fri Aug 9 17:13:45 UTC 2024",
+      "owner": "",
+      "partitions":
+      [
+        "production"
+      ],
+      "port": 6818,
+      "real_memory": 128000,
+      "res_cores_per_gpu": 0,
+      "comment": "",
+      "reason": "",
+      "reason_changed_at": {
+        "set": true,
+        "infinite": false,
+        "number": 0
+      },
+      "reason_set_by_user": "",
+      "resume_after": {
+        "set": true,
+        "infinite": false,
+        "number": 0
+      },
+      "reservation": "",
+      "alloc_memory": 512000,
+      "alloc_cpus": 24,
+      "alloc_idle_cpus": 24,
+      "tres_used": "cpu=0,mem=0G,billing=0,gres\/gpu=0",
+      "tres_weighted": 256.0,
+      "slurmd_start_time": {
+        "set": true,
+        "infinite": false,
+        "number": 1769037845
+      },
+      "sockets": 2,
+      "threads": 2,
+      "temporary_disk": 0,
+      "weight": 10,
+      "tres": "cpu=24,mem=128G,billing=0,gres\/gpu=0",
+      "version": "24.05.5"
+    },
+    {
+      "architecture": "x86_64",
+      "burstbuffer_network_address": "",
+      "boards": 1,
+      "boot_time": {
+        "set": true,
+        "infinite": false,
+        "number": 1767287904
+      },
+      "cluster_name": "",
+      "cores": 24,
+      "specialized_cores": 0,
+      "cpu_binding": 0,
+      "cpu_load": 0.1,
+      "free_mem": {
+        "set": true,
+        "infinite": false,
+        "number": 0
+      },
+      "cpus": 24,
+      "effective_cpus": 24,
+      "specialized_cpus": 24,
+      "energy": {
+        "average_watts": 0,
+        "base_consumed_energy": 0,
+        "consumed_energy": 0,
+        "current_watts": {
+          "set": true,
+          "infinite": false,
+          "number": 0
+        },
+        "previous_consumed_energy": 0,
+        "last_collected": 0
+      },
+      "external_sensors": {
+      },
+      "extra": "",
+      "power": {
+      },
+      "features": [
+      ],
+      "active_features": [
+      ],
+      "gpu_spec": "",
+      "gres": "gpu:8",
+      "gres_drained": "N\/A",
+      "gres_used": "gpu:0",
+      "instance_id": "",
+      "instance_type": "",
+      "last_busy": {
+        "set": true,
+        "infinite": false,
+        "number": 1769465900
+      },
+      "mcs_label": "",
+      "specialized_memory": 0,
+      "name": "node-23",
+      "next_state_after_reboot": [
+        "INVALID"
+      ],
+      "address": "node-23",
+      "hostname": "node-23",
+      "state": [
+        "IDLE",
+        "DRAIN"
+      ],
+      "operating_system": "Linux 5.15.0 Ubuntu SMP Fri Aug 9 17:13:45 UTC 2024",
+      "owner": "",
+      "partitions":
+      [
+        "production"
+      ],
+      "port": 6818,
+      "real_memory": 128000,
+      "res_cores_per_gpu": 0,
+      "comment": "",
+      "reason": "Prolog error",
+      "reason_changed_at": {
+        "set": true,
+        "infinite": false,
+        "number": 1769252834
+      },
+      "reason_set_by_user": "slurm",
+      "resume_after": {
+        "set": true,
+        "infinite": false,
+        "number": 0
+      },
+      "reservation": "",
+      "alloc_memory": 0,
+      "alloc_cpus": 24,
+      "alloc_idle_cpus": 24,
+      "tres_used": "cpu=0,mem=0G,billing=0,gres\/gpu=0",
+      "tres_weighted": 0.0,
+      "slurmd_start_time": {
+        "set": true,
+        "infinite": false,
+        "number": 1769037845
+      },
+      "sockets": 2,
+      "threads": 2,
+      "temporary_disk": 0,
+      "weight": 10,
+      "tres": "cpu=24,mem=128G,billing=0,gres\/gpu=0",
+      "version": "24.05.5"
+    },
+    {
+      "architecture": "x86_64",
+      "burstbuffer_network_address": "",
+      "boards": 1,
+      "boot_time": {
+        "set": true,
+        "infinite": false,
+        "number": 1767287359
+      },
+      "cluster_name": "",
+      "cores": 24,
+      "specialized_cores": 0,
+      "cpu_binding": 0,
+      "cpu_load": 0.1,
+      "free_mem": {
+        "set": true,
+        "infinite": false,
+        "number": 0
+      },
+      "cpus": 24,
+      "effective_cpus": 24,
+      "specialized_cpus": 24,
+      "energy": {
+        "average_watts": 0,
+        "base_consumed_energy": 0,
+        "consumed_energy": 0,
+        "current_watts": {
+          "set": true,
+          "infinite": false,
+          "number": 0
+        },
+        "previous_consumed_energy": 0,
+        "last_collected": 0
+      },
+      "external_sensors": {
+      },
+      "extra": "",
+      "power": {
+      },
+      "features": [
+      ],
+      "active_features": [
+      ],
+      "gpu_spec": "",
+      "gres": "gpu:8",
+      "gres_drained": "N\/A",
+      "gres_used": "gpu:1",
+      "instance_id": "",
+      "instance_type": "",
+      "last_busy": {
+        "set": true,
+        "infinite": false,
+        "number": 1768506926
+      },
+      "mcs_label": "",
+      "specialized_memory": 0,
+      "name": "node-24",
+      "next_state_after_reboot": [
+        "INVALID"
+      ],
+      "address": "node-24",
+      "hostname": "node-24",
+      "state": [
+        "MIXED",
+        "DRAIN"
+      ],
+      "operating_system": "Linux 5.15.0 Ubuntu SMP Fri Aug 9 17:13:45 UTC 2024",
+      "owner": "",
+      "partitions":
+      [
+        "production"
+      ],
+      "port": 6818,
+      "real_memory": 128000,
+      "res_cores_per_gpu": 0,
+      "comment": "",
+      "reason": "Prolog error",
+      "reason_changed_at": {
+        "set": true,
+        "infinite": false,
+        "number": 1768507029
+      },
+      "reason_set_by_user": "slurm",
+      "resume_after": {
+        "set": true,
+        "infinite": false,
+        "number": 0
+      },
+      "reservation": "",
+      "alloc_memory": 128000,
+      "alloc_cpus": 24,
+      "alloc_idle_cpus": 24,
+      "tres_used": "cpu=0,mem=0G,billing=0,gres\/gpu=0",
+      "tres_weighted": 32.0,
+      "slurmd_start_time": {
+        "set": true,
+        "infinite": false,
+        "number": 1769037845
+      },
+      "sockets": 2,
+      "threads": 2,
+      "temporary_disk": 0,
+      "weight": 10,
+      "tres": "cpu=24,mem=128G,billing=0,gres\/gpu=0",
+      "version": "24.05.5"
+    }
+  ],
+  "last_update": {
+    "set": true,
+    "infinite": false,
+    "number": 1769810398
+  },
+  "meta": {
+    "plugin": {
+      "type": "",
+      "name": "node-279",
+      "data_parser": "data_parser\/v0.0.41",
+      "accounting_storage": "accounting_storage\/slurmdbd"
+    },
+    "client": {
+      "source": "\/dev\/pts\/4",
+      "user": "szhumatiy",
+      "group": "dip"
+    },
+    "command": [
+      "show"
+    ],
+    "slurm": {
+      "version": {
+        "major": "24",
+        "micro": "5",
+        "minor": "05"
+      },
+      "release": "24.05.5",
+      "cluster": "mycluster"
+    }
+  },
+  "errors": [
+  ],
+  "warnings": [
+  ]
+}

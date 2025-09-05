@@ -1,0 +1,8 @@
+   Cluster NodeName                  TimeStart             TimeEnd  State                         Reason       User 
+---------- --------------- ------------------- ------------------- ------ ------------------------------ ---------- 
+mycluster                  2026-01-20T22:42:42             Unknown               Cluster Registered TRES            
+mycluster  node-01         2026-02-19T11:13:29             Unknown  DRAIN software update : reboot       slurm(300) 
+mycluster  node-02         2026-02-19T11:13:29             Unknown  DRAIN software update : reboot       slurm(300) 
+mycluster  node-05         2026-02-19T12:45:05             Unknown  DRAIN BUG: Throttling                slurm(300) 
+mycluster  node-08         2026-02-22T14:02:09             Unknown  DRAIN BUG: ECC Error                 slurm(300) 
+mycluster  node-09         2026-02-23T08:31:08             Unknown  DRAIN Unexpected reboot              slurm(300) 

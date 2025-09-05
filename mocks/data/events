@@ -1,0 +1,7 @@
+Cluster|Cluster Nodes|Duration|TimeStart|TimeEnd|Event|EventRaw|NodeName|State|StateRaw|TRES|User|Reason|
+mycluster|node-[01-24]|32-11:23:47|2026-01-20T22:42:42|Unknown|Cluster|1|||0|billing=0,cpu=576,energy=0,fs/disk=0,gres/gpu=192,gres/gpumem=0,gres/gpuutil=0,mem=307200G,node=24,pages=0,vmem=0||Cluster Registered TRES|
+mycluster||3-22:53:00|2026-02-19T11:13:29|Unknown|Node|2|node-01|DRAIN|545||slurm(300)|DRAIN software update : reboot|
+mycluster||3-22:53:00|2026-02-19T11:13:29|Unknown|Node|2|node-02|DRAIN|545||slurm(300)|DRAIN software update : reboot|
+mycluster||3-21:21:24|2026-02-19T12:45:05|Unknown|Node|2|node-05|DRAIN|545||slurm(300)|BUG: Throttling [root@2026-02-19T11:34:56]|
+mycluster||20:04:20|2026-02-22T14:02:09|Unknown|Node|2|node-08|DRAIN|545||slurm(300)|BUG: ECC Error [root@2026-02-22T13:21:38]|
+mycluster||01:35:21|2026-02-23T08:31:08|Unknown|Node|2|node-09|DRAIN|545||slurm(300)|BUG: Unexpected reboot [root@2026-02-23T07:51:43]|

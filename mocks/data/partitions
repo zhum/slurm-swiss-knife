@@ -1,0 +1,28 @@
+PartitionName=test
+   AllowGroups=ALL AllowAccounts=general AllowQos=ALL
+   AllocNodes=ALL Default=NO QoS=N/A
+   DefaultTime=00:31:00 DisableRootJobs=NO ExclusiveUser=NO ExclusiveTopo=NO GraceTime=0 Hidden=NO
+   MaxNodes=UNLIMITED MaxTime=08:00:00 MinNodes=1 LLN=NO MaxCPUsPerNode=UNLIMITED MaxCPUsPerSocket=UNLIMITED
+   Nodes=node-[01-12]
+   PriorityJobFactor=1 PriorityTier=10 RootOnly=NO ReqResv=NO OverSubscribe=NO
+   OverTimeLimit=NONE PreemptMode=OFF
+   State=UP TotalCPUs=288 TotalNodes=12 SelectTypeParameters=NONE
+   JobDefaults=DefCpuPerGPU=3
+   DefMemPerNode=UNLIMITED MaxMemPerNode=UNLIMITED
+   TRES=cpu=288,mem=3072G,node=12,billing=123,gres/gpu=96
+   TRESBillingWeights=CPU=0.1,Mem=16G,GRES/gpu=1.0
+
+PartitionName=production
+   AllowGroups=ALL AllowAccounts=ALL AllowQos=ALL
+   AllocNodes=ALL Default=NO QoS=N/A
+   DefaultTime=00:31:00 DisableRootJobs=NO ExclusiveUser=NO ExclusiveTopo=NO GraceTime=600 Hidden=NO
+   MaxNodes=UNLIMITED MaxTime=7-00:00:00 MinNodes=1 LLN=NO MaxCPUsPerNode=UNLIMITED MaxCPUsPerSocket=UNLIMITED
+   Nodes=node-[13-24]
+   PriorityJobFactor=1 PriorityTier=1 RootOnly=NO ReqResv=NO OverSubscribe=NO
+   OverTimeLimit=NONE PreemptMode=REQUEUE
+   State=UP TotalCPUs=288 TotalNodes=12 SelectTypeParameters=NONE
+   JobDefaults=DefCpuPerGPU=3,
+   DefMemPerNode=UNLIMITED MaxMemPerNode=UNLIMITED
+   TRES=cpu=288,mem=3072G,node=12,billing=123,gres/gpu=96
+   TRESBillingWeights=CPU=0.1,Mem=16G,GRES/gpu=1.0
+

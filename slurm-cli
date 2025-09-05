@@ -1,0 +1,5 @@
+#!/usr/bin/bash
+
+export _CLICK_COMPLETE
+export PATH=$PATH:./mocks
+poetry run slurm-cli "$@"

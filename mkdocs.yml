@@ -1,0 +1,79 @@
+site_name: Slurm CLI
+site_description: A CLI tool for Slurm cluster management with autocomplete functionality
+site_author: Sergey Zhumatiy
+site_url: https://zhum.github.io/slurm-cli/
+
+repo_name: zhum/slurm-cli
+repo_url: https://github.com/zhum/slurm-cli
+edit_uri: ""
+
+theme:
+  name: darkly
+  icon:
+    repo: fontawesome/brands/github
+    logo: material/console
+
+plugins:
+  - search
+  - mkdocstrings:
+      handlers:
+        python:
+          options:
+            show_source: true
+            show_root_heading: true
+            heading_level: 2
+
+markdown_extensions:
+  - admonition
+  - pymdownx.details
+  - pymdownx.superfences
+  - pymdownx.highlight:
+      anchor_linenums: true
+      line_spans: __span
+      pygments_lang_class: true
+  - pymdownx.inlinehilite
+  - pymdownx.snippets
+  - pymdownx.tabbed:
+      alternate_style: true
+  - tables
+  - attr_list
+  - md_in_html
+  - toc:
+      permalink: true
+
+nav:
+  - Home: index.md
+  - Getting Started:
+    - Installation: getting-started/installation.md
+    - Quick Start: getting-started/quickstart.md
+    - Autocomplete Setup: getting-started/autocomplete.md
+  - User Guide:
+    - Commands Overview: user-guide/commands.md
+    - Managing Resources:
+      - Jobs: user-guide/resources/jobs.md
+      - Partitions: user-guide/resources/partitions.md
+      - Nodes: user-guide/resources/nodes.md
+      - Users: user-guide/resources/users.md
+      - Accounts: user-guide/resources/accounts.md
+      - QoS: user-guide/resources/qos.md
+      - Reservations: user-guide/resources/reservations.md
+      - Associations: user-guide/resources/associations.md
+      - Coordinators: user-guide/resources/coordinators.md
+    - Output Profiles: user-guide/profiles.md
+    - Filtering & Formatting: user-guide/filtering.md
+  - Development:
+    - Contributing: development/contributing.md
+    - Testing: development/testing.md
+    - Mock System: development/mocks.md
+    - API Reference: development/api.md
+  - Changelog: changelog.md
+
+extra:
+  social:
+    - icon: fontawesome/brands/github
+      link: https://github.com/zhum/slurm-cli
+  version:
+    provider: mike
+
+copyright: Copyright &copy; 2025 Sergey Zhumatiy
+

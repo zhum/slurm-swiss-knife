@@ -1,0 +1,55 @@
+#!/usr/bin/env bash
+
+# Mock scancel script for testing SLURM job cancellation
+
+# Get the directory where this script is located (same as mocks directory)
+MOCKS_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
+# Parse arguments
+JOB_IDS=()
+VERBOSE=true  # Is set to true by default to check slurm-cli delete jobs
+SIGNAL=""
+USER=""
+
+prev=""
+for arg in "$@"; do
+    case "$arg" in
+        -v|--verbose)
+            VERBOSE=true
+            ;;
+        -s=*|--signal=*)
+            SIGNAL="${arg#*=}"
+            ;;
+        -u=*|--user=*)
+            USER="${arg#*=}"
+            ;;
+        -s|--signal|-u|--user)
+            # These will be handled with next arg
+            ;;
+        [0-9]*)
+            JOB_IDS+=("$arg")
+            ;;
+    esac
+    # Handle -s and -u as separate arguments
+    case "$prev" in
+        -s|--signal)
+            SIGNAL="$arg"
+            ;;
+        -u|--user)
+            USER="$arg"
+            ;;
+    esac
+    prev="$arg"
+done
+
+# If verbose, print what we're doing
+if [ "$VERBOSE" = true ]; then
+    if [ ${#JOB_IDS[@]} -gt 0 ]; then
+        echo "scancel: Cancelling ${#JOB_IDS[@]} job(s): ${JOB_IDS[*]}"
+    elif [ -n "$USER" ]; then
+        echo "scancel: Cancelling all jobs for user $USER"
+    fi
+fi
+
+# Mock always succeeds
+exit 0

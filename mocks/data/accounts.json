@@ -1,0 +1,59 @@
+{
+   "accounts": [
+     {
+       "associations": [
+       ],
+       "coordinators": [
+       ],
+       "description": "account-one",
+       "name": "account-one",
+       "organization": "general",
+       "flags": [
+       ]
+     },
+     {
+       "associations": [
+       ],
+       "coordinators": [
+         {
+           "name": "user-1",
+           "direct": true
+         }
+       ],
+       "description": "account-two",
+       "name": "account-two",
+       "organization": "general_1",
+       "flags": [
+       ]
+     }
+   ],
+   "meta": {
+     "plugin": {
+       "type": "",
+       "name": "",
+       "data_parser": "data_parser\/v0.0.40",
+       "accounting_storage": "accounting_storage\/slurmdbd"
+     },
+     "client": {
+       "source": "\/dev\/pts\/2",
+       "user": "root",
+       "group": "root"
+     },
+     "command": [
+       "withcoord"
+     ],
+     "slurm": {
+       "version": {
+         "major": "23",
+         "micro": "8",
+         "minor": "11"
+       },
+       "release": "23.11.8",
+       "cluster": "mycluster"
+     }
+   },
+   "errors": [
+   ],
+   "warnings": [
+   ]
+ }

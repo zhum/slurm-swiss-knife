@@ -1,0 +1,347 @@
+NodeName=node-01 Arch=x86_64 CoresPerSocket=24 
+   CPUAlloc=0 CPUEfctv=24 CPUTot=24 CPULoad=0.1
+   Gres=gpu:8
+   NodeAddr=node-01 NodeHostName=node-01 Version=24.05.5
+   OS=Linux 5.15.0 Ubuntu SMP Fri Aug 9 17:13:45 UTC 2024 
+   RealMemory=128000 AllocMem=0 FreeMem=128000 Sockets=2 Boards=1
+   State=ALLOCATED ThreadsPerCore=2 TmpDisk=0 Weight=10 Owner=N/A MCS_label=N/A
+   Partitions=test
+   BootTime=2026-01-04T12:17:48 SlurmdStartTime=2026-01-24T18:30:45
+   LastBusyTime=2026-01-18T15:05:00 ResumeAfterTime=None
+   CfgTRES=cpu=24,mem=128G,billing=8,gres/gpu=8
+   AllocTRES=cpu=0,mem=0G,gres/gpu=0
+   CurrentWatts=0 AveWatts=0
+
+NodeName=node-02 Arch=x86_64 CoresPerSocket=64 
+   CPUAlloc=0 CPUEfctv=24 CPUTot=24 CPULoad=0.1
+   Gres=gpu:8
+   NodeAddr=node-02 NodeHostName=node-02 Version=24.05.5
+   OS=Linux 5.15.0 Ubuntu SMP Fri Aug 9 17:13:45 UTC 2024 
+   RealMemory=128000 AllocMem=0 FreeMem=128000 Sockets=2 Boards=1
+   State=ALLOCATED ThreadsPerCore=2 TmpDisk=0 Weight=10 Owner=N/A MCS_label=N/A
+   Partitions=test
+   BootTime=2026-01-13T10:04:56 SlurmdStartTime=2026-01-24T18:30:45
+   LastBusyTime=2026-01-18T16:47:20 ResumeAfterTime=None
+   CfgTRES=cpu=24,mem=128G,billing=8,gres/gpu=8
+   AllocTRES=cpu=0,mem=0M,gres/gpu=0
+   CurrentWatts=0 AveWatts=0
+   ReservationName=test_reservation
+
+NodeName=node-03 Arch=x86_64 CoresPerSocket=64 
+   CPUAlloc=0 CPUEfctv=24 CPUTot=24 CPULoad=0.1
+   Gres=gpu:8
+   NodeAddr=node-03 NodeHostName=node-03 Version=24.05.5
+   OS=Linux 5.15.0 Ubuntu SMP Fri Aug 9 17:13:45 UTC 2024 
+   RealMemory=128000 AllocMem=0 FreeMem=128000 Sockets=2 Boards=1
+   State=DOWN+DRAIN+RESERVED ThreadsPerCore=2 TmpDisk=0 Weight=10 Owner=N/A MCS_label=N/A
+   Partitions=test
+   BootTime=2026-02-01T22:09:57 SlurmdStartTime=2026-02-01T22:16:48
+   LastBusyTime=2026-01-24T18:30:45 ResumeAfterTime=None
+   CfgTRES=cpu=24,mem=128G,billing=8,gres/gpu=8
+   AllocTRES=
+   CurrentWatts=0 AveWatts=0
+   Reason=BUG: Throttling [root@2026-02-02T10:27:00]
+   ReservationName=test_reservation
+
+NodeName=node-04 Arch=x86_64 CoresPerSocket=64 
+   CPUAlloc=0 CPUEfctv=24 CPUTot=24 CPULoad=0.1
+   Gres=gpu:8
+   NodeAddr=node-04 NodeHostName=node-04 Version=24.05.5
+   OS=Linux 5.15.0 Ubuntu SMP Fri Aug 9 17:13:45 UTC 2024 
+   RealMemory=128000 AllocMem=0 FreeMem=128000 Sockets=2 Boards=1
+   State=DOWN+DRAIN+RESERVED ThreadsPerCore=2 TmpDisk=0 Weight=10 Owner=N/A MCS_label=N/A
+   Partitions=test
+   BootTime=2026-02-02T09:50:54 SlurmdStartTime=2026-02-02T09:55:40
+   LastBusyTime=2026-01-13T08:32:26 ResumeAfterTime=None
+   CfgTRES=cpu=24,mem=128G,billing=8,gres/gpu=8
+   AllocTRES=
+   CurrentWatts=0 AveWatts=0
+   Reason=BUG: ECC error [root@2026-02-02T10:13:10]
+   ReservationName=test_reservation
+
+NodeName=node-05 Arch=x86_64 CoresPerSocket=64 
+   CPUAlloc=0 CPUEfctv=24 CPUTot=24 CPULoad=0.1
+   Gres=gpu:8
+   NodeAddr=node-05 NodeHostName=node-05 Version=24.05.5
+   OS=Linux 5.15.0 Ubuntu SMP Fri Aug 9 17:13:45 UTC 2024 
+   RealMemory=128000 AllocMem=0 FreeMem=128000 Sockets=2 Boards=1
+   State=MIXED ThreadsPerCore=2 TmpDisk=0 Weight=10 Owner=N/A MCS_label=N/A
+   Partitions=test
+   BootTime=2026-01-04T12:15:39 SlurmdStartTime=2026-01-24T18:30:45
+   LastBusyTime=2026-02-01T07:26:30 ResumeAfterTime=None
+   CfgTRES=cpu=24,mem=128G,billing=8,gres/gpu=8
+   AllocTRES=cpu=0,mem=0G,gres/gpu=0
+   CurrentWatts=0 AveWatts=0
+   ReservationName=test_reservation
+
+NodeName=node-06 Arch=x86_64 CoresPerSocket=64 
+   CPUAlloc=0 CPUEfctv=24 CPUTot=24 CPULoad=0.1
+   Gres=gpu:8
+   NodeAddr=node-06 NodeHostName=node-06 Version=24.05.5
+   OS=Linux 5.15.0 Ubuntu SMP Fri Aug 9 17:13:45 UTC 2024 
+   RealMemory=128000 AllocMem=0 FreeMem=128000 Sockets=2 Boards=1
+   State=MIXED ThreadsPerCore=2 TmpDisk=0 Weight=10 Owner=N/A MCS_label=N/A
+   Partitions=test
+   BootTime=2026-01-04T12:15:17 SlurmdStartTime=2026-01-24T18:30:45
+   LastBusyTime=2026-01-18T15:06:48 ResumeAfterTime=None
+   CfgTRES=cpu=24,mem=128G,billing=8,gres/gpu=8
+   AllocTRES=cpu=192,mem=1312.50G,gres/gpu=8
+   CurrentWatts=0 AveWatts=0
+
+NodeName=node-07 Arch=x86_64 CoresPerSocket=64 
+   CPUAlloc=0 CPUEfctv=24 CPUTot=24 CPULoad=0.1
+   Gres=gpu:8
+   NodeAddr=node-07 NodeHostName=node-07 Version=24.05.5
+   OS=Linux 5.15.0 Ubuntu SMP Fri Aug 9 17:13:45 UTC 2024 
+   RealMemory=128000 AllocMem=0 FreeMem=128000 Sockets=2 Boards=1
+   State=MIXED+DRAIN+REBOOT_REQUESTED ThreadsPerCore=2 TmpDisk=0 Weight=10 Owner=N/A MCS_label=N/A
+   NextState=RESUME
+   Partitions=test
+   BootTime=2026-01-07T11:40:50 SlurmdStartTime=2026-01-24T18:30:45
+   LastBusyTime=2026-02-02T16:53:07 ResumeAfterTime=None
+   CfgTRES=cpu=24,mem=128G,billing=8,gres/gpu=8
+   AllocTRES=cpu=0,mem=0G,gres/gpu=0
+   CurrentWatts=0 AveWatts=0
+   Reason=BUG: ECC error [root@2026-02-03T12:24:01]
+
+NodeName=node-08 Arch=x86_64 CoresPerSocket=64 
+   CPUAlloc=0 CPUEfctv=24 CPUTot=24 CPULoad=0.1
+   Gres=gpu:8
+   NodeAddr=node-08 NodeHostName=node-08 Version=24.05.5
+   OS=Linux 5.15.0 Ubuntu SMP Fri Aug 9 17:13:45 UTC 2024 
+   RealMemory=128000 AllocMem=0 FreeMem=128000 Sockets=2 Boards=1
+   State=MIXED ThreadsPerCore=2 TmpDisk=0 Weight=10 Owner=N/A MCS_label=N/A
+   Partitions=test
+   BootTime=2026-01-06T16:01:36 SlurmdStartTime=2026-01-24T18:30:45
+   LastBusyTime=2026-01-26T23:25:37 ResumeAfterTime=None
+   CfgTRES=cpu=24,mem=128G,billing=8,gres/gpu=8
+   AllocTRES=cpu=208,mem=1062.50G,gres/gpu=8
+   CurrentWatts=0 AveWatts=0
+
+NodeName=node-09 Arch=x86_64 CoresPerSocket=64 
+   CPUAlloc=0 CPUEfctv=24 CPUTot=24 CPULoad=0.1
+   Gres=gpu:8
+   NodeAddr=node-09 NodeHostName=node-09 Version=24.05.5
+   OS=Linux 5.15.0 Ubuntu SMP Fri Aug 9 17:13:45 UTC 2024 
+   RealMemory=128000 AllocMem=0 FreeMem=128000 Sockets=2 Boards=1
+   State=MIXED+DRAIN ThreadsPerCore=2 TmpDisk=0 Weight=10 Owner=N/A MCS_label=N/A
+   Partitions=test
+   BootTime=2026-01-05T14:35:57 SlurmdStartTime=2026-01-24T18:30:45
+   LastBusyTime=2026-01-18T15:06:48 ResumeAfterTime=None
+   CfgTRES=cpu=24,mem=128G,billing=8,gres/gpu=8
+   AllocTRES=cpu=0,mem=0G,gres/gpu=0
+   CurrentWatts=0 AveWatts=0
+   Reason=BUG: ECC error [root@2026-02-02T23:59:38]
+
+NodeName=node-10 Arch=x86_64 CoresPerSocket=64 
+   CPUAlloc=0 CPUEfctv=24 CPUTot=24 CPULoad=0.1
+   Gres=gpu:8
+   NodeAddr=node-10 NodeHostName=node-10 Version=24.05.5
+   OS=Linux 5.15.0 Ubuntu SMP Fri Aug 9 17:13:45 UTC 2024 
+   RealMemory=128000 AllocMem=0 FreeMem=128000 Sockets=2 Boards=1
+   State=MIXED ThreadsPerCore=2 TmpDisk=0 Weight=10 Owner=N/A MCS_label=N/A
+   Partitions=test
+   BootTime=2026-01-05T13:07:25 SlurmdStartTime=2026-01-24T18:30:45
+   LastBusyTime=2026-01-18T15:06:48 ResumeAfterTime=None
+   CfgTRES=cpu=24,mem=128G,billing=8,gres/gpu=8
+   AllocTRES=cpu=0,mem=0M,gres/gpu=8
+   CurrentWatts=0 AveWatts=0
+
+NodeName=node-11 Arch=x86_64 CoresPerSocket=64 
+   CPUAlloc=0 CPUEfctv=24 CPUTot=24 CPULoad=0.1
+   Gres=gpu:8
+   NodeAddr=node-11 NodeHostName=node-11 Version=24.05.5
+   OS=Linux 5.15.0 Ubuntu SMP Fri Aug 9 17:13:45 UTC 2024 
+   RealMemory=128000 AllocMem=0 FreeMem=128000 Sockets=2 Boards=1
+   State=ALLOCATED ThreadsPerCore=2 TmpDisk=0 Weight=10 Owner=N/A MCS_label=N/A
+   Partitions=test
+   BootTime=2026-01-16T09:15:16 SlurmdStartTime=2026-01-24T18:30:45
+   LastBusyTime=2026-02-02T03:23:54 ResumeAfterTime=None
+   CfgTRES=cpu=24,mem=128G,billing=8,gres/gpu=8
+   AllocTRES=cpu=0,mem=0G,gres/gpu=0
+   CurrentWatts=0 AveWatts=0
+
+NodeName=node-12 Arch=x86_64 CoresPerSocket=64 
+   CPUAlloc=0 CPUEfctv=24 CPUTot=24 CPULoad=0.1
+   Gres=gpu:8
+   NodeAddr=node-12 NodeHostName=node-12 Version=24.05.5
+   OS=Linux 5.15.0 Ubuntu SMP Fri Aug 9 17:13:45 UTC 2024 
+   RealMemory=128000 AllocMem=0 FreeMem=128000 Sockets=2 Boards=1
+   State=ALLOCATED ThreadsPerCore=2 TmpDisk=0 Weight=10 Owner=N/A MCS_label=N/A
+   Partitions=test
+   BootTime=2026-02-02T00:22:09 SlurmdStartTime=2026-02-02T00:26:19
+   LastBusyTime=2026-02-02T03:26:38 ResumeAfterTime=None
+   CfgTRES=cpu=24,mem=128G,billing=8,gres/gpu=8
+   AllocTRES=cpu=0,mem=0G,gres/gpu=0
+   CurrentWatts=0 AveWatts=0
+
+NodeName=node-13 Arch=x86_64 CoresPerSocket=64 
+   CPUAlloc=0 CPUEfctv=24 CPUTot=24 CPULoad=0.1
+   Gres=gpu:8
+   NodeAddr=node-13 NodeHostName=node-13 Version=24.05.5
+   OS=Linux 5.15.0 Ubuntu SMP Fri Aug 9 17:13:45 UTC 2024 
+   RealMemory=128000 AllocMem=0 FreeMem=128000 Sockets=2 Boards=1
+   State=ALLOCATED ThreadsPerCore=2 TmpDisk=0 Weight=10 Owner=N/A MCS_label=N/A
+   Partitions=production
+   BootTime=2026-01-05T14:34:41 SlurmdStartTime=2026-01-24T18:30:45
+   LastBusyTime=2026-02-02T03:24:37 ResumeAfterTime=None
+   CfgTRES=cpu=24,mem=128G,billing=8,gres/gpu=8
+   AllocTRES=cpu=0,mem=0G,gres/gpu=0
+   CurrentWatts=0 AveWatts=0
+
+NodeName=node-14 Arch=x86_64 CoresPerSocket=64 
+   CPUAlloc=0 CPUEfctv=24 CPUTot=24 CPULoad=0.1
+   Gres=gpu:8
+   NodeAddr=node-14 NodeHostName=node-14 Version=24.05.5
+   OS=Linux 5.15.0 Ubuntu SMP Fri Aug 9 17:13:45 UTC 2024 
+   RealMemory=128000 AllocMem=0 FreeMem=128000 Sockets=2 Boards=1
+   State=ALLOCATED ThreadsPerCore=2 TmpDisk=0 Weight=10 Owner=N/A MCS_label=N/A
+   Partitions=production
+   BootTime=2026-01-24T11:06:01 SlurmdStartTime=2026-01-24T18:30:45
+   LastBusyTime=2026-02-01T15:05:51 ResumeAfterTime=None
+   CfgTRES=cpu=24,mem=128G,billing=8,gres/gpu=8
+   AllocTRES=cpu=0,mem=0M,gres/gpu=5
+   CurrentWatts=0 AveWatts=0
+
+NodeName=node-15 Arch=x86_64 CoresPerSocket=64 
+   CPUAlloc=0 CPUEfctv=24 CPUTot=24 CPULoad=0.1
+   Gres=gpu:8
+   NodeAddr=node-15 NodeHostName=node-15 Version=24.05.5
+   OS=Linux 5.15.0 Ubuntu SMP Fri Aug 9 17:13:45 UTC 2024 
+   RealMemory=128000 AllocMem=0 FreeMem=128000 Sockets=2 Boards=1
+   State=IDLE ThreadsPerCore=2 TmpDisk=0 Weight=10 Owner=N/A MCS_label=N/A
+   Partitions=production
+   BootTime=2026-02-02T09:48:33 SlurmdStartTime=2026-02-02T09:53:04
+   LastBusyTime=2026-02-02T10:06:44 ResumeAfterTime=None
+   CfgTRES=cpu=24,mem=128G,billing=8,gres/gpu=8
+   AllocTRES=
+   CurrentWatts=0 AveWatts=0
+
+NodeName=node-16 Arch=x86_64 CoresPerSocket=64 
+   CPUAlloc=0 CPUEfctv=24 CPUTot=24 CPULoad=0.1
+   Gres=gpu:8
+   NodeAddr=node-16 NodeHostName=node-16 Version=24.05.5
+   OS=Linux 5.15.0 Ubuntu SMP Fri Aug 9 17:13:45 UTC 2024 
+   RealMemory=128000 AllocMem=0 FreeMem=128000 Sockets=2 Boards=1
+   State=MIXED ThreadsPerCore=2 TmpDisk=0 Weight=10 Owner=N/A MCS_label=N/A
+   Partitions=production
+   BootTime=2026-01-24T11:10:42 SlurmdStartTime=2026-01-24T18:30:45
+   LastBusyTime=2026-02-02T03:23:52 ResumeAfterTime=None
+   CfgTRES=cpu=24,mem=128G,billing=8,gres/gpu=8
+   AllocTRES=cpu=224,mem=312.50G,gres/gpu=7
+   CurrentWatts=0 AveWatts=0
+
+NodeName=node-17 Arch=x86_64 CoresPerSocket=64 
+   CPUAlloc=0 CPUEfctv=24 CPUTot=24 CPULoad=0.1
+   Gres=gpu:8
+   NodeAddr=node-17 NodeHostName=node-17 Version=24.05.5
+   OS=Linux 5.15.0 Ubuntu SMP Fri Aug 9 17:13:45 UTC 2024 
+   RealMemory=128000 AllocMem=0 FreeMem=128000 Sockets=2 Boards=1
+   State=IDLE ThreadsPerCore=2 TmpDisk=0 Weight=10 Owner=N/A MCS_label=N/A
+   Partitions=production
+   BootTime=2026-01-24T10:34:02 SlurmdStartTime=2026-01-24T18:30:45
+   LastBusyTime=2026-02-01T05:12:50 ResumeAfterTime=None
+   CfgTRES=cpu=24,mem=128G,billing=8,gres/gpu=8
+   AllocTRES=
+   CurrentWatts=0 AveWatts=0
+
+NodeName=node-18 Arch=x86_64 CoresPerSocket=64 
+   CPUAlloc=0 CPUEfctv=24 CPUTot=24 CPULoad=0.1
+   Gres=gpu:8
+   NodeAddr=node-18 NodeHostName=node-18 Version=24.05.5
+   OS=Linux 5.15.0 Ubuntu SMP Fri Aug 9 17:13:45 UTC 2024 
+   RealMemory=128000 AllocMem=0 FreeMem=128000 Sockets=2 Boards=1
+   State=ALLOCATED ThreadsPerCore=2 TmpDisk=0 Weight=10 Owner=N/A MCS_label=N/A
+   Partitions=production
+   BootTime=2026-01-05T14:34:33 SlurmdStartTime=2026-01-24T18:30:45
+   LastBusyTime=2026-02-02T03:24:14 ResumeAfterTime=None
+   CfgTRES=cpu=24,mem=128G,billing=8,gres/gpu=8
+   AllocTRES=cpu=0,mem=0G,gres/gpu=0
+   CurrentWatts=0 AveWatts=0
+
+NodeName=node-19 Arch=x86_64 CoresPerSocket=64 
+   CPUAlloc=0 CPUEfctv=24 CPUTot=24 CPULoad=0.1
+   Gres=gpu:8
+   NodeAddr=node-19 NodeHostName=node-19 Version=24.05.5
+   OS=Linux 5.15.0 Ubuntu SMP Fri Aug 9 17:13:45 UTC 2024 
+   RealMemory=128000 AllocMem=0 FreeMem=128000 Sockets=2 Boards=1
+   State=MIXED ThreadsPerCore=2 TmpDisk=0 Weight=10 Owner=N/A MCS_label=N/A
+   Partitions=production
+   BootTime=2026-01-05T14:35:18 SlurmdStartTime=2026-01-24T18:30:45
+   LastBusyTime=2026-02-02T03:24:19 ResumeAfterTime=None
+   CfgTRES=cpu=24,mem=128G,billing=8,gres/gpu=8
+   AllocTRES=cpu=0,mem=0M,gres/gpu=7
+   CurrentWatts=0 AveWatts=0
+
+NodeName=node-20 Arch=x86_64 CoresPerSocket=64 
+   CPUAlloc=0 CPUEfctv=24 CPUTot=24 CPULoad=0.1
+   Gres=gpu:8
+   NodeAddr=node-20 NodeHostName=node-20 Version=24.05.5
+   OS=Linux 5.15.0 Ubuntu SMP Fri Aug 9 17:13:45 UTC 2024 
+   RealMemory=128000 AllocMem=0 FreeMem=128000 Sockets=2 Boards=1
+   State=ALLOCATED ThreadsPerCore=2 TmpDisk=0 Weight=10 Owner=N/A MCS_label=N/A
+   Partitions=production
+   BootTime=2026-01-07T16:13:43 SlurmdStartTime=2026-01-24T18:30:45
+   LastBusyTime=2026-02-02T03:24:25 ResumeAfterTime=None
+   CfgTRES=cpu=24,mem=128G,billing=8,gres/gpu=8
+   AllocTRES=cpu=0,mem=0G,gres/gpu=0
+   CurrentWatts=0 AveWatts=0
+
+NodeName=node-21 Arch=x86_64 CoresPerSocket=64 
+   CPUAlloc=0 CPUEfctv=24 CPUTot=24 CPULoad=0.1
+   Gres=gpu:8
+   NodeAddr=node-21 NodeHostName=node-21 Version=24.05.5
+   OS=Linux 5.15.0 Ubuntu SMP Fri Aug 9 17:13:45 UTC 2024 
+   RealMemory=128000 AllocMem=0 FreeMem=128000 Sockets=2 Boards=1
+   State=ALLOCATED ThreadsPerCore=2 TmpDisk=0 Weight=10 Owner=N/A MCS_label=N/A
+   Partitions=production
+   BootTime=2026-01-04T12:14:15 SlurmdStartTime=2026-01-24T18:30:45
+   LastBusyTime=2026-01-26T18:45:09 ResumeAfterTime=None
+   CfgTRES=cpu=24,mem=128G,billing=8,gres/gpu=8
+   AllocTRES=cpu=0,mem=0G,gres/gpu=0
+   CurrentWatts=0 AveWatts=0
+
+NodeName=node-22 Arch=x86_64 CoresPerSocket=64 
+   CPUAlloc=0 CPUEfctv=24 CPUTot=24 CPULoad=0.1
+   Gres=gpu:8
+   NodeAddr=node-22 NodeHostName=node-22 Version=24.05.5
+   OS=Linux 5.15.0 Ubuntu SMP Fri Aug 9 17:13:45 UTC 2024 
+   RealMemory=128000 AllocMem=0 FreeMem=128000 Sockets=2 Boards=1
+   State=ALLOCATED ThreadsPerCore=2 TmpDisk=0 Weight=10 Owner=N/A MCS_label=N/A
+   Partitions=production
+   BootTime=2026-01-04T13:33:36 SlurmdStartTime=2026-01-24T18:30:45
+   LastBusyTime=2026-01-26T03:09:56 ResumeAfterTime=None
+   CfgTRES=cpu=24,mem=128G,billing=8,gres/gpu=8
+   AllocTRES=cpu=0,mem=0G,gres/gpu=0
+   CurrentWatts=0 AveWatts=0
+
+NodeName=node-23 Arch=x86_64 CoresPerSocket=64 
+   CPUAlloc=0 CPUEfctv=24 CPUTot=24 CPULoad=0.1
+   Gres=gpu:8
+   NodeAddr=node-23 NodeHostName=node-23 Version=24.05.5
+   OS=Linux 5.15.0 Ubuntu SMP Fri Aug 9 17:13:45 UTC 2024 
+   RealMemory=128000 AllocMem=0 FreeMem=128000 Sockets=2 Boards=1
+   State=IDLE+DRAIN ThreadsPerCore=2 TmpDisk=0 Weight=10 Owner=N/A MCS_label=N/A
+   Partitions=production
+   BootTime=2026-01-04T12:25:04 SlurmdStartTime=2026-01-24T18:30:45
+   LastBusyTime=2026-01-29T17:25:00 ResumeAfterTime=None
+   CfgTRES=cpu=24,mem=128G,billing=8,gres/gpu=8
+   AllocTRES=
+   CurrentWatts=0 AveWatts=0
+   Reason=BUG: ECC error [slurm@2026-01-27T06:13:54]
+
+NodeName=node-24 Arch=x86_64 CoresPerSocket=64 
+   CPUAlloc=0 CPUEfctv=24 CPUTot=24 CPULoad=0.1
+   Gres=gpu:8
+   NodeAddr=node-24 NodeHostName=node-24 Version=24.05.5
+   OS=Linux 5.15.0 Ubuntu SMP Fri Aug 9 17:13:45 UTC 2024 
+   RealMemory=128000 AllocMem=0 FreeMem=128000 Sockets=2 Boards=1
+   State=MIXED+DRAIN ThreadsPerCore=2 TmpDisk=0 Weight=10 Owner=N/A MCS_label=N/A
+   Partitions=production
+   BootTime=2026-01-04T12:15:59 SlurmdStartTime=2026-01-24T18:30:45
+   LastBusyTime=2026-01-18T15:02:06 ResumeAfterTime=None
+   CfgTRES=cpu=24,mem=128G,billing=8,gres/gpu=8
+   AllocTRES=cpu=0,mem=0G,gres/gpu=0
+   CurrentWatts=0 AveWatts=0
+   Reason=Prolog error [slurm@2026-01-18T15:03:49]
+

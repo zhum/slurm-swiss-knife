@@ -1,0 +1,412 @@
+{
+  "users": [
+    {
+      "administrator_level": [
+        "None"
+      ],
+      "associations": [
+      ],
+      "coordinators": [
+      ],
+      "default": {
+        "account": "general",
+        "wckey": ""
+      },
+      "flags": [
+        "NONE"
+      ],
+      "name": "user-1",
+      "old_name": "",
+      "wckeys": [
+      ]
+    },
+    {
+      "administrator_level": [
+        "None"
+      ],
+      "associations": [
+      ],
+      "coordinators": [
+      ],
+      "default": {
+        "account": "general",
+        "wckey": ""
+      },
+      "flags": [
+        "NONE"
+      ],
+      "name": "user-2",
+      "old_name": "",
+      "wckeys": [
+      ]
+    },
+    {
+      "administrator_level": [
+        "None"
+      ],
+      "associations": [
+      ],
+      "coordinators": [
+      ],
+      "default": {
+        "account": "general",
+        "wckey": ""
+      },
+      "flags": [
+        "NONE"
+      ],
+      "name": "user-3",
+      "old_name": "",
+      "wckeys": [
+      ]
+    },
+    {
+      "administrator_level": [
+        "None"
+      ],
+      "associations": [
+      ],
+      "coordinators": [
+      ],
+      "default": {
+        "account": "general",
+        "wckey": ""
+      },
+      "flags": [
+        "NONE"
+      ],
+      "name": "user-4",
+      "old_name": "",
+      "wckeys": [
+      ]
+    },
+    {
+      "administrator_level": [
+        "None"
+      ],
+      "associations": [
+      ],
+      "coordinators": [
+      ],
+      "default": {
+        "account": "general",
+        "wckey": ""
+      },
+      "flags": [
+        "NONE"
+      ],
+      "name": "user-5",
+      "old_name": "",
+      "wckeys": [
+      ]
+    },
+    {
+      "administrator_level": [
+        "None"
+      ],
+      "associations": [
+      ],
+      "coordinators": [
+      ],
+      "default": {
+        "account": "general",
+        "wckey": ""
+      },
+      "flags": [
+        "NONE"
+      ],
+      "name": "user-6",
+      "old_name": "",
+      "wckeys": [
+      ]
+    },
+    {
+      "administrator_level": [
+        "None"
+      ],
+      "associations": [
+      ],
+      "coordinators": [
+      ],
+      "default": {
+        "account": "general",
+        "wckey": ""
+      },
+      "flags": [
+        "NONE"
+      ],
+      "name": "user-7",
+      "old_name": "",
+      "wckeys": [
+      ]
+    },
+    {
+      "administrator_level": [
+        "None"
+      ],
+      "associations": [
+      ],
+      "coordinators": [
+      ],
+      "default": {
+        "account": "general",
+        "wckey": ""
+      },
+      "flags": [
+        "NONE"
+      ],
+      "name": "user-8",
+      "old_name": "",
+      "wckeys": [
+      ]
+    },
+    {
+      "administrator_level": [
+        "None"
+      ],
+      "associations": [
+      ],
+      "coordinators": [
+      ],
+      "default": {
+        "account": "general",
+        "wckey": ""
+      },
+      "flags": [
+        "NONE"
+      ],
+      "name": "user-9",
+      "old_name": "",
+      "wckeys": [
+      ]
+    },
+    {
+      "administrator_level": [
+        "None"
+      ],
+      "associations": [
+      ],
+      "coordinators": [
+      ],
+      "default": {
+        "account": "general",
+        "wckey": ""
+      },
+      "flags": [
+        "NONE"
+      ],
+      "name": "user-10",
+      "old_name": "",
+      "wckeys": [
+      ]
+    },
+    {
+      "administrator_level": [
+        "None"
+      ],
+      "associations": [
+      ],
+      "coordinators": [
+      ],
+      "default": {
+        "account": "general",
+        "wckey": ""
+      },
+      "flags": [
+        "NONE"
+      ],
+      "name": "user-11",
+      "old_name": "",
+      "wckeys": [
+      ]
+    },
+    {
+      "administrator_level": [
+        "None"
+      ],
+      "associations": [
+      ],
+      "coordinators": [
+      ],
+      "default": {
+        "account": "general",
+        "wckey": ""
+      },
+      "flags": [
+        "NONE"
+      ],
+      "name": "user-12",
+      "old_name": "",
+      "wckeys": [
+      ]
+    },
+    {
+      "administrator_level": [
+        "None"
+      ],
+      "associations": [
+      ],
+      "coordinators": [
+      ],
+      "default": {
+        "account": "general",
+        "wckey": ""
+      },
+      "flags": [
+        "NONE"
+      ],
+      "name": "user-13",
+      "old_name": "",
+      "wckeys": [
+      ]
+    },
+    {
+      "administrator_level": [
+        "None"
+      ],
+      "associations": [
+      ],
+      "coordinators": [
+      ],
+      "default": {
+        "account": "general",
+        "wckey": ""
+      },
+      "flags": [
+        "NONE"
+      ],
+      "name": "user-14",
+      "old_name": "",
+      "wckeys": [
+      ]
+    },
+    {
+      "administrator_level": [
+        "None"
+      ],
+      "associations": [
+      ],
+      "coordinators": [
+      ],
+      "default": {
+        "account": "general",
+        "wckey": ""
+      },
+      "flags": [
+        "NONE"
+      ],
+      "name": "user-15",
+      "old_name": "",
+      "wckeys": [
+      ]
+    },
+    {
+      "administrator_level": [
+        "None"
+      ],
+      "associations": [
+      ],
+      "coordinators": [
+      ],
+      "default": {
+        "account": "general",
+        "wckey": ""
+      },
+      "flags": [
+        "NONE"
+      ],
+      "name": "user-16",
+      "old_name": "",
+      "wckeys": [
+      ]
+    },
+    {
+      "administrator_level": [
+        "None"
+      ],
+      "associations": [
+      ],
+      "coordinators": [
+      ],
+      "default": {
+        "account": "general",
+        "wckey": ""
+      },
+      "flags": [
+        "NONE"
+      ],
+      "name": "user-17",
+      "old_name": "",
+      "wckeys": [
+      ]
+    },
+    {
+      "administrator_level": [
+        "None"
+      ],
+      "associations": [
+      ],
+      "coordinators": [
+      ],
+      "default": {
+        "account": "general",
+        "wckey": ""
+      },
+      "flags": [
+        "NONE"
+      ],
+      "name": "user-18",
+      "old_name": "",
+      "wckeys": [
+      ]
+    },
+    {
+      "administrator_level": [
+        "None"
+      ],
+      "associations": [
+      ],
+      "coordinators": [
+      ],
+      "default": {
+        "account": "general",
+        "wckey": ""
+      },
+      "flags": [
+        "NONE"
+      ],
+      "name": "user-19",
+      "old_name": "",
+      "wckeys": [
+      ]
+    }
+  ],
+  "meta": {
+    "plugin": {
+      "type": "",
+      "name": "",
+      "data_parser": "data_parser\/v0.0.41",
+      "accounting_storage": "accounting_storage\/slurmdbd"
+    },
+    "client": {
+      "source": "\/dev\/pts\/4",
+      "user": "root",
+      "group": "root"
+    },
+    "command": [
+    ],
+    "slurm": {
+      "version": {
+        "major": "24",
+        "micro": "5",
+        "minor": "05"
+      },
+      "release": "24.05.5",
+      "cluster": "mycluster"
+    }
+  },
+  "errors": [
+  ],
+  "warnings": [
+  ]
+}

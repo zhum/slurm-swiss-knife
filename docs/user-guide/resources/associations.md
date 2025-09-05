@@ -1,0 +1,220 @@
+# Associations
+
+Manage Slurm user-account associations.
+
+## Overview
+
+Associations link users to accounts and define their resource limits and QoS access within that account context.
+
+## Show Associations
+
+```bash
+# Show all associations
+slurm-cli show associations
+
+# Show associations for a user
+slurm-cli show associations user=testuser
+
+# Show associations for an account
+slurm-cli show associations account=myaccount
+
+# JSON output
+slurm-cli show associations --json
+
+# Tree view (hierarchical display)
+slurm-cli show associations --tree
+
+# Tree view with custom indentation
+slurm-cli show associations --tree --indent=">>> "
+slurm-cli show associations --tree --indent=$'\t'   # tab indentation
+```
+
+## Tree View
+
+The `--tree` option displays associations in a hierarchical format, showing the account hierarchy with proper indentation:
+
+```bash
+slurm-cli show associations --tree
+```
+
+Output:
+
+```
+Account          User          Cluster        Shares_Raw Qos
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+root             -             cluster        1          normal
+  root           alice         cluster        1          normal
+  root           bob           cluster        1          normal
+  engineering    -             cluster        100        normal,high
+    engineering  carol         cluster        1          normal,high
+    engineering  dave          cluster        1          normal,high
+```
+
+### Custom Indentation
+
+Use `--indent` to specify a custom indentation string (default: two spaces):
+
+```bash
+# Use 4 spaces
+slurm-cli show associations --tree --indent="    "
+
+# Use arrows
+slurm-cli show associations --tree --indent=">>> "
+
+# Use tabs
+slurm-cli show associations --tree --indent=$'\t'
+```
+
+### Tree View with CSV
+
+The tree view also works with CSV output:
+
+```bash
+slurm-cli show associations --tree --csv
+```
+
+## Create Associations
+
+Create user associations to link users to accounts with specific limits:
+
+```bash
+# Basic creation (positional username)
+slurm-cli create associations testuser account=myaccount
+
+# Using name= syntax
+slurm-cli create associations name=testuser account=myaccount
+
+# Using user= syntax (alias for name=)
+slurm-cli create associations user=testuser account=myaccount
+
+# With partition and QoS
+slurm-cli create associations user=testuser account=myaccount \
+    partition=batch \
+    qos=normal
+
+# With resource limits
+slurm-cli create associations user=testuser account=myaccount \
+    fairshare=100 \
+    maxjobs=50 \
+    maxsubmit=100
+```
+
+### Create Options
+
+| Option | Description |
+|--------|-------------|
+| `name` / `user` | Username (required) |
+| `account` | Account name |
+| `cluster` | Cluster name |
+| `partition` | Partition name |
+| `fairshare` | Fairshare value |
+| `defaultqos` | Default QoS |
+| `qos` | Allowed QoS list |
+| `grpjobs` | Group jobs limit |
+| `grpsubmit` | Group submit limit |
+| `grptres` | Group TRES limits |
+| `maxjobs` | Max running jobs |
+| `maxsubmit` | Max submitted jobs |
+| `maxtrespj` | Max TRES per job |
+| `maxwall` | Max wall time |
+
+## Update Associations
+
+### Simple Mode
+
+```bash
+# Update fairshare
+slurm-cli modify associations user=testuser account=myaccount set fairshare=100
+
+# Update QoS
+slurm-cli modify associations user=testuser account=myaccount set qos=high
+
+# Update max jobs
+slurm-cli modify associations user=testuser account=myaccount set maxjobs=50
+```
+
+### WHERE/SET Mode
+
+```bash
+# Update all associations in an account
+slurm-cli modify associations account=oldaccount set defaultqos=normal
+
+# Update by user
+slurm-cli modify associations user=testuser set fairshare=100
+```
+
+## Available Fields
+
+| Field | Description |
+|-------|-------------|
+| `user` | Username |
+| `account` | Account name |
+| `cluster` | Cluster name |
+| `partition` | Partition name |
+| `parent` | Parent account |
+| `fairshare` | Fairshare factor |
+| `shares` | Share allocation |
+| `grp_jobs` | Group job limit |
+| `grp_submit` | Group submit limit |
+| `grp_tres` | Group TRES limits |
+| `grp_wall` | Group wall time limit |
+| `max_jobs` | Max running jobs |
+| `max_submit` | Max submitted jobs |
+| `max_tres_pj` | Max TRES per job |
+| `max_tres_pu` | Max TRES per user |
+| `max_wall_pj` | Max wall time per job |
+| `qos` | Allowed QoS list |
+| `default_qos` | Default QoS |
+
+## Examples
+
+### View User's Associations
+
+```bash
+slurm-cli show associations user=testuser --profile-str='associations.columns=user,account,fairshare,qos'
+```
+
+### Set Resource Limits
+
+```bash
+slurm-cli modify associations user=testuser account=myaccount set \
+    maxjobs=20 \
+    maxsubmit=50 \
+    maxtrespj=cpu=64,mem=256G
+```
+
+### Update QoS Access
+
+```bash
+# Set allowed QoS
+slurm-cli modify associations user=testuser account=myaccount set qos=normal,high
+
+# Set default QoS
+slurm-cli modify associations user=testuser account=myaccount set defaultqos=normal
+```
+
+### Bulk Update
+
+```bash
+# Set fairshare for all users in account
+slurm-cli modify associations account=myaccount set fairshare=100
+```
+
+## Association Hierarchy
+
+```
+cluster
+└── account (root)
+    ├── account (engineering)
+    │   ├── user (alice) - association
+    │   └── user (bob) - association
+    └── account (research)
+        └── user (charlie) - association
+```
+
+## Related Commands
+
+- [Users](users.md) - User management
+- [Accounts](accounts.md) - Account management
+- [QoS](qos.md) - QoS settings
+

@@ -1,0 +1,290 @@
+{
+  "partitions": [
+    {
+      "nodes": {
+        "allowed_allocation": "",
+        "configured": "node-[01-12]",
+        "total": 12
+      },
+      "accounts": {
+        "allowed": "general",
+        "deny": ""
+      },
+      "groups": {
+        "allowed": ""
+      },
+      "qos": {
+        "allowed": "",
+        "deny": "",
+        "assigned": ""
+      },
+      "alternate": "",
+      "tres": {
+        "billing_weights": "CPU=0.1,Mem=16G,GRES/gpu=1.0",
+        "configured": "cpu=288,mem=3072G,node=12,billing=123,gres/gpu=96"
+      },
+      "cluster": "",
+      "select_type": [
+      ],
+      "cpus": {
+        "task_binding": 0,
+        "total": 288
+      },
+      "defaults": {
+        "memory_per_cpu": 0,
+        "partition_memory_per_cpu": {
+          "set": false,
+          "infinite": false,
+          "number": 0
+        },
+        "partition_memory_per_node": {
+          "set": true,
+          "infinite": false,
+          "number": 0
+        },
+        "time": {
+          "set": true,
+          "infinite": false,
+          "number": 31
+        },
+        "job": ""
+      },
+      "grace_time": 0,
+      "maximums": {
+        "cpus_per_node": {
+          "set": false,
+          "infinite": true,
+          "number": 0
+        },
+        "cpus_per_socket": {
+          "set": false,
+          "infinite": true,
+          "number": 0
+        },
+        "memory_per_cpu": 0,
+        "partition_memory_per_cpu": {
+          "set": false,
+          "infinite": false,
+          "number": 0
+        },
+        "partition_memory_per_node": {
+          "set": true,
+          "infinite": false,
+          "number": 0
+        },
+        "nodes": {
+          "set": false,
+          "infinite": true,
+          "number": 0
+        },
+        "shares": 1,
+        "oversubscribe": {
+          "jobs": 1,
+          "flags": [
+          ]
+        },
+        "time": {
+          "set": true,
+          "infinite": false,
+          "number": 480
+        },
+        "over_time_limit": {
+          "set": false,
+          "infinite": false,
+          "number": 0
+        }
+      },
+      "minimums": {
+        "nodes": 1
+      },
+      "name": "test",
+      "node_sets": "",
+      "priority": {
+        "job_factor": 1,
+        "tier": 10
+      },
+      "timeouts": {
+        "resume": {
+          "set": false,
+          "infinite": false,
+          "number": 0
+        },
+        "suspend": {
+          "set": false,
+          "infinite": false,
+          "number": 0
+        }
+      },
+      "partition": {
+        "state": [
+          "UP"
+        ]
+      },
+      "suspend_time": {
+        "set": false,
+        "infinite": false,
+        "number": 0
+      }
+    },
+    {
+      "nodes": {
+        "allowed_allocation": "",
+        "configured": "node-[13-24]",
+        "total": 12
+      },
+      "accounts": {
+        "allowed": "",
+        "deny": ""
+      },
+      "groups": {
+        "allowed": ""
+      },
+      "qos": {
+        "allowed": "",
+        "deny": "",
+        "assigned": ""
+      },
+      "alternate": "",
+      "tres": {
+        "billing_weights": "CPU=0.1,Mem=16G,GRES/gpu=1.0",
+        "configured": "cpu=288,mem=3072G,node=12,billing=123,gres/gpu=96"
+      },
+      "cluster": "",
+      "select_type": [
+      ],
+      "cpus": {
+        "task_binding": 0,
+        "total": 288
+      },
+      "defaults": {
+        "memory_per_cpu": 0,
+        "partition_memory_per_cpu": {
+          "set": false,
+          "infinite": false,
+          "number": 0
+        },
+        "partition_memory_per_node": {
+          "set": true,
+          "infinite": false,
+          "number": 0
+        },
+        "time": {
+          "set": true,
+          "infinite": false,
+          "number": 31
+        },
+        "job": ""
+      },
+      "grace_time": 600,
+      "maximums": {
+        "cpus_per_node": {
+          "set": false,
+          "infinite": true,
+          "number": 0
+        },
+        "cpus_per_socket": {
+          "set": false,
+          "infinite": true,
+          "number": 0
+        },
+        "memory_per_cpu": 0,
+        "partition_memory_per_cpu": {
+          "set": false,
+          "infinite": false,
+          "number": 0
+        },
+        "partition_memory_per_node": {
+          "set": true,
+          "infinite": false,
+          "number": 0
+        },
+        "nodes": {
+          "set": false,
+          "infinite": true,
+          "number": 0
+        },
+        "shares": 1,
+        "oversubscribe": {
+          "jobs": 1,
+          "flags": [
+          ]
+        },
+        "time": {
+          "set": true,
+          "infinite": false,
+          "number": 10080
+        },
+        "over_time_limit": {
+          "set": false,
+          "infinite": false,
+          "number": 0
+        }
+      },
+      "minimums": {
+        "nodes": 1
+      },
+      "name": "production",
+      "node_sets": "",
+      "priority": {
+        "job_factor": 1,
+        "tier": 1
+      },
+      "timeouts": {
+        "resume": {
+          "set": false,
+          "infinite": false,
+          "number": 0
+        },
+        "suspend": {
+          "set": false,
+          "infinite": false,
+          "number": 0
+        }
+      },
+      "partition": {
+        "state": [
+          "UP"
+        ]
+      },
+      "suspend_time": {
+        "set": false,
+        "infinite": false,
+        "number": 0
+      }
+    }
+  ],
+  "last_update": {
+    "set": true,
+    "infinite": false,
+    "number": 1765610397
+  },
+  "meta": {
+    "plugin": {
+      "type": "",
+      "name": "",
+      "data_parser": "data_parser\/v0.0.41",
+      "accounting_storage": "accounting_storage\/slurmdbd"
+    },
+    "client": {
+      "source": "\/dev\/pts\/4",
+      "user": "root",
+      "group": "root"
+    },
+    "command": [
+      "show"
+    ],
+    "slurm": {
+      "version": {
+        "major": "24",
+        "micro": "5",
+        "minor": "05"
+      },
+      "release": "24.05.5",
+      "cluster": "mycluster"
+    }
+  },
+  "errors": [
+  ],
+  "warnings": [
+  ]
+}

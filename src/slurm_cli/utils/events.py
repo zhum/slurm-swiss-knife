@@ -1,0 +1,695 @@
+"""Utilities for managing Slurm events."""
+
+import json
+import os
+import re
+import subprocess
+from typing import Any, Dict, List, Optional
+
+from rich.box import (
+    SIMPLE_HEAVY,
+)  # pyright: ignore[reportMissingImports]
+from rich.table import Table  # pyright: ignore[reportMissingImports]
+
+from .base_resource import BaseSlurmResource
+from .node_filter import is_node_filter, resolve_node_filter
+from .profiles import get_profile_config, sort_data
+from .utils import console
+
+
+def expand_node_ranges(node_spec: str) -> set:
+    """Expand Slurm node range notation to individual node names.
+
+    Examples:
+        "node[1-3]" -> {"node1", "node2", "node3"}
+        "node1,node2" -> {"node1", "node2"}
+        "a[1-2],b[1-2]" -> {"a1", "a2", "b1", "b2"}
+    """
+    nodes = set()
+    for part in node_spec.split(","):
+        part = part.strip()
+        if not part:
+            continue
+        # Check for range notation like node[1-3] or node[01-03]
+        match = re.match(r"^(.+?)\[([^\]]+)\](.*)$", part)
+        if match:
+            prefix, ranges, suffix = match.groups()
+            for range_part in ranges.split(","):
+                if "-" in range_part:
+                    start, end = range_part.split("-", 1)
+                    # Preserve leading zeros
+                    width = len(start)
+                    for i in range(int(start), int(end) + 1):
+                        nodes.add(
+                            f"{prefix}{str(i).zfill(width)}{suffix}"
+                        )
+                else:
+                    nodes.add(f"{prefix}{range_part}{suffix}")
+        else:
+            nodes.add(part)
+    return nodes
+
+
+# Cache file paths
+CACHE_DIR = "/tmp/"
+EVENTS_CACHE_FILE = f"{CACHE_DIR}slurm_cli_events.txt"
+EVENTS_JSON_CACHE_FILE = f"{CACHE_DIR}slurm_cli_events.json"
+# Flag file to indicate JSON format is not supported
+EVENTS_NO_JSON_FLAG = f"{CACHE_DIR}.slurm_cli_events_no_json"
+
+# Event filter options
+EVENT_FILTER_OPTIONS: List[str] = [
+    "Clusters",
+    "CondFlags",
+    "End",
+    "Events",
+    "MaxCPUs",
+    "MinCPUs",
+    "MaxNodes",
+    "MinNodes",
+    "Nodes",
+    "Reason",
+    "Start",
+    "States",
+    "User",
+]
+
+# Column mapping from sacctmgr output to our field names
+COLUMN_MAPPING = {
+    "Cluster": "cluster",
+    "Cluster Nodes": "cluster_nodes",
+    "Duration": "duration",
+    "TimeStart": "start",
+    "TimeEnd": "end",
+    "Event": "event",
+    "EventRaw": "event_raw",
+    "NodeName": "node",
+    "State": "state",
+    "StateRaw": "state_raw",
+    "TRES": "tres",
+    "User": "user",
+    "Reason": "reason",
+}
+
+
+class Event(BaseSlurmResource):
+    """Slurm event resource handler."""
+
+    def __init__(self, **kwargs: Any):
+        self.kwargs = kwargs
+
+    @classmethod
+    def get_profile_fields(cls) -> dict:
+        """Return field names and descriptions for profile templates."""
+        return {
+            "cluster": "Cluster name",
+            "cluster_nodes": "Nodes in cluster at time of event",
+            "duration": "Event duration",
+            "start": "Event start time",
+            "end": "Event end time",
+            "event": "Event type (Cluster or Node)",
+            "event_raw": "Raw event code",
+            "node": "Node name affected",
+            "state": "Node state",
+            "state_raw": "Raw state code",
+            "tres": "Trackable resources",
+            "user": "User who triggered event",
+            "reason": "Event reason",
+        }
+
+    # All available columns
+    ALL_COLUMNS = [
+        "cluster",
+        "cluster_nodes",
+        "duration",
+        "start",
+        "end",
+        "event",
+        "event_raw",
+        "node",
+        "state",
+        "state_raw",
+        "tres",
+        "user",
+        "reason",
+    ]
+
+    # Default column configuration for events
+    DEFAULT_COLUMNS = [
+        "node",
+        "state",
+        "start",
+        "end",
+        "duration",
+        "user",
+        "reason",
+    ]
+    DEFAULT_STYLES = {
+        "cluster": "cyan",
+        "cluster_nodes": "dim",
+        "duration": "yellow",
+        "start": "green",
+        "end": "green",
+        "event": "magenta",
+        "event_raw": "dim",
+        "node": "cyan bold",
+        "state": "yellow",
+        "state_raw": "dim",
+        "tres": "dim",
+        "user": "blue",
+        "reason": "white",
+    }
+
+    @classmethod
+    def _parse_events(cls, data: str) -> List[Dict[str, Any]]:
+        """Parse pipe-delimited event data into list of dicts."""
+        events = []
+        lines = data.strip().split("\n")
+
+        if not lines:
+            return events
+
+        # First line is header
+        header = lines[0].split("|")
+        # Map header names to our field names
+        field_names = []
+        for col in header:
+            col = col.strip()
+            field_names.append(COLUMN_MAPPING.get(col, col.lower()))
+
+        # Parse data lines
+        for line in lines[1:]:
+            if not line.strip():
+                continue
+            values = line.split("|")
+            event = {}
+            for i, value in enumerate(values):
+                if i < len(field_names):
+                    event[field_names[i]] = value.strip()
+            if event:
+                events.append(event)
+
+        return events
+
+    @classmethod
+    def _extract_cpus(cls, tres: str) -> int:
+        """Extract CPU count from TRES string."""
+        if not tres:
+            return 0
+        match = re.search(r"cpu=(\d+)", tres)
+        return int(match.group(1)) if match else 0
+
+    @classmethod
+    def _extract_nodes(cls, tres: str) -> int:
+        """Extract node count from TRES string."""
+        if not tres:
+            return 0
+        match = re.search(r"node=(\d+)", tres)
+        return int(match.group(1)) if match else 0
+
+    @classmethod
+    def _apply_filters(
+        cls,
+        events: List[Dict[str, Any]],
+        filters: Dict[str, str],
+    ) -> List[Dict[str, Any]]:
+        """Apply filters to event list."""
+        result = events
+
+        for key, value in filters.items():
+            key_lower = key.lower()
+
+            if key_lower == "clusters":
+                result = [
+                    e
+                    for e in result
+                    if e.get("cluster", "").lower() == value.lower()
+                ]
+            elif key_lower == "events":
+                result = [
+                    e
+                    for e in result
+                    if e.get("event", "").lower() == value.lower()
+                ]
+            elif key_lower == "nodes":
+                # Check if filter contains node ranges or multiple nodes
+                if "[" in value and "]" in value:
+                    # Expand node ranges to individual names for matching
+                    filter_nodes = expand_node_ranges(value.lower())
+                    result = [
+                        e
+                        for e in result
+                        if e.get("node", "").lower() in filter_nodes
+                    ]
+                elif "," in value:
+                    # Multiple comma-separated nodes (from resolved filter)
+                    filter_nodes = {
+                        n.strip().lower() for n in value.split(",")
+                    }
+                    result = [
+                        e
+                        for e in result
+                        if e.get("node", "").lower() in filter_nodes
+                    ]
+                else:
+                    # Simple substring match for partial names
+                    result = [
+                        e
+                        for e in result
+                        if value.lower() in e.get("node", "").lower()
+                    ]
+            elif key_lower == "states":
+                result = [
+                    e
+                    for e in result
+                    if value.lower() in e.get("state", "").lower()
+                ]
+            elif key_lower == "user":
+                result = [
+                    e
+                    for e in result
+                    if value.lower() in e.get("user", "").lower()
+                ]
+            elif key_lower == "reason":
+                result = [
+                    e
+                    for e in result
+                    if value.lower() in e.get("reason", "").lower()
+                ]
+            elif key_lower == "mincpus":
+                min_cpus = int(value)
+                result = [
+                    e
+                    for e in result
+                    if cls._extract_cpus(e.get("tres", "")) >= min_cpus
+                ]
+            elif key_lower == "maxcpus":
+                max_cpus = int(value)
+                result = [
+                    e
+                    for e in result
+                    if cls._extract_cpus(e.get("tres", "")) <= max_cpus
+                ]
+            elif key_lower == "minnodes":
+                min_nodes = int(value)
+                result = [
+                    e
+                    for e in result
+                    if cls._extract_nodes(e.get("tres", ""))
+                    >= min_nodes
+                ]
+            elif key_lower == "maxnodes":
+                max_nodes = int(value)
+                result = [
+                    e
+                    for e in result
+                    if cls._extract_nodes(e.get("tres", ""))
+                    <= max_nodes
+                ]
+            # Start and End filters would need date parsing - simplified here
+            elif key_lower == "start":
+                result = [
+                    e for e in result if value in e.get("start", "")
+                ]
+            elif key_lower == "end":
+                result = [
+                    e for e in result if value in e.get("end", "")
+                ]
+
+        return result
+
+    @classmethod
+    def _format_value(
+        cls, event: Dict[str, Any], column: str, truncate: bool = True
+    ) -> str:
+        """Format a value for display.
+
+        Args:
+            event: Event dictionary
+            column: Column name
+            truncate: Whether to truncate long values (for pretty output)
+        """
+        value = event.get(column, "")
+        if value is None or value == "":
+            return "-"
+        # Truncate long values only for pretty output
+        if truncate:
+            if column == "reason" and len(str(value)) > 60:
+                return str(value)[:57] + "..."
+            if column == "cluster_nodes" and len(str(value)) > 40:
+                return str(value)[:37] + "..."
+            if column == "tres" and len(str(value)) > 50:
+                return str(value)[:47] + "..."
+        return str(value)
+
+    @classmethod
+    def _get_sacctmgr_command(
+        cls, filters: Dict[str, str] = None, use_json: bool = False
+    ) -> List[str]:
+        """Build sacctmgr command with filters."""
+        cmd = ["sacctmgr", "list", "event"]
+
+        if use_json:
+            cmd.append("--json")
+        else:
+            cmd.extend(
+                [
+                    "format=Cluster,ClusterNodes,Duration,Start,End,"
+                    "Event,EventRaw,NodeName,State,StateRaw,TRES,User,Reason",
+                    "-p",
+                ]
+            )
+
+        if filters:
+            for key, value in filters.items():
+                # These are sacctmgr-level filters
+                if key.lower() in [
+                    "clusters",
+                    "condflags",
+                    "end",
+                    "events",
+                    "nodes",
+                    "reason",
+                    "start",
+                    "states",
+                    "user",
+                ]:
+                    cmd.append(f"{key}={value}")
+
+        return cmd
+
+    @classmethod
+    def _parse_json_events(cls, data: str) -> List[Dict[str, Any]]:
+        """Parse JSON event data into list of dicts."""
+        try:
+            parsed = json.loads(data)
+            events = parsed.get("events", [])
+            # Normalize field names to match our internal format
+            normalized = []
+            for event in events:
+                norm_event = {}
+                for key, value in event.items():
+                    # Map JSON keys to our field names
+                    mapped_key = COLUMN_MAPPING.get(key, key.lower())
+                    norm_event[mapped_key] = value
+                normalized.append(norm_event)
+            return normalized
+        except json.JSONDecodeError:
+            return []
+
+    @classmethod
+    def _fetch_events(
+        cls, filters: Dict[str, str] = None
+    ) -> List[Dict[str, Any]]:
+        """Fetch events with JSON fallback to text format.
+
+        Tries JSON format first. If it fails or returns invalid JSON,
+        sets a flag file and uses text format instead.
+        """
+        # Check if we already know JSON doesn't work
+        use_json = not os.path.exists(EVENTS_NO_JSON_FLAG)
+
+        if use_json:
+            try:
+                cmd = cls._get_sacctmgr_command(filters, use_json=True)
+                result = subprocess.run(
+                    cmd,
+                    check=True,
+                    capture_output=True,
+                    text=True,
+                    errors="replace",  # Handle invalid UTF-8 bytes
+                )
+                events = cls._parse_json_events(result.stdout)
+                if events or not result.stdout.strip():
+                    # JSON worked (either got events or empty result)
+                    return events
+                # Got output but couldn't parse as JSON - set flag
+                with open(EVENTS_NO_JSON_FLAG, "w") as f:
+                    f.write(
+                        "JSON format not supported by this Slurm version"
+                    )
+            except (
+                subprocess.CalledProcessError,
+                json.JSONDecodeError,
+            ):
+                # JSON failed - set flag and fall through to text format
+                with open(EVENTS_NO_JSON_FLAG, "w") as f:
+                    f.write(
+                        "JSON format not supported by this Slurm version"
+                    )
+
+        # Use text format
+        cmd = cls._get_sacctmgr_command(filters, use_json=False)
+        result = subprocess.run(
+            cmd,
+            check=True,
+            capture_output=True,
+            text=True,
+            errors="replace",  # Handle invalid UTF-8 bytes
+        )
+        return cls._parse_events(result.stdout)
+
+    @classmethod
+    def show(
+        cls,
+        field: str = None,
+        style: str = "pretty",
+        force_cache_update: bool = False,
+        delimiter: str = ";",
+        zebra: bool = False,
+        profile: str = "default",
+        profile_str: Optional[str] = None,
+    ) -> None:
+        """Show event information.
+
+        Args:
+            field: Optional filter (e.g., Nodes=h100-pool0-0290)
+            style: Output style ("pretty", "json", or "csv")
+            force_cache_update: Whether to force cache update
+            delimiter: Delimiter for CSV output (default: ";")
+            zebra: Use zebra striping for table rows
+            profile: Profile name to use for output formatting
+            profile_str: Inline profile string (overrides profile)
+        """
+        # Get profile configuration
+        (
+            columns,
+            styles,
+            template,
+            sort_field,
+            sort_asc,
+        ) = get_profile_config(profile, "events", profile_str)
+
+        # Use default columns if not specified, or all columns if "*"
+        if columns == "*":
+            columns = cls.ALL_COLUMNS
+        elif columns is None:
+            columns = cls.DEFAULT_COLUMNS
+
+        # Merge with default styles
+        merged_styles = dict(cls.DEFAULT_STYLES)
+        if styles:
+            merged_styles.update(styles)
+
+        # Parse filters from field argument
+        filters: Dict[str, str] = {}
+        if field:
+            # Parse multiple filters like "Nodes=x States=DRAIN"
+            parts = field.split()
+            for part in parts:
+                if "=" in part:
+                    key, value = part.split("=", 1)
+                    filters[key] = value
+
+        # Resolve node filters
+        # (e.g., nodes=partition=defq -> nodes=node1,node2)
+        nodes_value = filters.get("nodes") or filters.get("Nodes")
+        if nodes_value and is_node_filter(nodes_value):
+            resolved = resolve_node_filter(nodes_value)
+            if resolved:
+                # Update the filter with resolved node names
+                if "nodes" in filters:
+                    filters["nodes"] = resolved
+                if "Nodes" in filters:
+                    filters["Nodes"] = resolved
+            else:
+                console.print(
+                    f"[yellow]No nodes found matching filter: "
+                    f"{nodes_value}[/yellow]"
+                )
+                return
+
+        # Check if CondFlags=Open - if so, always run live
+        use_cache = True
+        if filters.get("CondFlags", "").lower() == "open":
+            use_cache = False
+
+        try:
+            events = []
+
+            # Try to use cache if allowed
+            if use_cache and not force_cache_update:
+                # Try JSON cache first, then text cache
+                if os.path.exists(EVENTS_JSON_CACHE_FILE):
+                    with open(EVENTS_JSON_CACHE_FILE, "r") as f:
+                        events = cls._parse_json_events(f.read())
+                elif os.path.exists(EVENTS_CACHE_FILE):
+                    with open(EVENTS_CACHE_FILE, "r") as f:
+                        events = cls._parse_events(f.read())
+
+            # If no cache or forced update, run command
+            if not events or force_cache_update or not use_cache:
+                # Build command with sacctmgr-level filters
+                sacctmgr_filters = {
+                    k: v
+                    for k, v in filters.items()
+                    if k.lower()
+                    in [
+                        "clusters",
+                        "condflags",
+                        "end",
+                        "events",
+                        "nodes",
+                        "reason",
+                        "start",
+                        "states",
+                        "user",
+                    ]
+                }
+
+                # Fetch events with JSON fallback
+                events = cls._fetch_events(sacctmgr_filters)
+
+                # Save to cache only if not using CondFlags=Open
+                if use_cache and events:
+                    # Save as JSON for faster loading next time
+                    with open(EVENTS_JSON_CACHE_FILE, "w") as f:
+                        json.dump({"events": events}, f)
+
+            if not events:
+                console.print("[yellow]No events found.[/yellow]")
+                return
+
+            # Apply client-side filters (all filters that need post-processing)
+            # This handles cases where sacctmgr mock doesn't filter
+            if filters:
+                events = cls._apply_filters(events, filters)
+
+            if not events:
+                console.print(
+                    "[yellow]No events matching filters found.[/yellow]"
+                )
+                return
+
+            # Apply sorting
+            if sort_field:
+                events = sort_data(events, sort_field, sort_asc)
+
+            # Output based on style
+            if style == "json":
+                console.print_json(json.dumps(events, indent=2))
+            elif style == "csv":
+                # CSV header
+                print(delimiter.join(columns))
+                for event in events:
+                    row = [
+                        cls._format_value(event, col, truncate=False)
+                        for col in columns
+                    ]
+                    print(delimiter.join(row))
+            else:
+                # Pretty table output
+                table = Table(
+                    title="Slurm Events",
+                    box=SIMPLE_HEAVY,
+                    show_header=True,
+                    header_style="bold",
+                )
+
+                # Add columns
+                for col in columns:
+                    col_style = merged_styles.get(col, "white")
+                    table.add_column(col.title(), style=col_style)
+
+                # Add rows
+                for i, event in enumerate(events):
+                    row_style = None
+                    if zebra and i % 2 == 1:
+                        row_style = "on grey15"
+                    row = [
+                        cls._format_value(event, col) for col in columns
+                    ]
+                    table.add_row(*row, style=row_style)
+
+                console.print(table)
+
+        except subprocess.CalledProcessError as e:
+            console.print(
+                f"[red]Failed to show events:[/red] {e.stderr or e}"
+            )
+
+    @classmethod
+    def create(cls, *args, **kwargs) -> None:
+        """Events cannot be created."""
+        console.print("[red]Events cannot be created manually.[/red]")
+
+    @classmethod
+    def update(cls, *args, **kwargs) -> None:
+        """Events cannot be updated."""
+        console.print("[red]Events cannot be updated manually.[/red]")
+
+    @classmethod
+    def delete(cls, *args, **kwargs) -> None:
+        """Events cannot be deleted."""
+        console.print("[red]Events cannot be deleted manually.[/red]")
+
+    @classmethod
+    def generate_autocomplete_options(cls) -> str:
+        """Generate bash autocomplete script for event options."""
+        filter_opts = " ".join(
+            f"{opt}=" for opt in EVENT_FILTER_OPTIONS
+        )
+        states = "DOWN DRAIN FAIL FUTR IDLE MAINT POWER REBOOT"
+
+        script = f"""
+_slurm_cli_events_autocomplete() {{
+    local cmd="$1"
+    local pos="$2"
+
+    local cur="${{COMP_WORDS[COMP_CWORD]}}"
+    local prev="${{COMP_WORDS[COMP_CWORD-1]}}"
+    local filter_options="{filter_opts}"
+
+    # Handle key=value completion
+    if _slurm_parse_keyval "$cur" "$prev"; then
+        case "$_key" in
+            condflags)
+                _slurm_complete_value "Open" "$_key" "$_val" "$cur" ;;
+            states)
+                _slurm_complete_value "{states}" "$_key" "$_val" "$cur" ;;
+            events)
+                _slurm_complete_value "Cluster Node" "$_key" "$_val" "$cur" ;;
+            nodes)
+                _slurm_complete_nodes_value "$_val" "$cur" "$_key" ;;
+            clusters)
+                # Note: clusters don't have a cache, so no value completion
+                ;;
+            user)
+                local cached_users="$(_slurm_cache_users)"
+                _slurm_complete_value "$cached_users" "$_key" "$_val" "$cur" ;;
+            # Node filter nested keys (when = is a word break, these are parsed as top-level keys)
+            partition)
+                _slurm_complete_value "$(_slurm_cache_partitions)" "$_key" "$_val" "$cur" ;;
+            state)
+                _slurm_complete_value "idle alloc drain down mixed comp" "$_key" "$_val" "$cur" ;;
+            reservation)
+                _slurm_complete_value "$(_slurm_cache_reservations)" "$_key" "$_val" "$cur" ;;
+        esac
+        [[ ${{#COMPREPLY[@]}} -gt 0 ]] && return
+    fi
+
+    # Default: show filter options
+    [[ $cmd == "show" ]] && _slurm_complete "$filter_options" "$cur"
+}}
+"""  # noqa: E501
+        return script

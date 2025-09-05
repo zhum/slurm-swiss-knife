@@ -1,0 +1,1291 @@
+{
+   "associations": [
+     {
+       "accounting": [
+       ],
+       "account": "root",
+       "cluster": "mycluster",
+       "comment": "",
+       "default": {
+         "qos": ""
+       },
+       "flags": [
+       ],
+       "max": {
+         "jobs": {
+           "per": {
+             "count": {
+               "set": false,
+               "infinite": true,
+               "number": 0
+             },
+             "accruing": {
+               "set": false,
+               "infinite": true,
+               "number": 0
+             },
+             "submitted": {
+               "set": false,
+               "infinite": true,
+               "number": 0
+             },
+             "wall_clock": {
+               "set": false,
+               "infinite": true,
+               "number": 0
+             }
+           },
+           "active": {
+             "set": false,
+             "infinite": true,
+             "number": 0
+           },
+           "accruing": {
+             "set": false,
+             "infinite": true,
+             "number": 0
+           },
+           "total": {
+             "set": false,
+             "infinite": true,
+             "number": 0
+           }
+         },
+         "tres": {
+           "total": [
+           ],
+           "group": {
+             "minutes": [
+             ],
+             "active": [
+             ]
+           },
+           "minutes": {
+             "total": [
+             ],
+             "per": {
+               "job": [
+               ]
+             }
+           },
+           "per": {
+             "job": [
+             ],
+             "node": [
+             ]
+           }
+         },
+         "per": {
+           "account": {
+             "wall_clock": {
+               "set": false,
+               "infinite": true,
+               "number": 0
+             }
+           }
+         }
+       },
+       "id": {
+         "account": "root",
+         "cluster": "mycluster",
+         "partition": "",
+         "user": "",
+         "id": 1
+       },
+       "is_default": false,
+       "lineage": "\/",
+       "min": {
+         "priority_threshold": {
+           "set": false,
+           "infinite": true,
+           "number": 0
+         }
+       },
+       "parent_account": "",
+       "partition": "",
+       "priority": {
+         "set": false,
+         "infinite": true,
+         "number": 0
+       },
+       "qos": [
+         "normal"
+       ],
+       "shares_raw": 1,
+       "user": ""
+     },
+     {
+       "accounting": [
+       ],
+       "account": "root",
+       "cluster": "mycluster",
+       "comment": "",
+       "default": {
+         "qos": ""
+       },
+       "flags": [
+       ],
+       "max": {
+         "jobs": {
+           "per": {
+             "count": {
+               "set": false,
+               "infinite": true,
+               "number": 0
+             },
+             "accruing": {
+               "set": false,
+               "infinite": true,
+               "number": 0
+             },
+             "submitted": {
+               "set": false,
+               "infinite": true,
+               "number": 0
+             },
+             "wall_clock": {
+               "set": false,
+               "infinite": true,
+               "number": 0
+             }
+           },
+           "active": {
+             "set": false,
+             "infinite": true,
+             "number": 0
+           },
+           "accruing": {
+             "set": false,
+             "infinite": true,
+             "number": 0
+           },
+           "total": {
+             "set": false,
+             "infinite": true,
+             "number": 0
+           }
+         },
+         "tres": {
+           "total": [
+           ],
+           "group": {
+             "minutes": [
+             ],
+             "active": [
+             ]
+           },
+           "minutes": {
+             "total": [
+             ],
+             "per": {
+               "job": [
+               ]
+             }
+           },
+           "per": {
+             "job": [
+             ],
+             "node": [
+             ]
+           }
+         },
+         "per": {
+           "account": {
+             "wall_clock": {
+               "set": false,
+               "infinite": true,
+               "number": 0
+             }
+           }
+         }
+       },
+       "id": {
+         "account": "root",
+         "cluster": "mycluster",
+         "partition": "",
+         "user": "user-1",
+         "id": 10001
+       },
+       "is_default": false,
+       "lineage": "",
+       "min": {
+         "priority_threshold": {
+           "set": false,
+           "infinite": true,
+           "number": 0
+         }
+       },
+       "parent_account": "",
+       "partition": "",
+       "priority": {
+         "set": false,
+         "infinite": true,
+         "number": 0
+       },
+       "qos": [
+         "normal"
+       ],
+       "shares_raw": 1,
+       "user": "user-1"
+     },
+     {
+       "accounting": [
+       ],
+       "account": "root",
+       "cluster": "mycluster",
+       "comment": "",
+       "default": {
+         "qos": ""
+       },
+       "flags": [
+       ],
+       "max": {
+         "jobs": {
+           "per": {
+             "count": {
+               "set": false,
+               "infinite": true,
+               "number": 0
+             },
+             "accruing": {
+               "set": false,
+               "infinite": true,
+               "number": 0
+             },
+             "submitted": {
+               "set": false,
+               "infinite": true,
+               "number": 0
+             },
+             "wall_clock": {
+               "set": false,
+               "infinite": true,
+               "number": 0
+             }
+           },
+           "active": {
+             "set": false,
+             "infinite": true,
+             "number": 0
+           },
+           "accruing": {
+             "set": false,
+             "infinite": true,
+             "number": 0
+           },
+           "total": {
+             "set": false,
+             "infinite": true,
+             "number": 0
+           }
+         },
+         "tres": {
+           "total": [
+           ],
+           "group": {
+             "minutes": [
+             ],
+             "active": [
+             ]
+           },
+           "minutes": {
+             "total": [
+             ],
+             "per": {
+               "job": [
+               ]
+             }
+           },
+           "per": {
+             "job": [
+             ],
+             "node": [
+             ]
+           }
+         },
+         "per": {
+           "account": {
+             "wall_clock": {
+               "set": false,
+               "infinite": true,
+               "number": 0
+             }
+           }
+         }
+       },
+       "id": {
+         "account": "root",
+         "cluster": "mycluster",
+         "partition": "",
+         "user": "user-2",
+         "id": 10002
+       },
+       "is_default": false,
+       "lineage": "\/0-user-2\/",
+       "min": {
+         "priority_threshold": {
+           "set": false,
+           "infinite": true,
+           "number": 0
+         }
+       },
+       "parent_account": "",
+       "partition": "",
+       "priority": {
+         "set": false,
+         "infinite": true,
+         "number": 0
+       },
+       "qos": [
+         "normal"
+       ],
+       "shares_raw": 1,
+       "user": "user-2"
+     },
+     {
+       "accounting": [
+       ],
+       "account": "root",
+       "cluster": "mycluster",
+       "comment": "",
+       "default": {
+         "qos": ""
+       },
+       "flags": [
+       ],
+       "max": {
+         "jobs": {
+           "per": {
+             "count": {
+               "set": false,
+               "infinite": true,
+               "number": 0
+             },
+             "accruing": {
+               "set": false,
+               "infinite": true,
+               "number": 0
+             },
+             "submitted": {
+               "set": false,
+               "infinite": true,
+               "number": 0
+             },
+             "wall_clock": {
+               "set": false,
+               "infinite": true,
+               "number": 0
+             }
+           },
+           "active": {
+             "set": false,
+             "infinite": true,
+             "number": 0
+           },
+           "accruing": {
+             "set": false,
+             "infinite": true,
+             "number": 0
+           },
+           "total": {
+             "set": false,
+             "infinite": true,
+             "number": 0
+           }
+         },
+         "tres": {
+           "total": [
+           ],
+           "group": {
+             "minutes": [
+             ],
+             "active": [
+             ]
+           },
+           "minutes": {
+             "total": [
+             ],
+             "per": {
+               "job": [
+               ]
+             }
+           },
+           "per": {
+             "job": [
+             ],
+             "node": [
+             ]
+           }
+         },
+         "per": {
+           "account": {
+             "wall_clock": {
+               "set": false,
+               "infinite": true,
+               "number": 0
+             }
+           }
+         }
+       },
+       "id": {
+         "account": "root",
+         "cluster": "mycluster",
+         "partition": "",
+         "user": "user-3",
+         "id": 44
+       },
+       "is_default": false,
+       "lineage": "\/0-user-3\/",
+       "min": {
+         "priority_threshold": {
+           "set": false,
+           "infinite": true,
+           "number": 0
+         }
+       },
+       "parent_account": "",
+       "partition": "",
+       "priority": {
+         "set": false,
+         "infinite": true,
+         "number": 0
+       },
+       "qos": [
+         "normal"
+       ],
+       "shares_raw": 1,
+       "user": "user-3"
+     },
+     {
+       "accounting": [
+       ],
+       "account": "root",
+       "cluster": "mycluster",
+       "comment": "",
+       "default": {
+         "qos": ""
+       },
+       "flags": [
+       ],
+       "max": {
+         "jobs": {
+           "per": {
+             "count": {
+               "set": false,
+               "infinite": true,
+               "number": 0
+             },
+             "accruing": {
+               "set": false,
+               "infinite": true,
+               "number": 0
+             },
+             "submitted": {
+               "set": false,
+               "infinite": true,
+               "number": 0
+             },
+             "wall_clock": {
+               "set": false,
+               "infinite": true,
+               "number": 0
+             }
+           },
+           "active": {
+             "set": false,
+             "infinite": true,
+             "number": 0
+           },
+           "accruing": {
+             "set": false,
+             "infinite": true,
+             "number": 0
+           },
+           "total": {
+             "set": false,
+             "infinite": true,
+             "number": 0
+           }
+         },
+         "tres": {
+           "total": [
+           ],
+           "group": {
+             "minutes": [
+             ],
+             "active": [
+             ]
+           },
+           "minutes": {
+             "total": [
+             ],
+             "per": {
+               "job": [
+               ]
+             }
+           },
+           "per": {
+             "job": [
+             ],
+             "node": [
+             ]
+           }
+         },
+         "per": {
+           "account": {
+             "wall_clock": {
+               "set": false,
+               "infinite": true,
+               "number": 0
+             }
+           }
+         }
+       },
+       "id": {
+         "account": "root",
+         "cluster": "mycluster",
+         "partition": "",
+         "user": "user-4",
+         "id": 40
+       },
+       "is_default": false,
+       "lineage": "\/0-user-4\/",
+       "min": {
+         "priority_threshold": {
+           "set": false,
+           "infinite": true,
+           "number": 0
+         }
+       },
+       "parent_account": "",
+       "partition": "",
+       "priority": {
+         "set": false,
+         "infinite": true,
+         "number": 0
+       },
+       "qos": [
+         "normal"
+       ],
+       "shares_raw": 1,
+       "user": "user-4"
+     },
+     {
+       "accounting": [
+       ],
+       "account": "root",
+       "cluster": "mycluster",
+       "comment": "",
+       "default": {
+         "qos": ""
+       },
+       "flags": [
+       ],
+       "max": {
+         "jobs": {
+           "per": {
+             "count": {
+               "set": false,
+               "infinite": true,
+               "number": 0
+             },
+             "accruing": {
+               "set": false,
+               "infinite": true,
+               "number": 0
+             },
+             "submitted": {
+               "set": false,
+               "infinite": true,
+               "number": 0
+             },
+             "wall_clock": {
+               "set": false,
+               "infinite": true,
+               "number": 0
+             }
+           },
+           "active": {
+             "set": false,
+             "infinite": true,
+             "number": 0
+           },
+           "accruing": {
+             "set": false,
+             "infinite": true,
+             "number": 0
+           },
+           "total": {
+             "set": false,
+             "infinite": true,
+             "number": 0
+           }
+         },
+         "tres": {
+           "total": [
+           ],
+           "group": {
+             "minutes": [
+             ],
+             "active": [
+             ]
+           },
+           "minutes": {
+             "total": [
+             ],
+             "per": {
+               "job": [
+               ]
+             }
+           },
+           "per": {
+             "job": [
+             ],
+             "node": [
+             ]
+           }
+         },
+         "per": {
+           "account": {
+             "wall_clock": {
+               "set": false,
+               "infinite": true,
+               "number": 0
+             }
+           }
+         }
+       },
+       "id": {
+         "account": "root",
+         "cluster": "mycluster",
+         "partition": "",
+         "user": "root",
+         "id": 2
+       },
+       "is_default": true,
+       "lineage": "\/0-root\/",
+       "min": {
+         "priority_threshold": {
+           "set": false,
+           "infinite": true,
+           "number": 0
+         }
+       },
+       "parent_account": "",
+       "partition": "",
+       "priority": {
+         "set": false,
+         "infinite": true,
+         "number": 0
+       },
+       "qos": [
+         "normal"
+       ],
+       "shares_raw": 1,
+       "user": "root"
+     },
+     {
+       "accounting": [
+       ],
+       "account": "general",
+       "cluster": "mycluster",
+       "comment": "",
+       "default": {
+         "qos": ""
+       },
+       "flags": [
+       ],
+       "max": {
+         "jobs": {
+           "per": {
+             "count": {
+               "set": false,
+               "infinite": true,
+               "number": 0
+             },
+             "accruing": {
+               "set": false,
+               "infinite": true,
+               "number": 0
+             },
+             "submitted": {
+               "set": false,
+               "infinite": true,
+               "number": 0
+             },
+             "wall_clock": {
+               "set": false,
+               "infinite": true,
+               "number": 0
+             }
+           },
+           "active": {
+             "set": false,
+             "infinite": true,
+             "number": 0
+           },
+           "accruing": {
+             "set": false,
+             "infinite": true,
+             "number": 0
+           },
+           "total": {
+             "set": false,
+             "infinite": true,
+             "number": 0
+           }
+         },
+         "tres": {
+           "total": [
+           ],
+           "group": {
+             "minutes": [
+             ],
+             "active": [
+             ]
+           },
+           "minutes": {
+             "total": [
+             ],
+             "per": {
+               "job": [
+               ]
+             }
+           },
+           "per": {
+             "job": [
+             ],
+             "node": [
+             ]
+           }
+         },
+         "per": {
+           "account": {
+             "wall_clock": {
+               "set": false,
+               "infinite": true,
+               "number": 0
+             }
+           }
+         }
+       },
+       "id": {
+         "account": "general",
+         "cluster": "mycluster",
+         "partition": "",
+         "user": "",
+         "id": 3
+       },
+       "is_default": false,
+       "lineage": "general",
+       "min": {
+         "priority_threshold": {
+           "set": false,
+           "infinite": true,
+           "number": 0
+         }
+       },
+       "parent_account": "root",
+       "partition": "",
+       "priority": {
+         "set": false,
+         "infinite": true,
+         "number": 0
+       },
+       "qos": [
+         "normal",
+         "free"
+       ],
+       "shares_raw": 473,
+       "user": ""
+     },
+     {
+       "accounting": [
+       ],
+       "account": "general",
+       "cluster": "mycluster",
+       "comment": "",
+       "default": {
+         "qos": ""
+       },
+       "flags": [
+       ],
+       "max": {
+         "jobs": {
+           "per": {
+             "count": {
+               "set": false,
+               "infinite": true,
+               "number": 0
+             },
+             "accruing": {
+               "set": false,
+               "infinite": true,
+               "number": 0
+             },
+             "submitted": {
+               "set": false,
+               "infinite": true,
+               "number": 0
+             },
+             "wall_clock": {
+               "set": false,
+               "infinite": true,
+               "number": 0
+             }
+           },
+           "active": {
+             "set": false,
+             "infinite": true,
+             "number": 0
+           },
+           "accruing": {
+             "set": false,
+             "infinite": true,
+             "number": 0
+           },
+           "total": {
+             "set": false,
+             "infinite": true,
+             "number": 0
+           }
+         },
+         "tres": {
+           "total": [
+           ],
+           "group": {
+             "minutes": [
+             ],
+             "active": [
+             ]
+           },
+           "minutes": {
+             "total": [
+             ],
+             "per": {
+               "job": [
+               ]
+             }
+           },
+           "per": {
+             "job": [
+             ],
+             "node": [
+             ]
+           }
+         },
+         "per": {
+           "account": {
+             "wall_clock": {
+               "set": false,
+               "infinite": true,
+               "number": 0
+             }
+           }
+         }
+       },
+       "id": {
+         "account": "general",
+         "cluster": "mycluster",
+         "partition": "",
+         "user": "",
+         "id": 95
+       },
+       "is_default": true,
+       "lineage": "\/general\/",
+       "min": {
+         "priority_threshold": {
+           "set": false,
+           "infinite": true,
+           "number": 0
+         }
+       },
+       "parent_account": "root",
+       "partition": "",
+       "priority": {
+         "set": false,
+         "infinite": true,
+         "number": 0
+       },
+       "qos": [
+         "normal",
+         "free"
+       ],
+       "shares_raw": 0,
+       "user": ""
+     },
+     {
+       "accounting": [
+       ],
+       "account": "general",
+       "cluster": "mycluster",
+       "comment": "",
+       "default": {
+         "qos": ""
+       },
+       "flags": [
+       ],
+       "max": {
+         "jobs": {
+           "per": {
+             "count": {
+               "set": false,
+               "infinite": true,
+               "number": 0
+             },
+             "accruing": {
+               "set": false,
+               "infinite": true,
+               "number": 0
+             },
+             "submitted": {
+               "set": false,
+               "infinite": true,
+               "number": 0
+             },
+             "wall_clock": {
+               "set": false,
+               "infinite": true,
+               "number": 0
+             }
+           },
+           "active": {
+             "set": false,
+             "infinite": true,
+             "number": 0
+           },
+           "accruing": {
+             "set": false,
+             "infinite": true,
+             "number": 0
+           },
+           "total": {
+             "set": false,
+             "infinite": true,
+             "number": 0
+           }
+         },
+         "tres": {
+           "total": [
+           ],
+           "group": {
+             "minutes": [
+             ],
+             "active": [
+             ]
+           },
+           "minutes": {
+             "total": [
+             ],
+             "per": {
+               "job": [
+               ]
+             }
+           },
+           "per": {
+             "job": [
+             ],
+             "node": [
+             ]
+           }
+         },
+         "per": {
+           "account": {
+             "wall_clock": {
+               "set": false,
+               "infinite": true,
+               "number": 0
+             }
+           }
+         }
+       },
+       "id": {
+         "account": "general",
+         "cluster": "mycluster",
+         "partition": "",
+         "user": "user-1",
+         "id": 173
+       },
+       "is_default": true,
+       "lineage": "\/general\/0-user-1\/",
+       "min": {
+         "priority_threshold": {
+           "set": false,
+           "infinite": true,
+           "number": 0
+         }
+       },
+       "parent_account": "",
+       "partition": "",
+       "priority": {
+         "set": false,
+         "infinite": true,
+         "number": 0
+       },
+       "qos": [
+         "normal",
+         "free"
+       ],
+       "shares_raw": 1,
+       "user": "user-1"
+     },
+     {
+       "accounting": [
+       ],
+       "account": "general",
+       "cluster": "mycluster",
+       "comment": "",
+       "default": {
+         "qos": ""
+       },
+       "flags": [
+       ],
+       "max": {
+         "jobs": {
+           "per": {
+             "count": {
+               "set": false,
+               "infinite": true,
+               "number": 0
+             },
+             "accruing": {
+               "set": false,
+               "infinite": true,
+               "number": 0
+             },
+             "submitted": {
+               "set": false,
+               "infinite": true,
+               "number": 0
+             },
+             "wall_clock": {
+               "set": false,
+               "infinite": true,
+               "number": 0
+             }
+           },
+           "active": {
+             "set": false,
+             "infinite": true,
+             "number": 0
+           },
+           "accruing": {
+             "set": false,
+             "infinite": true,
+             "number": 0
+           },
+           "total": {
+             "set": false,
+             "infinite": true,
+             "number": 0
+           }
+         },
+         "tres": {
+           "total": [
+           ],
+           "group": {
+             "minutes": [
+             ],
+             "active": [
+             ]
+           },
+           "minutes": {
+             "total": [
+             ],
+             "per": {
+               "job": [
+               ]
+             }
+           },
+           "per": {
+             "job": [
+             ],
+             "node": [
+             ]
+           }
+         },
+         "per": {
+           "account": {
+             "wall_clock": {
+               "set": false,
+               "infinite": true,
+               "number": 0
+             }
+           }
+         }
+       },
+       "id": {
+         "account": "general",
+         "cluster": "mycluster",
+         "partition": "",
+         "user": "user-2",
+         "id": 96
+       },
+       "is_default": true,
+       "lineage": "\/general\/0-user-2\/",
+       "min": {
+         "priority_threshold": {
+           "set": false,
+           "infinite": true,
+           "number": 0
+         }
+       },
+       "parent_account": "",
+       "partition": "",
+       "priority": {
+         "set": false,
+         "infinite": true,
+         "number": 0
+       },
+       "qos": [
+         "normal",
+         "free"
+       ],
+       "shares_raw": 1,
+       "user": "user-2"
+     },
+     {
+       "accounting": [
+       ],
+       "account": "adlr_other_infra",
+       "cluster": "mycluster",
+       "comment": "",
+       "default": {
+         "qos": ""
+       },
+       "flags": [
+       ],
+       "max": {
+         "jobs": {
+           "per": {
+             "count": {
+               "set": false,
+               "infinite": true,
+               "number": 0
+             },
+             "accruing": {
+               "set": false,
+               "infinite": true,
+               "number": 0
+             },
+             "submitted": {
+               "set": false,
+               "infinite": true,
+               "number": 0
+             },
+             "wall_clock": {
+               "set": false,
+               "infinite": true,
+               "number": 0
+             }
+           },
+           "active": {
+             "set": false,
+             "infinite": true,
+             "number": 0
+           },
+           "accruing": {
+             "set": false,
+             "infinite": true,
+             "number": 0
+           },
+           "total": {
+             "set": false,
+             "infinite": true,
+             "number": 0
+           }
+         },
+         "tres": {
+           "total": [
+           ],
+           "group": {
+             "minutes": [
+             ],
+             "active": [
+             ]
+           },
+           "minutes": {
+             "total": [
+             ],
+             "per": {
+               "job": [
+               ]
+             }
+           },
+           "per": {
+             "job": [
+             ],
+             "node": [
+             ]
+           }
+         },
+         "per": {
+           "account": {
+             "wall_clock": {
+               "set": false,
+               "infinite": true,
+               "number": 0
+             }
+           }
+         }
+       },
+       "id": {
+         "account": "adlr_other_infra",
+         "cluster": "mycluster",
+         "partition": "",
+         "user": "sagavali",
+         "id": 174
+       },
+       "is_default": true,
+       "lineage": "\/nvidia\/adlr_other_infra\/0-sagavali\/",
+       "min": {
+         "priority_threshold": {
+           "set": false,
+           "infinite": true,
+           "number": 0
+         }
+       },
+       "parent_account": "",
+       "partition": "",
+       "priority": {
+         "set": false,
+         "infinite": true,
+         "number": 0
+       },
+       "qos": [
+         "normal",
+         "free"
+       ],
+       "shares_raw": 1,
+       "user": "sagavali"
+     }
+   ],
+   "meta": {
+     "plugin": {
+       "type": "",
+       "name": "",
+       "data_parser": "data_parser\/v0.0.40",
+       "accounting_storage": "accounting_storage\/slurmdbd"
+     },
+     "client": {
+       "source": "\/dev\/pts\/2",
+       "user": "root",
+       "group": "root"
+     },
+     "command": [
+     ],
+     "slurm": {
+       "version": {
+         "major": "23",
+         "micro": "8",
+         "minor": "11"
+       },
+       "release": "23.11.8",
+       "cluster": "mycluster"
+     }
+   },
+   "errors": [
+   ],
+   "warnings": [
+   ]
+ }

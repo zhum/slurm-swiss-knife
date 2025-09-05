@@ -1,0 +1,305 @@
+#!/usr/bin/env bash
+
+# Mock scontrol script for testing SLURM commands
+
+# Optional: Add small delay to simulate real command execution
+# sleep 0.1
+
+# Get the directory where this script is located (same as mocks directory)
+MOCKS_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
+# Check if arguments match "show node[s] --json"
+if [[ "$1" == "show" ]] && [[ "$2" =~ ^nodes?$ ]] && [[ "$3" == "--json" ]]; then
+    if [ -f "$MOCKS_DIR/data/nodes.json" ]; then
+        cat "$MOCKS_DIR/data/nodes.json"
+    else
+        echo "Error: nodes.json file not found in $MOCKS_DIR/data" >&2
+        exit 1
+    fi
+elif [[ "$1" == "show" ]] && [[ "$2" =~ ^nodes?$ ]]; then
+    if [ -f "$MOCKS_DIR/data/nodes" ]; then
+        cat "$MOCKS_DIR/data/nodes"
+    else
+        echo "Error: nodes file not found in $MOCKS_DIR/data" >&2
+        exit 1
+    fi
+elif [ "$1" = "show" ] && [ "$2" = "partitions" ] && [ "$3" = "--json" ]; then
+    if [ -f "$MOCKS_DIR/data/partitions.json" ]; then
+        cat "$MOCKS_DIR/data/partitions.json"
+    else
+        echo "Error: partitions.json file not found in $MOCKS_DIR/data" >&2
+        exit 1
+    fi
+elif [ "$1" = "show" ] && [ "$2" = "partition" ] && [ -n "$3" ] && [ "$4" = "--json" ]; then
+    # Show specific partition - filter from partitions.json
+    PARTITION_NAME="$3"
+    if [ -f "$MOCKS_DIR/data/partitions.json" ]; then
+        python3 -c "
+import json
+data = json.load(open('$MOCKS_DIR/data/partitions.json'))
+for p in data.get('partitions', []):
+    if p.get('name') == '$PARTITION_NAME':
+        nodes = p.get('nodes', {}).get('configured', '')
+        print(json.dumps({'partitions': [{'name': '$PARTITION_NAME', 'nodes': {'nodes': nodes}}]}))
+        exit()
+print(json.dumps({'partitions': []}))
+" 2>/dev/null || echo '{"partitions": []}'
+    else
+        echo '{"partitions": []}'
+    fi
+elif [ "$1" = "show" ] && [ "$2" = "partitions" ]; then
+    if [ -f "$MOCKS_DIR/data/partitions" ]; then
+        cat "$MOCKS_DIR/data/partitions"
+    else
+        echo "Error: partitions file not found in $MOCKS_DIR/data" >&2
+        exit 1
+    fi
+elif [ "$1" = "show" ] && [ "$2" = "reservations" ] && [ "$3" = "--json" ]; then
+    if [ -f "$MOCKS_DIR/data/reservations.json" ]; then
+        cat "$MOCKS_DIR/data/reservations.json"
+    else
+        echo "Error: reservations.json file not found in $MOCKS_DIR/data" >&2
+        exit 1
+    fi
+elif [ "$1" = "show" ] && [ "$2" = "reservation" ] && [ -n "$3" ] && [ "$4" = "--json" ]; then
+    # Show specific reservation - filter from reservations.json
+    RES_NAME="$3"
+    if [ -f "$MOCKS_DIR/data/reservations.json" ]; then
+        python3 -c "
+import json
+data = json.load(open('$MOCKS_DIR/data/reservations.json'))
+for r in data.get('reservations', []):
+    if r.get('name') == '$RES_NAME':
+        print(json.dumps({'reservations': [r]}))
+        exit()
+print(json.dumps({'reservations': []}))
+" 2>/dev/null || echo '{"reservations": []}'
+    else
+        echo '{"reservations": []}'
+    fi
+elif [ "$1" = "show" ] && [ "$2" = "reservations" ]; then
+    if [ -f "$MOCKS_DIR/data/reservations" ]; then
+        cat "$MOCKS_DIR/data/reservations"
+    else
+        echo "Error: reservations file not found in $MOCKS_DIR/data" >&2
+        exit 1
+    fi
+elif [ "$1" = "show" ] && [ "$2" = "config" ]; then
+    if [ -f "$MOCKS_DIR/data/slurm_config" ]; then
+        cat "$MOCKS_DIR/data/slurm_config"
+    else
+        echo "Error: slurm_config file not found in $MOCKS_DIR/data" >&2
+        exit 1
+    fi
+elif [[ "$1" == "show" ]] && [[ "$2" =~ ^jobs?$ ]] && [[ "$3" == "--json" ]]; then
+    if [ -f "$MOCKS_DIR/data/jobs.json" ]; then
+        cat "$MOCKS_DIR/data/jobs.json"
+    else
+        echo "Error: jobs.json file not found in $MOCKS_DIR/data" >&2
+        exit 1
+    fi
+elif [[ "$1" == "show" ]] && [[ "$2" =~ ^jobs?$ ]]; then
+    if [ -f "$MOCKS_DIR/data/jobs.json" ]; then
+        cat "$MOCKS_DIR/data/jobs.json"
+    else
+        echo "Error: jobs.json file not found in $MOCKS_DIR/data" >&2
+        exit 1
+    fi
+elif [ "$1" = "create" ]; then
+    # Mock create command - just print what was received
+    echo "MOCK: scontrol $*"
+    exit 0
+elif [ "$1" = "update" ]; then
+    # Mock update command - just print what was received
+    echo "MOCK: scontrol $*"
+    exit 0
+elif [ "$1" = "delete" ]; then
+    # Mock delete command - just print what was received
+    echo "MOCK: scontrol $*"
+    exit 0
+elif [ "$1" = "reconfigure" ]; then
+    # Mock reconfigure command
+    echo "MOCK: scontrol reconfigure"
+    exit 0
+elif [ "$1" = "ping" ]; then
+    # Mock ping command
+    echo "Slurmctld(primary) at localhost is UP"
+    exit 0
+elif [ "$1" = "takeover" ]; then
+    # Mock takeover command
+    echo "MOCK: scontrol takeover"
+    exit 0
+elif [ "$1" = "write" ]; then
+    if [ "${2:-none}" = "config" ]; then
+        # Mock write config command
+        echo "MOCK: scontrol $*"
+        if [ -n "$3" ]; then
+            echo "Output file: $3"
+        fi
+    elif [ "${2:-none}" = "batch_script" ]; then
+        # Mock write batch_script command
+        echo "MOCK: scontrol $*"
+        if [ -n "$3" ] && [ -f "$3" ]; then
+            echo "Script file: $3 (exists)"
+        elif [ -n "$3" ]; then
+            echo "Script file: $3"
+        else
+            echo "MOCK: Not implemented scontrol $*"
+            exit 1
+        fi
+    else
+        echo "MOCK: Not implemented scontrol $*"
+        exit 1
+    fi
+    exit 0
+elif [ "$1" = "version" ]; then
+    # Mock version command
+    echo "slurm 23.11.4"
+    exit 0
+elif [ "$1" = "token" ]; then
+    # Mock token command
+    echo "MOCK: scontrol $*"
+    echo "SLURM_JWT=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VybmFtZSI6InRlc3R1c2VyIiwiZXhwIjoxNzA0MDY3MjAwfQ.mock_signature"
+    exit 0
+elif [ "$1" = "reboot" ]; then
+    # Mock reboot command
+    echo "MOCK: scontrol $*"
+    exit 0
+elif [ "$1" = "cancel_reboot" ]; then
+    # Mock cancel_reboot command
+    echo "MOCK: scontrol $*"
+    exit 0
+elif [ "$1" = "hold" ]; then
+    # Mock hold command
+    echo "MOCK: scontrol $*"
+    exit 0
+elif [ "$1" = "release" ]; then
+    # Mock release command
+    echo "MOCK: scontrol $*"
+    exit 0
+elif [ "$1" = "top" ]; then
+    # Mock top command
+    echo "MOCK: scontrol $*"
+    exit 0
+elif [ "$1" = "requeue" ]; then
+    # Mock requeue command
+    echo "MOCK: scontrol $*"
+    exit 0
+elif [ "$1" = "suspend" ]; then
+    # Mock suspend command
+    echo "MOCK: scontrol $*"
+    exit 0
+elif [ "$1" = "assoc_mgr" ]; then
+    # Mock assoc_mgr command
+    echo "MOCK: scontrol $*"
+    echo ""
+    echo "Current Association Manager state:"
+    # Check for flags option
+    for arg in "$@"; do
+        if [[ "$arg" == "flags=users" ]]; then
+            echo "User Records:"
+            echo "  UserName=root(0) AdminLevel=Administrator"
+            echo "  UserName=testuser(1000) AdminLevel=None"
+            exit 0
+        elif [[ "$arg" == "flags=assoc" ]]; then
+            echo "Association Records:"
+            echo "  ClusterName=cluster Account=root UserName= Partition="
+            echo "  ClusterName=cluster Account=general_cs_infra UserName= Partition="
+            exit 0
+        elif [[ "$arg" == "flags=qos" ]]; then
+            echo "QOS Records:"
+            echo "  Name=normal Priority=0"
+            echo "  Name=high Priority=100"
+            exit 0
+        fi
+    done
+    # Default: show all
+    echo "User Records:"
+    echo "  UserName=root(0) AdminLevel=Administrator"
+    echo "  UserName=testuser(1000) AdminLevel=None"
+    echo ""
+    echo "Association Records:"
+    echo "  ClusterName=cluster Account=root UserName= Partition="
+    echo "  ClusterName=cluster Account=general_cs_infra UserName= Partition="
+    echo ""
+    echo "QOS Records:"
+    echo "  Name=normal Priority=0"
+    echo "  Name=high Priority=100"
+    exit 0
+elif [ "$1" = "uhold" ]; then
+    # Mock uhold command (user hold)
+    echo "MOCK: scontrol $*"
+    exit 0
+elif [ "$1" = "setdebug" ]; then
+    # Mock setdebug command: setdebug LEVEL [nodes=nodelist]
+    LEVEL="${2:-}"
+    VALID_LEVELS="quiet fatal error info verbose debug debug2 debug3 debug4 debug5"
+    if [ -z "$LEVEL" ]; then
+        echo "error: setdebug requires a debug level" >&2
+        exit 1
+    fi
+    if ! echo "$VALID_LEVELS" | grep -qw "$LEVEL"; then
+        echo "error: Invalid debug level '$LEVEL'. Valid levels: $VALID_LEVELS" >&2
+        exit 1
+    fi
+    # Optional nodes= argument (nodelist only, not filter expressions)
+    NODES_ARG="${3:-}"
+    if [ -n "$NODES_ARG" ]; then
+        if [[ "$NODES_ARG" != nodes=* ]]; then
+            echo "error: unexpected argument '$NODES_ARG'" >&2
+            exit 1
+        fi
+        NODELIST="${NODES_ARG#nodes=}"
+        if [ -z "$NODELIST" ]; then
+            echo "error: nodes= requires a nodelist" >&2
+            exit 1
+        fi
+        echo "Debug level set to $LEVEL for nodes: $NODELIST"
+    else
+        echo "Debug level set to $LEVEL"
+    fi
+    exit 0
+elif [ "$1" = "burstbuffer" ]; then
+    echo "MOCK: scontrol burstbuffer"
+    echo "Name=lustreFS1 Granularity=1GiB TotalSpace=1000GiB UsedSpace=200GiB"
+    exit 0
+elif [ "$1" = "daemons" ]; then
+    echo "MOCK: scontrol daemons"
+    echo "slurmctld slurmd"
+    exit 0
+elif [ "$1" = "dwstat" ]; then
+    echo "MOCK: scontrol dwstat"
+    echo "pool:   id: 1  units: GiB  granularity: 1  quantity: 1000  free: 800"
+    exit 0
+elif [ "$1" = "topology" ]; then
+    echo "MOCK: scontrol topology"
+    echo "SwitchName=s0 Switches=s1,s2"
+    echo "SwitchName=s1 Nodes=node[001-004]"
+    echo "SwitchName=s2 Nodes=node[005-008]"
+    exit 0
+elif [ "$1" = "setdebugflags" ]; then
+    # Mock setdebugflags: accepts +FLAG/-FLAG [nodes=NODELIST]
+    shift
+    for arg in "$@"; do
+        case "$arg" in
+            nodes=*)
+                echo "Debug flags set for nodes: ${arg#nodes=}" ;;
+            +*|-*)
+                : ;;  # valid flag, no output needed
+            *)
+                echo "error: invalid argument '$arg'" >&2
+                exit 1 ;;
+        esac
+    done
+    echo "MOCK: scontrol setdebugflags $*"
+    exit 0
+else
+    # For other arguments, show usage or error
+    echo "Usage: $0 show {nodes|partitions|reservations|config} [--json]" >&2
+    echo "       $0 {reconfigure|ping|takeover|write config|write batch_script|version|token|assoc_mgr}" >&2
+    echo "       $0 setdebug {quiet|fatal|error|info|verbose|debug|debug2|debug3|debug4|debug5} [nodes=nodelist]" >&2
+    echo "       $0 {burstbuffer|daemons|dwstat|topology}" >&2
+    echo "This is a mock scontrol script for testing purposes." >&2
+    echo "Arguments received: $*" >&2
+    exit 1
+fi

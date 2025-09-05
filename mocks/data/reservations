@@ -1,0 +1,6 @@
+ReservationName=test_reservation StartTime=2026-02-02T10:16:01 EndTime=2027-02-02T10:16:01 Duration=365-00:00:00
+   Nodes=node-[02-05] NodeCnt=4 CoreCnt=92 Features=(null) PartitionName=(null) Flags=SPEC_NODES
+   TRES=cpu=92
+   Users=root Groups=(null) Accounts=(null) Licenses=(null) State=ACTIVE BurstBuffer=(null)
+   MaxStartDelay=(null)
+

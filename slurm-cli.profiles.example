@@ -1,0 +1,189 @@
+# Slurm CLI Profile Configuration
+#
+# Copy this file to one of these locations:
+#   - /etc/slurm/cli.profiles (system-wide)
+#   - ~/.config/slurm-cli.profiles (user-specific)
+#
+# Profile format:
+#   [profile:name]
+#   resource.columns = col1,col2,col3
+#   resource.styles.field = style
+#   resource.template = [color]{field}[/color] text
+#
+# Template syntax:
+#   {field}              - replaced with field value
+#   {?field TEXT}        - show TEXT only if field is not empty/default
+#                          TEXT can contain {field} placeholders
+#   [color]text[/color]  - Rich markup for styling
+#   \n                   - newline in output
+#   \  (at end of line)  - line continuation (for multi-line templates)
+#
+# Sorting:
+#   field+               - sort ascending by this field
+#   field-               - sort descending by this field
+#   Only the first field with +/- is used for sorting.
+#   Examples:
+#     accounts.columns = name+,description    # sort by name ascending
+#     jobs.columns = job_id-,user,state       # sort by job_id descending
+#     qos.columns = priority-,name            # sort by priority descending
+#
+# Conditional examples:
+#   {?users Users: {users}}           - shows "Users: root" only if users is set
+#   {?accounts | Accts: {accounts}}   - shows "| Accts: ..." only if accounts is set
+#
+# Available colors: cyan, green, yellow, red, magenta, blue, white, dim,
+#                   bold, italic, hot_pink, etc.
+#
+# Usage:
+#   slurm-cli --profile compact show accounts
+#   slurm-cli --profile-str "accounts.template=[cyan]{name}[/]" show acc
+#
+# Simplified --profile-str (template auto-applied to current resource):
+#   slurm-cli --profile-str "[cyan]{name}[/] - {description}" show acc
+#   slurm-cli --profile-str "{name} | {start_time}{?users  👥{users}}" show res
+#
+# Sorting from command line:
+#   slurm-cli --profile-str "name+,description" show accounts  # sort by name asc
+#   slurm-cli --profile-str "priority-,name" show qos          # sort by priority desc
+
+# ============================================================================
+# Default Profile - Shows all columns with standard styling
+# ============================================================================
+
+# [profile:default]
+# accounts.columns = *
+# accounts.styles.name = cyan
+# accounts.styles.description = white
+# accounts.styles.organization = green
+# accounts.styles.coordinators = yellow
+
+# qos.columns = *
+# qos.styles.name = cyan bold
+# qos.styles.id = dim
+# qos.styles.priority = green
+# qos.styles.flags = yellow
+
+# partitions.columns = *
+# partitions.styles.name = cyan bold
+# partitions.styles.state = green
+# partitions.styles.nodes = yellow
+
+# nodes.columns = *
+# nodes.styles.name = cyan
+# nodes.styles.state = green
+
+# reservations.columns = *
+# reservations.styles.name = cyan bold
+# reservations.styles.users = hot_pink
+# reservations.styles.accounts = green
+#
+# # Default reservation output template (mimics built-in pretty format):
+# # Use backslash (\) at end of line for multi-line templates
+# reservations.template = =============================================\n\
+#     Reservation: [cyan bold]{name}[/]\n\
+#     Start/End: [yellow]{start_time}[/] ({time_status}) / [yellow]{end_time}[/]\n\
+#     Partition: [bold blue]{partition}[/] Nodes/CPUs: [bold]{node_count}/{core_count}[/]\n\
+#     Nodes: ({node_list})\
+#     {?flags \n  flags: {flags}}\
+#     {?tres  tres: {tres}}\
+#     {?users \n  users: [hot_pink]{users}[/]}\
+#     {?accounts \n  accounts: [green]{accounts}[/]}
+
+# coordinators.columns = *
+# coordinators.styles.account = cyan
+# coordinators.styles.name = green
+
+# users.columns = *
+# users.styles.name = cyan
+
+# jobs.columns = job_id,user_name,partition,job_state,start_time,endlimit,node_count,gres,reason
+# jobs.styles.job_id = cyan bold
+# jobs.styles.user_name = blue
+# jobs.styles.partition = green
+# jobs.styles.job_state = yellow
+# jobs.styles.start_time = green
+# jobs.styles.endlimit = dim
+# jobs.styles.node_count = cyan
+# jobs.styles.gres = magenta
+
+# ============================================================================
+# Compact Profile - Essential columns only
+# ============================================================================
+
+# [profile:compact]
+# accounts.columns = name,description
+# accounts.styles.name = cyan bold
+
+# qos.columns = name,priority,max_wall
+# qos.styles.name = cyan bold
+
+# partitions.columns = name,state,nodes
+# partitions.styles.name = cyan bold
+
+# nodes.columns = name,state,cpus,real_memory,gres
+# nodes.styles.name = cyan
+
+# reservations.columns = name,start_time,end_time,nodes,users
+# reservations.styles.name = cyan bold
+# reservations.styles.users = hot_pink
+
+# coordinators.columns = account,name
+# coordinators.styles.account = cyan
+
+# users.columns = name,default_account
+# users.styles.name = cyan
+
+# jobs.columns = job_id,name,user_name,partition,job_state,endlimit,nodes
+# jobs.styles.job_id = cyan bold
+# jobs.styles.job_state = yellow
+
+# ============================================================================
+# Minimal Profile - Just names
+# ============================================================================
+
+# [profile:minimal]
+# accounts.columns = name
+# qos.columns = name
+# partitions.columns = name,state
+# nodes.columns = name,state,gres
+# reservations.columns = name
+# coordinators.columns = account,name
+# users.columns = name
+# jobs.columns = job_id,user_name,job_state
+
+# ============================================================================
+# Oneline Profile - Template-based, one line per item
+# ============================================================================
+
+# [profile:oneline]
+# accounts.template = [cyan]{name}[/cyan] - {description} ({organization})
+# qos.template = [cyan bold]{name}[/cyan bold] priority=[green]{priority}[/green]
+# partitions.template = [cyan bold]{PartitionName}[/cyan bold] state=[green]{State}[/green] nodes={TotalNodes}
+# nodes.template = [cyan]{name}[/cyan] state=[green]{state}[/green] cpus={cpus} mem={real_memory} gres={gres}
+# reservations.template = [cyan bold]{name}[/cyan bold] {start_time} -> {end_time} users=[hot_pink]{users}[/hot_pink]
+# coordinators.template = [cyan]{account}[/cyan]: [green]{name}[/green]
+# users.template = [cyan]{name}[/cyan] ({default_account})
+# jobs.template = [cyan bold]{job_id}[/cyan bold] [white]{name}[/white] user=[blue]{user_name}[/blue] state=[yellow]{job_state}[/yellow] end=[dim]{endlimit}[/dim] nodes={node_count}
+
+# ============================================================================
+# Detailed Profile - Template-based, multi-line per item
+# ============================================================================
+
+# [profile:detailed]
+# accounts.template = [bold cyan]{name}[/bold cyan]\n  Description: {description}\n  Organization: [green]{organization}[/green]\n  Coordinators: [yellow]{coordinators}[/yellow]
+# reservations.template = [bold cyan]{name}[/bold cyan]\n  Time: {start_time} → {end_time}\n  Nodes: {node_list} ({node_count})\n  Users: [hot_pink]{users}[/hot_pink]\n  Accounts: [green]{accounts}[/green]
+# jobs.template = [bold cyan]{job_id}[/bold cyan] - {name}\n  User: [blue]{user_name}[/blue] Account: [green]{account}[/green]\n  State: [yellow]{job_state}[/yellow] Partition: [magenta]{partition}[/magenta]\n  Nodes: {node_count} ({nodes}) GRES: [magenta]{gres}[/magenta]\n  Start: {start_time} End/Limit: {endlimit}\n  Reason: {reason}
+
+# ============================================================================
+# Custom Profile Example
+# ============================================================================
+
+# [profile:myprofile]
+# # Mix columns and templates as needed per resource
+# accounts.template = [bold magenta]{name}[/bold magenta] ➜ {description}{?coordinators  [Coords: {coordinators}]}
+# qos.columns = name,priority,flags
+# qos.styles.name = bold yellow
+# qos.styles.priority = green
+# # Use conditionals to show optional fields only when set
+# reservations.template = 📅 [cyan]{name}[/cyan] | {start_time} - {end_time}{?users  | 👥 [hot_pink]{users}[/hot_pink]}{?accounts  | 🏢 {accounts}}
+

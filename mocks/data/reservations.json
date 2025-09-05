@@ -1,0 +1,77 @@
+{
+  "reservations": [
+    {
+      "accounts": "",
+      "burst_buffer": "",
+      "core_count": 92,
+      "core_specializations": [
+      ],
+      "end_time": {
+        "set": true,
+        "infinite": false,
+        "number": 1801592161
+      },
+      "features": "",
+      "flags": [
+        "SPEC_NODES"
+      ],
+      "groups": "",
+      "licenses": "",
+      "max_start_delay": 0,
+      "name": "test_reservation",
+      "node_count": 4,
+      "node_list": "node-[02-05]",
+      "partition": "",
+      "purge_completed": {
+        "time": {
+          "set": true,
+          "infinite": false,
+          "number": 300
+        }
+      },
+      "start_time": {
+        "set": true,
+        "infinite": false,
+        "number": 1770056161
+      },
+      "watts": {
+      },
+      "tres": "cpu=92",
+      "users": "root"
+    }
+  ],
+  "last_update": {
+    "set": true,
+    "infinite": false,
+    "number": 1770056161
+  },
+  "meta": {
+    "plugin": {
+      "type": "",
+      "name": "",
+      "data_parser": "data_parser\/v0.0.41",
+      "accounting_storage": "accounting_storage\/slurmdbd"
+    },
+    "client": {
+      "source": "\/dev\/pts\/4",
+      "user": "root",
+      "group": "root"
+    },
+    "command": [
+      "show"
+    ],
+    "slurm": {
+      "version": {
+        "major": "24",
+        "micro": "5",
+        "minor": "05"
+      },
+      "release": "24.05.5",
+      "cluster": "mycluster"
+    }
+  },
+  "errors": [
+  ],
+  "warnings": [
+  ]
+}

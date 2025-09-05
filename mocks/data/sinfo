@@ -1,0 +1,8 @@
+PARTITION          AVAIL  TIMELIMIT  NODES  STATE NODELIST
+test*                 up    8:00:00      7  down* node-[03-04]
+test*                 up    8:00:00     24  drain node-[03-04,07,09]
+test*                 up    8:00:00    110    mix node-[05-10]
+test*                 up    8:00:00     24  alloc node-[01-02,11-12]
+production            up    8:00:00    110    mix node-[16,19,24]
+production            up    8:00:00     24  alloc node-[13-14,18,20-22]
+production            up    8:00:00    101   idle node-[15,17,23]
