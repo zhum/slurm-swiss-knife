@@ -1,0 +1,4 @@
+#!/usr/bin/bash
+export _CLICK_COMPLETE
+poetry run slurm-cli "$@"
+

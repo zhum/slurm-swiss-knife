@@ -1,0 +1,154 @@
+[tool.poetry]
+name = "slurm-cli"
+version = "0.1.0"
+description = "A CLI tool for Slurm cluster management with autocomplete functionality"
+authors = ["Sergey Zhumatiy <szhumatiy@gmail.com>"]
+maintainers = ["Sergey Zhumatiy <szhumatiy@gmail.com>"]
+readme = "README.md"
+license = "MIT"
+homepage = "https://github.com/zhum/slurm-cli"
+repository = "https://github.com/zhum/slurm-cli.git"
+documentation = "https://slurm-cli.readthedocs.io/"
+keywords = ["slurm", "cli", "cluster", "management", "hpc", "autocomplete"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: System Administrators",
+    "Intended Audience :: Developers",
+    "Operating System :: POSIX :: Linux",
+    "Operating System :: Unix",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: System :: Clustering",
+    "Topic :: System :: Systems Administration",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+    "Environment :: Console",
+]
+packages = [{include = "slurm_cli", from = "src"}]
+
+[tool.poetry.dependencies]
+python = "^3.9"
+fast-autocomplete = {extras = ["levenshtein"], version = "^0.9.0"}
+click = "^8.1.0"
+rich = "^13.0.0"
+rapidfuzz = "^3.13.0"
+
+[tool.poetry.group.dev.dependencies]
+pytest = "^7.0.0"
+pytest-cov = "^4.0.0"
+pytest-mock = "^3.0.0"
+black = "^23.0.0"
+flake8 = "^7.3.0"
+mypy = "^1.0.0"
+pre-commit = "^3.0.0"
+tox = "^4.0.0"
+isort = "^5.12.0"
+
+[tool.poetry.group.docs.dependencies]
+sphinx = "^5.0.0"
+sphinx-rtd-theme = "^1.0.0"
+myst-parser = "^1.0.0"
+
+[tool.poetry.scripts]
+slurm-cli = "slurm_cli.cli:main"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.black]
+line-length = 88
+target-version = ['py39']
+include = '\.pyi?$'
+extend-exclude = '''
+/(
+  # directories
+  \.eggs
+  | \.git
+  | \.hg
+  | \.mypy_cache
+  | \.tox
+  | \.venv
+  | build
+  | dist
+)/
+'''
+
+[tool.isort]
+profile = "black"
+multi_line_output = 3
+line_length = 88
+known_first_party = ["slurm_cli"]
+
+[tool.mypy]
+python_version = "3.9"
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = true
+disallow_incomplete_defs = true
+check_untyped_defs = true
+disallow_untyped_decorators = true
+no_implicit_optional = true
+warn_redundant_casts = true
+warn_unused_ignores = true
+warn_no_return = true
+warn_unreachable = true
+strict_equality = true
+
+[[tool.mypy.overrides]]
+module = [
+    "fast_autocomplete.*",
+    "rapidfuzz.*",
+]
+ignore_missing_imports = true
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
+addopts = [
+    "--strict-markers",
+    "--strict-config",
+]
+markers = [
+    "slow: marks tests as slow (deselect with '-m \"not slow\"')",
+    "integration: marks tests as integration tests",
+]
+
+[tool.coverage.run]
+source = ["src/slurm_cli"]
+omit = [
+    "*/tests/*",
+    "*/test_*",
+    "*/__pycache__/*",
+]
+
+[tool.coverage.report]
+exclude_lines = [
+    "pragma: no cover",
+    "def __repr__",
+    "if self.debug:",
+    "if settings.DEBUG",
+    "raise AssertionError",
+    "raise NotImplementedError",
+    "if 0:",
+    "if __name__ == .__main__.:",
+    "class .*\\bProtocol\\):",
+    "@(abc\\.)?abstractmethod",
+]
+
+[tool.flake8]
+max-line-length = 88
+extend-ignore = ["E203", "W503", "E501"]
+exclude = [
+    ".git",
+    "__pycache__",
+    "build",
+    "dist",
+    ".venv",
+    ".eggs",
+    "*.egg",
+]
