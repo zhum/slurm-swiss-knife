@@ -3,7 +3,7 @@
 import pytest
 from click.testing import CliRunner
 
-from slurm_swiss_knife.cli import main
+from slurm_cli.cli import main
 
 
 @pytest.fixture

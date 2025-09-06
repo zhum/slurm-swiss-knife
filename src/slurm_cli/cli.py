@@ -30,6 +30,7 @@ import json
 import subprocess
 
 import click
+from click_aliases import ClickAliasedGroup
 from rich.console import Console
 from rich.table import Table
 from rich.panel import Panel
@@ -156,14 +157,34 @@ class Resource:
         return subprocess.check_output(cmd, shell=True).decode('utf-8')
 
 
-@click.group()
+@click.group(cls=ClickAliasedGroup)
 @click.version_option()
 def main() -> None:
     """Slurm Swiss Knife - A CLI tool for Slurm cluster management."""
     pass
 
 
-@main.command(context_settings=CONTEXT_SETTINGS)
+def register_commands() -> None:
+    """Register all commands with their aliases using click-aliases."""
+    # Register commands with aliases (aliases are hidden from help)
+    main.add_command(show, name='show', aliases=['s'])
+    main.add_command(update, name='update',
+                     aliases=['u', 'set', 'modify', 'edit'])
+    main.add_command(create, name='create',
+                     aliases=['c', 'cr', 'add', 'new'])
+    main.add_command(delete, name='delete',
+                     aliases=['d', 'del', 'remove', 'rm'])
+    main.add_command(autocomplete, name='autocomplete',
+                     aliases=['auto', 'a', 'ac', 'autocomplete'])
+    main.add_command(list_resources, name='list-resources',
+                     aliases=['list', 'l', 'ls', 'resources'])
+    main.add_command(version, name='version',
+                     aliases=['v', 'ver', 'version'])
+    main.add_command(help_command, name='help',
+                     aliases=['h', '?'])
+
+
+@click.command(context_settings=CONTEXT_SETTINGS)
 @click.argument('resource',
                 type=click.Choice(get_resource_choices()),
                 required=False)
@@ -181,7 +202,7 @@ def show(resource: Optional[str], field: Optional[str], verbose: bool) -> None:
             console.print(f"Field: {field}")
 
 
-@main.command(context_settings=CONTEXT_SETTINGS)
+@click.command(context_settings=CONTEXT_SETTINGS)
 @click.argument('resource', type=click.Choice(get_resource_choices()))
 @click.argument('field')
 @click.argument('value')
@@ -196,7 +217,7 @@ def update(resource: str, field: str, value: str, dry_run: bool) -> None:
         console.print(f"Updating {resource}.{field} = {value}")
 
 
-@main.command(context_settings=CONTEXT_SETTINGS)
+@click.command(context_settings=CONTEXT_SETTINGS)
 @click.argument('resource', type=click.Choice(get_create_resource_choices()))
 @click.option('--name', '-n', help='Name for the new resource')
 @click.option('--dry-run', is_flag=True,
@@ -213,7 +234,7 @@ def create(resource: str, name: Optional[str], dry_run: bool) -> None:
             console.print(f"With name: {name}")
 
 
-@main.command(context_settings=CONTEXT_SETTINGS)
+@click.command(context_settings=CONTEXT_SETTINGS)
 @click.argument('resource', type=click.Choice(get_create_resource_choices()))
 @click.option('--name', '-n', help='Name of the resource to delete')
 @click.option('--force', '-f', is_flag=True,
@@ -239,7 +260,7 @@ def delete(resource: str, name: Optional[str], force: bool,
             console.print(f"With name: {name}")
 
 
-@main.command(context_settings=CONTEXT_SETTINGS)
+@click.command(context_settings=CONTEXT_SETTINGS)
 @click.argument('word', default='')
 @click.option('--max-cost', '-m', default=3,
               help='Maximum edit distance for fuzzy matching')
@@ -280,7 +301,7 @@ def autocomplete(word: str, max_cost: int, size: int) -> None:
         ))
 
 
-@main.command(context_settings=CONTEXT_SETTINGS)
+@click.command(context_settings=CONTEXT_SETTINGS)
 def list_resources() -> None:
     """List all available resource types and their fields."""
     table = Table(title="Available Slurm Resources")
@@ -311,11 +332,23 @@ def list_resources() -> None:
     console.print(table)
 
 
-@main.command(context_settings=CONTEXT_SETTINGS)
+@click.command(context_settings=CONTEXT_SETTINGS)
 def version() -> None:
     """Show version information."""
     console.print("[bold blue]Slurm Swiss Knife[/bold blue] v0.1.0")
     console.print("A CLI tool for Slurm cluster management")
+
+
+@click.command(context_settings=CONTEXT_SETTINGS)
+@click.pass_context
+def help_command(ctx: click.Context) -> None:
+    """Show help information."""
+    # Print the help for the main group
+    click.echo(ctx.parent.get_help() if ctx.parent else "Help not available")
+
+
+# Register commands when module is imported
+register_commands()
 
 
 if __name__ == "__main__":
