@@ -17,263 +17,1891 @@ Alternatively, you can generate a completion script file:
    _CLICK_COMPLETE=bash_source slurm-cli > \
        ~/.local/share/bash-completion/completions/slurm-cli
 
-Note: This requires Click's completion support which is available in Click \
-8.0+.
+Note: This requires Click's completion support
+which is available in Click 8.0+.
 """
 
-from enum import Enum
-from typing import Dict, List, Any, Optional
-import re
-import time
-import os
-import json
-import subprocess
+from typing import Any, Dict, List, Optional
 
 import click
-from click_aliases import ClickAliasedGroup
-from rich.console import Console
-from rich.table import Table
-from rich.panel import Panel
 from fast_autocomplete import AutoComplete
+from rich.panel import Panel
+from rich.table import Table
 
-from .utils.config import VERBS, ROUTES
+from .utils.accounts import Account
+from .utils.config import ROUTES, VERBS
+from .utils.coordinators import Coordinator
+from .utils.nodes import Node
+from .utils.partitions import Partition
+from .utils.qos import Qos
+from .utils.reservations import Reservation
+from .utils.resources import Resource, ResourceType
+from .utils.slurm_config import Config
+from .utils.users import User
+from .utils.utils import console
 
-# Initialize Rich console for better output
-console = Console()
+# , Union
 
-CONTEXT_SETTINGS = dict(help_option_names=['-h', '--help'])
+
+CONTEXT_SETTINGS = dict(help_option_names=["-h", "--help"])
 
 
 def get_resource_choices() -> List[str]:
-    routes = ROUTES['get-set']
+    routes = ROUTES["get-set"]
     if isinstance(routes, dict):
-        return list(routes.keys())
+        choices = list(routes.keys())
+        # Add aliases
+        aliases = {
+            "partitions": ["part", "parts"],
+            "nodes": ["node"],
+            "users": ["user"],
+            "qos": ["qoses"],
+            "accounts": ["acc", "account"],
+            "reservations": ["res", "reservation"],
+            "coordinators": ["coord", "coordinator"],
+        }
+        for resource, alias_list in aliases.items():
+            if resource in choices:
+                choices.extend(alias_list)
+        return choices
     return []
 
 
 def get_create_resource_choices() -> List[str]:
-    routes = ROUTES['create']
+    routes = ROUTES["create"]
     if isinstance(routes, dict):
-        return list(routes.keys())
+        choices = list(routes.keys())
+        # Add aliases
+        aliases = {
+            "partitions": ["part", "parts"],
+            "nodes": ["node"],
+            "users": ["user"],
+            "qos": ["qoses"],
+            "accounts": ["acc", "account"],
+            "reservations": ["res", "reservation"],
+            "coordinators": ["coord", "coordinator"],
+        }
+        for resource, alias_list in aliases.items():
+            if resource in choices:
+                choices.extend(alias_list)
+        return choices
     return []
+
+
+def resolve_resource_alias(resource: str) -> str:
+    """Resolve resource alias to canonical name."""
+    aliases = {
+        "part": "partitions",
+        "parts": "partitions",
+        "node": "nodes",
+        "user": "users",
+        "qoses": "qos",
+        "acc": "accounts",
+        "account": "accounts",
+        "res": "reservations",
+        "reservation": "reservations",
+        "coord": "coordinators",
+        "coordinator": "coordinators",
+    }
+    return aliases.get(resource, resource)
 
 
 def create_autocomplete() -> AutoComplete:
     """Create and return an autocomplete instance."""
-    words: Dict[str, Dict[str, Any]] = {value: {} for value in VERBS.keys()}
+    words: Dict[str, Dict[str, Any]] = {
+        value: {} for value in VERBS.keys()
+    }
     return AutoComplete(words=words, synonyms=VERBS)
 
 
-class ResourceType(str, Enum):
-    """Enum for available resource types."""
-    partitions = "partitions"
-    nodes = "nodes"
-    jobs = "jobs"
-    users = "users"
-    qos = "qos"
-    accounts = "accounts"
-    reservations = "reservations"
-    config = "config"
-    unknown = "unknown"
+def show_command_help_with_resources(
+    ctx: click.Context, param: click.Parameter, value: bool
+) -> None:
+    """Custom help callback that shows command help plus resource list."""
+    if not value or ctx.resilient_parsing:
+        return
+
+    # Show the standard command help
+    click.echo(ctx.get_help())
+
+    # Add the resource list
+    console.print("\n[bold]Available Slurm Resources:[/bold]")
+    table = Table()
+    table.add_column("Resource Type", style="cyan", no_wrap=True)
+    table.add_column("Available Fields", style="green")
+    table.add_column("Operations", style="yellow")
+
+    routes = ROUTES["get-set"]
+    if isinstance(routes, dict):
+        for resource_type, fields in routes.items():
+            if isinstance(fields, dict):
+                field_list = (
+                    ", ".join(fields.keys()) if fields else "N/A"
+                )
+            else:
+                field_list = "N/A"
+            operations: List[str] = []
+            if (
+                isinstance(ROUTES["get-set"], dict)
+                and resource_type in ROUTES["get-set"]
+            ):
+                operations.append("get/set")
+            if (
+                isinstance(ROUTES["create"], dict)
+                and resource_type in ROUTES["create"]
+            ):
+                operations.append("create")
+            if (
+                isinstance(ROUTES["create"], dict)
+                and resource_type in ROUTES["create"]
+            ):
+                operations.append("delete")
+
+            table.add_row(
+                resource_type, field_list, ", ".join(operations)
+            )
+
+    console.print(table)
+    ctx.exit()
 
 
-class Resource:
-    CACHE_TIMEOUT = 60
-    cached_nodes_file = "/tmp/slurm_cli_nodes.json"
-    cached_partitions_file = "/tmp/slurm_cli_partitions.json"
-    cached_jobs_file = "/tmp/slurm_cli_jobs.json"
-    cached_users_file = "/tmp/slurm_cli_users.json"
-    cached_qos_file = "/tmp/slurm_cli_qos.json"
-    cached_accounts_file = "/tmp/slurm_cli_accounts.json"
-    cached_reservations_file = "/tmp/slurm_cli_reservations.json"
-
-    @classmethod
-    def guess_resource_type(cls, name: str) -> ResourceType:
-        """Guess the resource type from the resource name."""
-        if re.match(r"^[0-9_]+$", name):
-            return ResourceType.jobs
-        if cls.cached_resource(name,
-                               cls.cached_nodes_file,
-                               "scontrol show node --json",
-                               ResourceType.nodes):
-            return ResourceType.nodes
-        if cls.cached_resource(name,
-                               cls.cached_partitions_file,
-                               "scontrol show partition --json",
-                               ResourceType.partitions):
-            return ResourceType.partitions
-        if cls.cached_resource(name, cls.cached_users_file,
-                               "sacctmgr show user --json",
-                               ResourceType.users):
-            return ResourceType.users
-        if cls.cached_resource(name, cls.cached_qos_file,
-                               "sacctmgr show qos --json",
-                               ResourceType.qos):
-            return ResourceType.qos
-        if cls.cached_resource(name, cls.cached_accounts_file,
-                               "sacctmgr show accounts --json",
-                               ResourceType.accounts):
-            return ResourceType.accounts
-        if cls.cached_resource(name, cls.cached_reservations_file,
-                               "scontrol show reservations --json",
-                               ResourceType.reservations):
-            return ResourceType.reservations
-        return ResourceType.unknown
-
-    @classmethod
-    def update_cache(cls, file: str, cmd: str) -> Dict[str, Any]:
-        raw_data = cls.run_cmd_json("scontrol show node --json")
-        data = {node['name']: node for node in raw_data["nodes"]}
-        with open(cls.cached_nodes_file, 'w') as f:
-            json.dump(data, f)
-            os.chmod(cls.cached_nodes_file, 0o600)
-        return data
-
-    @classmethod
-    def cached_resource(cls, name: str, file: str, cmd: str, resource_type: ResourceType) -> bool:  # noqa: E501
-        """Check if the resource is a cached resource."""
-        if os.path.exists(file):
-            file_mtime = os.path.getmtime(file)
-            if time.time() - file_mtime < cls.CACHE_TIMEOUT:
-                with open(file, 'r') as f:
-                    raw_data = json.load(f)
-                data = {resource['name']: resource for resource in raw_data.get(resource_type, [])}  # noqa: E501
-                return name in data
-
-        cls.update_cache(file, cmd)
-        return name in data
-
-    @classmethod
-    def run_cmd_json(cls, cmd: str) -> Dict[str, Any]:
-        """Run a command and return the JSON output."""
-        result = json.loads(cls.run_cmd(cmd))
-        if isinstance(result, dict):
-            return result
-        return {}
-
-    @classmethod
-    def run_cmd(cls, cmd: str) -> str:
-        """Run a command and return the output."""
-        return subprocess.check_output(cmd, shell=True).decode('utf-8')
-
-
-@click.group(cls=ClickAliasedGroup)
+@click.group(context_settings=CONTEXT_SETTINGS)
 @click.version_option()
+@click.help_option("-h", "--help")
 def main() -> None:
     """Slurm Swiss Knife - A CLI tool for Slurm cluster management."""
     pass
 
 
+class CustomGroup(click.Group):
+    """Custom Click group that hides alias commands from help."""
+
+    def format_commands(self, ctx, formatter):
+        """Custom command formatter that filters out aliases."""
+        commands = []
+        for subcommand in self.list_commands(ctx):
+            cmd = self.get_command(ctx, subcommand)
+            # Skip commands that are aliases (contain "alias for" in help)
+            if cmd and cmd.help:
+                if "alias for" not in cmd.help.lower():
+                    commands.append((subcommand, cmd))
+            elif cmd:
+                commands.append((subcommand, cmd))
+
+        if commands:
+            with formatter.section("Commands"):
+                formatter.write_dl(
+                    [
+                        (name, cmd.help or cmd.short_help or "")
+                        for name, cmd in commands
+                    ]
+                )
+
+
+# Change the main group to use our custom group class
+main.__class__ = CustomGroup
+
+
 def register_commands() -> None:
-    """Register all commands with their aliases using click-aliases."""
-    # Register commands with aliases (aliases are hidden from help)
-    main.add_command(show, name='show', aliases=['s'])
-    main.add_command(update, name='update',
-                     aliases=['u', 'set', 'modify', 'edit'])
-    main.add_command(create, name='create',
-                     aliases=['c', 'cr', 'add', 'new'])
-    main.add_command(delete, name='delete',
-                     aliases=['d', 'del', 'remove', 'rm'])
-    main.add_command(autocomplete, name='autocomplete',
-                     aliases=['auto', 'a', 'ac', 'autocomplete'])
-    main.add_command(list_resources, name='list-resources',
-                     aliases=['list', 'l', 'ls', 'resources'])
-    main.add_command(version, name='version',
-                     aliases=['v', 'ver', 'version'])
-    main.add_command(help_command, name='help',
-                     aliases=['h', '?'])
+    """Register all commands."""
+    # Clear existing commands to avoid duplicates
+    main.commands.clear()
+
+    # Register main commands only (aliases are still functional but hidden from help)
+    main.add_command(show, name="show")
+    main.add_command(update, name="update")
+    main.add_command(create, name="create")
+    main.add_command(delete, name="delete")
+    main.add_command(list_resources, name="list-resources")
+    main.add_command(autocomplete, name="autocomplete")
+    main.add_command(help, name="help")
+    main.add_command(version, name="version")
+
+    # Register aliases but hide them from help by not adding them to the main group
+    # Instead, we'll add them as separate commands that don't appear in help
+    # Show aliases
+    main.add_command(show_alias_sh, name="sh")
+    main.add_command(show_alias_s, name="s")
+
+    # Update aliases
+    main.add_command(update_alias_u, name="u")
+    main.add_command(update_alias_edit, name="edit")
+    main.add_command(update_alias_mod, name="mod")
+    main.add_command(update_alias_modify, name="modify")
+
+    # Create aliases
+    main.add_command(create_alias_c, name="c")
+    main.add_command(create_alias_new, name="new")
+    main.add_command(create_alias_add, name="add")
+
+    # Delete aliases
+    main.add_command(delete_alias_del, name="del")
+    main.add_command(delete_alias_d, name="d")
+    main.add_command(delete_alias_remove, name="remove")
+    main.add_command(delete_alias_rem, name="rem")
+    main.add_command(delete_alias_rm, name="rm")
+
+    # List-resources aliases
+    main.add_command(list_resources_alias_list, name="list")
+    main.add_command(list_resources_alias_ls, name="ls")
+    main.add_command(list_resources_alias_l, name="l")
 
 
+# Show command
 @click.command(context_settings=CONTEXT_SETTINGS)
-@click.argument('resource',
-                type=click.Choice(get_resource_choices()),
-                required=False)
-@click.argument('field', required=False)
-@click.option('--verbose', '-v', is_flag=True, help='Enable verbose output')
-def show(resource: Optional[str], field: Optional[str], verbose: bool) -> None:
-    """Show information about Slurm resources."""
-    if verbose:
-        console.print(f"[bold blue]Showing[/bold blue] {resource}")
+@click.argument(
+    "resource",
+    type=str,  # lick.Choice(get_resource_choices()),
+    required=True,
+)
+@click.argument("field", required=False)
+@click.option(
+    "--verbose", "-v", is_flag=True, help="Enable verbose output"
+)
+@click.option(
+    "--help",
+    "-h",
+    is_flag=True,
+    is_eager=True,
+    callback=show_command_help_with_resources,
+    help="Show this message and exit.",
+)
+def show(
+    resource: Optional[str],
+    field: Optional[str],
+    verbose: bool,
+    **kwargs,
+) -> None:
+    """Show information about Slurm resources (aliases: sh, s)."""
+    if resource == "config":
+        Config.show()
+    elif resource[0:4] == "node":
         if field:
-            console.print(f"[bold green]Field:[/bold green] {field}")
-    else:
-        console.print(f"Showing {resource}")
+            if Resource.cached_resource(
+                resource,
+                Resource.cached_nodes_file,
+                "scontrol show node --json",
+                ResourceType.nodes,
+            ):
+                Node.show(field)
+            else:
+                console.print(f"[red]Node '{field}' not found.[/red]")
+        else:
+            Node.show()
+    elif resource[:4] == "part":
         if field:
-            console.print(f"Field: {field}")
-
-
-@click.command(context_settings=CONTEXT_SETTINGS)
-@click.argument('resource', type=click.Choice(get_resource_choices()))
-@click.argument('field')
-@click.argument('value')
-@click.option('--dry-run', is_flag=True,
-              help='Show what would be updated without making changes')
-def update(resource: str, field: str, value: str, dry_run: bool) -> None:
-    """Update Slurm resource fields."""
-    if dry_run:
-        console.print(f"[yellow]DRY RUN:[/yellow] Would update "
-                      f"{resource}.{field} = {value}")
+            if Resource.cached_resource(
+                resource,
+                Resource.cached_partitions_file,
+                "scontrol show partition --json",
+                ResourceType.partitions,
+            ):
+                Partition.show(field)
+            else:
+                console.print(
+                    f"[red]Partition '{field}' not found.[/red]"
+                )
+        else:
+            Partition.show()
+    elif resource[:4] == "user":
+        if field:
+            if Resource.cached_resource(
+                resource,
+                Resource.cached_users_file,
+                "sacctmgr show user --json",
+                ResourceType.users,
+            ):
+                User.show(field)
+            else:
+                console.print(f"[red]User '{field}' not found.[/red]")
+        else:
+            User.show()
+    elif resource[:3] == "qos":
+        if field:
+            if Resource.cached_resource(
+                resource,
+                Resource.cached_qos_file,
+                "sacctmgr show qos --json",
+                ResourceType.qos,
+            ):
+                Qos.show(field)
+            else:
+                console.print(f"[red]Qos '{field}' not found.[/red]")
+        else:
+            Qos.show()
+    elif resource[:3] == "acc":
+        if field:
+            if Resource.cached_resource(
+                resource,
+                Resource.cached_accounts_file,
+                "sacctmgr show accounts --json",
+                ResourceType.accounts,
+            ):
+                Account.show(field)
+            else:
+                console.print(
+                    f"[red]Account '{field}' not found.[/red]"
+                )
+        else:
+            Account.show()
+    elif resource[:3] == "res" and Resource.cached_resource(
+        resource,
+        Resource.cached_reservations_file,
+        "scontrol show reservations --json",
+        ResourceType.reservations,
+    ):
+        Partition.show(field)
+    elif resource[:5] == "coord":
+        if field:
+            if Resource.cached_resource(
+                resource,
+                Resource.cached_coordinators_file,
+                "sacctmgr show coordinators --json",
+                ResourceType.coordinators,
+            ):
+                Coordinator.show(field)
+            else:
+                console.print(
+                    f"[red]Coordinator '{field}' not found.[/red]"
+                )
+        else:
+            Coordinator.show()
     else:
-        console.print(f"Updating {resource}.{field} = {value}")
+        console.print(f"[red]Resource '{resource}' not found.[/red]")
 
 
-@click.command(context_settings=CONTEXT_SETTINGS)
-@click.argument('resource', type=click.Choice(get_create_resource_choices()))
-@click.option('--name', '-n', help='Name for the new resource')
-@click.option('--dry-run', is_flag=True,
-              help='Show what would be created without making changes')
-def create(resource: str, name: Optional[str], dry_run: bool) -> None:
-    """Create new Slurm resources."""
-    if dry_run:
-        console.print(f"[yellow]DRY RUN:[/yellow] Would create new {resource}")
-        if name:
-            console.print(f"[yellow]DRY RUN:[/yellow] With name: {name}")
+# Show command aliases
+@click.command(context_settings=CONTEXT_SETTINGS, name="sh")
+@click.argument(
+    "resource",
+    type=click.Choice(get_resource_choices()),
+    required=False,
+)
+@click.argument("field", required=False)
+@click.option(
+    "--verbose", "-v", is_flag=True, help="Enable verbose output"
+)
+@click.option(
+    "--help",
+    "-h",
+    is_flag=True,
+    is_eager=True,
+    callback=show_command_help_with_resources,
+    help="Show this message and exit.",
+)
+def show_alias_sh(
+    resource: Optional[str],
+    field: Optional[str],
+    verbose: bool,
+    **kwargs,
+) -> None:
+    """Show information about Slurm resources (alias for show)."""
+    # Call the show function directly with the same logic
+    if resource == "config":
+        Config.show()
+    elif resource and resource[0:4] == "node":
+        if field:
+            Node.show(field)
+        else:
+            Node.show()
+    elif resource and resource[0:4] == "part":
+        if field:
+            Partition.show(field)
+        else:
+            Partition.show()
+    elif resource and resource[0:4] == "user":
+        if field:
+            User.show(field)
+        else:
+            User.show()
+    elif resource and resource[0:3] == "qos":
+        if field:
+            Qos.show(field)
+        else:
+            Qos.show()
+    elif resource and resource[0:3] == "acc":
+        if field:
+            Account.show(field)
+        else:
+            Account.show()
+    elif resource and resource[0:3] == "res":
+        if field:
+            Reservation.show(field)
+        else:
+            Reservation.show()
+    elif resource and resource[0:5] == "coord":
+        if field:
+            if field in (
+                ResourceType.partitions,
+                ResourceType.nodes,
+                ResourceType.jobs,
+                ResourceType.users,
+                ResourceType.qos,
+                ResourceType.accounts,
+                ResourceType.reservations,
+                ResourceType.coordinators,
+            ):
+                Coordinator.show(field)
+            else:
+                console.print(
+                    f"[red]Coordinator '{field}' not found.[/red]"
+                )
+        else:
+            Coordinator.show()
     else:
-        console.print(f"Creating new {resource}")
-        if name:
-            console.print(f"With name: {name}")
+        console.print(f"[red]Resource '{resource}' not found.[/red]")
+
+
+@click.command(context_settings=CONTEXT_SETTINGS, name="s")
+@click.argument(
+    "resource",
+    type=click.Choice(get_resource_choices()),
+    required=False,
+)
+@click.argument("field", required=False)
+@click.option(
+    "--verbose", "-v", is_flag=True, help="Enable verbose output"
+)
+@click.option(
+    "--help",
+    "-h",
+    is_flag=True,
+    is_eager=True,
+    callback=show_command_help_with_resources,
+    help="Show this message and exit.",
+)
+def show_alias_s(
+    resource: Optional[str],
+    field: Optional[str],
+    verbose: bool,
+    **kwargs,
+) -> None:
+    """Show information about Slurm resources (alias for show)."""
+    # Call the show function directly with the same logic
+    if resource == "config":
+        Config.show()
+    elif resource and resource[0:4] == "node":
+        if field:
+            Node.show(field)
+        else:
+            Node.show()
+    elif resource and resource[0:4] == "part":
+        if field:
+            Partition.show(field)
+        else:
+            Partition.show()
+    elif resource and resource[0:4] == "user":
+        if field:
+            User.show(field)
+        else:
+            User.show()
+    elif resource and resource[0:3] == "qos":
+        if field:
+            Qos.show(field)
+        else:
+            Qos.show()
+    elif resource and resource[0:3] == "acc":
+        if field:
+            Account.show(field)
+        else:
+            Account.show()
+    elif resource and resource[0:3] == "res":
+        if field:
+            Reservation.show(field)
+        else:
+            Reservation.show()
+    elif resource and resource[0:5] == "coord":
+        if field:
+            if field in (
+                ResourceType.partitions,
+                ResourceType.nodes,
+                ResourceType.jobs,
+                ResourceType.users,
+                ResourceType.qos,
+                ResourceType.accounts,
+                ResourceType.reservations,
+                ResourceType.coordinators,
+            ):
+                Coordinator.show(field)
+            else:
+                console.print(
+                    f"[red]Coordinator '{field}' not found.[/red]"
+                )
+        else:
+            Coordinator.show()
+    else:
+        console.print(f"[red]Resource '{resource}' not found.[/red]")
+
+
+# Update command
+@click.command(context_settings=CONTEXT_SETTINGS)
+@click.argument("resource", type=click.Choice(get_resource_choices()))
+@click.argument("field")
+@click.argument("value")
+@click.argument("names", nargs=-1, required=False)
+@click.option(
+    "--verbose", "-v", is_flag=True, help="Enable verbose output"
+)
+@click.option(
+    "--dry-run",
+    is_flag=True,
+    help="Show what would be updated without making changes",
+)
+@click.option(
+    "--help",
+    "-h",
+    is_flag=True,
+    is_eager=True,
+    callback=show_command_help_with_resources,
+    help="Show this message and exit.",
+)
+def update(
+    resource: str,
+    field: str,
+    value: str,
+    names: tuple,
+    verbose: bool,
+    dry_run: bool,
+    **kwargs,
+) -> None:
+    """Update Slurm resource fields (aliases: u, edit, mod, modify)."""
+    # Resolve resource alias to canonical name
+    canonical_resource = resolve_resource_alias(resource)
+
+    # Parse additional arguments into key-value pairs
+    update_options = {}
+    if names:
+        for arg in names:
+            if "=" in arg:
+                # Handle key=value format
+                key, value_part = arg.split("=", 1)
+                update_options[key] = value_part
+            else:
+                # Treat as a simple value
+                update_options[arg] = None
+
+    # Build the update message
+    if names:
+        additional_args = " ".join(f"'{arg}'" for arg in names)
+        if dry_run:
+            console.print(
+                f"[yellow]DRY RUN:[/yellow] Would update "
+                f"{canonical_resource} {field} '{value}' {additional_args}"
+            )
+        else:
+            if verbose:
+                console.print(
+                    f"Updating {canonical_resource} {field} '{value}' "
+                    f"{additional_args}"
+                )
+
+            if canonical_resource[:4] == "part":
+                Partition.update(field, verbose, **update_options)
+            elif canonical_resource[:4] == "node":
+                Node.update(field, verbose, **update_options)
+            elif canonical_resource[:4] == "user":
+                User.update(field, verbose, **update_options)
+            elif canonical_resource[:3] == "qos":
+                Qos.update(field, verbose, **update_options)
+            elif canonical_resource[:3] == "acc":
+                Account.update(field, verbose, **update_options)
+            elif canonical_resource[:3] == "res":
+                Reservation.update(field, verbose, **update_options)
+            elif canonical_resource[:5] == "coord":
+                Coordinator.update(field, verbose, **update_options)
+            elif canonical_resource[:4] == "conf":
+                Config.update(field, verbose, **update_options)
+            # elif canonical_resource[:3] == "job":
+            #     Job.update(field, verbose, **update_options)
+            else:
+                console.print(
+                    f"[red]Resource '{canonical_resource}' not found.[/red]"
+                )
+    else:
+        # If no additional arguments, show general update message
+        if dry_run:
+            console.print(
+                f"[yellow]DRY RUN:[/yellow] Would update "
+                f"{canonical_resource} {field} '{value}'"
+            )
+        else:
+            console.print(
+                f"Updating {canonical_resource} {field} '{value}'"
+            )
+
+
+# Update command aliases
+@click.command(context_settings=CONTEXT_SETTINGS, name="u")
+@click.argument("resource", type=click.Choice(get_resource_choices()))
+@click.argument("field")
+@click.argument("value")
+@click.argument("names", nargs=-1, required=False)
+@click.option(
+    "--verbose", "-v", is_flag=True, help="Enable verbose output"
+)
+@click.option(
+    "--dry-run",
+    is_flag=True,
+    help="Show what would be updated without making changes",
+)
+@click.option(
+    "--help",
+    "-h",
+    is_flag=True,
+    is_eager=True,
+    callback=show_command_help_with_resources,
+    help="Show this message and exit.",
+)
+def update_alias_u(
+    resource: str,
+    field: str,
+    value: str,
+    names: tuple,
+    verbose: bool,
+    dry_run: bool,
+    **kwargs,
+) -> None:
+    """Update Slurm resource fields (alias for update)."""
+    # Resolve resource alias to canonical name
+    canonical_resource = resolve_resource_alias(resource)
+
+    # Parse additional arguments into key-value pairs
+    update_options = {}
+    if names:
+        for arg in names:
+            if "=" in arg:
+                # Handle key=value format
+                key, value_part = arg.split("=", 1)
+                update_options[key] = value_part
+            else:
+                # Treat as a simple value
+                update_options[arg] = None
+
+    # Build the update message
+    if names:
+        additional_args = " ".join(f"'{arg}'" for arg in names)
+        if dry_run:
+            console.print(
+                f"[yellow]DRY RUN:[/yellow] Would update "
+                f"{canonical_resource} {field} '{value}' {additional_args}"
+            )
+        else:
+            if verbose:
+                console.print(
+                    f"Updating {canonical_resource} {field} '{value}' "
+                    f"{additional_args}"
+                )
+
+            if canonical_resource[:4] == "part":
+                Partition.update(field, verbose, **update_options)
+            elif canonical_resource[:4] == "node":
+                Node.update(field, verbose, **update_options)
+            elif canonical_resource[:4] == "user":
+                User.update(field, verbose, **update_options)
+            elif canonical_resource[:3] == "qos":
+                Qos.update(field, verbose, **update_options)
+            elif canonical_resource[:3] == "acc":
+                Account.update(field, verbose, **update_options)
+            elif canonical_resource[:3] == "res":
+                Reservation.update(field, verbose, **update_options)
+            elif canonical_resource[:5] == "coord":
+                Coordinator.update(field, verbose, **update_options)
+            elif canonical_resource[:4] == "conf":
+                Config.update(field, verbose, **update_options)
+            else:
+                console.print(
+                    f"[red]Resource '{canonical_resource}' not found.[/red]"
+                )
+    else:
+        # If no additional arguments, show general update message
+        if dry_run:
+            console.print(
+                f"[yellow]DRY RUN:[/yellow] Would update "
+                f"{canonical_resource} {field} '{value}'"
+            )
+        else:
+            console.print(
+                f"Updating {canonical_resource} {field} '{value}'"
+            )
+
+
+@click.command(context_settings=CONTEXT_SETTINGS, name="edit")
+@click.argument("resource", type=click.Choice(get_resource_choices()))
+@click.argument("field")
+@click.argument("value")
+@click.argument("names", nargs=-1, required=False)
+@click.option(
+    "--verbose", "-v", is_flag=True, help="Enable verbose output"
+)
+@click.option(
+    "--dry-run",
+    is_flag=True,
+    help="Show what would be updated without making changes",
+)
+@click.option(
+    "--help",
+    "-h",
+    is_flag=True,
+    is_eager=True,
+    callback=show_command_help_with_resources,
+    help="Show this message and exit.",
+)
+def update_alias_edit(
+    resource: str,
+    field: str,
+    value: str,
+    names: tuple,
+    verbose: bool,
+    dry_run: bool,
+    **kwargs,
+) -> None:
+    """Update Slurm resource fields (alias for update)."""
+    # Resolve resource alias to canonical name
+    canonical_resource = resolve_resource_alias(resource)
+
+    # Parse additional arguments into key-value pairs
+    update_options = {}
+    if names:
+        for arg in names:
+            if "=" in arg:
+                # Handle key=value format
+                key, value_part = arg.split("=", 1)
+                update_options[key] = value_part
+            else:
+                # Treat as a simple value
+                update_options[arg] = None
+
+    # Build the update message
+    if names:
+        additional_args = " ".join(f"'{arg}'" for arg in names)
+        if dry_run:
+            console.print(
+                f"[yellow]DRY RUN:[/yellow] Would update "
+                f"{canonical_resource} {field} '{value}' {additional_args}"
+            )
+        else:
+            if verbose:
+                console.print(
+                    f"Updating {canonical_resource} {field} '{value}' "
+                    f"{additional_args}"
+                )
+
+            if canonical_resource[:4] == "part":
+                Partition.update(field, verbose, **update_options)
+            elif canonical_resource[:4] == "node":
+                Node.update(field, verbose, **update_options)
+            elif canonical_resource[:4] == "user":
+                User.update(field, verbose, **update_options)
+            elif canonical_resource[:3] == "qos":
+                Qos.update(field, verbose, **update_options)
+            elif canonical_resource[:3] == "acc":
+                Account.update(field, verbose, **update_options)
+            elif canonical_resource[:3] == "res":
+                Reservation.update(field, verbose, **update_options)
+            elif canonical_resource[:5] == "coord":
+                Coordinator.update(field, verbose, **update_options)
+            elif canonical_resource[:4] == "conf":
+                Config.update(field, verbose, **update_options)
+            else:
+                console.print(
+                    f"[red]Resource '{canonical_resource}' not found.[/red]"
+                )
+    else:
+        # If no additional arguments, show general update message
+        if dry_run:
+            console.print(
+                f"[yellow]DRY RUN:[/yellow] Would update "
+                f"{canonical_resource} {field} '{value}'"
+            )
+        else:
+            console.print(
+                f"Updating {canonical_resource} {field} '{value}'"
+            )
+
+
+@click.command(context_settings=CONTEXT_SETTINGS, name="mod")
+@click.argument("resource", type=click.Choice(get_resource_choices()))
+@click.argument("field")
+@click.argument("value")
+@click.argument("names", nargs=-1, required=False)
+@click.option(
+    "--verbose", "-v", is_flag=True, help="Enable verbose output"
+)
+@click.option(
+    "--dry-run",
+    is_flag=True,
+    help="Show what would be updated without making changes",
+)
+@click.option(
+    "--help",
+    "-h",
+    is_flag=True,
+    is_eager=True,
+    callback=show_command_help_with_resources,
+    help="Show this message and exit.",
+)
+def update_alias_mod(
+    resource: str,
+    field: str,
+    value: str,
+    names: tuple,
+    verbose: bool,
+    dry_run: bool,
+    **kwargs,
+) -> None:
+    """Update Slurm resource fields (alias for update)."""
+    # Resolve resource alias to canonical name
+    canonical_resource = resolve_resource_alias(resource)
+
+    # Parse additional arguments into key-value pairs
+    update_options = {}
+    if names:
+        for arg in names:
+            if "=" in arg:
+                # Handle key=value format
+                key, value_part = arg.split("=", 1)
+                update_options[key] = value_part
+            else:
+                # Treat as a simple value
+                update_options[arg] = None
+
+    # Build the update message
+    if names:
+        additional_args = " ".join(f"'{arg}'" for arg in names)
+        if dry_run:
+            console.print(
+                f"[yellow]DRY RUN:[/yellow] Would update "
+                f"{canonical_resource} {field} '{value}' {additional_args}"
+            )
+        else:
+            if verbose:
+                console.print(
+                    f"Updating {canonical_resource} {field} '{value}' "
+                    f"{additional_args}"
+                )
+
+            if canonical_resource[:4] == "part":
+                Partition.update(field, verbose, **update_options)
+            elif canonical_resource[:4] == "node":
+                Node.update(field, verbose, **update_options)
+            elif canonical_resource[:4] == "user":
+                User.update(field, verbose, **update_options)
+            elif canonical_resource[:3] == "qos":
+                Qos.update(field, verbose, **update_options)
+            elif canonical_resource[:3] == "acc":
+                Account.update(field, verbose, **update_options)
+            elif canonical_resource[:3] == "res":
+                Reservation.update(field, verbose, **update_options)
+            elif canonical_resource[:5] == "coord":
+                Coordinator.update(field, verbose, **update_options)
+            elif canonical_resource[:4] == "conf":
+                Config.update(field, verbose, **update_options)
+            else:
+                console.print(
+                    f"[red]Resource '{canonical_resource}' not found.[/red]"
+                )
+    else:
+        # If no additional arguments, show general update message
+        if dry_run:
+            console.print(
+                f"[yellow]DRY RUN:[/yellow] Would update "
+                f"{canonical_resource} {field} '{value}'"
+            )
+        else:
+            console.print(
+                f"Updating {canonical_resource} {field} '{value}'"
+            )
+
+
+@click.command(context_settings=CONTEXT_SETTINGS, name="modify")
+@click.argument("resource", type=click.Choice(get_resource_choices()))
+@click.argument("field")
+@click.argument("value")
+@click.argument("names", nargs=-1, required=False)
+@click.option(
+    "--verbose", "-v", is_flag=True, help="Enable verbose output"
+)
+@click.option(
+    "--dry-run",
+    is_flag=True,
+    help="Show what would be updated without making changes",
+)
+@click.option(
+    "--help",
+    "-h",
+    is_flag=True,
+    is_eager=True,
+    callback=show_command_help_with_resources,
+    help="Show this message and exit.",
+)
+def update_alias_modify(
+    resource: str,
+    field: str,
+    value: str,
+    names: tuple,
+    verbose: bool,
+    dry_run: bool,
+    **kwargs,
+) -> None:
+    """Update Slurm resource fields (alias for update)."""
+    # Resolve resource alias to canonical name
+    canonical_resource = resolve_resource_alias(resource)
+
+    # Parse additional arguments into key-value pairs
+    update_options = {}
+    if names:
+        for arg in names:
+            if "=" in arg:
+                # Handle key=value format
+                key, value_part = arg.split("=", 1)
+                update_options[key] = value_part
+            else:
+                # Treat as a simple value
+                update_options[arg] = None
+
+    # Build the update message
+    if names:
+        additional_args = " ".join(f"'{arg}'" for arg in names)
+        if dry_run:
+            console.print(
+                f"[yellow]DRY RUN:[/yellow] Would update "
+                f"{canonical_resource} {field} '{value}' {additional_args}"
+            )
+        else:
+            if verbose:
+                console.print(
+                    f"Updating {canonical_resource} {field} '{value}' "
+                    f"{additional_args}"
+                )
+
+            if canonical_resource[:4] == "part":
+                Partition.update(field, verbose, **update_options)
+            elif canonical_resource[:4] == "node":
+                Node.update(field, verbose, **update_options)
+            elif canonical_resource[:4] == "user":
+                User.update(field, verbose, **update_options)
+            elif canonical_resource[:3] == "qos":
+                Qos.update(field, verbose, **update_options)
+            elif canonical_resource[:3] == "acc":
+                Account.update(field, verbose, **update_options)
+            elif canonical_resource[:3] == "res":
+                Reservation.update(field, verbose, **update_options)
+            elif canonical_resource[:5] == "coord":
+                Coordinator.update(field, verbose, **update_options)
+            elif canonical_resource[:4] == "conf":
+                Config.update(field, verbose, **update_options)
+            else:
+                console.print(
+                    f"[red]Resource '{canonical_resource}' not found.[/red]"
+                )
+    else:
+        # If no additional arguments, show general update message
+        if dry_run:
+            console.print(
+                f"[yellow]DRY RUN:[/yellow] Would update "
+                f"{canonical_resource} {field} '{value}'"
+            )
+        else:
+            console.print(
+                f"Updating {canonical_resource} {field} '{value}'"
+            )
+
+
+# Create command group with resource subcommands
+@click.command(context_settings=CONTEXT_SETTINGS)
+@click.argument("resource", type=click.Choice(get_resource_choices()))
+@click.argument("field")
+@click.argument("value")
+@click.argument("names", nargs=-1, required=False)
+@click.option(
+    "--dry-run",
+    is_flag=True,
+    help="Show what would be created without making changes",
+)
+@click.option(
+    "--verbose", "-v", is_flag=True, help="Enable verbose output"
+)
+@click.option(
+    "--help",
+    "-h",
+    is_flag=True,
+    is_eager=True,
+    callback=show_command_help_with_resources,
+    help="Show this message and exit.",
+)
+def create(
+    resource: str,
+    field: str,
+    value: str,
+    names: tuple,
+    verbose: bool,
+    dry_run: bool,
+    **kwargs,
+) -> None:
+    """Create Slurm resource fields (aliases: c, new, add)."""
+    # Resolve resource alias to canonical name
+    canonical_resource = resolve_resource_alias(resource)
+
+    # Parse additional arguments into key-value pairs
+    create_options = {}
+    if names:
+        for arg in names:
+            if "=" in arg:
+                # Handle key=value format
+                key, value_part = arg.split("=", 1)
+                create_options[key] = value_part
+            else:
+                # Treat as a simple value
+                create_options[arg] = None
+
+    if names:
+        additional_args = " ".join(f"'{arg}'" for arg in names)
+    else:
+        additional_args = None
+
+    if dry_run:
+        console.print(
+            f"[yellow]DRY RUN:[/yellow] Would create "
+            f"{canonical_resource} {field} '{value}' {additional_args}"
+        )
+    else:
+        if verbose:
+            console.print(
+                f"Creating {canonical_resource} {field} '{value}' "
+                f"{additional_args}"
+            )
+
+        if canonical_resource[:4] == "part":
+            Partition.create(field, verbose, **create_options)
+        elif canonical_resource[:4] == "node":
+            Node.create(field, verbose, **create_options)
+        elif canonical_resource[:4] == "user":
+            User.create(field, verbose, **create_options)
+        elif canonical_resource[:3] == "qos":
+            Qos.create(field, verbose, **create_options)
+        elif canonical_resource[:3] == "acc":
+            Account.create(field, verbose, **create_options)
+        elif canonical_resource[:3] == "res":
+            Reservation.create(field, verbose, **create_options)
+        elif canonical_resource[:5] == "coord":
+            Coordinator.create(field, verbose, **create_options)
+        else:
+            console.print(
+                f"[red]Resource '{canonical_resource}' not found.[/red]"
+            )
+
+
+# Create command aliases
+@click.command(context_settings=CONTEXT_SETTINGS, name="c")
+@click.argument(
+    "resource", type=click.Choice(get_create_resource_choices())
+)
+@click.argument("field")
+@click.argument("value")
+@click.argument("names", nargs=-1, required=False)
+@click.option(
+    "--verbose", "-v", is_flag=True, help="Enable verbose output"
+)
+@click.option(
+    "--dry-run",
+    is_flag=True,
+    help="Show what would be created without making changes",
+)
+@click.option(
+    "--help",
+    "-h",
+    is_flag=True,
+    is_eager=True,
+    callback=show_command_help_with_resources,
+    help="Show this message and exit.",
+)
+def create_alias_c(
+    resource: str,
+    field: str,
+    value: str,
+    names: tuple,
+    verbose: bool,
+    dry_run: bool,
+    **kwargs,
+) -> None:
+    """Create Slurm resource fields (alias for create)."""
+    # Resolve resource alias to canonical name
+    canonical_resource = resolve_resource_alias(resource)
+
+    # Parse additional arguments into key-value pairs
+    create_options = {}
+    if names:
+        for arg in names:
+            if "=" in arg:
+                # Handle key=value format
+                key, value_part = arg.split("=", 1)
+                create_options[key] = value_part
+            else:
+                # Treat as a simple value
+                create_options[arg] = None
+
+    if names:
+        additional_args = " ".join(f"'{arg}'" for arg in names)
+    else:
+        additional_args = None
+
+    if dry_run:
+        console.print(
+            f"[yellow]DRY RUN:[/yellow] Would create "
+            f"{canonical_resource} {field} '{value}' {additional_args}"
+        )
+    else:
+        if verbose:
+            console.print(
+                f"Creating {canonical_resource} {field} '{value}' "
+                f"{additional_args}"
+            )
+
+        if canonical_resource[:4] == "part":
+            Partition.create(field, verbose, **create_options)
+        elif canonical_resource[:4] == "node":
+            Node.create(field, verbose, **create_options)
+        elif canonical_resource[:4] == "user":
+            User.create(field, verbose, **create_options)
+        elif canonical_resource[:3] == "qos":
+            Qos.create(field, verbose, **create_options)
+        elif canonical_resource[:3] == "acc":
+            Account.create(field, verbose, **create_options)
+        elif canonical_resource[:3] == "res":
+            Reservation.create(field, verbose, **create_options)
+        elif canonical_resource[:5] == "coord":
+            Coordinator.create(field, verbose, **create_options)
+        else:
+            console.print(
+                f"[red]Resource '{canonical_resource}' not found.[/red]"
+            )
+
+
+@click.command(context_settings=CONTEXT_SETTINGS, name="new")
+@click.argument(
+    "resource", type=click.Choice(get_create_resource_choices())
+)
+@click.argument("field")
+@click.argument("value")
+@click.argument("names", nargs=-1, required=False)
+@click.option(
+    "--verbose", "-v", is_flag=True, help="Enable verbose output"
+)
+@click.option(
+    "--dry-run",
+    is_flag=True,
+    help="Show what would be created without making changes",
+)
+@click.option(
+    "--help",
+    "-h",
+    is_flag=True,
+    is_eager=True,
+    callback=show_command_help_with_resources,
+    help="Show this message and exit.",
+)
+def create_alias_new(
+    resource: str,
+    field: str,
+    value: str,
+    names: tuple,
+    verbose: bool,
+    dry_run: bool,
+    **kwargs,
+) -> None:
+    """Create Slurm resource fields (alias for create)."""
+    # Resolve resource alias to canonical name
+    canonical_resource = resolve_resource_alias(resource)
+
+    # Parse additional arguments into key-value pairs
+    create_options = {}
+    if names:
+        for arg in names:
+            if "=" in arg:
+                # Handle key=value format
+                key, value_part = arg.split("=", 1)
+                create_options[key] = value_part
+            else:
+                # Treat as a simple value
+                create_options[arg] = None
+
+    if names:
+        additional_args = " ".join(f"'{arg}'" for arg in names)
+    else:
+        additional_args = None
+
+    if dry_run:
+        console.print(
+            f"[yellow]DRY RUN:[/yellow] Would create "
+            f"{canonical_resource} {field} '{value}' {additional_args}"
+        )
+    else:
+        if verbose:
+            console.print(
+                f"Creating {canonical_resource} {field} '{value}' "
+                f"{additional_args}"
+            )
+
+        if canonical_resource[:4] == "part":
+            Partition.create(field, verbose, **create_options)
+        elif canonical_resource[:4] == "node":
+            Node.create(field, verbose, **create_options)
+        elif canonical_resource[:4] == "user":
+            User.create(field, verbose, **create_options)
+        elif canonical_resource[:3] == "qos":
+            Qos.create(field, verbose, **create_options)
+        elif canonical_resource[:3] == "acc":
+            Account.create(field, verbose, **create_options)
+        elif canonical_resource[:3] == "res":
+            Reservation.create(field, verbose, **create_options)
+        elif canonical_resource[:5] == "coord":
+            Coordinator.create(field, verbose, **create_options)
+        else:
+            console.print(
+                f"[red]Resource '{canonical_resource}' not found.[/red]"
+            )
+
+
+@click.command(context_settings=CONTEXT_SETTINGS, name="add")
+@click.argument(
+    "resource", type=click.Choice(get_create_resource_choices())
+)
+@click.argument("field")
+@click.argument("value")
+@click.argument("names", nargs=-1, required=False)
+@click.option(
+    "--verbose", "-v", is_flag=True, help="Enable verbose output"
+)
+@click.option(
+    "--dry-run",
+    is_flag=True,
+    help="Show what would be created without making changes",
+)
+@click.option(
+    "--help",
+    "-h",
+    is_flag=True,
+    is_eager=True,
+    callback=show_command_help_with_resources,
+    help="Show this message and exit.",
+)
+def create_alias_add(
+    resource: str,
+    field: str,
+    value: str,
+    names: tuple,
+    verbose: bool,
+    dry_run: bool,
+    **kwargs,
+) -> None:
+    """Create Slurm resource fields (alias for create)."""
+    # Resolve resource alias to canonical name
+    canonical_resource = resolve_resource_alias(resource)
+
+    # Parse additional arguments into key-value pairs
+    create_options = {}
+    if names:
+        for arg in names:
+            if "=" in arg:
+                # Handle key=value format
+                key, value_part = arg.split("=", 1)
+                create_options[key] = value_part
+            else:
+                # Treat as a simple value
+                create_options[arg] = None
+
+    if names:
+        additional_args = " ".join(f"'{arg}'" for arg in names)
+    else:
+        additional_args = None
+
+    if dry_run:
+        console.print(
+            f"[yellow]DRY RUN:[/yellow] Would create "
+            f"{canonical_resource} {field} '{value}' {additional_args}"
+        )
+    else:
+        if verbose:
+            console.print(
+                f"Creating {canonical_resource} {field} '{value}' "
+                f"{additional_args}"
+            )
+
+        if canonical_resource[:4] == "part":
+            Partition.create(field, verbose, **create_options)
+        elif canonical_resource[:4] == "node":
+            Node.create(field, verbose, **create_options)
+        elif canonical_resource[:4] == "user":
+            User.create(field, verbose, **create_options)
+        elif canonical_resource[:3] == "qos":
+            Qos.create(field, verbose, **create_options)
+        elif canonical_resource[:3] == "acc":
+            Account.create(field, verbose, **create_options)
+        elif canonical_resource[:3] == "res":
+            Reservation.create(field, verbose, **create_options)
+        elif canonical_resource[:5] == "coord":
+            Coordinator.create(field, verbose, **create_options)
+        else:
+            console.print(
+                f"[red]Resource '{canonical_resource}' not found.[/red]"
+            )
 
 
 @click.command(context_settings=CONTEXT_SETTINGS)
-@click.argument('resource', type=click.Choice(get_create_resource_choices()))
-@click.option('--name', '-n', help='Name of the resource to delete')
-@click.option('--force', '-f', is_flag=True,
-              help='Force deletion without confirmation')
-@click.option('--dry-run', is_flag=True,
-              help='Show what would be deleted without making changes')
-def delete(resource: str, name: Optional[str], force: bool,
-           dry_run: bool) -> None:
-    """Delete Slurm resources."""
-    if dry_run:
-        console.print(f"[yellow]DRY RUN:[/yellow] Would delete {resource}")
-        if name:
-            console.print(f"[yellow]DRY RUN:[/yellow] With name: {name}")
+@click.argument(
+    "resource", type=click.Choice(get_create_resource_choices())
+)
+@click.argument("names", nargs=-1, required=False)
+@click.option(
+    "--name",
+    "-n",
+    help="Name of the resource to delete (alternative to positional argument)",
+)
+@click.option(
+    "--force",
+    "-f",
+    is_flag=True,
+    help="Force deletion without confirmation",
+)
+@click.option(
+    "--dry-run",
+    is_flag=True,
+    help="Show what would be deleted without making changes",
+)
+@click.option(
+    "--verbose", "-v", is_flag=True, help="Enable verbose output"
+)
+@click.option(
+    "--help",
+    "-h",
+    is_flag=True,
+    is_eager=True,
+    callback=show_command_help_with_resources,
+    help="Show this message and exit.",
+)
+def delete(
+    resource: str,
+    names: tuple,
+    name: Optional[str],
+    force: bool,
+    dry_run: bool,
+    verbose: bool,
+    **kwargs,
+) -> None:  # noqa: E501
+    """Delete Slurm resources (aliases: del, d, remove, rem, rm)."""
+    # Resolve resource alias to canonical name
+    canonical_resource = resolve_resource_alias(resource)
+
+    # Handle multiple names - prioritize positional names over --name option
+    if names:
+        resource_names = names
+    elif name:
+        resource_names = [name]
+    else:
+        resource_names = [None]
+
+    for resource_name in resource_names:
+        if dry_run:
+            if resource_name:
+                console.print(
+                    "[yellow]DRY RUN:[/yellow] "
+                    f"Would delete {canonical_resource} '{resource_name}'"
+                )
+            else:
+                console.print(
+                    "[yellow]DRY RUN:[/yellow] "
+                    f"Would delete {canonical_resource}"
+                )
     else:
         if not force and not click.confirm(
-            f"Are you sure you want to delete {resource}?"
+            f"Are you sure you want to delete {canonical_resource}"
+            + (f" '{resource_name}'" if resource_name else "")
+            + "?"
         ):
             console.print("[red]Operation cancelled.[/red]")
             raise click.Abort()
 
-        console.print(f"Deleting {resource}")
-        if name:
-            console.print(f"With name: {name}")
+        if resource_name:
+            if verbose:
+                console.print(
+                    f"Deleting {canonical_resource} '{resource_name}'"
+                )
+            else:
+                console.print(
+                    f"Deleting {canonical_resource} '{resource_name}'"
+                )
+            console.print(
+                f"Deleting {canonical_resource} '{resource_name}'"
+            )
+        else:
+            console.print(f"Deleting {canonical_resource}")
+
+
+# Delete command aliases
+@click.command(context_settings=CONTEXT_SETTINGS, name="del")
+@click.argument("resource", type=click.Choice(get_resource_choices()))
+@click.argument("names", nargs=-1, required=False)
+@click.option(
+    "--name",
+    "-n",
+    help="Name of the resource to delete (alternative to positional argument)",
+)
+@click.option(
+    "--force",
+    "-f",
+    is_flag=True,
+    help="Force deletion without confirmation",
+)
+@click.option(
+    "--dry-run",
+    is_flag=True,
+    help="Show what would be deleted without making changes",
+)
+@click.option(
+    "--verbose", "-v", is_flag=True, help="Enable verbose output"
+)
+@click.option(
+    "--help",
+    "-h",
+    is_flag=True,
+    is_eager=True,
+    callback=show_command_help_with_resources,
+    help="Show this message and exit.",
+)
+def delete_alias_del(
+    resource: str,
+    names: tuple,
+    name: Optional[str],
+    force: bool,
+    dry_run: bool,
+    verbose: bool,
+    **kwargs,
+) -> None:
+    """Delete Slurm resources (alias for delete)."""
+    # Resolve resource alias to canonical name
+    canonical_resource = resolve_resource_alias(resource)
+
+    # Handle multiple names - prioritize positional names over --name option
+    if names:
+        resource_names = names
+    elif name:
+        resource_names = [name]
+    else:
+        resource_names = [None]
+
+    for resource_name in resource_names:
+        if dry_run:
+            if resource_name:
+                console.print(
+                    "[yellow]DRY RUN:[/yellow] "
+                    f"Would delete {canonical_resource} '{resource_name}'"
+                )
+            else:
+                console.print(
+                    "[yellow]DRY RUN:[/yellow] "
+                    f"Would delete {canonical_resource}"
+                )
+        else:
+            if not force and not click.confirm(
+                f"Are you sure you want to delete {canonical_resource}"
+                + (f" '{resource_name}'" if resource_name else "")
+                + "?"
+            ):
+                console.print("[red]Operation cancelled.[/red]")
+                raise click.Abort()
+
+            if resource_name:
+                if verbose:
+                    console.print(
+                        f"Deleting {canonical_resource} '{resource_name}'"
+                    )
+                else:
+                    console.print(
+                        f"Deleting {canonical_resource} '{resource_name}'"
+                    )
+                console.print(
+                    f"Deleting {canonical_resource} '{resource_name}'"
+                )
+            else:
+                console.print(f"Deleting {canonical_resource}")
+
+
+@click.command(context_settings=CONTEXT_SETTINGS, name="d")
+@click.argument("resource", type=click.Choice(get_resource_choices()))
+@click.argument("names", nargs=-1, required=False)
+@click.option(
+    "--name",
+    "-n",
+    help="Name of the resource to delete (alternative to positional argument)",
+)
+@click.option(
+    "--force",
+    "-f",
+    is_flag=True,
+    help="Force deletion without confirmation",
+)
+@click.option(
+    "--dry-run",
+    is_flag=True,
+    help="Show what would be deleted without making changes",
+)
+@click.option(
+    "--verbose", "-v", is_flag=True, help="Enable verbose output"
+)
+@click.option(
+    "--help",
+    "-h",
+    is_flag=True,
+    is_eager=True,
+    callback=show_command_help_with_resources,
+    help="Show this message and exit.",
+)
+def delete_alias_d(
+    resource: str,
+    names: tuple,
+    name: Optional[str],
+    force: bool,
+    dry_run: bool,
+    verbose: bool,
+    **kwargs,
+) -> None:
+    """Delete Slurm resources (alias for delete)."""
+    # Resolve resource alias to canonical name
+    canonical_resource = resolve_resource_alias(resource)
+
+    # Handle multiple names - prioritize positional names over --name option
+    if names:
+        resource_names = names
+    elif name:
+        resource_names = [name]
+    else:
+        resource_names = [None]
+
+    for resource_name in resource_names:
+        if dry_run:
+            if resource_name:
+                console.print(
+                    "[yellow]DRY RUN:[/yellow] "
+                    f"Would delete {canonical_resource} '{resource_name}'"
+                )
+            else:
+                console.print(
+                    "[yellow]DRY RUN:[/yellow] "
+                    f"Would delete {canonical_resource}"
+                )
+        else:
+            if not force and not click.confirm(
+                f"Are you sure you want to delete {canonical_resource}"
+                + (f" '{resource_name}'" if resource_name else "")
+                + "?"
+            ):
+                console.print("[red]Operation cancelled.[/red]")
+                raise click.Abort()
+
+            if resource_name:
+                if verbose:
+                    console.print(
+                        f"Deleting {canonical_resource} '{resource_name}'"
+                    )
+                else:
+                    console.print(
+                        f"Deleting {canonical_resource} '{resource_name}'"
+                    )
+                console.print(
+                    f"Deleting {canonical_resource} '{resource_name}'"
+                )
+            else:
+                console.print(f"Deleting {canonical_resource}")
+
+
+@click.command(context_settings=CONTEXT_SETTINGS, name="remove")
+@click.argument("resource", type=click.Choice(get_resource_choices()))
+@click.argument("names", nargs=-1, required=False)
+@click.option(
+    "--name",
+    "-n",
+    help="Name of the resource to delete (alternative to positional argument)",
+)
+@click.option(
+    "--force",
+    "-f",
+    is_flag=True,
+    help="Force deletion without confirmation",
+)
+@click.option(
+    "--dry-run",
+    is_flag=True,
+    help="Show what would be deleted without making changes",
+)
+@click.option(
+    "--verbose", "-v", is_flag=True, help="Enable verbose output"
+)
+@click.option(
+    "--help",
+    "-h",
+    is_flag=True,
+    is_eager=True,
+    callback=show_command_help_with_resources,
+    help="Show this message and exit.",
+)
+def delete_alias_remove(
+    resource: str,
+    names: tuple,
+    name: Optional[str],
+    force: bool,
+    dry_run: bool,
+    verbose: bool,
+    **kwargs,
+) -> None:
+    """Delete Slurm resources (alias for delete)."""
+    # Resolve resource alias to canonical name
+    canonical_resource = resolve_resource_alias(resource)
+
+    # Handle multiple names - prioritize positional names over --name option
+    if names:
+        resource_names = names
+    elif name:
+        resource_names = [name]
+    else:
+        resource_names = [None]
+
+    for resource_name in resource_names:
+        if dry_run:
+            if resource_name:
+                console.print(
+                    "[yellow]DRY RUN:[/yellow] "
+                    f"Would delete {canonical_resource} '{resource_name}'"
+                )
+            else:
+                console.print(
+                    "[yellow]DRY RUN:[/yellow] "
+                    f"Would delete {canonical_resource}"
+                )
+        else:
+            if not force and not click.confirm(
+                f"Are you sure you want to delete {canonical_resource}"
+                + (f" '{resource_name}'" if resource_name else "")
+                + "?"
+            ):
+                console.print("[red]Operation cancelled.[/red]")
+                raise click.Abort()
+
+            if resource_name:
+                if verbose:
+                    console.print(
+                        f"Deleting {canonical_resource} '{resource_name}'"
+                    )
+                else:
+                    console.print(
+                        f"Deleting {canonical_resource} '{resource_name}'"
+                    )
+                console.print(
+                    f"Deleting {canonical_resource} '{resource_name}'"
+                )
+            else:
+                console.print(f"Deleting {canonical_resource}")
+
+
+@click.command(context_settings=CONTEXT_SETTINGS, name="rem")
+@click.argument("resource", type=click.Choice(get_resource_choices()))
+@click.argument("names", nargs=-1, required=False)
+@click.option(
+    "--name",
+    "-n",
+    help="Name of the resource to delete (alternative to positional argument)",
+)
+@click.option(
+    "--force",
+    "-f",
+    is_flag=True,
+    help="Force deletion without confirmation",
+)
+@click.option(
+    "--dry-run",
+    is_flag=True,
+    help="Show what would be deleted without making changes",
+)
+@click.option(
+    "--verbose", "-v", is_flag=True, help="Enable verbose output"
+)
+@click.option(
+    "--help",
+    "-h",
+    is_flag=True,
+    is_eager=True,
+    callback=show_command_help_with_resources,
+    help="Show this message and exit.",
+)
+def delete_alias_rem(
+    resource: str,
+    names: tuple,
+    name: Optional[str],
+    force: bool,
+    dry_run: bool,
+    verbose: bool,
+    **kwargs,
+) -> None:
+    """Delete Slurm resources (alias for delete)."""
+    # Resolve resource alias to canonical name
+    canonical_resource = resolve_resource_alias(resource)
+
+    # Handle multiple names - prioritize positional names over --name option
+    if names:
+        resource_names = names
+    elif name:
+        resource_names = [name]
+    else:
+        resource_names = [None]
+
+    for resource_name in resource_names:
+        if dry_run:
+            if resource_name:
+                console.print(
+                    "[yellow]DRY RUN:[/yellow] "
+                    f"Would delete {canonical_resource} '{resource_name}'"
+                )
+            else:
+                console.print(
+                    "[yellow]DRY RUN:[/yellow] "
+                    f"Would delete {canonical_resource}"
+                )
+        else:
+            if not force and not click.confirm(
+                f"Are you sure you want to delete {canonical_resource}"
+                + (f" '{resource_name}'" if resource_name else "")
+                + "?"
+            ):
+                console.print("[red]Operation cancelled.[/red]")
+                raise click.Abort()
+
+            if resource_name:
+                if verbose:
+                    console.print(
+                        f"Deleting {canonical_resource} '{resource_name}'"
+                    )
+                else:
+                    console.print(
+                        f"Deleting {canonical_resource} '{resource_name}'"
+                    )
+                console.print(
+                    f"Deleting {canonical_resource} '{resource_name}'"
+                )
+            else:
+                console.print(f"Deleting {canonical_resource}")
+
+
+@click.command(context_settings=CONTEXT_SETTINGS, name="rm")
+@click.argument("resource", type=click.Choice(get_resource_choices()))
+@click.argument("names", nargs=-1, required=False)
+@click.option(
+    "--name",
+    "-n",
+    help="Name of the resource to delete (alternative to positional argument)",
+)
+@click.option(
+    "--force",
+    "-f",
+    is_flag=True,
+    help="Force deletion without confirmation",
+)
+@click.option(
+    "--dry-run",
+    is_flag=True,
+    help="Show what would be deleted without making changes",
+)
+@click.option(
+    "--verbose", "-v", is_flag=True, help="Enable verbose output"
+)
+@click.option(
+    "--help",
+    "-h",
+    is_flag=True,
+    is_eager=True,
+    callback=show_command_help_with_resources,
+    help="Show this message and exit.",
+)
+def delete_alias_rm(
+    resource: str,
+    names: tuple,
+    name: Optional[str],
+    force: bool,
+    dry_run: bool,
+    verbose: bool,
+    **kwargs,
+) -> None:
+    """Delete Slurm resources (alias for delete)."""
+    # Resolve resource alias to canonical name
+    canonical_resource = resolve_resource_alias(resource)
+
+    # Handle multiple names - prioritize positional names over --name option
+    if names:
+        resource_names = names
+    elif name:
+        resource_names = [name]
+    else:
+        resource_names = [None]
+
+    for resource_name in resource_names:
+        if dry_run:
+            if resource_name:
+                console.print(
+                    "[yellow]DRY RUN:[/yellow] "
+                    f"Would delete {canonical_resource} '{resource_name}'"
+                )
+            else:
+                console.print(
+                    "[yellow]DRY RUN:[/yellow] "
+                    f"Would delete {canonical_resource}"
+                )
+        else:
+            if not force and not click.confirm(
+                f"Are you sure you want to delete {canonical_resource}"
+                + (f" '{resource_name}'" if resource_name else "")
+                + "?"
+            ):
+                console.print("[red]Operation cancelled.[/red]")
+                raise click.Abort()
+
+            if resource_name:
+                if verbose:
+                    console.print(
+                        f"Deleting {canonical_resource} '{resource_name}'"
+                    )
+                else:
+                    console.print(
+                        f"Deleting {canonical_resource} '{resource_name}'"
+                    )
+                console.print(
+                    f"Deleting {canonical_resource} '{resource_name}'"
+                )
+            else:
+                console.print(f"Deleting {canonical_resource}")
 
 
 @click.command(context_settings=CONTEXT_SETTINGS)
-@click.argument('word', default='')
-@click.option('--max-cost', '-m', default=3,
-              help='Maximum edit distance for fuzzy matching')
-@click.option('--size', '-s', default=3,
-              help='Maximum number of suggestions to return')
+@click.argument("word", default="")
+@click.option(
+    "--max-cost",
+    "-m",
+    default=3,
+    help="Maximum edit distance for fuzzy matching",
+)
+@click.option(
+    "--size",
+    "-s",
+    default=3,
+    help="Maximum number of suggestions to return",
+)
 def autocomplete(word: str, max_cost: int, size: int) -> None:
     """Test autocomplete functionality."""
     autocomplete_instance = create_autocomplete()
 
     if word:
-        results = autocomplete_instance.search(word=word,
-                                               max_cost=max_cost,
-                                               size=size)
+        results = autocomplete_instance.search(
+            word=word,
+            max_cost=max_cost,
+            size=size,
+        )
         suggestions: List[str] = sum(results, [])
 
         if suggestions:
@@ -287,47 +1915,175 @@ def autocomplete(word: str, max_cost: int, size: int) -> None:
             console.print(table)
         else:
             console.print(
-                f"[yellow]No suggestions found for '{word}'[/yellow]")
+                f"[yellow]No suggestions found for '{word}'[/yellow]"
+            )  # noqa: E501
     else:
-        console.print(Panel(
-            "[bold]Available commands:[/bold]\n"
-            "• show - Show information about Slurm resources\n"
-            "• update - Update Slurm resource fields\n"
-            "• create - Create new Slurm resources\n"
-            "• delete - Delete Slurm resources\n"
-            "• autocomplete - Test autocomplete functionality\n"
-            "• list-resources - List all available resource types",
-            title="Slurm Swiss Knife Commands"
-        ))
+        console.print(
+            "[yellow]Please provide a word to search for suggestions.[/yellow]"
+        )
 
 
 @click.command(context_settings=CONTEXT_SETTINGS)
 def list_resources() -> None:
-    """List all available resource types and their fields."""
+    """List all available resource types and their fields (aliases: list, ls, l)."""
     table = Table(title="Available Slurm Resources")
     table.add_column("Resource Type", style="cyan", no_wrap=True)
     table.add_column("Available Fields", style="green")
     table.add_column("Operations", style="yellow")
 
-    routes = ROUTES['get-set']
+    routes = ROUTES["get-set"]
     if isinstance(routes, dict):
         for resource_type, fields in routes.items():
             if isinstance(fields, dict):
-                field_list = ", ".join(fields.keys()) if fields else "N/A"
+                field_list = (
+                    ", ".join(fields.keys()) if fields else "N/A"
+                )
             else:
                 field_list = "N/A"
             operations: List[str] = []
-            if (isinstance(ROUTES['get-set'], dict) and
-                    resource_type in ROUTES['get-set']):
+            if (
+                isinstance(ROUTES["get-set"], dict)
+                and resource_type in ROUTES["get-set"]
+            ):
                 operations.append("get/set")
-            if (isinstance(ROUTES['create'], dict) and
-                    resource_type in ROUTES['create']):
+            if (
+                isinstance(ROUTES["create"], dict)
+                and resource_type in ROUTES["create"]
+            ):
                 operations.append("create")
-            if (isinstance(ROUTES['create'], dict) and
-                    resource_type in ROUTES['create']):
+            if (
+                isinstance(ROUTES["create"], dict)
+                and resource_type in ROUTES["create"]
+            ):
                 operations.append("delete")
 
-            table.add_row(resource_type, field_list, ", ".join(operations))
+            table.add_row(
+                resource_type, field_list, ", ".join(operations)
+            )
+
+    console.print(table)
+
+
+# List-resources command aliases
+@click.command(context_settings=CONTEXT_SETTINGS, name="list")
+def list_resources_alias_list() -> None:
+    """List all available resource types and their fields (alias for list-resources)."""
+    table = Table(title="Available Slurm Resources")
+    table.add_column("Resource Type", style="cyan", no_wrap=True)
+    table.add_column("Available Fields", style="green")
+    table.add_column("Operations", style="yellow")
+
+    routes = ROUTES["get-set"]
+    if isinstance(routes, dict):
+        for resource_type, fields in routes.items():
+            if isinstance(fields, dict):
+                field_list = (
+                    ", ".join(fields.keys()) if fields else "N/A"
+                )
+            else:
+                field_list = "N/A"
+            operations: List[str] = []
+            if (
+                isinstance(ROUTES["get-set"], dict)
+                and resource_type in ROUTES["get-set"]
+            ):
+                operations.append("get/set")
+            if (
+                isinstance(ROUTES["create"], dict)
+                and resource_type in ROUTES["create"]
+            ):
+                operations.append("create")
+            if (
+                isinstance(ROUTES["create"], dict)
+                and resource_type in ROUTES["create"]
+            ):
+                operations.append("delete")
+
+            table.add_row(
+                resource_type, field_list, ", ".join(operations)
+            )
+
+    console.print(table)
+
+
+@click.command(context_settings=CONTEXT_SETTINGS, name="ls")
+def list_resources_alias_ls() -> None:
+    """List all available resource types and their fields (alias for list-resources)."""
+    table = Table(title="Available Slurm Resources")
+    table.add_column("Resource Type", style="cyan", no_wrap=True)
+    table.add_column("Available Fields", style="green")
+    table.add_column("Operations", style="yellow")
+
+    routes = ROUTES["get-set"]
+    if isinstance(routes, dict):
+        for resource_type, fields in routes.items():
+            if isinstance(fields, dict):
+                field_list = (
+                    ", ".join(fields.keys()) if fields else "N/A"
+                )
+            else:
+                field_list = "N/A"
+            operations: List[str] = []
+            if (
+                isinstance(ROUTES["get-set"], dict)
+                and resource_type in ROUTES["get-set"]
+            ):
+                operations.append("get/set")
+            if (
+                isinstance(ROUTES["create"], dict)
+                and resource_type in ROUTES["create"]
+            ):
+                operations.append("create")
+            if (
+                isinstance(ROUTES["create"], dict)
+                and resource_type in ROUTES["create"]
+            ):
+                operations.append("delete")
+
+            table.add_row(
+                resource_type, field_list, ", ".join(operations)
+            )
+
+    console.print(table)
+
+
+@click.command(context_settings=CONTEXT_SETTINGS, name="l")
+def list_resources_alias_l() -> None:
+    """List all available resource types and their fields (alias for list-resources)."""
+    table = Table(title="Available Slurm Resources")
+    table.add_column("Resource Type", style="cyan", no_wrap=True)
+    table.add_column("Available Fields", style="green")
+    table.add_column("Operations", style="yellow")
+
+    routes = ROUTES["get-set"]
+    if isinstance(routes, dict):
+        for resource_type, fields in routes.items():
+            if isinstance(fields, dict):
+                field_list = (
+                    ", ".join(fields.keys()) if fields else "N/A"
+                )
+            else:
+                field_list = "N/A"
+            operations: List[str] = []
+            if (
+                isinstance(ROUTES["get-set"], dict)
+                and resource_type in ROUTES["get-set"]
+            ):
+                operations.append("get/set")
+            if (
+                isinstance(ROUTES["create"], dict)
+                and resource_type in ROUTES["create"]
+            ):
+                operations.append("create")
+            if (
+                isinstance(ROUTES["create"], dict)
+                and resource_type in ROUTES["create"]
+            ):
+                operations.append("delete")
+
+            table.add_row(
+                resource_type, field_list, ", ".join(operations)
+            )
 
     console.print(table)
 
@@ -340,11 +2096,84 @@ def version() -> None:
 
 
 @click.command(context_settings=CONTEXT_SETTINGS)
-@click.pass_context
-def help_command(ctx: click.Context) -> None:
-    """Show help information."""
-    # Print the help for the main group
-    click.echo(ctx.parent.get_help() if ctx.parent else "Help not available")
+@click.argument("word", required=False)
+def help(word: Optional[str] = None) -> None:
+    """Show help information and available resources."""
+    if word:
+        # Use autocomplete to find suggestions
+        autocomplete_instance = create_autocomplete()
+        results = autocomplete_instance.search(
+            word=word,
+            max_cost=3,
+            size=10,
+        )
+        suggestions: List[str] = sum(results, [])
+
+        if suggestions:
+            table = Table(title=f"Autocomplete results for '{word}'")
+            table.add_column("Suggestion", style="cyan")
+            table.add_column("Type", style="magenta")
+
+            for suggestion in suggestions:
+                table.add_row(suggestion, "command")
+
+            console.print(table)
+        else:
+            console.print(
+                f"[yellow]No suggestions found for '{word}'[/yellow]"
+            )  # noqa: E501
+    else:
+        # Show available commands
+        console.print(
+            Panel(
+                "[bold]Available commands:[/bold]\n"
+                "• show - Show information about Slurm resources\n"
+                "• update - Update Slurm resource fields\n"
+                "• create - Create new Slurm resources\n"
+                "• delete - Delete Slurm resources\n"
+                "• autocomplete - Test autocomplete functionality\n"
+                "• list-resources - List all available resource types",
+                title="Slurm Swiss Knife Commands",
+            )
+        )
+        # Show available resources
+        console.print("\n[bold]Available Slurm Resources:[/bold]")
+        table = Table()
+        table.add_column("Resource Type", style="cyan", no_wrap=True)
+        table.add_column("Available Fields", style="green")
+        table.add_column("Operations", style="yellow")
+
+        routes = ROUTES["get-set"]
+        if isinstance(routes, dict):
+            for resource_type, fields in routes.items():
+                if isinstance(fields, dict):
+                    field_list = (
+                        ", ".join(fields.keys()) if fields else "N/A"
+                    )
+                else:
+                    field_list = "N/A"
+                operations: List[str] = []
+                if (
+                    isinstance(ROUTES["get-set"], dict)
+                    and resource_type in ROUTES["get-set"]
+                ):
+                    operations.append("get/set")
+                if (
+                    isinstance(ROUTES["create"], dict)
+                    and resource_type in ROUTES["create"]
+                ):
+                    operations.append("create")
+                if (
+                    isinstance(ROUTES["create"], dict)
+                    and resource_type in ROUTES["create"]
+                ):
+                    operations.append("delete")
+
+                table.add_row(
+                    resource_type, field_list, ", ".join(operations)
+                )
+
+        console.print(table)
 
 
 # Register commands when module is imported

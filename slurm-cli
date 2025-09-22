@@ -1,4 +1,5 @@
 #!/usr/bin/bash
-export _CLICK_COMPLETE
-poetry run slurm-cli "$@"
 
+export _CLICK_COMPLETE
+export PATH=$PATH:.
+poetry run slurm-cli "$@"

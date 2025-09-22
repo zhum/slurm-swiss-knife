@@ -24,8 +24,8 @@ lint: ## Run linting checks
 	poetry run mypy src
 
 format: ## Format code
-	poetry run black src tests
-	poetry run isort src tests
+	poetry run black --line-length=72 src tests
+	poetry run isort --profile=black src tests
 
 format-check: ## Check code formatting
 	poetry run black --check src tests
