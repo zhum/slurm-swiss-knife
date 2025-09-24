@@ -9,7 +9,7 @@ license = "MIT"
 homepage = "https://github.com/zhum/slurm-cli"
 repository = "https://github.com/zhum/slurm-cli.git"
 documentation = "https://slurm-cli.readthedocs.io/"
-keywords = ["slurm", "cli", "cluster", "management", "hpc", "autocomplete"]
+keywords = ["slurm", "cli", "cluster", "management"]
 classifiers = [
     "Development Status :: 4 - Beta",
     "Intended Audience :: System Administrators",

@@ -1,14 +1,20 @@
 """Utilities for managing partitions."""
 
+import json
 import re
 import subprocess
 from typing import Any
 
+from rich.markup import escape
+
+from .base_resource import BaseSlurmResource
+from .resources import Resource, ResourceType
 from .utils import console
 
 
-class Partition:
+class Partition(BaseSlurmResource):
 
+    _WIDTH = None
     valid_args = {
         "allowaccounts": {
             "type": "list",
@@ -187,174 +193,49 @@ class Partition:
             "help": "Partition state",
         },
     }
+    value_types = {
+        "allowgroups": {"def": "ALL", "flag": False},
+        "allowaccounts": {"def": "ALL", "flag": False},
+        "allowqos": {"def": "ALL", "flag": False},
+        "allocnodes": {"def": "ALL", "flag": False},
+        "default": {"def": "NO", "flag": True},
+        "defmempernode": {"def": "UNLIMITED", "flag": False},
+        "defmempercpu": {"def": "UNLIMITED", "flag": False},
+        "qos": {"def": "", "flag": False},
+        "disablerootjobs": {"def": "NO", "flag": True},
+        "exclusiveuser": {"def": "NO", "flag": True},
+        "gracetime": {"def": "0", "flag": False},
+        "hidden": {"def": "NO", "flag": True},
+        "maxnodes": {"def": "UNLIMITED", "flag": False},
+        "maxtime": {"def": "", "flag": False},
+        "minnodes": {"def": "1", "flag": False},
+        "lln": {"def": "NO", "flag": True},
+        "maxcpuspernode": {"def": "UNLIMITED", "flag": False},
+        "maxcpuspersocket": {"def": "UNLIMITED", "flag": False},
+        "priorityjobfactor": {"def": "1", "flag": False},
+        "prioritytier": {"def": "1", "flag": False},
+        "rootonly": {"def": "NO", "flag": True},
+        "reqresv": {"def": "NO", "flag": True},
+        "oversubscribe": {"def": "NO", "flag": True},
+        "overtimelimit": {"def": "NONE", "flag": False},
+        "preemptmode": {"def": "OFF", "flag": False},
+        "selecttypeparameters": {"def": "NONE", "flag": False},
+        "jobdefaults": {"def": "(null)", "flag": False},
+        "maxmempernode": {"def": "UNLIMITED", "flag": False},
+        "tres": {"def": "", "flag": False},
+        "tresbillingweights": {"def": "", "flag": False},
+    }
 
     def __init__(self, name: "str", **kwargs: Any):
         self.name = name
         self.kwargs = kwargs
 
     @classmethod
-    def _check_args(
-        cls,
-        kwargs: Any,
-        set: dict[str, Any],
-        add: dict[str, Any],
-        delete: dict[str, Any],
-    ) -> bool:
-        """Check if the arguments are valid."""
-        for key, value in kwargs.items():
-            arg_type = None
-            if key[-1] == "+":
-                key = key[:-1]
-                arg_type = "add"
-            elif key[-1] == "-":
-                key = key[:-1]
-                arg_type = "delete"
-
-            if key not in cls.valid_args.keys():
-                console.print(f"Invalid argument: {key}")
-                return False
-            key_type = cls.valid_args[key]["type"]
-            if key_type == "int":
-                try:
-                    kwargs[key] = int(value)
-                except ValueError:
-                    console.print(
-                        f"Invalid integer argument: {key}={value}"
-                    )
-                    return False
-            elif key_type == "list":
-                # kwargs[key] = value.split(",")
-                pass
-            elif key_type == "memory":
-                try:
-                    if value.endswith("M"):
-                        kwargs[key] = int(value.rstrip("M")) * 1024
-                    elif value.endswith("G"):
-                        kwargs[key] = (
-                            int(value.rstrip("G")) * 1024 * 1024
-                        )
-                    else:
-                        console.print(
-                            f"Invalid memory argument: {key}={value}"
-                        )
-                        return False
-                except ValueError:
-                    console.print(
-                        f"Invalid memory argument: {key}={value}"
-                    )
-                    return False
-            elif key_type == "time":
-                try:
-                    kwargs[key] = cls._parse_time_value(value)
-                except Exception:
-                    console.print(
-                        f"Invalid time argument: {key}={value}"
-                    )
-                    return False
-            elif key_type[0] == "[" and key_type[-1] == "]":
-                if value.lower() not in key_type[1:-1].split(","):
-                    console.print(
-                        f"Invalid list argument: {key}={value}."
-                        " Valid values are: "
-                        f"{', '.join(key_type[1:-1].split(','))}"
-                    )
-                    return False
-                kwargs[key] = value.lower()
-            # qos, partition, account, group, qos
-            elif key_type in ["qos", "partition", "account", "group"]:
-                value = value.lower()
-                # TODO: Check if the value is a valid qos, partition,
-                # account, or group
-            else:
-                console.print(
-                    f"Invalid argument: {key}={value}. {key_type} not found"
-                )
-                return False
-            if arg_type:
-                if arg_type == "add":
-                    add[key] = value
-                elif arg_type == "delete":
-                    delete[key] = value
-            else:
-                set[key] = value
-        return True
-
-    @classmethod
-    def _parse_time_value(cls, val):
-        # Try to parse as integer seconds
-        try:
-            return int(val)
-        except ValueError:
-            pass
-
-        # Accepts:
-        #   - now+count time-units
-        #   - tomorrow
-        #   - HH:MM:SS
-        #   - MMDDYY
-        #   - MM/DD/YY
-        #   - MM.DD.YY
-        #   - YYYY-MM-DD[THH:MM[:SS]]
-        #   - [D-]HH:MM:SS (e.g., 2-12:30:00)
-        if val.startswith("now+"):
-            return val
-        elif val.startswith("tomorrow"):
-            return val
-
-        time_patterns = [
-            # YYYY-MM-DD[THH:MM[:SS]]
-            re.compile(
-                r"^(?P<date>\d{4}-\d{2}-\d{2})(?:[T ](?P<h>\d{1,2}):"
-                r"(?P<m>\d{1,2})(?::(?P<s>\d{1,2}))?)?$"
-            ),
-            # [D-]HH:MM:SS (e.g., 2-12:30:00)
-            re.compile(
-                r"^(?:(?P<days>\d+)-)?(?P<h>\d{1,2}):(?P<m>\d{1,2}):"
-                r"(?P<s>\d{1,2})$"
-            ),
-            # HH:MM:SS
-            re.compile(
-                r"^(?P<h>\d{1,2}):(?P<m>\d{1,2}):(?P<s>\d{1,2})$"
-            ),
-            # MMDDYY
-            re.compile(
-                r"^(?P<month>\d{2})(?P<day>\d{2})(?P<year>\d{2})$"
-            ),
-            # MM/DD/YY
-            re.compile(
-                r"^(?P<month>\d{2})/(?P<day>\d{2})/(?P<year>\d{2})$"
-            ),
-            # MM.DD.YY
-            re.compile(
-                r"^(?P<month>\d{2})\.(?P<day>\d{2})\.(?P<year>\d{2})$"
-            ),
-        ]
-        m = None
-        for time_pattern in time_patterns:
-            m = time_pattern.match(val)
-            if m:
-                break
-        if not m:
-            raise ValueError("Invalid time format")
-
-        date = m.group("date")
-        hh = m.group("h")
-        mm = m.group("m")
-        ss = m.group("s")
-
-        # Fill in missing values
-        hh = int(hh) if hh is not None else 0
-        mm = int(mm) if mm is not None else 0
-        ss = int(ss) if ss is not None else 0
-
-        total_seconds = hh * 3600 + mm * 60 + ss
-
-        if date:
-            # If date is present, return a datetime object
-            return f"{date}T{hh:02d}:{mm:02d}:{ss:02d}"
-        else:
-            # Otherwise, return total seconds as int
-            return total_seconds
+    def max_width(cls) -> int:
+        """Get the maximum width of the console."""
+        if cls._WIDTH is None:
+            cls._WIDTH = console.width
+        return cls._WIDTH
 
     @classmethod
     def create(
@@ -370,18 +251,20 @@ class Partition:
             [f"{key}={value}" for key, value in set.items()]
         )
         if len(add) > 0:
-            options += " "
-            options += " ".join(
-                [f"{key}+={value}" for key, value in add.items()]
+            console.print(
+                "[yellow]Warning: Adding options is not supported"
+                " for partitions.[/yellow]"
             )
         if len(delete) > 0:
+            console.print(
+                "[yellow]Warning: Deleting options is not supported"
+                " for partitions.[/yellow]"
+            )
+        if len(set) > 0:
             options += " "
             options += " ".join(
                 [f"{key}-={value}" for key, value in delete.items()]
             )
-        # console.print(
-        #     f"Creating partition: {name} with options: {options}"
-        # )
         args = [
             "scontrol",
             "create",
@@ -465,23 +348,189 @@ class Partition:
     @classmethod
     def delete(cls, name: str) -> None:
         """Delete a partition."""
-        console.print(f"Deleting partition: {name}")
-
-        # TODO: Implement partition creation
+        args = [
+            "scontrol",
+            "delete",
+            "partitionname={name}",
+        ]
+        try:
+            result = subprocess.run(
+                args,
+                check=True,
+                capture_output=True,
+                text=True,
+            )
+            if result.stdout:
+                console.print(result.stdout)
+            console.print(
+                f"[green]Partition '{name}' "
+                "deleted successfully.[/green]"
+            )
+        except subprocess.CalledProcessError as e:
+            console.print(
+                f"[red]Failed to delete partition '{name}':[/red]"
+                f" {e.stderr or e}"
+            )
 
     @classmethod
-    def show(cls, field: str = None) -> None:
+    def show(
+        cls,
+        name: str = None,
+        style: str = "pretty",
+        force_cache_update: bool = False,
+    ) -> None:
         """Show partition information."""
-        console.print("Partition information:")
-        if field:
-            console.print(f"Field: {field}")
-        # TODO: Implement partition information display
+        if style == "pretty":
+            cls.show_pretty(name, force_cache_update)
+        elif style == "json":
+            if name:
+                console.print_json(
+                    json.dumps(
+                        Resource.cached_resource(
+                            "partitions",
+                            ResourceType.partitions,
+                            force_cache_update,
+                        )[name],
+                        indent=4,
+                    )
+                )
+            else:
+                console.print_json(
+                    json.dumps(
+                        Resource.cached_resource(
+                            "partitions",
+                            ResourceType.partitions,
+                            force_cache_update,
+                        ),
+                        indent=4,
+                    )
+                )
+        else:
+            console.print(f"[red]Invalid style '{style}'.[/red]")
 
+    @classmethod
+    def show_pretty(
+        cls, name: str = None, force_cache_update: bool = False
+    ) -> None:
+        partitions = Resource.cached_resource(
+            "partitions",
+            ResourceType.partitions,
+            force_cache_update,
+        )
 
-# create_node(name)
-# create_user(name)
-# create_qos(name)
-# create_account(name)
-# create_reservation(name)
-# create_coordinator(name)
-# create_config(name)
+        if not partitions:
+            console.print("[red]No partitions found.[/red]")
+            return
+        if name:
+            Partition.show_one_pretty(name, partitions[name])
+        else:
+            for partition in sorted(partitions.keys()):
+                Partition.show_one_pretty(
+                    partition, partitions[partition]
+                )
+
+    @classmethod
+    def show_one(cls, name: str, data: list[dict]) -> None:
+        """Show partition information."""
+        partitions = Resource.cached_resource(
+            "partitions",
+            ResourceType.partitions,
+        )
+        if not partitions:
+            console.print("[red]No partitions found.[/red]")
+            return
+        if name:
+            Partition.show_one(name, partitions[name])
+        else:
+            for partition in partitions.keys():
+                Partition.show_one(partition, partitions[partition])
+
+    @classmethod
+    def show_one_pretty(cls, name: str, data: list[dict]) -> None:
+        """Show one partition information."""
+        states = {
+            "UP": "[green]UP [/green]",
+            "DRAIN": "[yellow]DRN[/yellow]",
+            "INACTIVE": "[blue]INA[/blue]",
+            "DOWN": "[red]DWN[/red]",
+        }
+        width = cls.max_width()
+        state = states[data.pop("State")]
+        max_time = data.pop("MaxTime")
+        def_time = data.pop("DefaultTime")
+        total_nodes = data.pop("TotalNodes")
+        total_cpus = data.pop("TotalCPUs")
+        second_line_len = len(
+            f"Nodes/CPUs: {total_nodes}/{total_cpus} "
+        )
+        nodes = (
+            data["Nodes"]
+            if len(data["Nodes"]) < width - second_line_len - 3
+            else data["Nodes"][: (width - second_line_len - 5)] + "..."
+        )
+        data.pop("Nodes")
+        console.print(
+            "=============================================\n"
+            f"Partition: [partition]{escape(name)}[/] {state} "
+            f"def/max [time]{def_time}/{max_time}[/]"
+        )
+        console.print(
+            f"Nodes/CPUs: [b]{total_nodes}/{total_cpus}"
+            f"[/] ([nodes]{escape(nodes)}[/])"
+        )
+        flags = {
+            key.lower(): value
+            for key, value in data.items()
+            if cls.value_types[key.lower()]["flag"]
+        }
+        not_flags = {
+            key.lower(): value
+            for key, value in data.items()
+            if not cls.value_types[key.lower()]["flag"]
+        }
+        line_len = 2
+        something_was_printed = False
+        console.print("  ", end="")
+        for key in sorted(flags.keys()):
+            value = flags[key]
+            if key in cls.value_types:
+                if value == cls.value_types[key]["def"]:
+                    continue
+                line_len += len(key) + len(value) + 3
+                if line_len > width:
+                    console.print("  ")
+                    line_len = 0
+                if value == "YES":
+                    console.print(f"[green]{escape(key)}[/]", end=" ")
+                else:
+                    console.print(f"[red]{escape(key)}[/]", end=" ")
+                something_was_printed = True
+        if something_was_printed:
+            console.print()
+        line_len = 2
+        something_was_printed = False
+        console.print("  ", end="")
+        for key in sorted(not_flags.keys()):
+            value = not_flags[key]
+            if key in cls.value_types:
+                if value == cls.value_types[key]["def"]:
+                    continue
+                line_len += len(key) + len(value) + 3
+                if line_len > width:
+                    console.print("  ")
+                    line_len = 0
+                style = (
+                    "allow"
+                    if re.match(r"allow", key)
+                    else (
+                        "deny"
+                        if re.match(r"deny", key)
+                        else (
+                            "qos" if re.match(r"qos", key) else "b blue"
+                        )
+                    )
+                )
+                console.print(f"{key}: [{style}]{value}[/]", end=" ")
+                something_was_printed = True
+        if something_was_printed:
+            console.print()

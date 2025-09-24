@@ -106,6 +106,16 @@ def resolve_resource_alias(resource: str) -> str:
     return aliases.get(resource, resource)
 
 
+def get_output_style(ctx: click.Context) -> str:
+    """Get the output style from context."""
+    return ctx.obj.get("style", "pretty")
+
+
+def get_force_cache_update(ctx: click.Context) -> bool:
+    """Get the force cache update flag from context."""
+    return ctx.obj.get("force_cache_update", False)
+
+
 def create_autocomplete() -> AutoComplete:
     """Create and return an autocomplete instance."""
     words: Dict[str, Dict[str, Any]] = {
@@ -168,9 +178,46 @@ def show_command_help_with_resources(
 @click.group(context_settings=CONTEXT_SETTINGS)
 @click.version_option()
 @click.help_option("-h", "--help")
-def main() -> None:
+@click.option(
+    "--style",
+    type=click.Choice(["pretty", "json"]),
+    default="pretty",
+    help="Output style: pretty (default) or json",
+)
+@click.option(
+    "--pretty",
+    is_flag=True,
+    help="Use pretty output format (equivalent to --style pretty)",
+)
+@click.option(
+    "--json",
+    is_flag=True,
+    help="Use JSON output format (equivalent to --style json)",
+)
+@click.option(
+    "--force-cache-update",
+    is_flag=True,
+    help="Force update of resource cache, bypassing cache timeout",
+)
+@click.pass_context
+def main(
+    ctx: click.Context,
+    style: str,
+    pretty: bool,
+    json: bool,
+    force_cache_update: bool,
+) -> None:
     """Slurm Swiss Knife - A CLI tool for Slurm cluster management."""
-    pass
+    # Handle convenience flags
+    if pretty:
+        style = "pretty"
+    elif json:
+        style = "json"
+
+    # Store style and cache update flag in context for subcommands to access
+    ctx.ensure_object(dict)
+    ctx.obj["style"] = style
+    ctx.obj["force_cache_update"] = force_cache_update
 
 
 class CustomGroup(click.Group):
@@ -207,7 +254,8 @@ def register_commands() -> None:
     # Clear existing commands to avoid duplicates
     main.commands.clear()
 
-    # Register main commands only (aliases are still functional but hidden from help)
+    # Register main commands only
+    # (aliases are still functional but hidden from help)
     main.add_command(show, name="show")
     main.add_command(update, name="update")
     main.add_command(create, name="create")
@@ -217,7 +265,8 @@ def register_commands() -> None:
     main.add_command(help, name="help")
     main.add_command(version, name="version")
 
-    # Register aliases but hide them from help by not adding them to the main group
+    # Register aliases but hide them from help by not adding them
+    # to the main group
     # Instead, we'll add them as separate commands that don't appear in help
     # Show aliases
     main.add_command(show_alias_sh, name="sh")
@@ -266,106 +315,126 @@ def register_commands() -> None:
     callback=show_command_help_with_resources,
     help="Show this message and exit.",
 )
+@click.pass_context
 def show(
+    ctx: click.Context,
     resource: Optional[str],
     field: Optional[str],
     verbose: bool,
     **kwargs,
 ) -> None:
     """Show information about Slurm resources (aliases: sh, s)."""
+    style = get_output_style(ctx)
+    force_cache_update = get_force_cache_update(ctx)
     if resource == "config":
-        Config.show()
+        Config.show(style=style, force_cache_update=force_cache_update)
     elif resource[0:4] == "node":
+        data = Resource.cached_resource(
+            resource,
+            ResourceType.nodes,
+            force_cache_update,
+        )
         if field:
-            if Resource.cached_resource(
-                resource,
-                Resource.cached_nodes_file,
-                "scontrol show node --json",
-                ResourceType.nodes,
-            ):
-                Node.show(field)
-            else:
-                console.print(f"[red]Node '{field}' not found.[/red]")
+            Node.show(field, data, style=style)
         else:
-            Node.show()
+            Node.show(data, style=style)
     elif resource[:4] == "part":
+        data = Resource.cached_resource(
+            resource,
+            ResourceType.partitions,
+            force_cache_update,
+        )
         if field:
-            if Resource.cached_resource(
-                resource,
-                Resource.cached_partitions_file,
-                "scontrol show partition --json",
-                ResourceType.partitions,
-            ):
-                Partition.show(field)
-            else:
-                console.print(
-                    f"[red]Partition '{field}' not found.[/red]"
-                )
+            Partition.show(field, data, style=style)
         else:
-            Partition.show()
+            Partition.show(data, style=style)
     elif resource[:4] == "user":
+        data = Resource.cached_resource(
+            resource,
+            ResourceType.users,
+            force_cache_update,
+        )
         if field:
             if Resource.cached_resource(
                 resource,
-                Resource.cached_users_file,
-                "sacctmgr show user --json",
                 ResourceType.users,
+                force_cache_update,
             ):
-                User.show(field)
+                User.show(
+                    field,
+                    style=style,
+                    force_cache_update=force_cache_update,
+                )
             else:
                 console.print(f"[red]User '{field}' not found.[/red]")
         else:
-            User.show()
+            User.show(
+                style=style, force_cache_update=force_cache_update
+            )
     elif resource[:3] == "qos":
         if field:
             if Resource.cached_resource(
                 resource,
-                Resource.cached_qos_file,
-                "sacctmgr show qos --json",
                 ResourceType.qos,
+                force_cache_update,
             ):
-                Qos.show(field)
+                Qos.show(
+                    field,
+                    style=style,
+                    force_cache_update=force_cache_update,
+                )
             else:
                 console.print(f"[red]Qos '{field}' not found.[/red]")
         else:
-            Qos.show()
+            Qos.show(style=style, force_cache_update=force_cache_update)
     elif resource[:3] == "acc":
         if field:
             if Resource.cached_resource(
                 resource,
-                Resource.cached_accounts_file,
-                "sacctmgr show accounts --json",
                 ResourceType.accounts,
+                force_cache_update,
             ):
-                Account.show(field)
+                Account.show(
+                    field,
+                    style=style,
+                    force_cache_update=force_cache_update,
+                )
             else:
                 console.print(
                     f"[red]Account '{field}' not found.[/red]"
                 )
         else:
-            Account.show()
+            Account.show(
+                style=style, force_cache_update=force_cache_update
+            )
     elif resource[:3] == "res" and Resource.cached_resource(
         resource,
-        Resource.cached_reservations_file,
-        "scontrol show reservations --json",
         ResourceType.reservations,
+        force_cache_update,
     ):
-        Partition.show(field)
+        Reservation.show(
+            field, style=style, force_cache_update=force_cache_update
+        )
     elif resource[:5] == "coord":
         if field:
             if Resource.cached_resource(
                 resource,
-                Resource.cached_coordinators_file,
-                "sacctmgr show coordinators --json",
                 ResourceType.coordinators,
+                force_cache_update,
             ):
-                Coordinator.show(field)
+                Coordinator.show(
+                    field,
+                    style=style,
+                    force_cache_update=force_cache_update,
+                )
             else:
                 console.print(
                     f"[red]Coordinator '{field}' not found.[/red]"
                 )
         else:
-            Coordinator.show()
+            Coordinator.show(
+                style=style, force_cache_update=force_cache_update
+            )
     else:
         console.print(f"[red]Resource '{resource}' not found.[/red]")
 
@@ -389,46 +458,84 @@ def show(
     callback=show_command_help_with_resources,
     help="Show this message and exit.",
 )
+@click.pass_context
 def show_alias_sh(
+    ctx: click.Context,
     resource: Optional[str],
     field: Optional[str],
     verbose: bool,
     **kwargs,
 ) -> None:
     """Show information about Slurm resources (alias for show)."""
+    style = get_output_style(ctx)
+    force_cache_update = get_force_cache_update(ctx)
     # Call the show function directly with the same logic
     if resource == "config":
-        Config.show()
+        Config.show(style=style, force_cache_update=force_cache_update)
     elif resource and resource[0:4] == "node":
         if field:
-            Node.show(field)
+            Node.show(
+                field,
+                style=style,
+                force_cache_update=force_cache_update,
+            )
         else:
-            Node.show()
+            Node.show(
+                style=style, force_cache_update=force_cache_update
+            )
     elif resource and resource[0:4] == "part":
         if field:
-            Partition.show(field)
+            Partition.show(
+                field,
+                style=style,
+                force_cache_update=force_cache_update,
+            )
         else:
-            Partition.show()
+            Partition.show(
+                style=style, force_cache_update=force_cache_update
+            )
     elif resource and resource[0:4] == "user":
         if field:
-            User.show(field)
+            User.show(
+                field,
+                style=style,
+                force_cache_update=force_cache_update,
+            )
         else:
-            User.show()
+            User.show(
+                style=style, force_cache_update=force_cache_update
+            )
     elif resource and resource[0:3] == "qos":
         if field:
-            Qos.show(field)
+            Qos.show(
+                field,
+                style=style,
+                force_cache_update=force_cache_update,
+            )
         else:
-            Qos.show()
+            Qos.show(style=style, force_cache_update=force_cache_update)
     elif resource and resource[0:3] == "acc":
         if field:
-            Account.show(field)
+            Account.show(
+                field,
+                style=style,
+                force_cache_update=force_cache_update,
+            )
         else:
-            Account.show()
+            Account.show(
+                style=style, force_cache_update=force_cache_update
+            )
     elif resource and resource[0:3] == "res":
         if field:
-            Reservation.show(field)
+            Reservation.show(
+                field,
+                style=style,
+                force_cache_update=force_cache_update,
+            )
         else:
-            Reservation.show()
+            Reservation.show(
+                style=style, force_cache_update=force_cache_update
+            )
     elif resource and resource[0:5] == "coord":
         if field:
             if field in (
@@ -441,13 +548,19 @@ def show_alias_sh(
                 ResourceType.reservations,
                 ResourceType.coordinators,
             ):
-                Coordinator.show(field)
+                Coordinator.show(
+                    field,
+                    style=style,
+                    force_cache_update=force_cache_update,
+                )
             else:
                 console.print(
                     f"[red]Coordinator '{field}' not found.[/red]"
                 )
         else:
-            Coordinator.show()
+            Coordinator.show(
+                style=style, force_cache_update=force_cache_update
+            )
     else:
         console.print(f"[red]Resource '{resource}' not found.[/red]")
 
@@ -470,46 +583,84 @@ def show_alias_sh(
     callback=show_command_help_with_resources,
     help="Show this message and exit.",
 )
+@click.pass_context
 def show_alias_s(
+    ctx: click.Context,
     resource: Optional[str],
     field: Optional[str],
     verbose: bool,
     **kwargs,
 ) -> None:
     """Show information about Slurm resources (alias for show)."""
+    style = get_output_style(ctx)
+    force_cache_update = get_force_cache_update(ctx)
     # Call the show function directly with the same logic
     if resource == "config":
-        Config.show()
+        Config.show(style=style, force_cache_update=force_cache_update)
     elif resource and resource[0:4] == "node":
         if field:
-            Node.show(field)
+            Node.show(
+                field,
+                style=style,
+                force_cache_update=force_cache_update,
+            )
         else:
-            Node.show()
+            Node.show(
+                style=style, force_cache_update=force_cache_update
+            )
     elif resource and resource[0:4] == "part":
         if field:
-            Partition.show(field)
+            Partition.show(
+                field,
+                style=style,
+                force_cache_update=force_cache_update,
+            )
         else:
-            Partition.show()
+            Partition.show(
+                style=style, force_cache_update=force_cache_update
+            )
     elif resource and resource[0:4] == "user":
         if field:
-            User.show(field)
+            User.show(
+                field,
+                style=style,
+                force_cache_update=force_cache_update,
+            )
         else:
-            User.show()
+            User.show(
+                style=style, force_cache_update=force_cache_update
+            )
     elif resource and resource[0:3] == "qos":
         if field:
-            Qos.show(field)
+            Qos.show(
+                field,
+                style=style,
+                force_cache_update=force_cache_update,
+            )
         else:
-            Qos.show()
+            Qos.show(style=style, force_cache_update=force_cache_update)
     elif resource and resource[0:3] == "acc":
         if field:
-            Account.show(field)
+            Account.show(
+                field,
+                style=style,
+                force_cache_update=force_cache_update,
+            )
         else:
-            Account.show()
+            Account.show(
+                style=style, force_cache_update=force_cache_update
+            )
     elif resource and resource[0:3] == "res":
         if field:
-            Reservation.show(field)
+            Reservation.show(
+                field,
+                style=style,
+                force_cache_update=force_cache_update,
+            )
         else:
-            Reservation.show()
+            Reservation.show(
+                style=style, force_cache_update=force_cache_update
+            )
     elif resource and resource[0:5] == "coord":
         if field:
             if field in (
@@ -522,13 +673,19 @@ def show_alias_s(
                 ResourceType.reservations,
                 ResourceType.coordinators,
             ):
-                Coordinator.show(field)
+                Coordinator.show(
+                    field,
+                    style=style,
+                    force_cache_update=force_cache_update,
+                )
             else:
                 console.print(
                     f"[red]Coordinator '{field}' not found.[/red]"
                 )
         else:
-            Coordinator.show()
+            Coordinator.show(
+                style=style, force_cache_update=force_cache_update
+            )
     else:
         console.print(f"[red]Resource '{resource}' not found.[/red]")
 
@@ -1925,7 +2082,8 @@ def autocomplete(word: str, max_cost: int, size: int) -> None:
 
 @click.command(context_settings=CONTEXT_SETTINGS)
 def list_resources() -> None:
-    """List all available resource types and their fields (aliases: list, ls, l)."""
+    """List all available resource types and their fields
+    (aliases: list, ls, l)."""
     table = Table(title="Available Slurm Resources")
     table.add_column("Resource Type", style="cyan", no_wrap=True)
     table.add_column("Available Fields", style="green")
@@ -1967,7 +2125,8 @@ def list_resources() -> None:
 # List-resources command aliases
 @click.command(context_settings=CONTEXT_SETTINGS, name="list")
 def list_resources_alias_list() -> None:
-    """List all available resource types and their fields (alias for list-resources)."""
+    """List all available resource types and their fields
+    (alias for list-resources)."""
     table = Table(title="Available Slurm Resources")
     table.add_column("Resource Type", style="cyan", no_wrap=True)
     table.add_column("Available Fields", style="green")
@@ -2008,7 +2167,8 @@ def list_resources_alias_list() -> None:
 
 @click.command(context_settings=CONTEXT_SETTINGS, name="ls")
 def list_resources_alias_ls() -> None:
-    """List all available resource types and their fields (alias for list-resources)."""
+    """List all available resource types and their fields
+    (alias for list-resources)."""
     table = Table(title="Available Slurm Resources")
     table.add_column("Resource Type", style="cyan", no_wrap=True)
     table.add_column("Available Fields", style="green")
@@ -2049,7 +2209,8 @@ def list_resources_alias_ls() -> None:
 
 @click.command(context_settings=CONTEXT_SETTINGS, name="l")
 def list_resources_alias_l() -> None:
-    """List all available resource types and their fields (alias for list-resources)."""
+    """List all available resource types and their fields
+    (alias for list-resources)."""
     table = Table(title="Available Slurm Resources")
     table.add_column("Resource Type", style="cyan", no_wrap=True)
     table.add_column("Available Fields", style="green")

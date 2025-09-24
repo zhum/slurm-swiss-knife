@@ -3,10 +3,11 @@
 import subprocess
 from typing import Any
 
+from .base_resource import BaseSlurmResource
 from .utils import console
 
 
-class Qos:
+class Qos(BaseSlurmResource):
     def __init__(self, name: str, **kwargs: Any):
         self.name = name
         self.kwargs = kwargs
@@ -45,3 +46,35 @@ class Qos:
     def delete(cls, name: str) -> None:
         """Delete a QoS."""
         console.print(f"Deleting QoS: {name}")
+
+    @classmethod
+    def show(
+        cls,
+        field: str = None,
+        style: str = "pretty",
+        force_cache_update: bool = False,
+    ) -> None:
+        """Show QoS information."""
+        try:
+            if style == "json":
+                result = subprocess.run(
+                    ["sacctmgr", "show", "qos", "--json"],
+                    check=True,
+                    capture_output=True,
+                    text=True,
+                )
+                if result.stdout:
+                    console.print_json(result.stdout)
+            else:  # pretty style
+                result = subprocess.run(
+                    ["sacctmgr", "show", "qos"],
+                    check=True,
+                    capture_output=True,
+                    text=True,
+                )
+                if result.stdout:
+                    console.print(result.stdout)
+        except subprocess.CalledProcessError as e:
+            console.print(
+                f"[red]Failed to show QoS:[/red] {e.stderr or e}"
+            )

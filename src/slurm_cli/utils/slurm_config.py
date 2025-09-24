@@ -3,10 +3,11 @@
 import subprocess
 from typing import Any
 
+from .base_resource import BaseSlurmResource
 from .utils import console
 
 
-class Config:
+class Config(BaseSlurmResource):
     def __init__(self, name: str, **kwargs: Any):
         self.name = name
         self.kwargs = kwargs
@@ -32,17 +33,29 @@ class Config:
             )
 
     @classmethod
-    def show(cls) -> None:
+    def show(
+        cls, style: str = "pretty", force_cache_update: bool = False
+    ) -> None:
         """Show a config."""
         try:
-            result = subprocess.run(
-                ["scontrol", "show", "config"],
-                check=True,
-                capture_output=True,
-                text=True,
-            )
-            if result.stdout:
-                console.print(result.stdout)
+            if style == "json":
+                result = subprocess.run(
+                    ["scontrol", "show", "config", "--json"],
+                    check=True,
+                    capture_output=True,
+                    text=True,
+                )
+                if result.stdout:
+                    console.print_json(result.stdout)
+            else:  # pretty style
+                result = subprocess.run(
+                    ["scontrol", "show", "config"],
+                    check=True,
+                    capture_output=True,
+                    text=True,
+                )
+                if result.stdout:
+                    console.print(result.stdout)
         except subprocess.CalledProcessError as e:
             console.print(
                 f"[red]Failed to show config:[/red] {e.stderr or e}"
