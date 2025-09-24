@@ -4,7 +4,7 @@ import re
 import subprocess
 import time
 from enum import Enum
-from typing import Any, Dict
+from typing import Any, Dict, Tuple
 
 from .utils import console
 
@@ -20,7 +20,7 @@ class ResourceType(str, Enum):
     accounts = "accounts"
     reservations = "reservations"
     config = "config"
-    unknown = "unknown"
+    unknown = None
 
 
 SPINNER_STYLE = "dots2"
@@ -55,49 +55,60 @@ class Resource:
     }
 
     @classmethod
+    def set_cache_timeout(cls, timeout: int) -> None:
+        """Set the cache timeout."""
+        cls.CACHE_TIMEOUT = timeout
+
+    @classmethod
     def guess_resource_type(
         cls, name: str, force_update: bool = False
-    ) -> ResourceType:
+    ) -> Tuple[ResourceType, dict]:
         """Guess the resource type from the resource name."""
         if re.match(r"^[0-9_]+$", name):
-            return ResourceType.jobs
-        if cls.cached_resource(
-            name,
-            ResourceType.nodes,
+            return ResourceType.jobs, None
+        part = cls.cached_resource(
+            "partitions",
             force_update,
-        ):
-            return ResourceType.nodes
-        if cls.cached_resource(
-            name,
-            ResourceType.partitions,
+        )
+        if part and name in part.keys():
+            return ResourceType.partitions, part
+        node = cls.cached_resource(
+            "nodes",
             force_update,
-        ):
-            return ResourceType.partitions
-        if cls.cached_resource(
-            name,
-            ResourceType.users,
+        )
+        if node and name in node.keys():
+            return ResourceType.nodes, node
+        user = cls.cached_resource(
+            "users",
             force_update,
-        ):
-            return ResourceType.users
-        if cls.cached_resource(
-            name,
-            ResourceType.qos,
+        )
+        if user and name in user.keys():
+            return ResourceType.users, user
+        qos = cls.cached_resource(
+            "qos",
             force_update,
-        ):
-            return ResourceType.qos
-        if cls.cached_resource(
-            name,
-            ResourceType.accounts,
+        )
+        if qos and name in qos.keys():
+            return ResourceType.qos, qos
+        account = cls.cached_resource(
+            "accounts",
             force_update,
-        ):
-            return ResourceType.accounts
-        if cls.cached_resource(
-            name,
-            ResourceType.reservations,
+        )
+        if account and name in account.keys():
+            return ResourceType.accounts, account
+        reservation = cls.cached_resource(
+            "reservations",
             force_update,
-        ):
-            return ResourceType.reservations
-        return ResourceType.unknown
+        )
+        if reservation and name in reservation.keys():
+            return ResourceType.reservations, reservation
+        coordinator = cls.cached_resource(
+            "coordinators",
+            force_update,
+        )
+        if coordinator and name in coordinator.keys():
+            return ResourceType.coordinators, coordinator
+        return ResourceType.unknown, None
 
     @classmethod
     def update_cache(cls, name: str) -> Dict[str, Any]:
@@ -116,11 +127,12 @@ class Resource:
     def cached_resource(
         cls,
         name: str,
-        resource_type: ResourceType,
         force_update: bool = False,
     ) -> bool:  # noqa: E501
         """Check if the resource is a cached resource."""
-        file = cls.CACHE_FILES[name]
+        file = cls.CACHE_FILES.get(name)
+        if not file:
+            return None
         if not force_update and os.path.exists(file):
             file_mtime = os.path.getmtime(file)
             if time.time() - file_mtime < cls.CACHE_TIMEOUT:
@@ -144,6 +156,7 @@ class Resource:
     @classmethod
     def run_cmd_json(cls, cmd: [str]) -> Dict[str, Any] | None:
         """Run a command and return the JSON output."""
+        result = None
         try:
             result = subprocess.run(
                 cmd,
@@ -158,9 +171,9 @@ class Resource:
             console.print(
                 f"[red]Failed to run command '{cmd}':[/red]" f" {e}"
             )
-            if result.stderr:
+            if result and result.stderr:
                 console.print(result.stderr)
-            if result.stdout:
+            if result and result.stdout:
                 console.print(result.stdout)
         return None
 

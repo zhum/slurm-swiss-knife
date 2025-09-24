@@ -8,7 +8,8 @@ from typing import Any
 from rich.markup import escape
 
 from .base_resource import BaseSlurmResource
-from .resources import Resource, ResourceType
+
+# from .resources import Resource, ResourceType
 from .utils import console
 
 
@@ -376,32 +377,25 @@ class Partition(BaseSlurmResource):
     def show(
         cls,
         name: str = None,
+        data: dict = None,
         style: str = "pretty",
         force_cache_update: bool = False,
     ) -> None:
         """Show partition information."""
         if style == "pretty":
-            cls.show_pretty(name, force_cache_update)
+            cls.show_pretty(name, data)
         elif style == "json":
             if name:
                 console.print_json(
                     json.dumps(
-                        Resource.cached_resource(
-                            "partitions",
-                            ResourceType.partitions,
-                            force_cache_update,
-                        )[name],
+                        data[name],
                         indent=4,
                     )
                 )
             else:
                 console.print_json(
                     json.dumps(
-                        Resource.cached_resource(
-                            "partitions",
-                            ResourceType.partitions,
-                            force_cache_update,
-                        ),
+                        data,
                         indent=4,
                     )
                 )
@@ -410,13 +404,8 @@ class Partition(BaseSlurmResource):
 
     @classmethod
     def show_pretty(
-        cls, name: str = None, force_cache_update: bool = False
+        cls, name: str = None, partitions: dict = None
     ) -> None:
-        partitions = Resource.cached_resource(
-            "partitions",
-            ResourceType.partitions,
-            force_cache_update,
-        )
 
         if not partitions:
             console.print("[red]No partitions found.[/red]")
@@ -429,21 +418,17 @@ class Partition(BaseSlurmResource):
                     partition, partitions[partition]
                 )
 
-    @classmethod
-    def show_one(cls, name: str, data: list[dict]) -> None:
-        """Show partition information."""
-        partitions = Resource.cached_resource(
-            "partitions",
-            ResourceType.partitions,
-        )
-        if not partitions:
-            console.print("[red]No partitions found.[/red]")
-            return
-        if name:
-            Partition.show_one(name, partitions[name])
-        else:
-            for partition in partitions.keys():
-                Partition.show_one(partition, partitions[partition])
+    # @classmethod
+    # def show_one(cls, name: str, partitions: dict) -> None:
+    #     """Show partition information."""
+    #     if not partitions:
+    #         console.print("[red]No partitions found.[/red]")
+    #         return
+    #     if name:
+    #         Partition.show_one(name, partitions[name])
+    #     else:
+    #         for partition in partitions.keys():
+    #             Partition.show_one(partition, partitions[partition])
 
     @classmethod
     def show_one_pretty(cls, name: str, data: list[dict]) -> None:

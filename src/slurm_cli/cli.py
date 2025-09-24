@@ -21,7 +21,7 @@ Note: This requires Click's completion support
 which is available in Click 8.0+.
 """
 
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Tuple
 
 import click
 from fast_autocomplete import AutoComplete
@@ -35,7 +35,7 @@ from .utils.nodes import Node
 from .utils.partitions import Partition
 from .utils.qos import Qos
 from .utils.reservations import Reservation
-from .utils.resources import Resource, ResourceType
+from .utils.resources import Resource
 from .utils.slurm_config import Config
 from .utils.users import User
 from .utils.utils import console
@@ -124,6 +124,73 @@ def create_autocomplete() -> AutoComplete:
     return AutoComplete(words=words, synonyms=VERBS)
 
 
+def ensure_resource_name(
+    resource: str,
+    field: str = None,
+    force_update: bool = False,
+) -> Tuple[str, str, dict]:
+    """
+    Ensure the resource name is a valid resource name.
+    Return the resource type, field, and data.
+    """
+    if resource[:4] == "part":
+        data = Resource.cached_resource(
+            "partitions",
+            force_update,
+        )
+        return resource, field, data
+    elif resource[:4] == "node":
+        data = Resource.cached_resource(
+            "nodes",
+            force_update,
+        )
+        return resource, field, data
+    elif resource[:4] == "user":
+        data = Resource.cached_resource(
+            "users",
+            force_update,
+        )
+        return resource, field, data
+    elif resource[:3] == "qos":
+        data = Resource.cached_resource(
+            "qos",
+            force_update,
+        )
+        return resource, field, data
+    elif resource[:3] == "acc":
+        data = Resource.cached_resource(
+            "accounts",
+            force_update,
+        )
+        return resource, field, data
+    elif resource[:3] == "res":
+        data = Resource.cached_resource(
+            "reservations",
+            force_update,
+        )
+        return resource, field, data
+    elif resource[:5] == "coord":
+        data = Resource.cached_resource(
+            "coordinators",
+            force_update,
+        )
+        return resource, field, data
+    elif resource[:4] == "conf":
+        data = Resource.cached_resource(
+            "config",
+            force_update,
+        )
+        return resource, field, data
+    else:
+        resource_type, data = Resource.guess_resource_type(
+            resource, force_update
+        )
+        if resource_type.value:
+            return resource_type.value, resource, data
+        else:
+            return None, resource, data
+
+
 def show_command_help_with_resources(
     ctx: click.Context, param: click.Parameter, value: bool
 ) -> None:
@@ -186,18 +253,28 @@ def show_command_help_with_resources(
 )
 @click.option(
     "--pretty",
+    "-p",
     is_flag=True,
     help="Use pretty output format (equivalent to --style pretty)",
 )
 @click.option(
     "--json",
+    "-j",
     is_flag=True,
     help="Use JSON output format (equivalent to --style json)",
 )
 @click.option(
     "--force-cache-update",
+    "-f",
     is_flag=True,
     help="Force update of resource cache, bypassing cache timeout",
+)
+@click.option(
+    "--cache-timeout",
+    "-t",
+    type=int,
+    default=60,
+    help="Cache timeout in seconds (default: 60)",
 )
 @click.pass_context
 def main(
@@ -206,6 +283,7 @@ def main(
     pretty: bool,
     json: bool,
     force_cache_update: bool,
+    cache_timeout: int,
 ) -> None:
     """Slurm Swiss Knife - A CLI tool for Slurm cluster management."""
     # Handle convenience flags
@@ -214,10 +292,14 @@ def main(
     elif json:
         style = "json"
 
-    # Store style and cache update flag in context for subcommands to access
+    # Store style and cache update flag in context
+    # for subcommands to access
     ctx.ensure_object(dict)
     ctx.obj["style"] = style
     ctx.obj["force_cache_update"] = force_cache_update
+
+    # Set the cache timeout in the Resource class
+    Resource.set_cache_timeout(cache_timeout)
 
 
 class CustomGroup(click.Group):
@@ -226,12 +308,22 @@ class CustomGroup(click.Group):
     def format_commands(self, ctx, formatter):
         """Custom command formatter that filters out aliases."""
         commands = []
+        main_command_names = {
+            "show",
+            "update",
+            "create",
+            "delete",
+            "list-resources",
+            "autocomplete",
+            "help",
+            "version",
+        }
+
         for subcommand in self.list_commands(ctx):
             cmd = self.get_command(ctx, subcommand)
-            # Skip commands that are aliases (contain "alias for" in help)
-            if cmd and cmd.help:
-                if "alias for" not in cmd.help.lower():
-                    commands.append((subcommand, cmd))
+            # Skip commands that are aliases (not main command names)
+            if cmd and subcommand not in main_command_names:
+                continue
             elif cmd:
                 commands.append((subcommand, cmd))
 
@@ -255,7 +347,7 @@ def register_commands() -> None:
     main.commands.clear()
 
     # Register main commands only
-    # (aliases are still functional but hidden from help)
+    # Aliases will be handled by modifying the help text to show them inline
     main.add_command(show, name="show")
     main.add_command(update, name="update")
     main.add_command(create, name="create")
@@ -265,35 +357,53 @@ def register_commands() -> None:
     main.add_command(help, name="help")
     main.add_command(version, name="version")
 
-    # Register aliases but hide them from help by not adding them
-    # to the main group
-    # Instead, we'll add them as separate commands that don't appear in help
+    # Register aliases as separate commands but hide them from help
     # Show aliases
-    main.add_command(show_alias_sh, name="sh")
-    main.add_command(show_alias_s, name="s")
+    main.add_command(show, name="sh")
+    main.add_command(show, name="s")
 
     # Update aliases
-    main.add_command(update_alias_u, name="u")
-    main.add_command(update_alias_edit, name="edit")
-    main.add_command(update_alias_mod, name="mod")
-    main.add_command(update_alias_modify, name="modify")
+    main.add_command(update, name="u")
+    main.add_command(update, name="upd")
+    main.add_command(update, name="edit")
+    main.add_command(update, name="change")
+    main.add_command(update, name="ch")
+    main.add_command(update, name="set")
+    main.add_command(update, name="mod")
+    main.add_command(update, name="modify")
 
     # Create aliases
-    main.add_command(create_alias_c, name="c")
-    main.add_command(create_alias_new, name="new")
-    main.add_command(create_alias_add, name="add")
+    main.add_command(create, name="c")
+    main.add_command(create, name="new")
+    main.add_command(create, name="add")
 
     # Delete aliases
-    main.add_command(delete_alias_del, name="del")
-    main.add_command(delete_alias_d, name="d")
-    main.add_command(delete_alias_remove, name="remove")
-    main.add_command(delete_alias_rem, name="rem")
-    main.add_command(delete_alias_rm, name="rm")
+    main.add_command(delete, name="del")
+    main.add_command(delete, name="d")
+    main.add_command(delete, name="remove")
+    main.add_command(delete, name="rem")
+    main.add_command(delete, name="rm")
 
     # List-resources aliases
-    main.add_command(list_resources_alias_list, name="list")
-    main.add_command(list_resources_alias_ls, name="ls")
-    main.add_command(list_resources_alias_l, name="l")
+    main.add_command(list_resources, name="list")
+    main.add_command(list_resources, name="ls")
+    main.add_command(list_resources, name="l")
+
+    # Modify help text to show aliases inline
+    show.help = (
+        "Show information about Slurm resources (aliases: sh, s)"
+    )
+    update.help = (
+        "Update Slurm resource fields "
+        "(aliases: u, upd, edit, change, ch, set, mod, modify)"
+    )
+    create.help = "Create Slurm resources (aliases: c, new, add)"
+    delete.help = (
+        "Delete Slurm resources (aliases: del, d, remove, rem, rm)"
+    )
+    list_resources.help = (
+        "List available Slurm resources (aliases: list, ls, l)"
+    )
 
 
 # Show command
@@ -326,366 +436,47 @@ def show(
     """Show information about Slurm resources (aliases: sh, s)."""
     style = get_output_style(ctx)
     force_cache_update = get_force_cache_update(ctx)
-    if resource == "config":
-        Config.show(style=style, force_cache_update=force_cache_update)
-    elif resource[0:4] == "node":
-        data = Resource.cached_resource(
-            resource,
-            ResourceType.nodes,
-            force_cache_update,
-        )
+    canonical_resource, field, data = ensure_resource_name(
+        resource, field, force_cache_update
+    )
+    # TODO: eliminate double checking of cached resource
+    if canonical_resource[:4] == "conf":
+        Config.show(data=data, style=style)
+    elif canonical_resource[:4] == "node":
         if field:
-            Node.show(field, data, style=style)
+            Node.show(name=field, data=data, style=style)
         else:
-            Node.show(data, style=style)
-    elif resource[:4] == "part":
-        data = Resource.cached_resource(
-            resource,
-            ResourceType.partitions,
-            force_cache_update,
-        )
+            Node.show(data=data, style=style)
+    elif canonical_resource[:4] == "part":
         if field:
-            Partition.show(field, data, style=style)
+            Partition.show(name=field, data=data, style=style)
         else:
-            Partition.show(data, style=style)
-    elif resource[:4] == "user":
-        data = Resource.cached_resource(
-            resource,
-            ResourceType.users,
-            force_cache_update,
-        )
+            Partition.show(data=data, style=style)
+    elif canonical_resource[:4] == "user":
         if field:
-            if Resource.cached_resource(
-                resource,
-                ResourceType.users,
-                force_cache_update,
-            ):
-                User.show(
-                    field,
-                    style=style,
-                    force_cache_update=force_cache_update,
-                )
-            else:
-                console.print(f"[red]User '{field}' not found.[/red]")
+            User.show(name=field, data=data, style=style)
         else:
-            User.show(
-                style=style, force_cache_update=force_cache_update
-            )
-    elif resource[:3] == "qos":
+            User.show(data=data, style=style)
+    elif canonical_resource[:3] == "qos":
         if field:
-            if Resource.cached_resource(
-                resource,
-                ResourceType.qos,
-                force_cache_update,
-            ):
-                Qos.show(
-                    field,
-                    style=style,
-                    force_cache_update=force_cache_update,
-                )
-            else:
-                console.print(f"[red]Qos '{field}' not found.[/red]")
+            Qos.show(name=field, data=data, style=style)
         else:
-            Qos.show(style=style, force_cache_update=force_cache_update)
-    elif resource[:3] == "acc":
+            Qos.show(data=data, style=style)
+    elif canonical_resource[:3] == "acc":
         if field:
-            if Resource.cached_resource(
-                resource,
-                ResourceType.accounts,
-                force_cache_update,
-            ):
-                Account.show(
-                    field,
-                    style=style,
-                    force_cache_update=force_cache_update,
-                )
-            else:
-                console.print(
-                    f"[red]Account '{field}' not found.[/red]"
-                )
+            Account.show(name=field, data=data, style=style)
         else:
-            Account.show(
-                style=style, force_cache_update=force_cache_update
-            )
-    elif resource[:3] == "res" and Resource.cached_resource(
-        resource,
-        ResourceType.reservations,
-        force_cache_update,
-    ):
-        Reservation.show(
-            field, style=style, force_cache_update=force_cache_update
-        )
-    elif resource[:5] == "coord":
+            Account.show(data=data, style=style)
+    elif canonical_resource[:3] == "res":
         if field:
-            if Resource.cached_resource(
-                resource,
-                ResourceType.coordinators,
-                force_cache_update,
-            ):
-                Coordinator.show(
-                    field,
-                    style=style,
-                    force_cache_update=force_cache_update,
-                )
-            else:
-                console.print(
-                    f"[red]Coordinator '{field}' not found.[/red]"
-                )
+            Reservation.show(name=field, data=data, style=style)
         else:
-            Coordinator.show(
-                style=style, force_cache_update=force_cache_update
-            )
-    else:
-        console.print(f"[red]Resource '{resource}' not found.[/red]")
-
-
-# Show command aliases
-@click.command(context_settings=CONTEXT_SETTINGS, name="sh")
-@click.argument(
-    "resource",
-    type=click.Choice(get_resource_choices()),
-    required=False,
-)
-@click.argument("field", required=False)
-@click.option(
-    "--verbose", "-v", is_flag=True, help="Enable verbose output"
-)
-@click.option(
-    "--help",
-    "-h",
-    is_flag=True,
-    is_eager=True,
-    callback=show_command_help_with_resources,
-    help="Show this message and exit.",
-)
-@click.pass_context
-def show_alias_sh(
-    ctx: click.Context,
-    resource: Optional[str],
-    field: Optional[str],
-    verbose: bool,
-    **kwargs,
-) -> None:
-    """Show information about Slurm resources (alias for show)."""
-    style = get_output_style(ctx)
-    force_cache_update = get_force_cache_update(ctx)
-    # Call the show function directly with the same logic
-    if resource == "config":
-        Config.show(style=style, force_cache_update=force_cache_update)
-    elif resource and resource[0:4] == "node":
+            Reservation.show(data=data, style=style)
+    elif canonical_resource[:5] == "coord":
         if field:
-            Node.show(
-                field,
-                style=style,
-                force_cache_update=force_cache_update,
-            )
+            Coordinator.show(name=field, data=data, style=style)
         else:
-            Node.show(
-                style=style, force_cache_update=force_cache_update
-            )
-    elif resource and resource[0:4] == "part":
-        if field:
-            Partition.show(
-                field,
-                style=style,
-                force_cache_update=force_cache_update,
-            )
-        else:
-            Partition.show(
-                style=style, force_cache_update=force_cache_update
-            )
-    elif resource and resource[0:4] == "user":
-        if field:
-            User.show(
-                field,
-                style=style,
-                force_cache_update=force_cache_update,
-            )
-        else:
-            User.show(
-                style=style, force_cache_update=force_cache_update
-            )
-    elif resource and resource[0:3] == "qos":
-        if field:
-            Qos.show(
-                field,
-                style=style,
-                force_cache_update=force_cache_update,
-            )
-        else:
-            Qos.show(style=style, force_cache_update=force_cache_update)
-    elif resource and resource[0:3] == "acc":
-        if field:
-            Account.show(
-                field,
-                style=style,
-                force_cache_update=force_cache_update,
-            )
-        else:
-            Account.show(
-                style=style, force_cache_update=force_cache_update
-            )
-    elif resource and resource[0:3] == "res":
-        if field:
-            Reservation.show(
-                field,
-                style=style,
-                force_cache_update=force_cache_update,
-            )
-        else:
-            Reservation.show(
-                style=style, force_cache_update=force_cache_update
-            )
-    elif resource and resource[0:5] == "coord":
-        if field:
-            if field in (
-                ResourceType.partitions,
-                ResourceType.nodes,
-                ResourceType.jobs,
-                ResourceType.users,
-                ResourceType.qos,
-                ResourceType.accounts,
-                ResourceType.reservations,
-                ResourceType.coordinators,
-            ):
-                Coordinator.show(
-                    field,
-                    style=style,
-                    force_cache_update=force_cache_update,
-                )
-            else:
-                console.print(
-                    f"[red]Coordinator '{field}' not found.[/red]"
-                )
-        else:
-            Coordinator.show(
-                style=style, force_cache_update=force_cache_update
-            )
-    else:
-        console.print(f"[red]Resource '{resource}' not found.[/red]")
-
-
-@click.command(context_settings=CONTEXT_SETTINGS, name="s")
-@click.argument(
-    "resource",
-    type=click.Choice(get_resource_choices()),
-    required=False,
-)
-@click.argument("field", required=False)
-@click.option(
-    "--verbose", "-v", is_flag=True, help="Enable verbose output"
-)
-@click.option(
-    "--help",
-    "-h",
-    is_flag=True,
-    is_eager=True,
-    callback=show_command_help_with_resources,
-    help="Show this message and exit.",
-)
-@click.pass_context
-def show_alias_s(
-    ctx: click.Context,
-    resource: Optional[str],
-    field: Optional[str],
-    verbose: bool,
-    **kwargs,
-) -> None:
-    """Show information about Slurm resources (alias for show)."""
-    style = get_output_style(ctx)
-    force_cache_update = get_force_cache_update(ctx)
-    # Call the show function directly with the same logic
-    if resource == "config":
-        Config.show(style=style, force_cache_update=force_cache_update)
-    elif resource and resource[0:4] == "node":
-        if field:
-            Node.show(
-                field,
-                style=style,
-                force_cache_update=force_cache_update,
-            )
-        else:
-            Node.show(
-                style=style, force_cache_update=force_cache_update
-            )
-    elif resource and resource[0:4] == "part":
-        if field:
-            Partition.show(
-                field,
-                style=style,
-                force_cache_update=force_cache_update,
-            )
-        else:
-            Partition.show(
-                style=style, force_cache_update=force_cache_update
-            )
-    elif resource and resource[0:4] == "user":
-        if field:
-            User.show(
-                field,
-                style=style,
-                force_cache_update=force_cache_update,
-            )
-        else:
-            User.show(
-                style=style, force_cache_update=force_cache_update
-            )
-    elif resource and resource[0:3] == "qos":
-        if field:
-            Qos.show(
-                field,
-                style=style,
-                force_cache_update=force_cache_update,
-            )
-        else:
-            Qos.show(style=style, force_cache_update=force_cache_update)
-    elif resource and resource[0:3] == "acc":
-        if field:
-            Account.show(
-                field,
-                style=style,
-                force_cache_update=force_cache_update,
-            )
-        else:
-            Account.show(
-                style=style, force_cache_update=force_cache_update
-            )
-    elif resource and resource[0:3] == "res":
-        if field:
-            Reservation.show(
-                field,
-                style=style,
-                force_cache_update=force_cache_update,
-            )
-        else:
-            Reservation.show(
-                style=style, force_cache_update=force_cache_update
-            )
-    elif resource and resource[0:5] == "coord":
-        if field:
-            if field in (
-                ResourceType.partitions,
-                ResourceType.nodes,
-                ResourceType.jobs,
-                ResourceType.users,
-                ResourceType.qos,
-                ResourceType.accounts,
-                ResourceType.reservations,
-                ResourceType.coordinators,
-            ):
-                Coordinator.show(
-                    field,
-                    style=style,
-                    force_cache_update=force_cache_update,
-                )
-            else:
-                console.print(
-                    f"[red]Coordinator '{field}' not found.[/red]"
-                )
-        else:
-            Coordinator.show(
-                style=style, force_cache_update=force_cache_update
-            )
+            Coordinator.show(data=data, style=style)
     else:
         console.print(f"[red]Resource '{resource}' not found.[/red]")
 
@@ -768,8 +559,6 @@ def update(
                 Coordinator.update(field, verbose, **update_options)
             elif canonical_resource[:4] == "conf":
                 Config.update(field, verbose, **update_options)
-            # elif canonical_resource[:3] == "job":
-            #     Job.update(field, verbose, **update_options)
             else:
                 console.print(
                     f"[red]Resource '{canonical_resource}' not found.[/red]"
@@ -787,287 +576,100 @@ def update(
             )
 
 
-# Update command aliases
-@click.command(context_settings=CONTEXT_SETTINGS, name="u")
-@click.argument("resource", type=click.Choice(get_resource_choices()))
-@click.argument("field")
-@click.argument("value")
-@click.argument("names", nargs=-1, required=False)
-@click.option(
-    "--verbose", "-v", is_flag=True, help="Enable verbose output"
-)
-@click.option(
-    "--dry-run",
-    is_flag=True,
-    help="Show what would be updated without making changes",
-)
-@click.option(
-    "--help",
-    "-h",
-    is_flag=True,
-    is_eager=True,
-    callback=show_command_help_with_resources,
-    help="Show this message and exit.",
-)
-def update_alias_u(
-    resource: str,
-    field: str,
-    value: str,
-    names: tuple,
-    verbose: bool,
-    dry_run: bool,
-    **kwargs,
-) -> None:
-    """Update Slurm resource fields (alias for update)."""
-    # Resolve resource alias to canonical name
-    canonical_resource = resolve_resource_alias(resource)
+# # Update command
+# @click.command(context_settings=CONTEXT_SETTINGS)
+# @click.argument("resource", type=click.Choice(get_resource_choices()))
+# @click.argument("field")
+# @click.argument("value")
+# @click.argument("names", nargs=-1, required=False)
+# @click.option(
+#     "--verbose", "-v", is_flag=True, help="Enable verbose output"
+# )
+# @click.option(
+#     "--dry-run",
+#     is_flag=True,
+#     help="Show what would be updated without making changes",
+# )
+# @click.option(
+#     "--help",
+#     "-h",
+#     is_flag=True,
+#     is_eager=True,
+#     callback=show_command_help_with_resources,
+#     help="Show this message and exit.",
+# )
+# # Create command aliases
+# def create(
+#     resource: str,
+#     field: str,
+#     value: str,
+#     names: tuple,
+#     verbose: bool,
+#     dry_run: bool,
+#     **kwargs,
+# ) -> None:
+#     """Update Slurm resource fields (alias for update)."""
+#     # Resolve resource alias to canonical name
+#     canonical_resource = resolve_resource_alias(resource)
 
-    # Parse additional arguments into key-value pairs
-    update_options = {}
-    if names:
-        for arg in names:
-            if "=" in arg:
-                # Handle key=value format
-                key, value_part = arg.split("=", 1)
-                update_options[key] = value_part
-            else:
-                # Treat as a simple value
-                update_options[arg] = None
+#     # Parse additional arguments into key-value pairs
+#     update_options = {}
+#     if names:
+#         for arg in names:
+#             if "=" in arg:
+#                 # Handle key=value format
+#                 key, value_part = arg.split("=", 1)
+#                 update_options[key] = value_part
+#             else:
+#                 # Treat as a simple value
+#                 update_options[arg] = None
 
-    # Build the update message
-    if names:
-        additional_args = " ".join(f"'{arg}'" for arg in names)
-        if dry_run:
-            console.print(
-                f"[yellow]DRY RUN:[/yellow] Would update "
-                f"{canonical_resource} {field} '{value}' {additional_args}"
-            )
-        else:
-            if verbose:
-                console.print(
-                    f"Updating {canonical_resource} {field} '{value}' "
-                    f"{additional_args}"
-                )
+#     # Build the update message
+#     if names:
+#         additional_args = " ".join(f"'{arg}'" for arg in names)
+#         if dry_run:
+#             console.print(
+#                 f"[yellow]DRY RUN:[/yellow] Would update "
+#                 f"{canonical_resource} {field} '{value}' {additional_args}"
+#             )
+#         else:
+#             if verbose:
+#                 console.print(
+#                     f"Updating {canonical_resource} {field} '{value}' "
+#                     f"{additional_args}"
+#                 )
 
-            if canonical_resource[:4] == "part":
-                Partition.update(field, verbose, **update_options)
-            elif canonical_resource[:4] == "node":
-                Node.update(field, verbose, **update_options)
-            elif canonical_resource[:4] == "user":
-                User.update(field, verbose, **update_options)
-            elif canonical_resource[:3] == "qos":
-                Qos.update(field, verbose, **update_options)
-            elif canonical_resource[:3] == "acc":
-                Account.update(field, verbose, **update_options)
-            elif canonical_resource[:3] == "res":
-                Reservation.update(field, verbose, **update_options)
-            elif canonical_resource[:5] == "coord":
-                Coordinator.update(field, verbose, **update_options)
-            elif canonical_resource[:4] == "conf":
-                Config.update(field, verbose, **update_options)
-            else:
-                console.print(
-                    f"[red]Resource '{canonical_resource}' not found.[/red]"
-                )
-    else:
-        # If no additional arguments, show general update message
-        if dry_run:
-            console.print(
-                f"[yellow]DRY RUN:[/yellow] Would update "
-                f"{canonical_resource} {field} '{value}'"
-            )
-        else:
-            console.print(
-                f"Updating {canonical_resource} {field} '{value}'"
-            )
-
-
-@click.command(context_settings=CONTEXT_SETTINGS, name="edit")
-@click.argument("resource", type=click.Choice(get_resource_choices()))
-@click.argument("field")
-@click.argument("value")
-@click.argument("names", nargs=-1, required=False)
-@click.option(
-    "--verbose", "-v", is_flag=True, help="Enable verbose output"
-)
-@click.option(
-    "--dry-run",
-    is_flag=True,
-    help="Show what would be updated without making changes",
-)
-@click.option(
-    "--help",
-    "-h",
-    is_flag=True,
-    is_eager=True,
-    callback=show_command_help_with_resources,
-    help="Show this message and exit.",
-)
-def update_alias_edit(
-    resource: str,
-    field: str,
-    value: str,
-    names: tuple,
-    verbose: bool,
-    dry_run: bool,
-    **kwargs,
-) -> None:
-    """Update Slurm resource fields (alias for update)."""
-    # Resolve resource alias to canonical name
-    canonical_resource = resolve_resource_alias(resource)
-
-    # Parse additional arguments into key-value pairs
-    update_options = {}
-    if names:
-        for arg in names:
-            if "=" in arg:
-                # Handle key=value format
-                key, value_part = arg.split("=", 1)
-                update_options[key] = value_part
-            else:
-                # Treat as a simple value
-                update_options[arg] = None
-
-    # Build the update message
-    if names:
-        additional_args = " ".join(f"'{arg}'" for arg in names)
-        if dry_run:
-            console.print(
-                f"[yellow]DRY RUN:[/yellow] Would update "
-                f"{canonical_resource} {field} '{value}' {additional_args}"
-            )
-        else:
-            if verbose:
-                console.print(
-                    f"Updating {canonical_resource} {field} '{value}' "
-                    f"{additional_args}"
-                )
-
-            if canonical_resource[:4] == "part":
-                Partition.update(field, verbose, **update_options)
-            elif canonical_resource[:4] == "node":
-                Node.update(field, verbose, **update_options)
-            elif canonical_resource[:4] == "user":
-                User.update(field, verbose, **update_options)
-            elif canonical_resource[:3] == "qos":
-                Qos.update(field, verbose, **update_options)
-            elif canonical_resource[:3] == "acc":
-                Account.update(field, verbose, **update_options)
-            elif canonical_resource[:3] == "res":
-                Reservation.update(field, verbose, **update_options)
-            elif canonical_resource[:5] == "coord":
-                Coordinator.update(field, verbose, **update_options)
-            elif canonical_resource[:4] == "conf":
-                Config.update(field, verbose, **update_options)
-            else:
-                console.print(
-                    f"[red]Resource '{canonical_resource}' not found.[/red]"
-                )
-    else:
-        # If no additional arguments, show general update message
-        if dry_run:
-            console.print(
-                f"[yellow]DRY RUN:[/yellow] Would update "
-                f"{canonical_resource} {field} '{value}'"
-            )
-        else:
-            console.print(
-                f"Updating {canonical_resource} {field} '{value}'"
-            )
-
-
-@click.command(context_settings=CONTEXT_SETTINGS, name="mod")
-@click.argument("resource", type=click.Choice(get_resource_choices()))
-@click.argument("field")
-@click.argument("value")
-@click.argument("names", nargs=-1, required=False)
-@click.option(
-    "--verbose", "-v", is_flag=True, help="Enable verbose output"
-)
-@click.option(
-    "--dry-run",
-    is_flag=True,
-    help="Show what would be updated without making changes",
-)
-@click.option(
-    "--help",
-    "-h",
-    is_flag=True,
-    is_eager=True,
-    callback=show_command_help_with_resources,
-    help="Show this message and exit.",
-)
-def update_alias_mod(
-    resource: str,
-    field: str,
-    value: str,
-    names: tuple,
-    verbose: bool,
-    dry_run: bool,
-    **kwargs,
-) -> None:
-    """Update Slurm resource fields (alias for update)."""
-    # Resolve resource alias to canonical name
-    canonical_resource = resolve_resource_alias(resource)
-
-    # Parse additional arguments into key-value pairs
-    update_options = {}
-    if names:
-        for arg in names:
-            if "=" in arg:
-                # Handle key=value format
-                key, value_part = arg.split("=", 1)
-                update_options[key] = value_part
-            else:
-                # Treat as a simple value
-                update_options[arg] = None
-
-    # Build the update message
-    if names:
-        additional_args = " ".join(f"'{arg}'" for arg in names)
-        if dry_run:
-            console.print(
-                f"[yellow]DRY RUN:[/yellow] Would update "
-                f"{canonical_resource} {field} '{value}' {additional_args}"
-            )
-        else:
-            if verbose:
-                console.print(
-                    f"Updating {canonical_resource} {field} '{value}' "
-                    f"{additional_args}"
-                )
-
-            if canonical_resource[:4] == "part":
-                Partition.update(field, verbose, **update_options)
-            elif canonical_resource[:4] == "node":
-                Node.update(field, verbose, **update_options)
-            elif canonical_resource[:4] == "user":
-                User.update(field, verbose, **update_options)
-            elif canonical_resource[:3] == "qos":
-                Qos.update(field, verbose, **update_options)
-            elif canonical_resource[:3] == "acc":
-                Account.update(field, verbose, **update_options)
-            elif canonical_resource[:3] == "res":
-                Reservation.update(field, verbose, **update_options)
-            elif canonical_resource[:5] == "coord":
-                Coordinator.update(field, verbose, **update_options)
-            elif canonical_resource[:4] == "conf":
-                Config.update(field, verbose, **update_options)
-            else:
-                console.print(
-                    f"[red]Resource '{canonical_resource}' not found.[/red]"
-                )
-    else:
-        # If no additional arguments, show general update message
-        if dry_run:
-            console.print(
-                f"[yellow]DRY RUN:[/yellow] Would update "
-                f"{canonical_resource} {field} '{value}'"
-            )
-        else:
-            console.print(
-                f"Updating {canonical_resource} {field} '{value}'"
-            )
+#             if canonical_resource[:4] == "part":
+#                 Partition.update(field, verbose, **update_options)
+#             elif canonical_resource[:4] == "node":
+#                 Node.update(field, verbose, **update_options)
+#             elif canonical_resource[:4] == "user":
+#                 User.update(field, verbose, **update_options)
+#             elif canonical_resource[:3] == "qos":
+#                 Qos.update(field, verbose, **update_options)
+#             elif canonical_resource[:3] == "acc":
+#                 Account.update(field, verbose, **update_options)
+#             elif canonical_resource[:3] == "res":
+#                 Reservation.update(field, verbose, **update_options)
+#             elif canonical_resource[:5] == "coord":
+#                 Coordinator.update(field, verbose, **update_options)
+#             elif canonical_resource[:4] == "conf":
+#                 Config.update(field, verbose, **update_options)
+#             else:
+#                 console.print(
+#                     f"[red]Resource '{canonical_resource}' not found.[/red]"
+#                 )
+#     else:
+#         # If no additional arguments, show general update message
+#         if dry_run:
+#             console.print(
+#                 f"[yellow]DRY RUN:[/yellow] Would update "
+#                 f"{canonical_resource} {field} '{value}'"
+#             )
+#         else:
+#             console.print(
+#                 f"Updating {canonical_resource} {field} '{value}'"
+#             )
 
 
 @click.command(context_settings=CONTEXT_SETTINGS, name="modify")
