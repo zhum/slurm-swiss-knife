@@ -1,14 +1,18 @@
 """Utilities for managing reservations."""
 
+import json
+from datetime import datetime
 import subprocess
 from typing import Any
 
 from .base_resource import BaseSlurmResource
 from .utils import console
+from rich.markup import escape
 
 
 class Reservation(BaseSlurmResource):
 
+    _WIDTH = None
     valid_args = {
         "accounts": {
             "type": "list",
@@ -96,6 +100,13 @@ class Reservation(BaseSlurmResource):
     def __init__(self, name: str, **kwargs: Any):
         self.name = name
         self.kwargs = kwargs
+
+    @classmethod
+    def max_width(cls) -> int:
+        """Get the maximum width of the console."""
+        if cls._WIDTH is None:
+            cls._WIDTH = console.width
+        return cls._WIDTH
 
     @classmethod
     def create(
@@ -234,31 +245,85 @@ class Reservation(BaseSlurmResource):
     @classmethod
     def show(
         cls,
-        field: str = None,
-        style: str = "pretty",
-        force_cache_update: bool = False,
+        name: str = None,
+        data: dict = None,
+        style: str = "pretty"
     ) -> None:
         """Show reservation information."""
+        if not data:
+            console.print_json("[red]No data available.[/red]")
+            return
         try:
-            if style == "json":
-                result = subprocess.run(
-                    ["scontrol", "show", "reservations", "--json"],
-                    check=True,
-                    capture_output=True,
-                    text=True,
-                )
-                if result.stdout:
-                    console.print_json(result.stdout)
-            else:  # pretty style
-                result = subprocess.run(
-                    ["scontrol", "show", "reservations"],
-                    check=True,
-                    capture_output=True,
-                    text=True,
-                )
-                if result.stdout:
-                    console.print(result.stdout)
+            if name:
+                if style == "json":
+                    console.print_json(json.dumps(data[name], indent=2))
+                else:  # pretty style
+                    cls.print_one_pretty(name, data[name])
+            else:
+                if style == "json":
+                    console.print_json(json.dumps(data, indent=2))
+                else:  # pretty style
+                    for res in data.keys():
+                        cls.print_one_pretty(res, data[res])
         except subprocess.CalledProcessError as e:
             console.print(
                 f"[red]Failed to show reservations:[/red] {e.stderr or e}"
             )
+
+    @classmethod
+    def tm2str(cls, tm: int) -> str:
+        """Convert time to string."""
+        return datetime.fromtimestamp(tm).strftime("%Y-%m-%d %H:%M:%S")
+
+    @classmethod
+    def delta2str(cls, delta: int) -> str:
+        """Convert delta to string."""
+        days = delta // 86400
+        hours = (delta % 86400) // 3600
+        minutes = (delta % 3600) // 60
+        if days > 0:
+            return f"{days}d {hours}h {minutes}m"
+        elif hours > 0:
+            return f"{hours}h {minutes}m"
+        else:
+            return f"{minutes}m"
+
+    @classmethod
+    def print_one_pretty(cls, name: str, data: dict) -> None:
+        """Print pretty reservation information."""
+        if not data:
+            console.print("[red]No data available.[/red]")
+            return
+        end_delta = data['end_time'] - datetime.now().timestamp()
+        start_delta = data['start_time'] - datetime.now().timestamp()
+        if start_delta > 0:
+            start_str = f"(in [time]{cls.delta2str(start_delta)}[/])"
+            end_str = ""
+        elif end_delta > 0:
+            start_str = ""
+            end_str = f"(in [time]{cls.delta2str(end_delta)}[/])"
+        else:
+            start_str = ""
+            end_str = ""
+        console.print("=============================================")
+        console.print(f"Reservation: [object]{escape(name)}[/] Start/End: "
+                      f"[time]{cls.tm2str(data['start_time'])}[/]{start_str}"
+                      f" / [time]{cls.tm2str(data['end_time'])}[/]{end_str}")
+        console.print(f"Partition: [b blue]{escape(data['partition'])}[/] "
+                      f"Nodes/CPUs: [b]{data['node_count']}/"
+                      f"{data['core_count']}"
+                      f"[/] ([nodes]{data['node_list']}[/])")
+        data.pop('node_list')
+        data.pop('partition')
+        data.pop('core_count')
+        data.pop('node_count')
+        data.pop('start_time')
+        data.pop('end_time')
+        data.pop('purge_completed')  # WHAT'S THAT FOR???
+        watts = data.pop('watts')
+        if watts['set']:
+            data['watts'] = f"[time]{watts['number']}[/]" if \
+                not watts['infinite'] else "[time]INF[/]"
+        cls.print_dict_pretty(
+            data
+        )

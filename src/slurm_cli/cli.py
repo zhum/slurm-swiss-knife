@@ -442,16 +442,21 @@ def show(
     # TODO: eliminate double checking of cached resource
     if canonical_resource[:4] == "conf":
         Config.show(data=data, style=style)
-    elif canonical_resource[:4] == "node":
+    elif canonical_resource[:3] == "res":
         if field:
-            Node.show(name=field, data=data, style=style)
+            Reservation.show(name=field, data=data, style=style)
         else:
-            Node.show(data=data, style=style)
+            Reservation.show(data=data, style=style)
     elif canonical_resource[:4] == "part":
         if field:
             Partition.show(name=field, data=data, style=style)
         else:
             Partition.show(data=data, style=style)
+    elif canonical_resource[:4] == "node":
+        if field:
+            Node.show(name=field, data=data, style=style, verbose=verbose)
+        else:
+            Node.show(data=data, style=style)
     elif canonical_resource[:4] == "user":
         if field:
             User.show(name=field, data=data, style=style)
@@ -467,11 +472,6 @@ def show(
             Account.show(name=field, data=data, style=style)
         else:
             Account.show(data=data, style=style)
-    elif canonical_resource[:3] == "res":
-        if field:
-            Reservation.show(name=field, data=data, style=style)
-        else:
-            Reservation.show(data=data, style=style)
     elif canonical_resource[:5] == "coord":
         if field:
             Coordinator.show(name=field, data=data, style=style)

@@ -4,7 +4,7 @@ import re
 import subprocess
 import time
 from enum import Enum
-from typing import Any, Dict, Tuple
+from typing import Any, Dict, Tuple, List
 
 from .utils import console
 
@@ -42,6 +42,17 @@ class Resource:
         "coordinators": f"{CACHE_DIR}slurm_cli_coordinators.json",
         "config": f"{CACHE_DIR}slurm_cli_config.json",
     }
+    CACHE_LIST_FILES = {
+        "nodes": f"{CACHE_DIR}slurm_cli_nodes.list",
+        "partitions": f"{CACHE_DIR}slurm_cli_partitions.list",
+        "jobs": f"{CACHE_DIR}slurm_cli_jobs.list",
+        "users": f"{CACHE_DIR}slurm_cli_users.list",
+        "qos": f"{CACHE_DIR}slurm_cli_qos.list",
+        "accounts": f"{CACHE_DIR}slurm_cli_accounts.list",
+        "reservations": f"{CACHE_DIR}slurm_cli_reservations.list",
+        "coordinators": f"{CACHE_DIR}slurm_cli_coordinators.list",
+        "config": f"{CACHE_DIR}slurm_cli_config.list",
+    }
     CACHE_CMD = {
         "nodes": ["scontrol", "show", "nodes", "--json"],
         "partitions": ["scontrol", "show", "partitions", "--details"],
@@ -66,61 +77,86 @@ class Resource:
         """Guess the resource type from the resource name."""
         if re.match(r"^[0-9_]+$", name):
             return ResourceType.jobs, None
-        part = cls.cached_resource(
-            "partitions",
-            force_update,
+        part = cls.cached_resource_list(
+            "partitions"
         )
-        if part and name in part.keys():
-            return ResourceType.partitions, part
-        node = cls.cached_resource(
-            "nodes",
-            force_update,
+        if part and name in part:
+            return ResourceType.partitions, Resource.cached_resource(
+                "partitions",
+                force_update
+            )
+        node = cls.cached_resource_list(
+            "nodes"
         )
-        if node and name in node.keys():
-            return ResourceType.nodes, node
-        user = cls.cached_resource(
-            "users",
-            force_update,
+        if node and name in node:
+            return ResourceType.nodes, Resource.cached_resource(
+                "nodes",
+                force_update
+            )
+        user = cls.cached_resource_list(
+            "users"
         )
-        if user and name in user.keys():
-            return ResourceType.users, user
-        qos = cls.cached_resource(
-            "qos",
-            force_update,
+        if user and name in user:
+            return ResourceType.users, Resource.cached_resource(
+                "users",
+                force_update
+            )
+        qos = cls.cached_resource_list(
+            "qos"
         )
-        if qos and name in qos.keys():
-            return ResourceType.qos, qos
-        account = cls.cached_resource(
-            "accounts",
-            force_update,
+        if qos and name in qos:
+            return ResourceType.qos, Resource.cached_resource(
+                "qos",
+                force_update
+            )
+        account = cls.cached_resource_list(
+            "accounts"
         )
-        if account and name in account.keys():
-            return ResourceType.accounts, account
-        reservation = cls.cached_resource(
-            "reservations",
-            force_update,
+        if account and name in account:
+            return ResourceType.accounts, Resource.cached_resource(
+                "accounts",
+                force_update
+            )
+        reservation = cls.cached_resource_list(
+            "reservations"
         )
-        if reservation and name in reservation.keys():
-            return ResourceType.reservations, reservation
-        coordinator = cls.cached_resource(
-            "coordinators",
-            force_update,
+        if reservation and name in reservation:
+            return ResourceType.reservations, Resource.cached_resource(
+                "reservations",
+                force_update
+            )
+        coordinator = cls.cached_resource_list(
+            "coordinators"
         )
-        if coordinator and name in coordinator.keys():
-            return ResourceType.coordinators, coordinator
+        if coordinator and name in coordinator:
+            return ResourceType.coordinators, Resource.cached_resource(
+                "coordinators",
+                force_update
+            )
         return ResourceType.unknown, None
 
     @classmethod
     def update_cache(cls, name: str) -> Dict[str, Any]:
-        if name == ResourceType.partitions:
+        if name == "partitions":
             raw_data = cls.run_cmd(cls.CACHE_CMD[name])
             raw_data = cls.partitions2json(raw_data)
+        elif name == "reservations":
+            raw_data = cls.run_cmd_json(cls.CACHE_CMD[name])
+            raw_data = {hash.pop("name"): hash for
+                        hash in raw_data['reservations']}
+        elif name == "nodes":
+            raw_data = cls.run_cmd_json(cls.CACHE_CMD[name])
+            raw_data = {hash.pop("name"): hash for
+                        hash in raw_data['nodes']}
         else:
             raw_data = cls.run_cmd_json(cls.CACHE_CMD[name])
         if raw_data:
             with open(cls.CACHE_FILES[name], "w") as f:
                 json.dump(raw_data, f)
                 os.chmod(cls.CACHE_FILES[name], 0o600)
+            with open(cls.CACHE_LIST_FILES[name], "w") as f:
+                json.dump(list(raw_data.keys()), f)
+                os.chmod(cls.CACHE_LIST_FILES[name], 0o600)
         return raw_data
 
     @classmethod
@@ -154,6 +190,26 @@ class Resource:
         return data
 
     @classmethod
+    def cached_resource_list(
+        cls,
+        name: str,
+    ) -> List[str]:
+        """Check if the resource is a cached resource."""
+        file = cls.CACHE_LIST_FILES.get(name)
+        if not file:
+            return []
+        if not os.path.exists(file):
+            # just update!
+            cls.cached_resource(name)
+        try:
+            with open(file, "r") as f:
+                raw_data = json.load(f)
+            return raw_data
+        except Exception:
+            return []
+        return []
+
+    @classmethod
     def run_cmd_json(cls, cmd: [str]) -> Dict[str, Any] | None:
         """Run a command and return the JSON output."""
         result = None
@@ -167,7 +223,9 @@ class Resource:
             if result.stdout:
                 json_text = json.loads(result.stdout)
                 return json_text
-        except (subprocess.CalledProcessError, ValueError) as e:
+        except (subprocess.CalledProcessError,
+                FileNotFoundError,
+                ValueError) as e:
             console.print(
                 f"[red]Failed to run command '{cmd}':[/red]" f" {e}"
             )

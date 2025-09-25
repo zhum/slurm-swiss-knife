@@ -4,10 +4,13 @@ import re
 from typing import Any, Dict
 
 from .utils import console
+from rich.markup import escape
 
 
 class BaseSlurmResource:
     """Base class for all Slurm resources."""
+
+    _WIDTH = None
 
     # Subclasses should define their valid_args
     valid_args: Dict[str, Dict[str, str]] = {}
@@ -176,3 +179,102 @@ class BaseSlurmResource:
         else:
             # Otherwise, return total seconds as int
             return total_seconds
+
+    @classmethod
+    def max_width(cls) -> int:
+        """Get the maximum width of the console."""
+        if cls._WIDTH is None:
+            cls._WIDTH = console.width
+        return cls._WIDTH
+
+    @classmethod
+    def print_dict_pretty(cls, data: dict) -> bool:
+        """Print a dictionary in a pretty format."""
+        line_len = 2
+        something_was_printed = False
+        console.print("  ", end="")
+        for k in sorted(data.keys()):
+            value = data[k]
+            if isinstance(value, list):
+                if len(value) == 0:
+                    continue
+                value = ",".join(value)
+            else:
+                value = str(value)
+                if str(value) == "":
+                    continue
+            line_len += len(k) + len(value) + 2
+            if line_len > cls.max_width():
+                console.print("\n  ", end="")
+                line_len = 0
+            console.print(f"[label]{k}[/]: [str]{value}[/]", end=" ")
+            if len(k) + len(value) + 2 > cls.max_width():
+                console.print("\n  ", end="")
+                line_len = 0
+            something_was_printed = True
+        if something_was_printed:
+            console.print()
+        return something_was_printed
+
+    @classmethod
+    def print_dict_pretty_def(cls, data: dict, value_types: dict) -> bool:
+        """Print a dictionary skipping the default values
+        in a pretty format."""
+        line_len = 2
+        something_was_printed = False
+        width = cls.max_width()
+        for key in sorted(data.keys()):
+            value = data[key]
+            if key in value_types:
+                if value == value_types[key]["def"]:
+                    continue
+                line_len += len(key) + len(value) + 2
+                if line_len > width:
+                    console.print("\n  ", end="")
+                    line_len = 0
+                style = (
+                    "allow"
+                    if re.match(r"allow", key)
+                    else (
+                        "deny"
+                        if re.match(r"deny", key)
+                        else (
+                            "qos" if re.match(r"qos", key) else "str"
+                        )
+                    )
+                )
+                console.print(f"{key}: [{style}]{value}[/]", end=" ")
+                something_was_printed = True
+        if something_was_printed:
+            console.print()
+        return something_was_printed
+
+    @classmethod
+    def print_dict_pretty_flags_def(
+        cls,
+        data: dict,
+        value_types: dict,
+    ) -> bool:
+        """Print a dictionary skipping the default values
+        in a pretty format."""
+        line_len = 2
+        something_was_printed = False
+        width = cls.max_width()
+        console.print("  ", end="")
+        for key in sorted(data.keys()):
+            value = data[key]
+            if key in value_types:
+                if value == value_types[key]["def"]:
+                    continue
+                line_len += len(key) + len(value) + 1
+                if line_len > width:
+                    console.print("\n  ", end="")
+                    line_len = 0
+                if value == "YES":
+                    console.print(f"[green]{escape(key)}[/]", end=" ")
+                else:
+                    console.print(f"[red]{escape(key)}[/]", end=" ")
+                something_was_printed = True
+        if something_was_printed:
+            console.print()
+        return something_was_printed

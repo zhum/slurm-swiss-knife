@@ -1,7 +1,6 @@
 """Utilities for managing partitions."""
 
 import json
-import re
 import subprocess
 from typing import Any
 
@@ -456,7 +455,7 @@ class Partition(BaseSlurmResource):
         data.pop("Nodes")
         console.print(
             "=============================================\n"
-            f"Partition: [partition]{escape(name)}[/] {state} "
+            f"Partition: [object]{escape(name)}[/] {state} "
             f"def/max [time]{def_time}/{max_time}[/]"
         )
         console.print(
@@ -473,49 +472,9 @@ class Partition(BaseSlurmResource):
             for key, value in data.items()
             if not cls.value_types[key.lower()]["flag"]
         }
-        line_len = 2
-        something_was_printed = False
-        console.print("  ", end="")
-        for key in sorted(flags.keys()):
-            value = flags[key]
-            if key in cls.value_types:
-                if value == cls.value_types[key]["def"]:
-                    continue
-                line_len += len(key) + len(value) + 3
-                if line_len > width:
-                    console.print("  ")
-                    line_len = 0
-                if value == "YES":
-                    console.print(f"[green]{escape(key)}[/]", end=" ")
-                else:
-                    console.print(f"[red]{escape(key)}[/]", end=" ")
-                something_was_printed = True
-        if something_was_printed:
-            console.print()
-        line_len = 2
-        something_was_printed = False
-        console.print("  ", end="")
-        for key in sorted(not_flags.keys()):
-            value = not_flags[key]
-            if key in cls.value_types:
-                if value == cls.value_types[key]["def"]:
-                    continue
-                line_len += len(key) + len(value) + 3
-                if line_len > width:
-                    console.print("  ")
-                    line_len = 0
-                style = (
-                    "allow"
-                    if re.match(r"allow", key)
-                    else (
-                        "deny"
-                        if re.match(r"deny", key)
-                        else (
-                            "qos" if re.match(r"qos", key) else "b blue"
-                        )
-                    )
-                )
-                console.print(f"{key}: [{style}]{value}[/]", end=" ")
-                something_was_printed = True
-        if something_was_printed:
-            console.print()
+        flag_was_printed = cls.print_dict_pretty_flags_def(
+            flags, cls.value_types
+        )
+        if flag_was_printed:
+            console.print("  ", end="")
+        cls.print_dict_pretty_def(not_flags, cls.value_types)
