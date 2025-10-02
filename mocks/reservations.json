@@ -1,0 +1,96 @@
+{
+   "meta": {
+     "plugins": {
+       "data_parser": "data_parser\/v0.0.39",
+       "accounting_storage": "accounting_storage\/slurmdbd"
+     },
+     "command": [
+       "show",
+       "res"
+     ],
+     "Slurm": {
+       "version": {
+         "major": 23,
+         "micro": 4,
+         "minor": 2
+       },
+       "release": "23.02.4"
+     }
+   },
+   "reservations": [
+     {
+       "accounts": "general_cs_admin,general_cs_infra",
+       "burst_buffer": "",
+       "core_count": 1680,
+       "core_specializations": [
+       ],
+       "end_time": 1771400302,
+       "features": "",
+       "flags": [
+         "IGNORE_JOBS",
+         "SPEC_NODES"
+       ],
+       "groups": "",
+       "licenses": "",
+       "max_start_delay": 0,
+       "name": "sla_res_hwinf-fss-test",
+       "node_count": 35,
+       "node_list": "cpu-[00143-00152,00170-00175,00179-00191,00194,00196-00200]",
+       "partition": "admin",
+       "purge_completed": {
+         "time": {
+           "set": true,
+           "infinite": false,
+           "number": 300
+         }
+       },
+       "start_time": 1739864302,
+       "watts": {
+         "set": false,
+         "infinite": false,
+         "number": 0
+       },
+       "tres": "cpu=3360",
+       "users": ""
+     },
+     {
+       "accounts": "",
+       "burst_buffer": "",
+       "core_count": 248,
+       "core_specializations": [
+       ],
+       "end_time": 1772237028,
+       "features": "",
+       "flags": [
+         "IGNORE_JOBS",
+         "SPEC_NODES"
+       ],
+       "groups": "",
+       "licenses": "",
+       "max_start_delay": 0,
+       "name": "sla_res_supercluster",
+       "node_count": 2,
+       "node_list": "batch-block3-[0010-0011]",
+       "partition": "",
+       "purge_completed": {
+         "time": {
+           "set": true,
+           "infinite": false,
+           "number": 300
+         }
+       },
+       "start_time": 1740701028,
+       "watts": {
+         "set": false,
+         "infinite": false,
+         "number": 0
+       },
+       "tres": "cpu=496",
+       "users": "root"
+     }
+   ],
+   "warnings": [
+   ],
+   "errors": [
+   ]
+ }

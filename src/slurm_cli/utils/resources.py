@@ -4,7 +4,7 @@ import re
 import subprocess
 import time
 from enum import Enum
-from typing import Any, Dict, Tuple, List
+from typing import Any, Dict, List, Tuple
 
 from .utils import console
 
@@ -26,6 +26,7 @@ class ResourceType(str, Enum):
 SPINNER_STYLE = "dots2"
 # moon, dots, simpleDots, dots2, dots12
 # noise, line
+SPINNER_SPEED = 1.0
 
 
 class Resource:
@@ -77,61 +78,40 @@ class Resource:
         """Guess the resource type from the resource name."""
         if re.match(r"^[0-9_]+$", name):
             return ResourceType.jobs, None
-        part = cls.cached_resource_list(
-            "partitions"
-        )
+        part = cls.cached_resource_list("partitions")
         if part and name in part:
             return ResourceType.partitions, Resource.cached_resource(
-                "partitions",
-                force_update
+                "partitions", force_update
             )
-        node = cls.cached_resource_list(
-            "nodes"
-        )
+        node = cls.cached_resource_list("nodes")
         if node and name in node:
             return ResourceType.nodes, Resource.cached_resource(
-                "nodes",
-                force_update
+                "nodes", force_update
             )
-        user = cls.cached_resource_list(
-            "users"
-        )
+        user = cls.cached_resource_list("users")
         if user and name in user:
             return ResourceType.users, Resource.cached_resource(
-                "users",
-                force_update
+                "users", force_update
             )
-        qos = cls.cached_resource_list(
-            "qos"
-        )
+        qos = cls.cached_resource_list("qos")
         if qos and name in qos:
             return ResourceType.qos, Resource.cached_resource(
-                "qos",
-                force_update
+                "qos", force_update
             )
-        account = cls.cached_resource_list(
-            "accounts"
-        )
+        account = cls.cached_resource_list("accounts")
         if account and name in account:
             return ResourceType.accounts, Resource.cached_resource(
-                "accounts",
-                force_update
+                "accounts", force_update
             )
-        reservation = cls.cached_resource_list(
-            "reservations"
-        )
+        reservation = cls.cached_resource_list("reservations")
         if reservation and name in reservation:
             return ResourceType.reservations, Resource.cached_resource(
-                "reservations",
-                force_update
+                "reservations", force_update
             )
-        coordinator = cls.cached_resource_list(
-            "coordinators"
-        )
+        coordinator = cls.cached_resource_list("coordinators")
         if coordinator and name in coordinator:
             return ResourceType.coordinators, Resource.cached_resource(
-                "coordinators",
-                force_update
+                "coordinators", force_update
             )
         return ResourceType.unknown, None
 
@@ -142,12 +122,15 @@ class Resource:
             raw_data = cls.partitions2json(raw_data)
         elif name == "reservations":
             raw_data = cls.run_cmd_json(cls.CACHE_CMD[name])
-            raw_data = {hash.pop("name"): hash for
-                        hash in raw_data['reservations']}
+            raw_data = {
+                hash.pop("name"): hash
+                for hash in raw_data["reservations"]
+            }
         elif name == "nodes":
             raw_data = cls.run_cmd_json(cls.CACHE_CMD[name])
-            raw_data = {hash.pop("name"): hash for
-                        hash in raw_data['nodes']}
+            raw_data = {
+                hash.pop("name"): hash for hash in raw_data["nodes"]
+            }
         else:
             raw_data = cls.run_cmd_json(cls.CACHE_CMD[name])
         if raw_data:
@@ -184,7 +167,7 @@ class Resource:
             "[bold blue]Calling slurm...",
             spinner=SPINNER_STYLE,
             spinner_style="yellow",
-            speed=2,
+            speed=SPINNER_SPEED,
         ):
             data = cls.update_cache(name)
         return data
@@ -223,9 +206,11 @@ class Resource:
             if result.stdout:
                 json_text = json.loads(result.stdout)
                 return json_text
-        except (subprocess.CalledProcessError,
-                FileNotFoundError,
-                ValueError) as e:
+        except (
+            subprocess.CalledProcessError,
+            FileNotFoundError,
+            ValueError,
+        ) as e:
             console.print(
                 f"[red]Failed to run command '{cmd}':[/red]" f" {e}"
             )

@@ -1,13 +1,14 @@
 """Utilities for managing reservations."""
 
 import json
-from datetime import datetime
 import subprocess
+from datetime import datetime
 from typing import Any
+
+from rich.markup import escape
 
 from .base_resource import BaseSlurmResource
 from .utils import console
-from rich.markup import escape
 
 
 class Reservation(BaseSlurmResource):
@@ -244,10 +245,7 @@ class Reservation(BaseSlurmResource):
 
     @classmethod
     def show(
-        cls,
-        name: str = None,
-        data: dict = None,
-        style: str = "pretty"
+        cls, name: str = None, data: dict = None, style: str = "pretty"
     ) -> None:
         """Show reservation information."""
         if not data:
@@ -294,8 +292,8 @@ class Reservation(BaseSlurmResource):
         if not data:
             console.print("[red]No data available.[/red]")
             return
-        end_delta = data['end_time'] - datetime.now().timestamp()
-        start_delta = data['start_time'] - datetime.now().timestamp()
+        end_delta = data["end_time"] - datetime.now().timestamp()
+        start_delta = data["start_time"] - datetime.now().timestamp()
         if start_delta > 0:
             start_str = f"(in [time]{cls.delta2str(start_delta)}[/])"
             end_str = ""
@@ -306,24 +304,29 @@ class Reservation(BaseSlurmResource):
             start_str = ""
             end_str = ""
         console.print("=============================================")
-        console.print(f"Reservation: [object]{escape(name)}[/] Start/End: "
-                      f"[time]{cls.tm2str(data['start_time'])}[/]{start_str}"
-                      f" / [time]{cls.tm2str(data['end_time'])}[/]{end_str}")
-        console.print(f"Partition: [b blue]{escape(data['partition'])}[/] "
-                      f"Nodes/CPUs: [b]{data['node_count']}/"
-                      f"{data['core_count']}"
-                      f"[/] ([nodes]{data['node_list']}[/])")
-        data.pop('node_list')
-        data.pop('partition')
-        data.pop('core_count')
-        data.pop('node_count')
-        data.pop('start_time')
-        data.pop('end_time')
-        data.pop('purge_completed')  # WHAT'S THAT FOR???
-        watts = data.pop('watts')
-        if watts['set']:
-            data['watts'] = f"[time]{watts['number']}[/]" if \
-                not watts['infinite'] else "[time]INF[/]"
-        cls.print_dict_pretty(
-            data
+        console.print(
+            f"Reservation: [object]{escape(name)}[/] Start/End: "
+            f"[time]{cls.tm2str(data['start_time'])}[/]{start_str}"
+            f" / [time]{cls.tm2str(data['end_time'])}[/]{end_str}"
         )
+        console.print(
+            f"Partition: [b blue]{escape(data['partition'])}[/] "
+            f"Nodes/CPUs: [b]{data['node_count']}/"
+            f"{data['core_count']}"
+            f"[/] ([nodes]{data['node_list']}[/])"
+        )
+        data.pop("node_list")
+        data.pop("partition")
+        data.pop("core_count")
+        data.pop("node_count")
+        data.pop("start_time")
+        data.pop("end_time")
+        data.pop("purge_completed")  # WHAT'S THAT FOR???
+        watts = data.pop("watts")
+        if watts["set"]:
+            data["watts"] = (
+                f"[time]{watts['number']}[/]"
+                if not watts["infinite"]
+                else "[time]INF[/]"
+            )
+        cls.print_dict_pretty(data)

@@ -13,12 +13,30 @@ class Coordinator(BaseSlurmResource):
         self.kwargs = kwargs
 
     @classmethod
-    def create(cls, name: str, **kwargs: Any) -> None:
+    def create(
+        cls,
+        name: str,
+        verbose: bool = False,
+        value: str = None,
+        names: tuple = None,
+    ) -> None:
         """Create a new coordinator."""
-        console.print(f"Creating coordinator: {name}")
-        args = ["sacctmgr", "create", "coordinator", name]
-        for key, value in kwargs.items():
-            args.append(f"{key}={value}")
+        # console.print(
+        # f"Creating coordinator: {name} {value} {names} {kwargs}"
+        # )
+        if not value and not names:
+            console.print(
+                f"[red]Coordinator '{name}' creation failed:[/]"
+                f"Use slurm-cli create coordinator <account(s)> <user(s)>"
+            )
+            return
+        args = [
+            "sacctmgr",
+            "add",
+            "coordinator",
+            f"accounts={name}",
+            f"names={value}",
+        ]
 
         try:
             result = subprocess.run(
@@ -34,7 +52,8 @@ class Coordinator(BaseSlurmResource):
                 console.print(result.stdout)
         except subprocess.CalledProcessError as e:
             console.print(
-                f"[red]Failed to create coordinator '{name}':[/red] {e.stderr or e}"
+                f"[red]Failed to create coordinator '{name}':[/]"
+                f"{e.stderr or e}"
             )
 
     @classmethod
@@ -55,10 +74,19 @@ class Coordinator(BaseSlurmResource):
         force_cache_update: bool = False,
     ) -> None:
         """Show coordinator information."""
+        print(
+            f"Showing coordinator: {field} {style} {force_cache_update}"
+        )
         try:
             if style == "json":
                 result = subprocess.run(
-                    ["sacctmgr", "show", "coordinators", "--json"],
+                    [
+                        "echo",
+                        "sacctmgr",
+                        "show",
+                        "coordinators",
+                        "--json",
+                    ],
                     check=True,
                     capture_output=True,
                     text=True,
@@ -67,7 +95,7 @@ class Coordinator(BaseSlurmResource):
                     console.print_json(result.stdout)
             else:  # pretty style
                 result = subprocess.run(
-                    ["sacctmgr", "show", "coordinators"],
+                    ["echo", "sacctmgr", "show", "coordinators"],
                     check=True,
                     capture_output=True,
                     text=True,
