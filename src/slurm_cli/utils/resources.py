@@ -3,24 +3,10 @@ import os
 import re
 import subprocess
 import time
-from enum import Enum
+# from enum import Enum
 from typing import Any, Dict, List, Tuple
 
 from .utils import console
-
-
-class ResourceType(str, Enum):
-    """Enum for available resource types."""
-
-    partitions = "partitions"
-    nodes = "nodes"
-    jobs = "jobs"
-    users = "users"
-    qos = "qos"
-    accounts = "accounts"
-    reservations = "reservations"
-    config = "config"
-    unknown = None
 
 
 SPINNER_STYLE = "dots2"
@@ -74,46 +60,67 @@ class Resource:
     @classmethod
     def guess_resource_type(
         cls, name: str, force_update: bool = False
-    ) -> Tuple[ResourceType, dict]:
+    ) -> Tuple[str, dict]:
         """Guess the resource type from the resource name."""
-        if re.match(r"^[0-9_]+$", name):
-            return ResourceType.jobs, None
+        if name[:1] == "j" or re.match(r"^[0-9_]+$", name):
+            return "jobs", None
         part = cls.cached_resource_list("partitions")
-        if part and name in part:
-            return ResourceType.partitions, Resource.cached_resource(
+        if name[:4] == "part" or (part and name in part):
+            return "partitions", Resource.cached_resource(
                 "partitions", force_update
             )
         node = cls.cached_resource_list("nodes")
-        if node and name in node:
-            return ResourceType.nodes, Resource.cached_resource(
+        if name[:4] == "node" or (node and name in node):
+            return "nodes", Resource.cached_resource(
                 "nodes", force_update
             )
         user = cls.cached_resource_list("users")
-        if user and name in user:
-            return ResourceType.users, Resource.cached_resource(
+        if name[:4] == "user" or (user and name in user):
+            return "users", Resource.cached_resource(
                 "users", force_update
             )
         qos = cls.cached_resource_list("qos")
-        if qos and name in qos:
-            return ResourceType.qos, Resource.cached_resource(
+        if name[:3] == "qos" or (qos and name in qos):
+            return "qos", Resource.cached_resource(
                 "qos", force_update
             )
         account = cls.cached_resource_list("accounts")
-        if account and name in account:
-            return ResourceType.accounts, Resource.cached_resource(
+        if name[:3] == "acc" or (account and name in account):
+            return "accounts", Resource.cached_resource(
                 "accounts", force_update
             )
         reservation = cls.cached_resource_list("reservations")
-        if reservation and name in reservation:
-            return ResourceType.reservations, Resource.cached_resource(
+        if name[:3] == "res" or (reservation and name in reservation):
+            return "reservations", Resource.cached_resource(
                 "reservations", force_update
             )
         coordinator = cls.cached_resource_list("coordinators")
-        if coordinator and name in coordinator:
-            return ResourceType.coordinators, Resource.cached_resource(
+        if name[:5] == "coord" or (coordinator and name in coordinator):
+            return "coordinators", Resource.cached_resource(
                 "coordinators", force_update
             )
-        return ResourceType.unknown, None
+        if name[:4] == "prob":
+            return "problems", []
+        elif name[:4] == "stat":
+            return "stats", []
+        elif name[:4] == "assoc":
+            return "associations", []
+        elif name[:4] == "dump":
+            return "dump", []
+        elif name[:2] == "ev":
+            return "events", []
+        elif name[:3] == "lic" or name[:4] == "reso":
+            return "licenses", []
+        elif name[:3] == "bad" or name[:3] == "runa":
+            return "runawayjobs", []
+        elif name[:3] == "tra":
+            return "transactions", []
+        elif name[:2] == "tr":
+            return "tres", []
+        elif name[:2] == "ar":
+            return "archive", []
+
+        return "unknown", None
 
     @classmethod
     def update_cache(cls, name: str) -> Dict[str, Any]:
@@ -218,6 +225,7 @@ class Resource:
                 console.print(result.stderr)
             if result and result.stdout:
                 console.print(result.stdout)
+            exit(1)
         return None
 
     @classmethod

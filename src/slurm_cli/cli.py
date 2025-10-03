@@ -51,26 +51,6 @@ RESOURCES_ALIASES = {
     "coordinators": ["coord", "coordinator"],
 }
 
-COMMANDS_ALIASES = {
-    "show": ["sh", "s", "get"],
-    "create": ["c", "create", "new", "add"],
-    "update": [
-        "u",
-        "update",
-        "edit",
-        "change",
-        "ch",
-        "set",
-        "mod",
-        "modify",
-    ],
-    "delete": ["d", "delete", "remove", "rem", "rm"],
-    "list-resources": ["l", "ls", "list"],
-    "autocomplete": ["auto", "autocomplete"],
-    "help": ["h", "help"],
-    "version": ["v", "ver", "version"],
-}
-
 
 def get_resource_choices() -> List[str]:
     routes = ROUTES["get-set"]
@@ -114,12 +94,12 @@ def resolve_resource_alias(resource: str) -> str:
     return resource
 
 
-def resolve_command_alias(command: str) -> str:
-    """Resolve command alias to canonical name."""
-    for orig, alias_list in COMMANDS_ALIASES.items():
-        if orig in alias_list:
-            return orig
-    return command
+# def resolve_command_alias(command: str) -> str:
+#     """Resolve command alias to canonical name."""
+#     for orig, alias_list in COMMANDS_ALIASES.items():
+#         if orig in alias_list:
+#             return orig
+#     return command
 
 
 def get_output_style(ctx: click.Context) -> str:
@@ -191,17 +171,23 @@ def ensure_resource_name(
         return "tres", field, []
     elif resource[:2] == "ar":
         return "archive", field, []
-    elif resource[:5] == "coord":
+    elif resource[:5] == "coord":  # !
         return "coordinators", field, []
-    elif resource[:4] == "part":
+    elif resource[:1] == "j":
         data = Resource.cached_resource(
-            "partitions",
+            "jobs",
             force_update,
         )
         return resource, field, data
     elif resource[:4] == "node":
         data = Resource.cached_resource(
             "nodes",
+            force_update,
+        )
+        return resource, field, data
+    elif resource[:4] == "part":
+        data = Resource.cached_resource(
+            "partitions",
             force_update,
         )
         return resource, field, data
@@ -229,12 +215,6 @@ def ensure_resource_name(
             force_update,
         )
         return resource, field, data
-    # elif resource[:5] == "coord":
-    #     data = Resource.cached_resource(
-    #         "coordinators",
-    #         force_update,
-    #     )
-    #     return resource, field, data
     elif resource[:4] == "conf":
         data = Resource.cached_resource(
             "config",
@@ -245,8 +225,8 @@ def ensure_resource_name(
         resource_type, data = Resource.guess_resource_type(
             resource, force_update
         )
-        if resource_type.value:
-            return resource_type.value, resource, data
+        if resource_type:
+            return resource_type, resource, data
         else:
             return None, resource, data
 
@@ -392,17 +372,51 @@ def main(
 
 
 class CustomGroup(click.Group):
-    """Custom Click group that hides alias commands from help."""
+    """Custom Click group that hides alias commands from help
+    and supports prefix matching."""
+
+    def get_command(self, ctx, cmd_name):
+        """Override to support prefix matching for commands."""
+        # First try exact match (including aliases)
+        rv = super().get_command(ctx, cmd_name)
+        if rv is not None:
+            return rv
+
+        # Try prefix matching on main commands only
+        main_commands = {
+            "show": ["show", "get"],
+            "create": ["new", "add", "create"],
+            "update": ["edit", "change", "modify", "update"],
+            "delete": ["delete", "remove", "rm"],
+            "list-resources": ["ls", "list"],
+            "autocomplete": ["autocomplete"],
+            "help": ["help"],
+            "version": ["version"]
+        }
+        matches = [
+            (cmd, alias) for cmd, aliases in main_commands.items()
+            for alias in aliases
+            if alias.startswith(cmd_name)
+        ]
+
+        if len(matches) == 1:
+            return super().get_command(ctx, matches[0][0])
+        elif len(matches) > 1:
+            ctx.fail(
+                f"Ambiguous command: {cmd_name}. "
+                f"Could be: {', '.join([f'{alias}' for _, alias in matches])}")
+
+        return None
 
     def format_commands(self, ctx, formatter):
         """Custom command formatter that filters out aliases."""
         commands = []
         main_command_names = {
-            "show",
-            "update",
-            "create",
-            "delete",
-            "list-resources",
+            "show", "get",
+            "update", "edit", "change", "modify",
+            "create", "new", "add",
+            "delete", "remove", "rm",
+            "list-resources", "ls",
             "autocomplete",
             "help",
             "version",
@@ -446,28 +460,29 @@ def register_commands() -> None:
     main.add_command(help, name="help")
     main.add_command(version, name="version")
 
-    for command, aliases in COMMANDS_ALIASES.items():
-        command = command.replace("-", "_")
-        for alias in aliases:
-            main.add_command(globals()[command], name=alias)
+    # for command, aliases in COMMANDS_ALIASES.items():
+    #     command = command.replace("-", "_")
+    #     for alias in aliases:
+    #         main.add_command(globals()[command], name=alias)
 
     # Modify help text to show aliases inline
     show.help = (
-        "Show information about Slurm resources (aliases: sh, s)"
+        "Show information about Slurm resources (aliases: get)"
     )
     update.help = (
         "Update Slurm resource fields "
-        "(aliases: u, upd, edit, change, ch, set, mod, modify)"
+        "(aliases: edit, change, modify)"
     )
-    create.help = "Create Slurm resources (aliases: c, new, add)"
+    create.help = "Create Slurm resources (aliases: new, add)"
     delete.help = (
-        "Delete Slurm resources (aliases: del, d, remove, rem, rm)"
+        "Delete Slurm resources (aliases: remove, rm)"
     )
     list_resources.help = (
-        "List available Slurm resources (aliases: list, ls, l)"
+        "List available Slurm resources (aliases: ls)"
     )
-    version.help = "Show version information (aliases: ver, v)"
-    help.help = "Show help information (aliases: h)"
+    version.help = "Show version information"
+    # Show version information (aliases: ver, v)"
+    help.help = "Show help information"
 
 
 # Show command
@@ -872,34 +887,248 @@ def delete(
 )
 def autocomplete(word: str, max_cost: int, size: int) -> None:
     """Test autocomplete functionality."""
-    autocomplete_instance = create_autocomplete()
+    print("""
+# Reservation autocomplete function
+_slurm_cli_initialize_autocomplete() {
 
-    if word:
-        results = autocomplete_instance.search(
-            word=word,
-            max_cost=max_cost,
-            size=size,
-        )
-        suggestions: List[str] = sum(results, [])
+    # Check for optional CLI options and print their values for debugging
+    local -A opts=()
+    local i=1
 
-        if suggestions:
-            table = Table(title=f"Autocomplete results for '{word}'")
-            table.add_column("Suggestion", style="cyan")
-            table.add_column("Type", style="magenta")
+    while [[ $i -lt ${COMP_CWORD} ]]; do
+        arg="${COMP_WORDS[$i]}"
+        case "$arg" in
+        -v|--version)
+            opts[version]="1"
+            ;;
+        -h|--help)
+            opts[help]="1"
+            ;;
+        --style)
+            if [[ $((i+1)) -lt ${#COMP_WORDS[@]} ]]; then
+                opts[style]="${COMP_WORDS[$((i+1))]}"
+                ((i++))
+            else
+                COMPREPLY=($(compgen -W "pretty json" -- "$cur"))
+                return
+            fi
+            ;;
+        -p|--pretty)
+            opts[pretty]="1"
+            ;;
+        -j|--json)
+            opts[json]="1"
+            ;;
+        -f|--force-update)
+            opts[force_update]="1"
+            ;;
+        -t|--cache-timeout)
+            if [[ $((i+1)) -lt ${#COMP_WORDS[@]} ]]; then
+                opts[cache_timeout]="${COMP_WORDS[$((i+1))]}"
+                ((i++))
+            fi
+            ;;
+        *)
+            break
+            ;;
+        esac
+        ((i++))
+    done
 
-            for suggestion in suggestions:
-                table.add_row(suggestion, "command")
+    if [[ ${COMP_WORDS[COMP_CWORD]:0:1} == "-" ]]; then
+        COMPREPLY=($(compgen -W "-v -h -p -j -f -t --style --pretty --json --force-update --cache-timeout --help --version" -- "$cur"))
+        return
+    fi
 
-            console.print(table)
-        else:
-            console.print(
-                f"[yellow]No suggestions found for '{word}'[/yellow]"
-            )  # noqa: E501
-    else:
-        console.print(
-            "[yellow]Please provide a word to search for suggestions.[/yellow]"
-        )
+    # Get command and resource name if any
+    local cmd=""
+    local resource=""
+    cmd="${COMP_WORDS[$i]}"
+    resource="${COMP_WORDS[$((i+1))]}"
+    # echo -e "\\nCOMP_CWORD=$COMP_CWORD; i=$i COMP_WORDS=${COMP_WORDS[@]} Current=${COMP_WORDS[COMP_CWORD]} cmd=$cmd resource=$resource"
 
+    local cur="${COMP_WORDS[COMP_CWORD]}"
+    local prev="${COMP_WORDS[COMP_CWORD-1]}"
+
+    # Guess the command by prefix, using the same commands as in get_command
+    local guessed="no"
+    case "$cmd" in
+        s*)
+            guessed="show"
+            cmd="show"
+            ;;
+        g*)
+            guessed="get"
+            cmd="show"
+            ;;
+        cr*)
+            guessed="create"
+            cmd="create"
+            ;;
+        ne*)
+            guessed="new"
+            cmd="create"
+            ;;
+        ad*)
+            guessed="add"
+            cmd="create"
+            ;;
+        u*)
+            guessed="update"
+            cmd="update"
+            ;;
+        e*)
+            guessed="edit"
+            cmd="update"
+            ;;
+        ch*)
+            guessed="change"
+            cmd="update"
+            ;;
+        m*)
+            guessed="modify"
+            cmd="update"
+            ;;
+        d*)
+            guessed="delete"
+            cmd="delete"
+            ;;
+        re*)
+            guessed="remove"
+            cmd="delete"
+            ;;
+        rm*)
+            guessed="rm"
+            cmd="delete"
+            ;;
+        l*)
+            guessed="list-resources"
+            cmd="list-resources"
+            ;;
+        au*)
+            guessed="autocomplete"
+            cmd="autocomplete"
+            ;;
+        h*)
+            guessed="help"
+            cmd="help"
+            ;;
+        v*)
+            guessed="version"
+            cmd="version"
+            ;;
+        *)
+            ;;
+    esac
+    if [[ $i == $((COMP_CWORD)) ]]; then
+        if [[ $guessed != "no" ]]; then
+            COMPREPLY=($(compgen -W "$guessed" -- "$cur"))
+            return
+        else
+            COMPREPLY=($(compgen -W "show get create add new update edit change modify delete remove rm list-resources autocomplete help version -v -h -p -j -f -t --style --pretty --json --force-update --cache-timeout --help --version" -- "$cur"))
+            return
+        fi
+    fi
+
+    i=$((i+1))
+    guessed="no"
+    case "$resource" in
+        lic*)
+            guessed="licenses"
+            ;;
+        reso*)
+            guessed="resources"
+            # _slurm_cli_license_autocomplete "$cmd" "$cur" "$prev"
+            ;;
+        res*)
+            guessed="reservations"
+            # _slurm_cli_reservation_autocomplete "$cmd" "$cur" "$prev"
+            ;;
+        no*)
+            guessed="nodes"
+            # _slurm_cli_node_autocomplete "$cmd" "$cur" "$prev"
+            ;;
+        part*)
+            guessed="partitions"
+            # _slurm_cli_partition_autocomplete "$cmd" "$cur" "$prev"
+            ;;
+        acc*)
+            guessed="accounts"
+            # _slurm_cli_account_autocomplete "$cmd" "$cur" "$prev"
+            ;;
+        qos*)
+            guessed="qos"
+            # _slurm_cli_qos_autocomplete "$cmd" "$cur" "$prev"
+            ;;
+        us*)
+            guessed="users"
+            # _slurm_cli_user_autocomplete "$cmd" "$cur" "$prev"
+            ;;
+        pr*)
+            guessed="problems"
+            # _slurm_cli_problem_autocomplete "$cmd" "$cur" "$prev"
+            ;;
+        st*)
+            guessed="stats"
+            # _slurm_cli_stat_autocomplete "$cmd" "$cur" "$prev"
+            ;;
+        as*)
+            guessed="associations"
+            # _slurm_cli_association_autocomplete "$cmd" "$cur" "$prev"
+            ;;
+        du*)
+            guessed="dumps"
+            # _slurm_cli_dump_autocomplete "$cmd" "$cur" "$prev"
+            ;;
+        ev*)
+            guessed="events"
+            # _slurm_cli_event_autocomplete "$cmd" "$cur" "$prev"
+            ;;
+        b*)
+            guessed="bad"
+            # _slurm_cli_runawayjob_autocomplete "$cmd" "$cur" "$prev"
+            ;;
+        runa*)
+            guessed="runawayjobs"
+            # _slurm_cli_runawayjob_autocomplete "$cmd" "$cur" "$prev"
+            ;;
+        tr*)
+            guessed="tres"
+            # _slurm_cli_tres_autocomplete "$cmd" "$cur" "$prev"
+            ;;
+        ar*)
+            guessed="archive"
+            # _slurm_cli_archive_autocomplete "$cmd" "$cur" "$prev"
+            ;;
+        co*)
+            guessed="coordinators"
+            # _slurm_cli_coordinator_autocomplete "$cmd" "$cur" "$prev"
+            ;;
+    esac
+
+    # echo "i=$i COMP_CWORD=$COMP_CWORD guessed=$guessed"
+    if [[ $i == $((COMP_CWORD)) ]]; then
+        if [[ $guessed != "no" ]]; then
+            COMPREPLY=($(compgen -W "$guessed" -- "$cur"))
+            return
+        else
+            COMPREPLY=($(compgen -W "reservations nodes partitions accounts qos users coordinators problems stats associations dump events licenses bad runawayjobs tres archives coordinators" -- "$cur"))
+            return
+        fi
+    fi
+    # command current_autocomplete_word_index
+    _slurm_cli_${resource}_autocomplete "$cmd" "$i"
+
+    # echo "${COMP_REPLY[@]}"
+}
+""")
+    print(Reservation.generate_autocomplete_options())
+    print("""
+
+# Register the completion function
+complete -F _slurm_cli_initialize_autocomplete slurm-cli
+    """)
+    return
 
 # list-resources command
 @click.command(context_settings=CONTEXT_SETTINGS)

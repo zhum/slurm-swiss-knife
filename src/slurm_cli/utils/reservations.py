@@ -8,6 +8,7 @@ from typing import Any
 from rich.markup import escape
 
 from .base_resource import BaseSlurmResource
+# from .resources import Resource
 from .utils import console
 
 
@@ -330,3 +331,141 @@ class Reservation(BaseSlurmResource):
                 else "[time]INF[/]"
             )
         cls.print_dict_pretty(data)
+
+    @classmethod
+    def generate_autocomplete_options(cls) -> str:
+        """
+        Generate autocomplete for bash completion.
+        Assume we already have entered
+        "slurm-cli {new|del|upd|show} reservation"
+        and we are trying to autocomplete the next command.
+
+        For each command (new, del, upd, show) generate a list of options
+        1. show:
+            - name
+        2. new:
+            a. name is not entered:
+                - reservationname
+                - list of valid_args keys
+            b. name is entered:
+                I) option name is not entered:
+                    - list of valid_args keys
+                II) option name is entered:
+                    - list of values,
+                      depending of type
+                      format: key=value
+        3. del:
+            - name
+        4. upd:
+            a. name is not entered:
+                - reservationname
+                - list of valid_args keys
+            b. name is entered:
+                I) option name is not entered:
+                    - list of valid_args keys
+                II) option name is entered:
+                    - list of values,
+                      depending of type
+                      format: key=value
+        Output should be part of the autocomplete script
+        for bash completion.
+        For keys with types nodes, partition, account, qos, user
+        use jq utility to extract keys from cache files.
+        """
+
+        # Get valid argument keys
+        valid_keys = list(cls.valid_args.keys())
+        valid_types = ' '.join(
+            [f'[{k}]=\"{v["type"]}\"' for k, v in cls.valid_args.items()])
+        script = f"""
+_gen_comreply_for_keyvalues() {{
+    local cur="$1"
+    local file="$2"
+    list="$(jq -r 'keys[]' $file)"
+    if [[ $cur = = ]]; then
+        COMPREPLY=($list)
+    else
+        COMPREPLY=($(compgen -W "$list" -- "$cur"))
+    fi
+}}
+
+_slurm_cli_reservations_autocomplete() {{
+    # slurm-cli -x -y -z COMMAND reservation abc def ghi
+    #                    cmd                 ^ pos   ^ COMP_CWORD
+    local cmd="$1"
+    local pos="$2"
+
+    name="${{COMP_WORDS[$pos]}}"
+    cur="${{COMP_WORDS[COMP_CWORD]}}"
+    prev="${{COMP_WORDS[COMP_CWORD-1]}}"
+
+    if [[ $name == reservations && $prev == reservations ]]; then # we're on the name field
+        if [ -f "/tmp/slurm_cli_reservations.json" ]; then
+            COMPREPLY=($(compgen -W "$(jq -r 'keys[]' /tmp/slurm_cli_reservations.json)" -- "$cur"))
+        fi
+        return
+    fi
+    # echo -e "\\ncmd=$cmd pos=$pos name=$name cur=$cur; prev=$prev COMP_CWORD=${{COMP_CWORD}} ${{COMP_WORDS[@]}}"
+    case "$cmd" in
+        show|delete)
+            return
+            ;;
+        create|update)
+            # Check if we're completing an option (key=value format)
+            if [[ $cur == = || $prev == = ]]; then
+                # completing a value
+                local -A valid_types=({valid_types})
+                local key
+
+                if [[ $cur == = ]]; then   # abc=
+                    key=${{COMP_WORDS[COMP_CWORD-1]}}
+                else                       # abc=q
+                    key=${{COMP_WORDS[COMP_CWORD-2]}}
+                fi
+                local type=${{valid_types[$key]}}
+                # echo -e "\\n key=$key; type=$type; cur=$cur"
+                case "$type" in
+                    nodes)
+                        if [ -f "/tmp/slurm_cli_nodes.json" ]; then
+                            _gen_comreply_for_keyvalues "$cur" /tmp/slurm_cli_nodes.json
+                        fi
+                        ;;
+                    partition)
+                        if [ -f "/tmp/slurm_cli_partitions.json" ]; then
+                            _gen_comreply_for_keyvalues "$cur" "/tmp/slurm_cli_partitions.json"
+                        fi
+                        ;;
+                    account)
+                        if [ -f "/tmp/slurm_cli_accounts.json" ]; then
+                            _gen_comreply_for_keyvalues "$cur" "/tmp/slurm_cli_accounts.json"
+                        fi
+                        ;;
+                    int|time)
+                        ;;
+                    *)
+                        case "$key" in
+                        flags)
+                            COMPREPLY=($(compgen -W "ANY_NODES DAILY FLEX IGNORE_JOBS HOURLY LICENSE_ONLY MAINT MAGNETIC NO_HOLD_JOBS_AFTER OVERLAP PART_NODES PURGE_COMP REPLACE REPLACE_DOWN SPEC_NODES STATIC_ALLOC TIME_FLOAT WEEKDAY WEEKEND WEEKLY" -- "${{cur#*=}}"))
+                            ;;
+                        skip)
+                            COMPREPLY=($(compgen -W "yes no y n 1 0" -- "${{cur#*=}}"))
+                            ;;
+                        esac
+                    ;;
+                esac
+                # echo "${{COMPREPLY}}"
+                return
+            else
+                # completing an option name
+                local -a valid_keys=({'= '.join(valid_keys)}=)
+                if [[ $cur == '' ]]; then
+                    COMPREPLY=(${{valid_keys[@]}})
+                else
+                    COMPREPLY=($(compgen -W "${{valid_keys[*]}}" "$cur"))
+                fi
+            fi
+            ;;
+    esac
+}}
+"""
+        return script
