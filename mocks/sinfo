@@ -1,0 +1,28 @@
+#!/usr/bin/env bash
+
+# Mock sinfo script for testing SLURM info commands
+
+# Optional: Add small delay to simulate real command execution
+# sleep 0.1
+
+# Get the directory where this script is located (same as mocks directory)
+MOCKS_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
+# Check if --json is in arguments
+if [[ "$*" == *"--json"* ]]; then
+    if [ -f "$MOCKS_DIR/data/sinfo.json" ]; then
+        cat "$MOCKS_DIR/data/sinfo.json"
+    else
+        echo "Error: sinfo.json file not found in $MOCKS_DIR/data" >&2
+        exit 1
+    fi
+# Check if -s or --summarize is in arguments, or use as default
+else
+    if [ -f "$MOCKS_DIR/data/sinfo-s" ]; then
+        cat "$MOCKS_DIR/data/sinfo-s"
+    else
+        echo "Error: sinfo-s file not found in $MOCKS_DIR/data" >&2
+        exit 1
+    fi
+fi
+

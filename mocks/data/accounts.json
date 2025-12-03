@@ -1,0 +1,197 @@
+{
+  "accounts": [
+    {
+      "associations": [
+      ],
+      "coordinators": [
+      ],
+      "description": "general",
+      "name": "general",
+      "organization": "general",
+      "flags": [
+      ]
+    },
+    {
+      "associations": [
+      ],
+      "coordinators": [
+      ],
+      "description": "general_cs",
+      "name": "general_cs",
+      "organization": "general_cs",
+      "flags": [
+      ]
+    },
+    {
+      "associations": [
+      ],
+      "coordinators": [
+      ],
+      "description": "general_cs_admin",
+      "name": "general_cs_admin",
+      "organization": "nvidia",
+      "flags": [
+      ]
+    },
+    {
+      "associations": [
+      ],
+      "coordinators": [
+      ],
+      "description": "general_cs_infra",
+      "name": "general_cs_infra",
+      "organization": "general_cs_infra",
+      "flags": [
+      ]
+    },
+    {
+      "associations": [
+      ],
+      "coordinators": [
+      ],
+      "description": "general_cs_infra__ngcsre",
+      "name": "general_cs_infra__ngcsre",
+      "organization": "nvidia",
+      "flags": [
+      ]
+    },
+    {
+      "associations": [
+      ],
+      "coordinators": [
+      ],
+      "description": "general_cs_noallocation",
+      "name": "general_cs_noallocation",
+      "organization": "nvidia",
+      "flags": [
+      ]
+    },
+    {
+      "associations": [
+      ],
+      "coordinators": [
+      ],
+      "description": "general_hwinf_infra",
+      "name": "general_hwinf_infra",
+      "organization": "nvidia",
+      "flags": [
+      ]
+    },
+    {
+      "associations": [
+      ],
+      "coordinators": [
+      ],
+      "description": "hw_gpu_gb102__hw_power_analysis",
+      "name": "hw_gpu_gb102__hw_power_analysis",
+      "organization": "nvidia",
+      "flags": [
+      ]
+    },
+    {
+      "associations": [
+      ],
+      "coordinators": [
+      ],
+      "description": "hw_msd_meth__cir",
+      "name": "hw_msd_meth__cir",
+      "organization": "nvidia",
+      "flags": [
+      ]
+    },
+    {
+      "associations": [
+      ],
+      "coordinators": [
+      ],
+      "description": "hw_prod_spt",
+      "name": "hw_prod_spt",
+      "organization": "nvidia",
+      "flags": [
+      ]
+    },
+    {
+      "associations": [
+      ],
+      "coordinators": [
+      ],
+      "description": "hw_vlsi_meth__pnr_infra",
+      "name": "hw_vlsi_meth__pnr_infra",
+      "organization": "nvidia",
+      "flags": [
+      ]
+    },
+    {
+      "associations": [
+      ],
+      "coordinators": [
+      ],
+      "description": "nvidia",
+      "name": "nvidia",
+      "organization": "nvidia",
+      "flags": [
+      ]
+    },
+    {
+      "associations": [
+      ],
+      "coordinators": [
+      ],
+      "description": "nvr_asicvlsi_dar",
+      "name": "nvr_asicvlsi_dar",
+      "organization": "nvidia",
+      "flags": [
+      ]
+    },
+    {
+      "associations": [
+      ],
+      "coordinators": [
+      ],
+      "description": "default root account",
+      "name": "root",
+      "organization": "root",
+      "flags": [
+      ]
+    },
+    {
+      "associations": [
+      ],
+      "coordinators": [
+      ],
+      "description": "shashankraje",
+      "name": "shashankraje",
+      "organization": "nvidia",
+      "flags": [
+      ]
+    }
+  ],
+  "meta": {
+    "plugin": {
+      "type": "",
+      "name": "",
+      "data_parser": "data_parser\/v0.0.41",
+      "accounting_storage": "accounting_storage\/slurmdbd"
+    },
+    "client": {
+      "source": "\/dev\/pts\/2",
+      "user": "szhumatiy",
+      "group": "dip"
+    },
+    "command": [
+    ],
+    "slurm": {
+      "version": {
+        "major": "24",
+        "micro": "5",
+        "minor": "05"
+      },
+      "release": "24.05.5",
+      "cluster": "my-test-cluster"
+    }
+  },
+  "errors": [
+  ],
+  "warnings": [
+  ]
+}

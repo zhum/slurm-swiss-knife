@@ -1,0 +1,17 @@
+   Account                Descr                  Org 
+---------- -------------------- -------------------- 
+   general              general              general 
+general_cs           general_cs           general_cs 
+general_c+     general_cs_admin               nvidia 
+general_c+     general_cs_infra     general_cs_infra 
+general_c+ general_cs_infra__n+               nvidia 
+general_c+ general_cs_noalloca+               nvidia 
+general_h+  general_hwinf_infra               nvidia 
+hw_gpu_gb+ hw_gpu_gb102__hw_po+               nvidia 
+hw_msd_me+     hw_msd_meth__cir               nvidia 
+hw_prod_s+          hw_prod_spt               nvidia 
+hw_vlsi_m+ hw_vlsi_meth__pnr_i+               nvidia 
+    nvidia               nvidia               nvidia 
+nvr_asicv+     nvr_asicvlsi_dar               nvidia 
+      root default root account                 root 
+shashankr+         shashankraje               nvidia 

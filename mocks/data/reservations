@@ -1,0 +1,6 @@
+ReservationName=rma_nodes_reservation StartTime=2025-12-02T10:16:01 EndTime=2026-12-02T10:16:01 Duration=365-00:00:00
+   Nodes=a15-dgx-282,a17-dgx-283,a31-dgx-388,a33-dgx-393,b20-dgx-310,b30-dgx-406,k20-dgx-471 NodeCnt=7 CoreCnt=896 Features=(null) PartitionName=(null) Flags=SPEC_NODES
+   TRES=cpu=1792
+   Users=root Groups=(null) Accounts=(null) Licenses=(null) State=ACTIVE BurstBuffer=(null)
+   MaxStartDelay=(null)
+

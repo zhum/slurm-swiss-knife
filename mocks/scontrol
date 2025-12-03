@@ -1,0 +1,67 @@
+#!/usr/bin/env bash
+
+# Mock scontrol script for testing SLURM commands
+
+# Optional: Add small delay to simulate real command execution
+# sleep 0.1
+
+# Get the directory where this script is located (same as mocks directory)
+MOCKS_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
+# Check if arguments match "show node[s] --json"
+if [[ "$1" == "show" ]] && [[ "$2" =~ ^nodes?$ ]] && [[ "$3" == "--json" ]]; then
+    if [ -f "$MOCKS_DIR/data/nodes.json" ]; then
+        cat "$MOCKS_DIR/data/nodes.json"
+    else
+        echo "Error: nodes.json file not found in $MOCKS_DIR/data" >&2
+        exit 1
+    fi
+elif [[ "$1" == "show" ]] && [[ "$2" =~ ^nodes?$ ]]; then
+    if [ -f "$MOCKS_DIR/data/nodes" ]; then
+        cat "$MOCKS_DIR/data/nodes"
+    else
+        echo "Error: nodes file not found in $MOCKS_DIR/data" >&2
+        exit 1
+    fi
+elif [ "$1" = "show" ] && [ "$2" = "partitions" ] && [ "$3" = "--json" ]; then
+    if [ -f "$MOCKS_DIR/data/partitions.json" ]; then
+        cat "$MOCKS_DIR/data/partitions.json"
+    else
+        echo "Error: partitions.json file not found in $MOCKS_DIR/data" >&2
+        exit 1
+    fi
+elif [ "$1" = "show" ] && [ "$2" = "partitions" ]; then
+    if [ -f "$MOCKS_DIR/data/partitions" ]; then
+        cat "$MOCKS_DIR/data/partitions"
+    else
+        echo "Error: partitions file not found in $MOCKS_DIR/data" >&2
+        exit 1
+    fi
+elif [ "$1" = "show" ] && [ "$2" = "reservations" ] && [ "$3" = "--json" ]; then
+    if [ -f "$MOCKS_DIR/data/reservations.json" ]; then
+        cat "$MOCKS_DIR/data/reservations.json"
+    else
+        echo "Error: reservations.json file not found in $MOCKS_DIR/data" >&2
+        exit 1
+    fi
+elif [ "$1" = "show" ] && [ "$2" = "reservations" ]; then
+    if [ -f "$MOCKS_DIR/data/reservations" ]; then
+        cat "$MOCKS_DIR/data/reservations"
+    else
+        echo "Error: reservations file not found in $MOCKS_DIR/data" >&2
+        exit 1
+    fi
+elif [ "$1" = "show" ] && [ "$2" = "config" ]; then
+    if [ -f "$MOCKS_DIR/data/slurm_config" ]; then
+        cat "$MOCKS_DIR/data/slurm_config"
+    else
+        echo "Error: slurm_config file not found in $MOCKS_DIR/data" >&2
+        exit 1
+    fi
+else
+    # For other arguments, show usage or error
+    echo "Usage: $0 show {nodes|partitions|reservations|config} [--json]" >&2
+    echo "This is a mock scontrol script for testing purposes." >&2
+    echo "Arguments received: $*" >&2
+    exit 1
+fi

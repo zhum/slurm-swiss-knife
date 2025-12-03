@@ -5,7 +5,9 @@ from typing import List, Optional, Tuple
 
 # Add src to path for imports
 sys.path.insert(0, "src")
-from slurm_cli.utils.base_resource import BaseSlurmResource  # noqa: E402
+from slurm_cli.utils.base_resource import (  # noqa: E402
+    BaseSlurmResource,
+)
 
 
 class TestTimePatterns:

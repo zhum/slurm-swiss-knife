@@ -94,12 +94,33 @@ def resolve_resource_alias(resource: str) -> str:
     return resource
 
 
-# def resolve_command_alias(command: str) -> str:
-#     """Resolve command alias to canonical name."""
-#     for orig, alias_list in COMMANDS_ALIASES.items():
-#         if orig in alias_list:
-#             return orig
-#     return command
+def resolve_command_alias(command: str) -> str:
+    """Resolve command alias to canonical name."""
+    # Try prefix matching on main commands only
+    main_commands = {
+        "show": ["show", "get"],
+        "create": ["new", "add", "create"],
+        "update": ["edit", "change", "modify", "update"],
+        "delete": ["delete", "remove", "rm"],
+        "list-resources": ["ls", "list"],
+        "autocomplete": ["autocomplete"],
+        "help": ["help"],
+        "version": ["version"],
+    }
+    matches = [
+        (cmd, alias)
+        for cmd, aliases in main_commands.items()
+        for alias in aliases
+        if alias.startswith(command)
+    ]
+
+    if len(matches) == 1:
+        return matches[0][0]
+    elif len(matches) > 1:
+        click.fail(
+            f"Ambiguous command: {command}. "
+            f"Could be: {', '.join([f'{alias}' for _, alias in matches])}"
+        )
 
 
 def get_output_style(ctx: click.Context) -> str:
@@ -382,41 +403,50 @@ class CustomGroup(click.Group):
         if rv is not None:
             return rv
 
-        # Try prefix matching on main commands only
-        main_commands = {
-            "show": ["show", "get"],
-            "create": ["new", "add", "create"],
-            "update": ["edit", "change", "modify", "update"],
-            "delete": ["delete", "remove", "rm"],
-            "list-resources": ["ls", "list"],
-            "autocomplete": ["autocomplete"],
-            "help": ["help"],
-            "version": ["version"]
-        }
-        matches = [
-            (cmd, alias) for cmd, aliases in main_commands.items()
-            for alias in aliases
-            if alias.startswith(cmd_name)
-        ]
+        # # Try prefix matching on main commands only
+        # main_commands = {
+        #     "show": ["show", "get"],
+        #     "create": ["new", "add", "create"],
+        #     "update": ["edit", "change", "modify", "update"],
+        #     "delete": ["delete", "remove", "rm"],
+        #     "list-resources": ["ls", "list"],
+        #     "autocomplete": ["autocomplete"],
+        #     "help": ["help"],
+        #     "version": ["version"]
+        # }
+        # matches = [
+        #     (cmd, alias) for cmd, aliases in main_commands.items()
+        #     for alias in aliases
+        #     if alias.startswith(cmd_name)
+        # ]
 
-        if len(matches) == 1:
-            return super().get_command(ctx, matches[0][0])
-        elif len(matches) > 1:
-            ctx.fail(
-                f"Ambiguous command: {cmd_name}. "
-                f"Could be: {', '.join([f'{alias}' for _, alias in matches])}")
-
-        return None
+        # if len(matches) == 1:
+        #     return super().get_command(ctx, matches[0][0])
+        # elif len(matches) > 1:
+        #     ctx.fail(
+        #         f"Ambiguous command: {cmd_name}. "
+        #         f"Could be: {', '.join([f'{alias}' for _, alias in matches])}")  # noqa: E501
+        command = resolve_command_alias(cmd_name)
+        return super().get_command(ctx, command)
 
     def format_commands(self, ctx, formatter):
         """Custom command formatter that filters out aliases."""
         commands = []
         main_command_names = {
-            "show", "get",
-            "update", "edit", "change", "modify",
-            "create", "new", "add",
-            "delete", "remove", "rm",
-            "list-resources", "ls",
+            "show",
+            "get",
+            "update",
+            "edit",
+            "change",
+            "modify",
+            "create",
+            "new",
+            "add",
+            "delete",
+            "remove",
+            "rm",
+            "list-resources",
+            "ls",
             "autocomplete",
             "help",
             "version",
@@ -466,20 +496,14 @@ def register_commands() -> None:
     #         main.add_command(globals()[command], name=alias)
 
     # Modify help text to show aliases inline
-    show.help = (
-        "Show information about Slurm resources (aliases: get)"
-    )
+    show.help = "Show information about Slurm resources (aliases: get)"
     update.help = (
         "Update Slurm resource fields "
         "(aliases: edit, change, modify)"
     )
     create.help = "Create Slurm resources (aliases: new, add)"
-    delete.help = (
-        "Delete Slurm resources (aliases: remove, rm)"
-    )
-    list_resources.help = (
-        "List available Slurm resources (aliases: ls)"
-    )
+    delete.help = "Delete Slurm resources (aliases: remove, rm)"
+    list_resources.help = "List available Slurm resources (aliases: ls)"
     version.help = "Show version information"
     # Show version information (aliases: ver, v)"
     help.help = "Show help information"
@@ -887,7 +911,8 @@ def delete(
 )
 def autocomplete(word: str, max_cost: int, size: int) -> None:
     """Test autocomplete functionality."""
-    print("""
+    print(
+        """
 # Reservation autocomplete function
 _slurm_cli_initialize_autocomplete() {
 
@@ -1121,14 +1146,18 @@ _slurm_cli_initialize_autocomplete() {
 
     # echo "${COMP_REPLY[@]}"
 }
-""")
+"""
+    )  # noqa: E501
     print(Reservation.generate_autocomplete_options())
-    print("""
+    print(
+        """
 
 # Register the completion function
 complete -F _slurm_cli_initialize_autocomplete slurm-cli
-    """)
+    """
+    )
     return
+
 
 # list-resources command
 @click.command(context_settings=CONTEXT_SETTINGS)

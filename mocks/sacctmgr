@@ -1,0 +1,69 @@
+#!/usr/bin/env bash
+
+# Mock sacctmgr script for testing SLURM accounting commands
+
+# Optional: Add small delay to simulate real command execution
+# sleep 0.1
+
+# Get the directory where this script is located (same as mocks directory)
+MOCKS_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
+# Parse arguments (sacctmgr can have format= anywhere in the command)
+if [ "$1" = "show" ] && [ "$2" = "qos" ]; then
+    # Check if --json is in arguments
+    if [[ "$*" == *"--json"* ]]; then
+        if [ -f "$MOCKS_DIR/data/qos.json" ]; then
+            cat "$MOCKS_DIR/data/qos.json"
+        else
+            echo "Error: qos.json file not found in $MOCKS_DIR/data" >&2
+            exit 1
+        fi
+    else
+        if [ -f "$MOCKS_DIR/data/qos" ]; then
+            cat "$MOCKS_DIR/data/qos"
+        else
+            echo "Error: qos file not found in $MOCKS_DIR/data" >&2
+            exit 1
+        fi
+    fi
+elif [ "$1" = "show" ] && [ "$2" = "accounts" ]; then
+    # Check if --json is in arguments
+    if [[ "$*" == *"--json"* ]]; then
+        if [ -f "$MOCKS_DIR/data/accounts.json" ]; then
+            cat "$MOCKS_DIR/data/accounts.json"
+        else
+            echo "Error: accounts.json file not found in $MOCKS_DIR/data" >&2
+            exit 1
+        fi
+    else
+        if [ -f "$MOCKS_DIR/data/accounts" ]; then
+            cat "$MOCKS_DIR/data/accounts"
+        else
+            echo "Error: accounts file not found in $MOCKS_DIR/data" >&2
+            exit 1
+        fi
+    fi
+elif [ "$1" = "show" ] && [ "$2" = "users" ]; then
+    # Check if --json is in arguments
+    if [[ "$*" == *"--json"* ]]; then
+        if [ -f "$MOCKS_DIR/data/users.json" ]; then
+            cat "$MOCKS_DIR/data/users.json"
+        else
+            echo "Error: users.json file not found in $MOCKS_DIR/data" >&2
+            exit 1
+        fi
+    else
+        if [ -f "$MOCKS_DIR/data/users" ]; then
+            cat "$MOCKS_DIR/data/users"
+        else
+            echo "Error: users file not found in $MOCKS_DIR/data" >&2
+            exit 1
+        fi
+    fi
+else
+    # For other arguments, show usage or error
+    echo "Usage: $0 show {qos|accounts|users} [--json] [format=...]" >&2
+    echo "This is a mock sacctmgr script for testing purposes." >&2
+    echo "Arguments received: $*" >&2
+    exit 1
+fi

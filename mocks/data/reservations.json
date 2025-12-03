@@ -1,0 +1,77 @@
+{
+  "reservations": [
+    {
+      "accounts": "",
+      "burst_buffer": "",
+      "core_count": 896,
+      "core_specializations": [
+      ],
+      "end_time": {
+        "set": true,
+        "infinite": false,
+        "number": 1796235361
+      },
+      "features": "",
+      "flags": [
+        "SPEC_NODES"
+      ],
+      "groups": "",
+      "licenses": "",
+      "max_start_delay": 0,
+      "name": "rma_nodes_reservation",
+      "node_count": 7,
+      "node_list": "a15-dgx-282,a17-dgx-283,a31-dgx-388,a33-dgx-393,b20-dgx-310,b30-dgx-406,k20-dgx-471",
+      "partition": "",
+      "purge_completed": {
+        "time": {
+          "set": true,
+          "infinite": false,
+          "number": 300
+        }
+      },
+      "start_time": {
+        "set": true,
+        "infinite": false,
+        "number": 1764699361
+      },
+      "watts": {
+      },
+      "tres": "cpu=1792",
+      "users": "root"
+    }
+  ],
+  "last_update": {
+    "set": true,
+    "infinite": false,
+    "number": 1764724605
+  },
+  "meta": {
+    "plugin": {
+      "type": "",
+      "name": "",
+      "data_parser": "data_parser\/v0.0.41",
+      "accounting_storage": "accounting_storage\/slurmdbd"
+    },
+    "client": {
+      "source": "\/dev\/pts\/2",
+      "user": "szhumatiy",
+      "group": "dip"
+    },
+    "command": [
+      "show"
+    ],
+    "slurm": {
+      "version": {
+        "major": "24",
+        "micro": "5",
+        "minor": "05"
+      },
+      "release": "24.05.5",
+      "cluster": "my-test-cluster"
+    }
+  },
+  "errors": [
+  ],
+  "warnings": [
+  ]
+}

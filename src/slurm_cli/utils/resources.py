@@ -3,11 +3,11 @@ import os
 import re
 import subprocess
 import time
+
 # from enum import Enum
 from typing import Any, Dict, List, Tuple
 
 from .utils import console
-
 
 SPINNER_STYLE = "dots2"
 # moon, dots, simpleDots, dots2, dots12
@@ -81,9 +81,7 @@ class Resource:
             )
         qos = cls.cached_resource_list("qos")
         if name[:3] == "qos" or (qos and name in qos):
-            return "qos", Resource.cached_resource(
-                "qos", force_update
-            )
+            return "qos", Resource.cached_resource("qos", force_update)
         account = cls.cached_resource_list("accounts")
         if name[:3] == "acc" or (account and name in account):
             return "accounts", Resource.cached_resource(

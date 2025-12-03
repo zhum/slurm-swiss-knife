@@ -1,0 +1,44 @@
+#!/usr/bin/env bash
+
+# Mock squeue script for testing SLURM queue commands
+
+# Optional: Add small delay to simulate real command execution
+# sleep 0.1
+
+# Get the directory where this script is located (same as mocks directory)
+MOCKS_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
+# Check if --json is in arguments
+if [[ "$*" == *"--json"* ]]; then
+    if [ -f "$MOCKS_DIR/data/squeue.json" ]; then
+        cat "$MOCKS_DIR/data/squeue.json"
+    else
+        echo "Error: squeue.json file not found in $MOCKS_DIR/data" >&2
+        exit 1
+    fi
+# Check if extended format is requested (-O or --Format)
+elif [[ "$*" =~ -O|--Format ]]; then
+    if [ -f "$MOCKS_DIR/data/squeue_extended" ]; then
+        cat "$MOCKS_DIR/data/squeue_extended"
+    else
+        echo "Error: squeue_extended file not found in $MOCKS_DIR/data" >&2
+        exit 1
+    fi
+# Check if specific states are requested
+elif [[ "$*" =~ --states?= ]]; then
+    if [ -f "$MOCKS_DIR/data/squeue_active" ]; then
+        cat "$MOCKS_DIR/data/squeue_active"
+    else
+        echo "Error: squeue_active file not found in $MOCKS_DIR/data" >&2
+        exit 1
+    fi
+# Default: show all jobs
+else
+    if [ -f "$MOCKS_DIR/data/squeue_all" ]; then
+        cat "$MOCKS_DIR/data/squeue_all"
+    else
+        echo "Error: squeue_all file not found in $MOCKS_DIR/data" >&2
+        exit 1
+    fi
+fi
+

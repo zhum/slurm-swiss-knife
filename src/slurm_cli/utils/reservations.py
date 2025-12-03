@@ -8,6 +8,7 @@ from typing import Any
 from rich.markup import escape
 
 from .base_resource import BaseSlurmResource
+
 # from .resources import Resource
 from .utils import console
 
@@ -375,8 +376,9 @@ class Reservation(BaseSlurmResource):
 
         # Get valid argument keys
         valid_keys = list(cls.valid_args.keys())
-        valid_types = ' '.join(
-            [f'[{k}]=\"{v["type"]}\"' for k, v in cls.valid_args.items()])
+        valid_types = " ".join(
+            [f'[{k}]="{v["type"]}"' for k, v in cls.valid_args.items()]
+        )
         script = f"""
 _gen_comreply_for_keyvalues() {{
     local cur="$1"
@@ -467,5 +469,5 @@ _slurm_cli_reservations_autocomplete() {{
             ;;
     esac
 }}
-"""
+"""  # noqa: E501
         return script
