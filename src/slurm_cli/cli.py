@@ -183,7 +183,7 @@ def ensure_resource_name(
     elif resource[:2] == "ev":
         return "events", field, []
     elif resource[:3] == "lic" or resource[:4] == "reso":
-        return "licenses", field, []
+        return "`licens`es", field, []
     elif resource[:3] == "bad" or resource[:3] == "runa":
         return "runawayjobs", field, []
     elif resource[:3] == "tra":
@@ -573,14 +573,14 @@ def show(
             User.show(data=data, style=style)
     elif canonical_resource[:3] == "qos":
         if field:
-            Qos.show(name=field, data=data, style=style)
+            Qos.show(field=field, style=style)
         else:
-            Qos.show(data=data, style=style)
+            Qos.show(style=style)
     elif canonical_resource[:3] == "acc":
         if field:
-            Account.show(name=field, data=data, style=style)
+            Account.show(field=field, style=style)
         else:
-            Account.show(data=data, style=style)
+            Account.show(style=style)
     elif canonical_resource[:5] == "coord":
         if field:
             Coordinator.show(field=field, style=style)
@@ -961,7 +961,8 @@ _slurm_cli_initialize_autocomplete() {
     done
 
     if [[ ${COMP_WORDS[COMP_CWORD]:0:1} == "-" ]]; then
-        COMPREPLY=($(compgen -W "-v -h -p -j -f -t --style --pretty --json --force-update --cache-timeout --help --version" -- "$cur"))
+        COMPREPLY=($(compgen -W "-v -h -p -j -f -t --style --pretty --json \
+                   --force-update --cache-timeout --help --version" -- "$cur"))
         return
     fi
 
@@ -970,7 +971,8 @@ _slurm_cli_initialize_autocomplete() {
     local resource=""
     cmd="${COMP_WORDS[$i]}"
     resource="${COMP_WORDS[$((i+1))]}"
-    # echo -e "\\nCOMP_CWORD=$COMP_CWORD; i=$i COMP_WORDS=${COMP_WORDS[@]} Current=${COMP_WORDS[COMP_CWORD]} cmd=$cmd resource=$resource"
+    # echo -e "\\nCOMP_CWORD=$COMP_CWORD; i=$i COMP_WORDS=${COMP_WORDS[@]} \
+    # Current=${COMP_WORDS[COMP_CWORD]} cmd=$cmd resource=$resource"
 
     local cur="${COMP_WORDS[COMP_CWORD]}"
     local prev="${COMP_WORDS[COMP_CWORD-1]}"
@@ -1050,7 +1052,10 @@ _slurm_cli_initialize_autocomplete() {
             COMPREPLY=($(compgen -W "$guessed" -- "$cur"))
             return
         else
-            COMPREPLY=($(compgen -W "show get create add new update edit change modify delete remove rm list-resources autocomplete help version -v -h -p -j -f -t --style --pretty --json --force-update --cache-timeout --help --version" -- "$cur"))
+            COMPREPLY=($(compgen -W "show get create add new update edit \
+                change modify delete remove rm list-resources autocomplete \
+                help version -v -h -p -j -f -t --style --pretty --json \
+                --force-update --cache-timeout --help --version" -- "$cur"))
             return
         fi
     fi
@@ -1137,7 +1142,10 @@ _slurm_cli_initialize_autocomplete() {
             COMPREPLY=($(compgen -W "$guessed" -- "$cur"))
             return
         else
-            COMPREPLY=($(compgen -W "reservations nodes partitions accounts qos users coordinators problems stats associations dump events licenses bad runawayjobs tres archives coordinators" -- "$cur"))
+            COMPREPLY=($(compgen -W "reservations nodes partitions accounts \
+                qos users coordinators problems stats associations dumps \
+                events licenses bad runawayjobs tres archives transactions \
+                -- "$cur"))
             return
         fi
     fi

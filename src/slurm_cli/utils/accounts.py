@@ -1,7 +1,10 @@
 """Utilities for managing accounts."""
 
+import json
 import subprocess
 from typing import Any
+
+from rich.table import Table
 
 from .base_resource import BaseSlurmResource
 from .utils import console
@@ -33,8 +36,9 @@ class Account(BaseSlurmResource):
             if result.stdout:
                 console.print(result.stdout)
         except subprocess.CalledProcessError as e:
+            error_msg = e.stderr or e
             console.print(
-                f"[red]Failed to create account '{name}':[/red] {e.stderr or e}"
+                f"[red]Failed to create account '{name}':[/red] {error_msg}"
             )
 
     @classmethod
@@ -54,27 +58,76 @@ class Account(BaseSlurmResource):
         style: str = "pretty",
         force_cache_update: bool = False,
     ) -> None:
-        """Show account information."""
+        """Show account information.
+
+        Args:
+            field: Optional account name to filter by
+            style: Output style ("pretty" or "json")
+            force_cache_update: Whether to force cache update (unused)
+        """
         try:
+            # Always get JSON output from sacctmgr
+            result = subprocess.run(
+                ["sacctmgr", "show", "accounts", "--json"],
+                check=True,
+                capture_output=True,
+                text=True,
+            )
+
+            if not result.stdout:
+                console.print("[yellow]No accounts found.[/yellow]")
+                return
+
+            # Parse JSON data
+            data = json.loads(result.stdout)
+            accounts = data.get("accounts", [])
+
+            # Filter by field (account name) if specified
+            if field:
+                accounts = [
+                    acc for acc in accounts if acc.get("name") == field
+                ]
+                if not accounts:
+                    console.print(
+                        f"[yellow]Account '{field}' not found.[/yellow]"
+                    )
+                    return
+
             if style == "json":
-                result = subprocess.run(
-                    ["sacctmgr", "show", "accounts", "--json"],
-                    check=True,
-                    capture_output=True,
-                    text=True,
-                )
-                if result.stdout:
-                    console.print_json(result.stdout)
+                # Print filtered JSON
+                filtered_data = {"accounts": accounts}
+                console.print_json(json.dumps(filtered_data, indent=2))
             else:  # pretty style
-                result = subprocess.run(
-                    ["sacctmgr", "show", "accounts"],
-                    check=True,
-                    capture_output=True,
-                    text=True,
-                )
-                if result.stdout:
-                    console.print(result.stdout)
+                # Create a rich table
+                table = Table(title="Accounts", box=None)
+                table.add_column("Name", style="cyan", no_wrap=True)
+                table.add_column("Description", style="white")
+                table.add_column("Organization", style="green")
+                table.add_column("Coordinators", style="yellow")
+
+                for account in accounts:
+                    name = account.get("name", "")
+                    description = account.get("description", "")
+                    organization = account.get("organization", "")
+                    coordinators = account.get("coordinators", [])
+
+                    # Format coordinators list
+                    coord_str = (
+                        ", ".join(coordinators) if coordinators else "-"
+                    )
+
+                    table.add_row(
+                        name, description, organization, coord_str
+                    )
+
+                console.print(table)
+
         except subprocess.CalledProcessError as e:
+            error_msg = e.stderr or e
             console.print(
-                f"[red]Failed to show accounts:[/red] {e.stderr or e}"
+                f"[red]Failed to show accounts:[/red] {error_msg}"
+            )
+        except json.JSONDecodeError as e:
+            console.print(
+                f"[red]Failed to parse JSON output:[/red] {e}"
             )
