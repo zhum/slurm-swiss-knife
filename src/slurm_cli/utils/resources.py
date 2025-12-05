@@ -250,13 +250,46 @@ class Resource:
 
     @classmethod
     def partitions2json(cls, output: str) -> dict:
-        """Convert partitions to JSON."""
+        """Convert partitions to JSON.
+
+        Partition data is multi-line format:
+        PartitionName=xxx
+           Key1=Value1 Key2=Value2
+           Key3=Value3
+        (empty line)
+        """
         partitions = {}
+        current_partition = None
+        current_data = {}
+
         for line in output.splitlines():
-            hash = {
-                x[0]: x[1]
-                for x in [y.split("=") for y in line.strip().split(" ")]
-            }
-            name = hash.pop("PartitionName")
-            partitions[name] = hash
+            line = line.strip()
+
+            # Empty line marks end of a partition block
+            if not line:
+                if current_partition:
+                    partitions[current_partition] = current_data
+                    current_partition = None
+                    current_data = {}
+                continue
+
+            # Parse key=value pairs from the line
+            for pair in line.split():
+                if "=" in pair:
+                    key, value = pair.split("=", 1)
+
+                    # Check if this starts a new partition
+                    if key == "PartitionName":
+                        # Save previous partition if any
+                        if current_partition:
+                            partitions[current_partition] = current_data
+                        current_partition = value
+                        current_data = {}
+                    else:
+                        current_data[key] = value
+
+        # Don't forget the last partition
+        if current_partition:
+            partitions[current_partition] = current_data
+
         return partitions

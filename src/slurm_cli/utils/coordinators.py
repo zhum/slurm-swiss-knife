@@ -72,6 +72,7 @@ class Coordinator(BaseSlurmResource):
         field: str = None,
         style: str = "pretty",
         force_cache_update: bool = False,
+        delimiter: str = ";",
     ) -> None:
         """Show coordinator information."""
         print(

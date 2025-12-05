@@ -50,11 +50,15 @@ class User(BaseSlurmResource):
     @classmethod
     def show(
         cls,
-        field: str = None,
+        name: str = None,
+        data: dict = None,
         style: str = "pretty",
         force_cache_update: bool = False,
+        delimiter: str = ";",
     ) -> None:
         """Show user information."""
+        # For backward compatibility, support 'field' parameter name
+        field = name
         try:
             if style == "json":
                 result = subprocess.run(

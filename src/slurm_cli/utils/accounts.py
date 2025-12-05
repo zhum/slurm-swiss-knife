@@ -4,6 +4,7 @@ import json
 import subprocess
 from typing import Any
 
+from rich.box import SIMPLE_HEAVY
 from rich.table import Table
 
 from .base_resource import BaseSlurmResource
@@ -57,13 +58,17 @@ class Account(BaseSlurmResource):
         field: str = None,
         style: str = "pretty",
         force_cache_update: bool = False,
+        delimiter: str = ";",
+        zebra: bool = False,
     ) -> None:
         """Show account information.
 
         Args:
             field: Optional account name to filter by
-            style: Output style ("pretty" or "json")
+            style: Output style ("pretty", "json", or "csv")
             force_cache_update: Whether to force cache update (unused)
+            delimiter: Delimiter for CSV output (default: ";")
+            zebra: Use zebra striping for table rows (default: False)
         """
         try:
             # Always get JSON output from sacctmgr
@@ -97,9 +102,41 @@ class Account(BaseSlurmResource):
                 # Print filtered JSON
                 filtered_data = {"accounts": accounts}
                 console.print_json(json.dumps(filtered_data, indent=2))
+            elif style == "csv":
+                # Print CSV format
+                # Header
+                headers = [
+                    "Name",
+                    "Description",
+                    "Organization",
+                    "Coordinators",
+                ]
+                print(delimiter.join(headers))
+
+                # Data rows
+                for account in accounts:
+                    name = account.get("name", "")
+                    description = account.get("description", "")
+                    organization = account.get("organization", "")
+                    coordinators = account.get("coordinators", [])
+
+                    # Format coordinators list
+                    coord_str = (
+                        ",".join(coordinators) if coordinators else ""
+                    )
+
+                    row = [name, description, organization, coord_str]
+                    print(delimiter.join(row))
             else:  # pretty style
                 # Create a rich table
-                table = Table(title="Accounts", box=None)
+                row_styles = ["", "on rgb(30,40,60)"] if zebra else None
+                table = Table(
+                    title="Accounts",
+                    box=SIMPLE_HEAVY,
+                    pad_edge=False,
+                    padding=(0, 0),
+                    row_styles=row_styles,
+                )
                 table.add_column("Name", style="cyan", no_wrap=True)
                 table.add_column("Description", style="white")
                 table.add_column("Organization", style="green")

@@ -4,6 +4,7 @@ import json
 import subprocess
 from typing import Any
 
+from rich.box import SIMPLE_HEAVY
 from rich.table import Table
 
 from .base_resource import BaseSlurmResource
@@ -56,13 +57,17 @@ class Qos(BaseSlurmResource):
         field: str = None,
         style: str = "pretty",
         force_cache_update: bool = False,
+        delimiter: str = ";",
+        zebra: bool = False,
     ) -> None:
         """Show QoS information.
 
         Args:
             field: Optional QoS name to filter by
-            style: Output style ("pretty" or "json")
+            style: Output style ("pretty", "json", or "csv")
             force_cache_update: Whether to force cache update (unused)
+            delimiter: Delimiter for CSV output (default: ";")
+            zebra: Use zebra striping for table rows (default: False)
         """
         try:
             # Always get JSON output from sacctmgr
@@ -92,48 +97,46 @@ class Qos(BaseSlurmResource):
                     )
                     return
 
+            # Helper functions (used by both CSV and pretty styles)
+            def get_set_value(obj, default="-"):
+                if isinstance(obj, dict):
+                    if obj.get("set", False):
+                        val = obj.get("number")
+                        if val is not None:
+                            return str(val)
+                return default
+
+            def format_tres_list(tres_list):
+                """Format TRES list to human-readable string."""
+                if not tres_list:
+                    return "-"
+                parts = []
+                for tres in tres_list:
+                    if isinstance(tres, dict):
+                        name = tres.get("name") or tres.get("type", "")
+                        count = tres.get("count", "")
+                        if name and count:
+                            parts.append(f"{name}={count}")
+                return ",".join(parts) if parts else "-"
+
+            def get_nested(obj, path):
+                """Get nested dictionary value by dot-separated path."""
+                keys = path.split(".")
+                current = obj
+                for key in keys:
+                    if isinstance(current, dict):
+                        current = current.get(key, {})
+                    else:
+                        return None
+                return current
+
             if style == "json":
                 # Print filtered JSON
                 console.print_json(
                     json.dumps({"qos": qos_list}, indent=2)
                 )
-            else:  # pretty style
-                # Helper function to extract value from set/number structure
-                def get_set_value(obj, default="-"):
-                    if isinstance(obj, dict):
-                        if obj.get("set", False):
-                            val = obj.get("number")
-                            if val is not None:
-                                return str(val)
-                    return default
-
-                def format_tres_list(tres_list):
-                    """Format TRES list to human-readable string."""
-                    if not tres_list:
-                        return "-"
-                    parts = []
-                    for tres in tres_list:
-                        if isinstance(tres, dict):
-                            name = tres.get("name") or tres.get(
-                                "type", ""
-                            )
-                            count = tres.get("count", "")
-                            if name and count:
-                                parts.append(f"{name}={count}")
-                    return ",".join(parts) if parts else "-"
-
-                def get_nested(obj, path):
-                    """Get nested dictionary value by dot-separated path."""
-                    keys = path.split(".")
-                    current = obj
-                    for key in keys:
-                        if isinstance(current, dict):
-                            current = current.get(key, {})
-                        else:
-                            return None
-                    return current
-
-                # Analyze which columns have non-default values
+            elif style in ["csv", "pretty"]:
+                # Column definitions (used by both CSV and pretty styles)
                 column_definitions = [
                     (
                         "name",
@@ -326,10 +329,7 @@ class Qos(BaseSlurmResource):
                                 and value == "1.0"
                             ):
                                 continue
-                            if (
-                                col_key == "priority"
-                                and value == "0"
-                            ):
+                            if col_key == "priority" and value == "0":
                                 continue
                             if (
                                 col_key == "preempt_mode"
@@ -348,32 +348,56 @@ class Qos(BaseSlurmResource):
                             (col_name, col_style, col_justify, col_func)
                         )
 
-                # Create table with dynamic columns
-                table = Table(
-                    title="Quality of Service (QoS)", box=None
-                )
-                for (
-                    col_name,
-                    col_style,
-                    col_justify,
-                    _,
-                ) in visible_columns:
-                    table.add_column(
-                        col_name,
-                        style=col_style,
-                        justify=col_justify,
-                        no_wrap=(col_justify == "right"),
-                    )
-
-                # Add rows
-                for qos in qos_list:
-                    row_values = [
-                        col_func(qos)
-                        for _, _, _, col_func in visible_columns
+                # Output based on style
+                if style == "csv":
+                    # Print CSV header
+                    headers = [
+                        col_name
+                        for col_name, _, _, _ in visible_columns
                     ]
-                    table.add_row(*row_values)
+                    print(delimiter.join(headers))
 
-                console.print(table)
+                    # Print CSV data rows
+                    for qos in qos_list:
+                        row_values = [
+                            col_func(qos)
+                            for _, _, _, col_func in visible_columns
+                        ]
+                        print(delimiter.join(row_values))
+                else:  # pretty style
+                    # Create table with dynamic columns
+                    row_styles = (
+                        ["", "on rgb(30,40,60)"] if zebra else None
+                    )
+                    table = Table(
+                        title="Quality of Service (QoS)",
+                        box=SIMPLE_HEAVY,
+                        pad_edge=False,
+                        padding=(0, 0),
+                        row_styles=row_styles,
+                    )
+                    for (
+                        col_name,
+                        col_style,
+                        col_justify,
+                        _,
+                    ) in visible_columns:
+                        table.add_column(
+                            col_name,
+                            style=col_style,
+                            justify=col_justify,
+                            no_wrap=(col_justify == "right"),
+                        )
+
+                    # Add rows
+                    for qos in qos_list:
+                        row_values = [
+                            col_func(qos)
+                            for _, _, _, col_func in visible_columns
+                        ]
+                        table.add_row(*row_values)
+
+                    console.print(table)
 
         except subprocess.CalledProcessError as e:
             console.print(

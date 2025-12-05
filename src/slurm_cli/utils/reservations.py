@@ -247,7 +247,11 @@ class Reservation(BaseSlurmResource):
 
     @classmethod
     def show(
-        cls, name: str = None, data: dict = None, style: str = "pretty"
+        cls,
+        name: str = None,
+        data: dict = None,
+        style: str = "pretty",
+        delimiter: str = ";",
     ) -> None:
         """Show reservation information."""
         if not data:

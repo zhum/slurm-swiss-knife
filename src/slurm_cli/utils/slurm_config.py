@@ -34,7 +34,11 @@ class Config(BaseSlurmResource):
 
     @classmethod
     def show(
-        cls, style: str = "pretty", force_cache_update: bool = False
+        cls,
+        data: dict = None,
+        style: str = "pretty",
+        force_cache_update: bool = False,
+        delimiter: str = ";",
     ) -> None:
         """Show a config."""
         try:

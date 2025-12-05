@@ -204,6 +204,7 @@ class Partition(BaseSlurmResource):
         "qos": {"def": "", "flag": False},
         "disablerootjobs": {"def": "NO", "flag": True},
         "exclusiveuser": {"def": "NO", "flag": True},
+        "exclusivetopo": {"def": "NO", "flag": True},
         "gracetime": {"def": "0", "flag": False},
         "hidden": {"def": "NO", "flag": True},
         "maxnodes": {"def": "UNLIMITED", "flag": False},
@@ -379,6 +380,7 @@ class Partition(BaseSlurmResource):
         data: dict = None,
         style: str = "pretty",
         force_cache_update: bool = False,
+        delimiter: str = ";",
     ) -> None:
         """Show partition information."""
         if style == "pretty":
@@ -398,8 +400,57 @@ class Partition(BaseSlurmResource):
                         indent=4,
                     )
                 )
+        elif style == "csv":
+            cls.show_csv(name, data, delimiter)
         else:
             console.print(f"[red]Invalid style '{style}'.[/red]")
+
+    @classmethod
+    def show_csv(
+        cls,
+        name: str = None,
+        partitions: dict = None,
+        delimiter: str = ";",
+    ) -> None:
+        """Show partition information in CSV format."""
+        if not partitions:
+            console.print("[red]No partitions found.[/red]")
+            return
+
+        # Determine all unique fields across all partitions
+        all_fields = set()
+        partitions_to_show = (
+            {name: partitions[name]}
+            if name and name in partitions
+            else partitions
+        )
+
+        for partition_data in partitions_to_show.values():
+            all_fields.update(partition_data.keys())
+
+        # Sort fields for consistent output (with common fields first)
+        priority_fields = [
+            "State",
+            "TotalNodes",
+            "TotalCPUs",
+            "MaxTime",
+            "DefaultTime",
+        ]
+        sorted_fields = [
+            f for f in priority_fields if f in all_fields
+        ] + sorted([f for f in all_fields if f not in priority_fields])
+
+        # Print CSV header
+        headers = ["PartitionName"] + sorted_fields
+        print(delimiter.join(headers))
+
+        # Print data rows
+        for partition_name in sorted(partitions_to_show.keys()):
+            data = partitions_to_show[partition_name]
+            row = [partition_name] + [
+                str(data.get(field, "")) for field in sorted_fields
+            ]
+            print(delimiter.join(row))
 
     @classmethod
     def show_pretty(
@@ -462,19 +513,39 @@ class Partition(BaseSlurmResource):
             f"Nodes/CPUs: [b]{total_nodes}/{total_cpus}"
             f"[/] ([nodes]{escape(nodes)}[/])"
         )
+
+        # Check for missing fields and track them
+        missing_fields = []
+        extended_value_types = dict(cls.value_types)
+        for key in data.keys():
+            if key.lower() not in cls.value_types:
+                missing_fields.append(key)
+                # Use default values for missing fields
+                extended_value_types[key.lower()] = {
+                    "def": "",
+                    "flag": False,
+                }
+
         flags = {
             key.lower(): value
             for key, value in data.items()
-            if cls.value_types[key.lower()]["flag"]
+            if extended_value_types[key.lower()]["flag"]
         }
         not_flags = {
             key.lower(): value
             for key, value in data.items()
-            if not cls.value_types[key.lower()]["flag"]
+            if not extended_value_types[key.lower()]["flag"]
         }
         flag_was_printed = cls.print_dict_pretty_flags_def(
-            flags, cls.value_types
+            flags, extended_value_types
         )
         if flag_was_printed:
             console.print("  ", end="")
-        cls.print_dict_pretty_def(not_flags, cls.value_types)
+        cls.print_dict_pretty_def(not_flags, extended_value_types)
+
+        # Show warning for missing fields
+        if missing_fields:
+            console.print(
+                f"\n[yellow]Warning: Unknown partition fields "
+                f"(using defaults): {', '.join(missing_fields)}[/yellow]"
+            )

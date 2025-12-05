@@ -67,6 +67,7 @@ class Node(BaseSlurmResource):
         style: str = "pretty",
         verbose: bool = False,
         force_cache_update: bool = False,
+        delimiter: str = ";",
     ) -> None:
         """Show node information."""
         if not data:
@@ -78,6 +79,8 @@ class Node(BaseSlurmResource):
                     console.print_json(json.dumps(data[name], indent=4))
                 else:
                     console.print_json(json.dumps(data, indent=4))
+            elif style == "csv":
+                cls.show_csv(name, data, delimiter, verbose)
             else:  # pretty style
                 if name:
                     cls.show_one_pretty(name, data[name], verbose)
@@ -88,6 +91,121 @@ class Node(BaseSlurmResource):
             console.print(
                 f"[red]Failed to show node(s):[/red] {e.stderr or e}"
             )
+
+    @classmethod
+    def show_csv(
+        cls,
+        name: str = None,
+        nodes: dict = None,
+        delimiter: str = ";",
+        verbose: bool = False,
+    ) -> None:
+        """Show node information in CSV format."""
+        if not nodes:
+            console.print("[red]No nodes found.[/red]")
+            return
+
+        # Helper to flatten complex values
+        def flatten_value(value):
+            """Convert complex values to strings."""
+            if isinstance(value, dict):
+                # Handle set/number structures
+                if "set" in value and "number" in value:
+                    return (
+                        str(value.get("number", ""))
+                        if value.get("set")
+                        else ""
+                    )
+                # Handle other dicts as JSON
+                return json.dumps(value)
+            elif isinstance(value, list):
+                # Join list items
+                return ",".join(str(v) for v in value)
+            else:
+                return str(value) if value is not None else ""
+
+        # Determine nodes to show
+        nodes_to_show = (
+            {name: nodes[name]} if name and name in nodes else nodes
+        )
+
+        # Find all unique fields across all nodes
+        all_fields = set()
+        for node_data in nodes_to_show.values():
+            all_fields.update(node_data.keys())
+
+        # Priority fields (most important ones first)
+        priority_fields = [
+            "state",
+            "cpus",
+            "alloc_cpus",
+            "real_memory",
+            "alloc_memory",
+            "gres",
+            "gres_used",
+            "tres",
+            "tres_used",
+        ]
+
+        # Fields to skip in non-verbose mode
+        skip_fields = set()
+        if not verbose:
+            skip_fields = {
+                "cpu_load",
+                "architecture",
+                "boards",
+                "boot_time",
+                "cluster_name",
+                "cores",
+                "specialized_cores",
+                "cpu_binding",
+                "free_mem",
+                "effective_cpus",
+                "specialized_cpus",
+                "energy",
+                "external_sensors",
+                "power",
+                "gres_drained",
+                "next_state_after_reboot",
+                "address",
+                "operating_system",
+                "owner",
+                "port",
+                "reason_changed_at",
+                "resume_after",
+                "specialized_memory",
+                "last_busy",
+                "alloc_idle_cpus",
+                "tres_weighted",
+                "slurmd_start_time",
+                "sockets",
+                "threads",
+                "temporary_disk",
+                "weight",
+                "version",
+            }
+
+        # Filter fields based on verbose mode
+        if not verbose:
+            all_fields = all_fields - skip_fields
+
+        # Sort fields: priority first, then alphabetically
+        sorted_fields = [
+            f for f in priority_fields if f in all_fields
+        ] + sorted([f for f in all_fields if f not in priority_fields])
+
+        # Print CSV header
+        headers = ["NodeName"] + sorted_fields
+        print(delimiter.join(headers))
+
+        # Print data rows
+        for node_name in sorted(nodes_to_show.keys()):
+            node_data = nodes_to_show[node_name]
+            row = [node_name] + [
+                flatten_value(node_data.get(field, ""))
+                for field in sorted_fields
+            ]
+            print(delimiter.join(row))
 
     @classmethod
     def show_one_pretty(
