@@ -1,7 +1,7 @@
-Configuration data as of 2025-12-02T17:16:45
-AccountingStorageBackupHost = my-test-cluster-slurm-ctld-02
+Configuration data as of 2025-12-03T17:06:38
+AccountingStorageBackupHost = nv-pdx-cs-002-slurm-ctld-02
 AccountingStorageEnforce = associations,limits,qos,safe
-AccountingStorageHost   = my-test-cluster-slurm-ctld-01
+AccountingStorageHost   = nv-pdx-cs-002-slurm-ctld-01
 AccountingStorageExternalHost = (null)
 AccountingStorageParameters = (null)
 AccountingStoragePort   = 6819
@@ -25,7 +25,7 @@ BcastParameters         = (null)
 BOOT_TIME               = 2025-11-24T18:30:44
 BurstBufferType         = (null)
 CliFilterPlugins        = (null)
-ClusterName             = my-test-cluster
+ClusterName             = nv-pdx-cs-002
 CommunicationParameters = (null)
 CompleteWait            = 0 sec
 CpuFreqDef              = Performance
@@ -90,7 +90,7 @@ MessageTimeout          = 30 sec
 MinJobAge               = 300 sec
 MpiDefault              = pmix
 MpiParams               = (null)
-NEXT_JOB_ID             = 57529
+NEXT_JOB_ID             = 60301
 NodeFeaturesPlugins     = (null)
 OverTimeLimit           = 0 min
 PluginDir               = /cm/shared/apps/slurm/24.05.5-sharp/lib64/slurm
@@ -147,8 +147,8 @@ SelectTypeParameters    = CR_CORE_MEMORY,OTHER_CONS_TRES,CR_CORE_DEFAULT_DIST_BL
 SlurmUser               = slurm(300)
 SlurmctldAddr           = (null)
 SlurmctldDebug          = debug
-SlurmctldHost[0]        = my-test-cluster-slurm-ctld-01
-SlurmctldHost[1]        = my-test-cluster-slurm-ctld-02
+SlurmctldHost[0]        = nv-pdx-cs-002-slurm-ctld-01
+SlurmctldHost[1]        = nv-pdx-cs-002-slurm-ctld-02
 SlurmctldLogFile        = /var/log/slurmctld
 SlurmctldPort           = 6817
 SlurmctldSyslogDebug    = info
@@ -168,12 +168,12 @@ SlurmdUser              = root(0)
 SlurmSchedLogFile       = /var/log/slurmsched.log
 SlurmSchedLogLevel      = 0
 SlurmctldPidFile        = /var/run/slurmctld.pid
-SLURM_CONF              = /cm/shared/apps/slurm/var/etc/my-test-cluster/slurm.conf
+SLURM_CONF              = /cm/shared/apps/slurm/var/etc/nv-pdx-cs-002/slurm.conf
 SLURM_VERSION           = 24.05.5
 SrunEpilog              = (null)
 SrunPortRange           = 0-0
 SrunProlog              = (null)
-StateSaveLocation       = /cm/shared/apps/slurm/var/cm/statesave/my-test-cluster
+StateSaveLocation       = /cm/shared/apps/slurm/var/cm/statesave/nv-pdx-cs-002
 SuspendExcNodes         = (null)
 SuspendExcParts         = (null)
 SuspendExcStates        = (null)
@@ -234,5 +234,5 @@ PMIxNetDevicesUCX       = (null)
 PMIxTimeout             = 300
 PMIxTlsUCX              = (null)
 
-Slurmctld(primary) at my-test-cluster-slurm-ctld-01 is UP
-Slurmctld(backup) at my-test-cluster-slurm-ctld-02 is UP
+Slurmctld(primary) at nv-pdx-cs-002-slurm-ctld-01 is UP
+Slurmctld(backup) at nv-pdx-cs-002-slurm-ctld-02 is UP

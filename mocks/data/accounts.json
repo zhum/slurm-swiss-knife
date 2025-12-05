@@ -174,7 +174,7 @@
       "accounting_storage": "accounting_storage\/slurmdbd"
     },
     "client": {
-      "source": "\/dev\/pts\/2",
+      "source": "\/dev\/pts\/4",
       "user": "szhumatiy",
       "group": "dip"
     },
@@ -187,7 +187,7 @@
         "minor": "05"
       },
       "release": "24.05.5",
-      "cluster": "my-test-cluster"
+      "cluster": "nv-pdx-cs-002"
     }
   },
   "errors": [

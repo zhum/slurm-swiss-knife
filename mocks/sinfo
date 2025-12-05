@@ -16,12 +16,12 @@ if [[ "$*" == *"--json"* ]]; then
         echo "Error: sinfo.json file not found in $MOCKS_DIR/data" >&2
         exit 1
     fi
-# Check if -s or --summarize is in arguments, or use as default
+# Default: show sinfo output
 else
-    if [ -f "$MOCKS_DIR/data/sinfo-s" ]; then
-        cat "$MOCKS_DIR/data/sinfo-s"
+    if [ -f "$MOCKS_DIR/data/sinfo" ]; then
+        cat "$MOCKS_DIR/data/sinfo"
     else
-        echo "Error: sinfo-s file not found in $MOCKS_DIR/data" >&2
+        echo "Error: sinfo file not found in $MOCKS_DIR/data" >&2
         exit 1
     fi
 fi
