@@ -2,11 +2,12 @@
 
 import json
 import subprocess
-from typing import Any
+from typing import Any, Optional
 
 from rich.markup import escape
 
 from .base_resource import BaseSlurmResource
+from .profiles import get_profile_config
 from .utils import console
 
 
@@ -68,8 +69,12 @@ class Node(BaseSlurmResource):
         verbose: bool = False,
         force_cache_update: bool = False,
         delimiter: str = ";",
+        profile: str = "default",
+        profile_str: Optional[str] = None,
     ) -> None:
         """Show node information."""
+        # Get profile configuration (for future enhancement)
+        _, _, _ = get_profile_config(profile, "nodes", profile_str)
         if not data:
             console.print_json("[red]No data available.[/red]")
             return

@@ -3,11 +3,12 @@
 import json
 import subprocess
 from datetime import datetime
-from typing import Any
+from typing import Any, Optional
 
 from rich.markup import escape
 
 from .base_resource import BaseSlurmResource
+from .profiles import format_with_template, get_profile_config
 
 # from .resources import Resource
 from .utils import console
@@ -252,27 +253,148 @@ class Reservation(BaseSlurmResource):
         data: dict = None,
         style: str = "pretty",
         delimiter: str = ";",
+        profile: str = "default",
+        profile_str: Optional[str] = None,
     ) -> None:
         """Show reservation information."""
+        # Get profile configuration
+        _, _, template = get_profile_config(
+            profile, "reservations", profile_str
+        )
         if not data:
             console.print_json("[red]No data available.[/red]")
             return
+        if name and name not in data:
+            console.print(f"[red]Reservation '{name}' not found.[/red]")
+            return
         try:
-            if name:
-                if style == "json":
+            if style == "json":
+                if name:
                     console.print_json(json.dumps(data[name], indent=2))
-                else:  # pretty style
-                    cls.print_one_pretty(name, data[name])
-            else:
-                if style == "json":
+                else:
                     console.print_json(json.dumps(data, indent=2))
-                else:  # pretty style
+            elif style == "csv":
+                cls._show_csv(data, name, delimiter)
+            elif template:
+                # Use template-based output
+                if name:
+                    res_data = cls._prepare_template_data(
+                        name, data[name]
+                    )
+                    output = format_with_template(
+                        template, res_data, resource="reservations"
+                    )
+                    console.print(output)
+                else:
+                    for res_name, res_data in data.items():
+                        prepared = cls._prepare_template_data(
+                            res_name, res_data
+                        )
+                        output = format_with_template(
+                            template, prepared, resource="reservations"
+                        )
+                        console.print(output)
+            else:  # default pretty style
+                if name:
+                    cls.print_one_pretty(name, data[name])
+                else:
                     for res in data.keys():
                         cls.print_one_pretty(res, data[res])
         except subprocess.CalledProcessError as e:
             console.print(
                 f"[red]Failed to show reservations:[/red] {e.stderr or e}"
             )
+
+    @classmethod
+    def _prepare_template_data(cls, name: str, data: dict) -> dict:
+        """Prepare reservation data for template formatting."""
+        result = dict(data)
+        result["name"] = name
+
+        # Format timestamps
+        start_time = cls._get_timestamp(data.get("start_time"))
+        end_time = cls._get_timestamp(data.get("end_time"))
+        result["start_time"] = (
+            cls.tm2str(start_time) if start_time else "-"
+        )
+        result["end_time"] = cls.tm2str(end_time) if end_time else "-"
+
+        # Calculate deltas
+        now = datetime.now().timestamp()
+        if start_time > now:
+            result["time_status"] = (
+                f"starts in {cls.delta2str(start_time - now)}"
+            )
+        elif end_time > now:
+            result["time_status"] = (
+                f"ends in {cls.delta2str(end_time - now)}"
+            )
+        else:
+            result["time_status"] = "expired"
+
+        # Format users list
+        if "users" in result and isinstance(result["users"], list):
+            result["users"] = ",".join(result["users"])
+
+        # Format accounts list
+        if "accounts" in result and isinstance(
+            result["accounts"], list
+        ):
+            result["accounts"] = ",".join(result["accounts"])
+
+        return result
+
+    @classmethod
+    def _show_csv(
+        cls,
+        data: dict,
+        name: str = None,
+        delimiter: str = ";",
+    ) -> None:
+        """Show reservations in CSV format."""
+        # Define columns for CSV output
+        columns = [
+            "name",
+            "partition",
+            "start_time",
+            "end_time",
+            "node_count",
+            "core_count",
+            "node_list",
+            "users",
+            "accounts",
+            "flags",
+            "tres",
+        ]
+
+        # Print header
+        print(
+            delimiter.join(
+                col.title().replace("_", " ") for col in columns
+            )
+        )
+
+        # Filter data if name is specified
+        items = {name: data[name]} if name else data
+
+        for res_name, res_data in items.items():
+            prepared = cls._prepare_template_data(res_name, res_data)
+            row = []
+            for col in columns:
+                val = prepared.get(col, "")
+                if val is None or val == "":
+                    val = ""
+                elif isinstance(val, list):
+                    val = ",".join(str(v) for v in val)
+                elif isinstance(val, dict):
+                    if val.get("set"):
+                        val = str(val.get("number", ""))
+                    else:
+                        val = ""
+                else:
+                    val = str(val)
+                row.append(val)
+            print(delimiter.join(row))
 
     @classmethod
     def tm2str(cls, tm: int) -> str:
@@ -293,13 +415,24 @@ class Reservation(BaseSlurmResource):
             return f"{minutes}m"
 
     @classmethod
+    def _get_timestamp(cls, value: Any) -> float:
+        """Extract timestamp from value (handles dict with set/number)."""
+        if isinstance(value, dict):
+            if value.get("set"):
+                return float(value.get("number", 0))
+            return 0.0
+        return float(value) if value else 0.0
+
+    @classmethod
     def print_one_pretty(cls, name: str, data: dict) -> None:
         """Print pretty reservation information."""
         if not data:
             console.print("[red]No data available.[/red]")
             return
-        end_delta = data["end_time"] - datetime.now().timestamp()
-        start_delta = data["start_time"] - datetime.now().timestamp()
+        end_time = cls._get_timestamp(data["end_time"])
+        start_time = cls._get_timestamp(data["start_time"])
+        end_delta = end_time - datetime.now().timestamp()
+        start_delta = start_time - datetime.now().timestamp()
         if start_delta > 0:
             start_str = f"(in [time]{cls.delta2str(start_delta)}[/])"
             end_str = ""
@@ -312,8 +445,8 @@ class Reservation(BaseSlurmResource):
         console.print("=============================================")
         console.print(
             f"Reservation: [object]{escape(name)}[/] Start/End: "
-            f"[time]{cls.tm2str(data['start_time'])}[/]{start_str}"
-            f" / [time]{cls.tm2str(data['end_time'])}[/]{end_str}"
+            f"[time]{cls.tm2str(start_time)}[/]{start_str}"
+            f" / [time]{cls.tm2str(end_time)}[/]{end_str}"
         )
         console.print(
             f"Partition: [b blue]{escape(data['partition'])}[/] "
@@ -321,20 +454,28 @@ class Reservation(BaseSlurmResource):
             f"{data['core_count']}"
             f"[/] ([nodes]{data['node_list']}[/])"
         )
-        data.pop("node_list")
-        data.pop("partition")
-        data.pop("core_count")
-        data.pop("node_count")
-        data.pop("start_time")
-        data.pop("end_time")
-        data.pop("purge_completed")  # WHAT'S THAT FOR???
-        watts = data.pop("watts")
-        if watts["set"]:
+        data.pop("node_list", None)
+        data.pop("partition", None)
+        data.pop("core_count", None)
+        data.pop("node_count", None)
+        data.pop("start_time", None)
+        data.pop("end_time", None)
+        data.pop("purge_completed", None)  # WHAT'S THAT FOR???
+        watts = data.pop("watts", None)
+        if watts and isinstance(watts, dict) and watts.get("set"):
             data["watts"] = (
                 f"[time]{watts['number']}[/]"
-                if not watts["infinite"]
+                if not watts.get("infinite")
                 else "[time]INF[/]"
             )
+        elif watts and not isinstance(watts, dict):
+            data["watts"] = str(watts)
+        # Highlight users in pink
+        if "users" in data:
+            users_val = data["users"]
+            if isinstance(users_val, list):
+                users_val = ",".join(users_val)
+            data["users"] = f"[hot_pink]{users_val}[/hot_pink]"
         cls.print_dict_pretty(data)
 
     @classmethod

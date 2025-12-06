@@ -2,12 +2,13 @@
 
 import json
 import subprocess
-from typing import Any
+from typing import Any, Optional
 
 from rich.box import SIMPLE_HEAVY
 from rich.table import Table
 
 from .base_resource import BaseSlurmResource
+from .profiles import get_profile_config
 from .utils import console
 
 
@@ -59,6 +60,8 @@ class Qos(BaseSlurmResource):
         force_cache_update: bool = False,
         delimiter: str = ";",
         zebra: bool = False,
+        profile: str = "default",
+        profile_str: Optional[str] = None,
     ) -> None:
         """Show QoS information.
 
@@ -68,7 +71,13 @@ class Qos(BaseSlurmResource):
             force_cache_update: Whether to force cache update (unused)
             delimiter: Delimiter for CSV output (default: ";")
             zebra: Use zebra striping for table rows (default: False)
+            profile: Profile name to use for output formatting
+            profile_str: Inline profile string (overrides profile)
         """
+        # Get profile configuration (for future enhancement)
+        columns_cfg, styles_cfg, template_cfg = get_profile_config(
+            profile, "qos", profile_str
+        )
         try:
             # Always get JSON output from sacctmgr
             result = subprocess.run(

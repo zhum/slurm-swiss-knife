@@ -1,9 +1,10 @@
 """SLURM config utilities."""
 
 import subprocess
-from typing import Any
+from typing import Any, Optional
 
 from .base_resource import BaseSlurmResource
+from .profiles import get_profile_config
 from .utils import console
 
 
@@ -39,8 +40,12 @@ class Config(BaseSlurmResource):
         style: str = "pretty",
         force_cache_update: bool = False,
         delimiter: str = ";",
+        profile: str = "default",
+        profile_str: Optional[str] = None,
     ) -> None:
         """Show a config."""
+        # Get profile configuration (for future enhancement)
+        _, _, _ = get_profile_config(profile, "config", profile_str)
         try:
             if style == "json":
                 result = subprocess.run(

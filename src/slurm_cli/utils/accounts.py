@@ -2,12 +2,13 @@
 
 import json
 import subprocess
-from typing import Any
+from typing import Any, Dict, List, Optional
 
 from rich.box import SIMPLE_HEAVY
 from rich.table import Table
 
 from .base_resource import BaseSlurmResource
+from .profiles import format_with_template, get_profile_config
 from .utils import console
 
 
@@ -52,6 +53,56 @@ class Account(BaseSlurmResource):
         """Delete an account."""
         console.print(f"Deleting account: {name}")
 
+    # Default column configuration for accounts
+    DEFAULT_COLUMNS = [
+        "name",
+        "description",
+        "organization",
+        "coordinators",
+    ]
+    DEFAULT_STYLES = {
+        "name": "cyan",
+        "description": "white",
+        "organization": "green",
+        "coordinators": "yellow",
+    }
+
+    @classmethod
+    def _get_column_config(
+        cls,
+        profile: str = "default",
+        profile_str: Optional[str] = None,
+    ) -> tuple:
+        """Get column configuration from profile.
+
+        Returns:
+            Tuple of (columns, styles, template)
+        """
+        columns, styles, template = get_profile_config(
+            profile, "accounts", profile_str
+        )
+
+        # Use default columns if profile specifies "*" or no columns
+        if columns == "*" or columns is None:
+            columns = cls.DEFAULT_COLUMNS
+
+        # Merge with default styles
+        merged_styles = dict(cls.DEFAULT_STYLES)
+        merged_styles.update(styles)
+
+        return columns, merged_styles, template
+
+    @classmethod
+    def _format_value(cls, account: Dict[str, Any], column: str) -> str:
+        """Format a value for display."""
+        value = account.get(column, "")
+        if column == "coordinators":
+            if isinstance(value, list):
+                return ", ".join(value) if value else "-"
+        if value is None or value == "":
+            return "-"
+        return str(value)
+
     @classmethod
     def show(
         cls,
@@ -60,6 +111,8 @@ class Account(BaseSlurmResource):
         force_cache_update: bool = False,
         delimiter: str = ";",
         zebra: bool = False,
+        profile: str = "default",
+        profile_str: Optional[str] = None,
     ) -> None:
         """Show account information.
 
@@ -69,6 +122,8 @@ class Account(BaseSlurmResource):
             force_cache_update: Whether to force cache update (unused)
             delimiter: Delimiter for CSV output (default: ";")
             zebra: Use zebra striping for table rows (default: False)
+            profile: Profile name to use for output formatting
+            profile_str: Inline profile string (overrides profile)
         """
         try:
             # Always get JSON output from sacctmgr
@@ -103,61 +158,67 @@ class Account(BaseSlurmResource):
                 filtered_data = {"accounts": accounts}
                 console.print_json(json.dumps(filtered_data, indent=2))
             elif style == "csv":
-                # Print CSV format
+                # Get column configuration from profile
+                columns, _, _ = cls._get_column_config(
+                    profile, profile_str
+                )
+
                 # Header
-                headers = [
-                    "Name",
-                    "Description",
-                    "Organization",
-                    "Coordinators",
-                ]
+                headers = [col.title() for col in columns]
                 print(delimiter.join(headers))
 
                 # Data rows
                 for account in accounts:
-                    name = account.get("name", "")
-                    description = account.get("description", "")
-                    organization = account.get("organization", "")
-                    coordinators = account.get("coordinators", [])
-
-                    # Format coordinators list
-                    coord_str = (
-                        ",".join(coordinators) if coordinators else ""
-                    )
-
-                    row = [name, description, organization, coord_str]
+                    row = [
+                        cls._format_value(account, col)
+                        for col in columns
+                    ]
+                    # Replace "-" with empty for CSV
+                    row = ["" if v == "-" else v for v in row]
                     print(delimiter.join(row))
             else:  # pretty style
-                # Create a rich table
-                row_styles = ["", "on rgb(30,40,60)"] if zebra else None
-                table = Table(
-                    title="Accounts",
-                    box=SIMPLE_HEAVY,
-                    pad_edge=False,
-                    padding=(0, 0),
-                    row_styles=row_styles,
+                # Get column configuration from profile
+                columns, styles, template = cls._get_column_config(
+                    profile, profile_str
                 )
-                table.add_column("Name", style="cyan", no_wrap=True)
-                table.add_column("Description", style="white")
-                table.add_column("Organization", style="green")
-                table.add_column("Coordinators", style="yellow")
 
-                for account in accounts:
-                    name = account.get("name", "")
-                    description = account.get("description", "")
-                    organization = account.get("organization", "")
-                    coordinators = account.get("coordinators", [])
-
-                    # Format coordinators list
-                    coord_str = (
-                        ", ".join(coordinators) if coordinators else "-"
+                # If template is specified, use template-based output
+                if template:
+                    for account in accounts:
+                        output = format_with_template(
+                            template, account, resource="accounts"
+                        )
+                        console.print(output)
+                else:
+                    # Create a rich table
+                    row_styles = (
+                        ["", "on rgb(30,40,60)"] if zebra else None
+                    )
+                    table = Table(
+                        title="Accounts",
+                        box=SIMPLE_HEAVY,
+                        pad_edge=False,
+                        padding=(0, 0),
+                        row_styles=row_styles,
                     )
 
-                    table.add_row(
-                        name, description, organization, coord_str
-                    )
+                    # Add columns based on profile
+                    for col in columns:
+                        table.add_column(
+                            col.title(),
+                            style=styles.get(col, ""),
+                            no_wrap=(col == "name"),
+                        )
 
-                console.print(table)
+                    # Add rows
+                    for account in accounts:
+                        row = [
+                            cls._format_value(account, col)
+                            for col in columns
+                        ]
+                        table.add_row(*row)
+
+                    console.print(table)
 
         except subprocess.CalledProcessError as e:
             error_msg = e.stderr or e

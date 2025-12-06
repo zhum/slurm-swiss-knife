@@ -2,11 +2,12 @@
 
 import json
 import subprocess
-from typing import Any
+from typing import Any, Optional
 
 from rich.markup import escape
 
 from .base_resource import BaseSlurmResource
+from .profiles import get_profile_config
 
 # from .resources import Resource, ResourceType
 from .utils import console
@@ -381,8 +382,12 @@ class Partition(BaseSlurmResource):
         style: str = "pretty",
         force_cache_update: bool = False,
         delimiter: str = ";",
+        profile: str = "default",
+        profile_str: Optional[str] = None,
     ) -> None:
         """Show partition information."""
+        # Get profile configuration (for future enhancement)
+        _, _, _ = get_profile_config(profile, "partitions", profile_str)
         if style == "pretty":
             cls.show_pretty(name, data)
         elif style == "json":

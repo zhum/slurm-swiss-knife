@@ -41,6 +41,7 @@ from .utils.users import User
 from .utils.utils import console
 
 CONTEXT_SETTINGS = dict(help_option_names=["-h", "--help"])
+STYLE_OPTIONS = ["pretty", "json", "csv"]
 RESOURCES_ALIASES = {
     "partitions": ["part", "parts"],
     "nodes": ["node"],
@@ -129,6 +130,17 @@ def common_options(func):
     This allows command-level overrides of global options.
     """
     func = click.option(
+        "--profile-str",
+        default=None,
+        help="Inline profile string (overrides --profile)",
+    )(func)
+    func = click.option(
+        "--profile",
+        "-P",
+        default=None,
+        help="Output profile name (overrides global)",
+    )(func)
+    func = click.option(
         "--delimiter",
         "-d",
         default=None,
@@ -202,6 +214,24 @@ def get_row_styles(zebra: bool = False):
 def get_force_update(ctx: click.Context) -> bool:
     """Get the force update flag from context."""
     return ctx.obj.get("force_update", False)
+
+
+def get_profile(
+    ctx: click.Context, profile_override: str = None
+) -> str:
+    """Get the profile name from context or override."""
+    if profile_override:
+        return profile_override
+    return ctx.obj.get("profile", "default")
+
+
+def get_profile_str(
+    ctx: click.Context, profile_str_override: str = None
+) -> str:
+    """Get the profile string from context or override."""
+    if profile_str_override:
+        return profile_str_override
+    return ctx.obj.get("profile_str")
 
 
 def print_help(command: str, ctx: click.Context) -> None:
@@ -423,7 +453,7 @@ def show_command_help_with_resources(
 @click.help_option("-h", "--help")
 @click.option(
     "--style",
-    type=click.Choice(["pretty", "json", "csv"]),
+    type=click.Choice(STYLE_OPTIONS),
     default="pretty",
     help="Output style: pretty (default), json, or csv",
 )
@@ -469,6 +499,20 @@ def show_command_help_with_resources(
     default=60,
     help="SLURM cache timeout in seconds (default: 60)",
 )
+@click.option(
+    "--profile",
+    "-P",
+    default="default",
+    help="Output profile name (default: 'default'). "
+    "Profiles are loaded from /etc/slurm/cli.profiles "
+    "or ~/.config/slurm-cli.profiles",
+)
+@click.option(
+    "--profile-str",
+    default=None,
+    help="Inline profile string (overrides --profile). "
+    "Format: resource.columns=col1,col2;resource.styles.field=style",
+)
 @click.pass_context
 def main(
     ctx: click.Context,
@@ -480,6 +524,8 @@ def main(
     zebra: bool,
     force_update: bool,
     cache_timeout: int,
+    profile: str,
+    profile_str: str,
 ) -> None:
     """Slurm Swiss Knife - A CLI tool for Slurm cluster management."""
     # Handle convenience flags
@@ -490,13 +536,15 @@ def main(
     elif csv:
         style = "csv"
 
-    # Store style, delimiter, zebra, and cache update flag in context
+    # Store style, delimiter, zebra, profile, and cache update flag in context
     # for subcommands to access
     ctx.ensure_object(dict)
     ctx.obj["style"] = style
     ctx.obj["delimiter"] = delimiter
     ctx.obj["zebra"] = zebra
     ctx.obj["force_update"] = force_update
+    ctx.obj["profile"] = profile
+    ctx.obj["profile_str"] = profile_str
 
     # Set the cache timeout in the Resource class
     Resource.set_cache_timeout(cache_timeout)
@@ -628,6 +676,8 @@ def show(
     csv: bool = False,
     zebra: Optional[bool] = None,
     delimiter: Optional[str] = None,
+    profile: Optional[str] = None,
+    profile_str: Optional[str] = None,
     **kwargs,
 ) -> None:
     """Show information about Slurm resources (aliases: sh, s)."""
@@ -648,28 +698,56 @@ def show(
     delimiter = get_delimiter(ctx, delimiter)
     zebra = get_zebra(ctx, zebra)
     force_update = get_force_update(ctx)
+    profile = get_profile(ctx, profile)
+    profile_str = get_profile_str(ctx, profile_str)
     canonical_resource, field, data = ensure_resource_name(
         resource, field, force_update
     )
     # TODO: eliminate double checking of cached resource
     if canonical_resource[:4] == "conf":
-        Config.show(data=data, style=style, delimiter=delimiter)
+        Config.show(
+            data=data,
+            style=style,
+            delimiter=delimiter,
+            profile=profile,
+            profile_str=profile_str,
+        )
     elif canonical_resource[:3] == "res":
         if field:
             Reservation.show(
-                name=field, data=data, style=style, delimiter=delimiter
+                name=field,
+                data=data,
+                style=style,
+                delimiter=delimiter,
+                profile=profile,
+                profile_str=profile_str,
             )
         else:
             Reservation.show(
-                data=data, style=style, delimiter=delimiter
+                data=data,
+                style=style,
+                delimiter=delimiter,
+                profile=profile,
+                profile_str=profile_str,
             )
     elif canonical_resource[:4] == "part":
         if field:
             Partition.show(
-                name=field, data=data, style=style, delimiter=delimiter
+                name=field,
+                data=data,
+                style=style,
+                delimiter=delimiter,
+                profile=profile,
+                profile_str=profile_str,
             )
         else:
-            Partition.show(data=data, style=style, delimiter=delimiter)
+            Partition.show(
+                data=data,
+                style=style,
+                delimiter=delimiter,
+                profile=profile,
+                profile_str=profile_str,
+            )
     elif canonical_resource[:4] == "node":
         if field:
             Node.show(
@@ -678,16 +756,35 @@ def show(
                 style=style,
                 verbose=verbose,
                 delimiter=delimiter,
+                profile=profile,
+                profile_str=profile_str,
             )
         else:
-            Node.show(data=data, style=style, delimiter=delimiter)
+            Node.show(
+                data=data,
+                style=style,
+                delimiter=delimiter,
+                profile=profile,
+                profile_str=profile_str,
+            )
     elif canonical_resource[:4] == "user":
         if field:
             User.show(
-                name=field, data=data, style=style, delimiter=delimiter
+                name=field,
+                data=data,
+                style=style,
+                delimiter=delimiter,
+                profile=profile,
+                profile_str=profile_str,
             )
         else:
-            User.show(data=data, style=style, delimiter=delimiter)
+            User.show(
+                data=data,
+                style=style,
+                delimiter=delimiter,
+                profile=profile,
+                profile_str=profile_str,
+            )
     elif canonical_resource[:3] == "qos":
         if field:
             Qos.show(
@@ -695,9 +792,17 @@ def show(
                 style=style,
                 delimiter=delimiter,
                 zebra=zebra,
+                profile=profile,
+                profile_str=profile_str,
             )
         else:
-            Qos.show(style=style, delimiter=delimiter, zebra=zebra)
+            Qos.show(
+                style=style,
+                delimiter=delimiter,
+                zebra=zebra,
+                profile=profile,
+                profile_str=profile_str,
+            )
     elif canonical_resource[:3] == "acc":
         if field:
             Account.show(
@@ -705,16 +810,33 @@ def show(
                 style=style,
                 delimiter=delimiter,
                 zebra=zebra,
+                profile=profile,
+                profile_str=profile_str,
             )
         else:
-            Account.show(style=style, delimiter=delimiter, zebra=zebra)
+            Account.show(
+                style=style,
+                delimiter=delimiter,
+                zebra=zebra,
+                profile=profile,
+                profile_str=profile_str,
+            )
     elif canonical_resource[:5] == "coord":
         if field:
             Coordinator.show(
-                field=field, style=style, delimiter=delimiter
+                field=field,
+                style=style,
+                delimiter=delimiter,
+                profile=profile,
+                profile_str=profile_str,
             )
         else:
-            Coordinator.show(style=style, delimiter=delimiter)
+            Coordinator.show(
+                style=style,
+                delimiter=delimiter,
+                profile=profile,
+                profile_str=profile_str,
+            )
     else:
         console.print(f"[red]Resource '{resource}' not found.[/red]")
 
@@ -1128,7 +1250,7 @@ _slurm_cli_initialize_autocomplete() {{
     local cmd=""
     local resource=""
     cmd="${{COMP_WORDS[$i]}}"
-    
+
     # Find resource by skipping over any options (words starting with -)
     local j=$((i+1))
     while [[ $j -lt ${{#COMP_WORDS[@]}} ]]; do
@@ -1327,8 +1449,32 @@ _slurm_cli_initialize_autocomplete() {{
             return
         fi
     fi
+
+    # Handle options that come after the resource
+    # Check if previous word needs a value
+    case "$prev" in
+        --style)
+            COMPREPLY=($(compgen -W "{' '.join(STYLE_OPTIONS)}" -- "$cur"))
+            return
+            ;;
+        --delimiter|-d|--cache-timeout|-t)
+            # These options need a value, no completion
+            return
+            ;;
+    esac
+
+    # If current word starts with -, show options
+    if [[ "$cur" == -* ]]; then
+        COMPREPLY=($(compgen -W "{all_opts_str}" -- "$cur"))
+        return
+    fi
+
     # command current_autocomplete_word_index
-    _slurm_cli_${{resource}}_autocomplete "$cmd" "$j"
+    # Use guessed (full name) instead of resource (partial name)
+    # Check if the autocomplete function exists before calling it
+    if type "_slurm_cli_${{guessed}}_autocomplete" &>/dev/null; then
+        _slurm_cli_${{guessed}}_autocomplete "$cmd" "$j"
+    fi
 
     # echo "${{COMP_REPLY[@]}}"
 }}

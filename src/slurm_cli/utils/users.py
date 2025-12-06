@@ -1,9 +1,10 @@
 """Utilities for managing users."""
 
 import subprocess
-from typing import Any
+from typing import Any, Optional
 
 from .base_resource import BaseSlurmResource
+from .profiles import get_profile_config
 from .utils import console
 
 
@@ -55,8 +56,12 @@ class User(BaseSlurmResource):
         style: str = "pretty",
         force_cache_update: bool = False,
         delimiter: str = ";",
+        profile: str = "default",
+        profile_str: Optional[str] = None,
     ) -> None:
         """Show user information."""
+        # Get profile configuration (for future enhancement)
+        _, _, _ = get_profile_config(profile, "users", profile_str)
         # For backward compatibility, support 'field' parameter name
         field = name
         try:
