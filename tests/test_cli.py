@@ -52,20 +52,25 @@ def test_show_command(runner):
 
 
 def test_autocomplete_command(runner):
-    """Test the autocomplete command."""
+    """Test the autocomplete command returns bash completion script."""
     result = runner.invoke(main, ["autocomplete"])
     assert result.exit_code == 0
+    # Now returns a bash completion script
     assert (
-        "Please provide a word to search for suggestions"
-        in result.output
+        "_slurm_cli_initialize_autocomplete" in result.output
+        or "complete -F" in result.output
     )
 
 
 def test_autocomplete_with_word(runner):
-    """Test the autocomplete command with a word."""
+    """Test the autocomplete command with a word still returns script."""
     result = runner.invoke(main, ["autocomplete", "s"])
     assert result.exit_code == 0
-    assert "Autocomplete results" in result.output
+    # Autocomplete command now returns full bash script
+    assert (
+        "_slurm_cli_initialize_autocomplete" in result.output
+        or "complete -F" in result.output
+    )
 
 
 # Tests for --style, --json, --pretty, and --force-cache-update options

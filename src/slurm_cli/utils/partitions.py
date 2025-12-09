@@ -14,7 +14,6 @@ from .utils import console
 
 
 class Partition(BaseSlurmResource):
-
     _WIDTH = None
     valid_args = {
         "allowaccounts": {
@@ -461,7 +460,6 @@ class Partition(BaseSlurmResource):
     def show_pretty(
         cls, name: str = None, partitions: dict = None
     ) -> None:
-
         if not partitions:
             console.print("[red]No partitions found.[/red]")
             return

@@ -402,7 +402,7 @@ class ProfileManager:
         while i < len(profile_str):
             if profile_str[i] == ";":
                 # Look ahead to see if this looks like a new setting
-                rest = profile_str[i+1:].lstrip()
+                rest = profile_str[i + 1 :].lstrip()
                 # Check if rest starts with word.word= pattern
                 if re.match(r"^\w+\.\w+=", rest):
                     # This is a separator between settings

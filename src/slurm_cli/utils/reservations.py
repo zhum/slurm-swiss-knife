@@ -15,7 +15,6 @@ from .utils import console
 
 
 class Reservation(BaseSlurmResource):
-
     _WIDTH = None
     valid_args = {
         "accounts": {
@@ -322,13 +321,13 @@ class Reservation(BaseSlurmResource):
         # Calculate deltas
         now = datetime.now().timestamp()
         if start_time > now:
-            result["time_status"] = (
-                f"starts in {cls.delta2str(start_time - now)}"
-            )
+            result[
+                "time_status"
+            ] = f"starts in {cls.delta2str(start_time - now)}"
         elif end_time > now:
-            result["time_status"] = (
-                f"ends in {cls.delta2str(end_time - now)}"
-            )
+            result[
+                "time_status"
+            ] = f"ends in {cls.delta2str(end_time - now)}"
         else:
             result["time_status"] = "expired"
 
