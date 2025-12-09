@@ -15,7 +15,8 @@
 #   {?field TEXT}        - show TEXT only if field is not empty/default
 #                          TEXT can contain {field} placeholders
 #   [color]text[/color]  - Rich markup for styling
-#   \n                   - newline
+#   \n                   - newline in output
+#   \  (at end of line)  - line continuation (for multi-line templates)
 #
 # Conditional examples:
 #   {?users Users: {users}}           - shows "Users: root" only if users is set
@@ -27,6 +28,10 @@
 # Usage:
 #   slurm-cli --profile compact show accounts
 #   slurm-cli --profile-str "accounts.template=[cyan]{name}[/]" show acc
+#
+# Simplified --profile-str (template auto-applied to current resource):
+#   slurm-cli --profile-str "[cyan]{name}[/] - {description}" show acc
+#   slurm-cli --profile-str "{name} | {start_time}{?users  👥{users}}" show res
 
 # ============================================================================
 # Default Profile - Shows all columns with standard styling
@@ -58,6 +63,18 @@
 # reservations.styles.name = cyan bold
 # reservations.styles.users = hot_pink
 # reservations.styles.accounts = green
+#
+# # Default reservation output template (mimics built-in pretty format):
+# # Use backslash (\) at end of line for multi-line templates
+# reservations.template = =============================================\n\
+#     Reservation: [cyan bold]{name}[/]\n\
+#     Start/End: [yellow]{start_time}[/] ({time_status}) / [yellow]{end_time}[/]\n\
+#     Partition: [bold blue]{partition}[/] Nodes/CPUs: [bold]{node_count}/{core_count}[/]\n\
+#     Nodes: ({node_list})\
+#     {?flags \n  flags: {flags}}\
+#     {?tres  tres: {tres}}\
+#     {?users \n  users: [hot_pink]{users}[/]}\
+#     {?accounts \n  accounts: [green]{accounts}[/]}
 
 # coordinators.columns = *
 # coordinators.styles.account = cyan

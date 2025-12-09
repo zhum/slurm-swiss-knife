@@ -9,6 +9,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Output Profiles** for customizing pretty output format
+  - Profile files loaded from `/etc/slurm/cli.profiles` or `~/.config/slurm-cli.profiles`
+  - `--profile` CLI option to select named profile (default, compact, minimal, oneline, detailed)
+  - `--profile-str` CLI option for inline profile specification
+  - Customizable columns and styles per resource type
+  - Template-based output with Rich markup support
+  - Template syntax: `{field}` for values, `[color]text[/color]` for styling, `\n` for newlines
+  - Example: `accounts.template=[cyan]{name}[/cyan] - {description}`
 - **SLURM Mock System** for testing without a real cluster
   - Mock command scripts (`mocks/scontrol`, `sacctmgr`, `squeue`, `sinfo`) supporting both JSON and text formats
   - Recording script (`utils/record_slurm_outputs.sh`) to capture real SLURM outputs

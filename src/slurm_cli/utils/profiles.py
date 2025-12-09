@@ -21,7 +21,9 @@ accounts.template = [cyan]{name}[/cyan] - {description}
 
 qos.template = [bold]{name}[/bold] Priority: [green]{priority}[/green]
 
-reservations.template = [cyan bold]{name}[/cyan bold]\\n  Time: {start_time} -> {end_time}\\n  Users: [hot_pink]{users}[/hot_pink]
+reservations.template = [cyan bold]{name}[/cyan bold]\\n\
+    Time: {start_time} -> {end_time}\\n\
+    Users: [hot_pink]{users}[/hot_pink]
 ```
 
 Inline profile string format:
@@ -252,35 +254,56 @@ class ProfileManager:
         resource.columns = col1,col2,col3
         resource.styles.field = style
         resource.template = [cyan]{name}[/] - {description}
+
+        # Multi-line templates with backslash continuation:
+        resource.template = [cyan]{name}[/] \\
+            Time: {start_time} \\
+            Users: {users}
         ```
         """
         profiles: Dict[str, Dict[str, Any]] = {}
         current_profile: Optional[str] = None
 
         with open(filepath, "r") as f:
-            for line_num, line in enumerate(f, 1):
-                line = line.strip()
+            lines = f.readlines()
 
-                # Skip empty lines and comments
-                if not line or line.startswith("#"):
-                    continue
+        # Process lines with continuation support
+        i = 0
+        while i < len(lines):
+            line = lines[i].rstrip("\n\r")
 
-                # Profile header
-                if line.startswith("[profile:") and line.endswith("]"):
-                    current_profile = line[9:-1].strip()
-                    if current_profile not in profiles:
-                        profiles[current_profile] = {}
-                    continue
+            # Handle line continuation (backslash at end)
+            while line.rstrip().endswith("\\") and i + 1 < len(lines):
+                # Remove trailing backslash and append next line
+                line = line.rstrip()[:-1]
+                i += 1
+                next_line = lines[i].rstrip("\n\r")
+                # Preserve some indentation as space
+                line += next_line.lstrip()
 
-                # Setting line: resource.key = value
-                if "=" in line and current_profile:
-                    key, value = line.split("=", 1)
-                    key = key.strip()
-                    value = value.strip()
+            line = line.strip()
+            i += 1
 
-                    self._set_nested_value(
-                        profiles[current_profile], key, value
-                    )
+            # Skip empty lines and comments
+            if not line or line.startswith("#"):
+                continue
+
+            # Profile header
+            if line.startswith("[profile:") and line.endswith("]"):
+                current_profile = line[9:-1].strip()
+                if current_profile not in profiles:
+                    profiles[current_profile] = {}
+                continue
+
+            # Setting line: resource.key = value
+            if "=" in line and current_profile:
+                key, value = line.split("=", 1)
+                key = key.strip()
+                value = value.strip()
+
+                self._set_nested_value(
+                    profiles[current_profile], key, value
+                )
 
         return profiles
 
@@ -289,7 +312,8 @@ class ProfileManager:
     ) -> None:
         """Set a nested value in a dictionary.
 
-        Key format: resource.columns, resource.styles.field, or resource.template
+        Key format: resource.columns, resource.styles.field,
+                    or resource.template
         """
         parts = key.split(".")
         current = target
@@ -364,14 +388,36 @@ class ProfileManager:
         """Parse an inline profile string.
 
         Format: resource.columns=col1,col2;resource.template=[cyan]{name}[/]
+
+        Note: Only splits on ';' when followed by a resource.key= pattern.
+        This allows templates to contain ';' characters.
         """
         profile: Dict[str, Any] = {}
 
-        for part in profile_str.split(";"):
-            part = part.strip()
-            if not part:
-                continue
+        # Smart split: only split on ';' followed by 'word.word='
+        # This preserves ';' inside template strings
+        parts = []
+        current = ""
+        i = 0
+        while i < len(profile_str):
+            if profile_str[i] == ";":
+                # Look ahead to see if this looks like a new setting
+                rest = profile_str[i+1:].lstrip()
+                # Check if rest starts with word.word= pattern
+                if re.match(r"^\w+\.\w+=", rest):
+                    # This is a separator between settings
+                    if current.strip():
+                        parts.append(current.strip())
+                    current = ""
+                    i += 1
+                    continue
+            current += profile_str[i]
+            i += 1
 
+        if current.strip():
+            parts.append(current.strip())
+
+        for part in parts:
             if "=" in part:
                 key, value = part.split("=", 1)
                 self._set_nested_value(
@@ -492,6 +538,37 @@ def get_template_for_resource(
     return None
 
 
+def _normalize_profile_str(
+    profile_str: Optional[str], resource: str
+) -> Optional[str]:
+    """Normalize profile string, adding resource prefix if missing.
+
+    If profile_str doesn't contain 'resource.' prefix, treat it as a
+    template for the current resource.
+
+    Args:
+        profile_str: Raw profile string
+        resource: Current resource type
+
+    Returns:
+        Normalized profile string with proper resource prefix
+    """
+    if not profile_str:
+        return None
+
+    # Check if it's already in proper format (has resource.key= pattern)
+    # Look for pattern like "resource.columns=" or "resource.template="
+    if (
+        "." in profile_str.split("=")[0]
+        if "=" in profile_str
+        else False
+    ):
+        return profile_str
+
+    # No resource prefix - treat as raw template for current resource
+    return f"{resource}.template={profile_str}"
+
+
 def get_profile_config(
     profile_name: str,
     resource: str,
@@ -504,7 +581,9 @@ def get_profile_config(
     Args:
         profile_name: Name of the profile to use
         resource: Resource type (accounts, qos, etc.)
-        profile_str: Optional inline profile string (takes precedence)
+        profile_str: Optional inline profile string (takes precedence).
+                     If no 'resource.' prefix, treated as template for
+                     current resource.
 
     Returns:
         Tuple of (columns, styles, template)
@@ -512,14 +591,17 @@ def get_profile_config(
         - styles is a dict mapping field names to style strings
         - template is a string template or None
     """
+    # Normalize profile_str - add resource prefix if missing
+    normalized_str = _normalize_profile_str(profile_str, resource)
+
     columns = get_columns_for_resource(
-        profile_name, resource, profile_str
+        profile_name, resource, normalized_str
     )
     styles = get_styles_for_resource(
-        profile_name, resource, profile_str
+        profile_name, resource, normalized_str
     )
     template = get_template_for_resource(
-        profile_name, resource, profile_str
+        profile_name, resource, normalized_str
     )
     return columns, styles, template
 
@@ -690,3 +772,141 @@ def extract_fields_from_template(template: str) -> List[str]:
     matches = pattern.findall(template)
     # Flatten and filter empty strings
     return [m[0] or m[1] for m in matches if m[0] or m[1]]
+
+
+# Available fields for each resource type (for --profile-str=help)
+RESOURCE_FIELDS: Dict[str, Dict[str, str]] = {
+    "accounts": {
+        "name": "Account name",
+        "description": "Account description",
+        "organization": "Organization name",
+        "coordinators": "List of coordinator usernames",
+    },
+    "qos": {
+        "name": "QoS name",
+        "id": "QoS ID",
+        "description": "QoS description",
+        "priority": "Priority value",
+        "usage_factor": "Usage factor (default: 1.0)",
+        "grace_time": "Grace time in seconds",
+        "flags": "QoS flags (comma-separated)",
+        "preempt_mode": "Preempt mode",
+        "max_jobs_per_user": "Max jobs per user",
+        "max_jobs_active_per_user": "Max active jobs per user",
+        "max_wall": "Max wall clock time per job",
+        "max_tres_per_job": "Max TRES per job",
+        "max_tres_per_user": "Max TRES per user",
+        "max_tres_total": "Max TRES total",
+    },
+    "reservations": {
+        "name": "Reservation name",
+        "partition": "Partition name",
+        "start_time": "Start time (formatted)",
+        "end_time": "End time (formatted)",
+        "time_status": "Time status (e.g., 'ends in 5d 3h')",
+        "node_count": "Number of nodes",
+        "core_count": "Number of cores",
+        "node_list": "List of nodes",
+        "users": "Allowed users",
+        "accounts": "Allowed accounts",
+        "flags": "Reservation flags",
+        "tres": "TRES specification",
+        "max_start_delay": "Max start delay",
+    },
+    "partitions": {
+        "PartitionName": "Partition name",
+        "State": "Partition state",
+        "TotalNodes": "Total nodes in partition",
+        "TotalCPUs": "Total CPUs in partition",
+        "MaxTime": "Max time limit",
+        "DefaultTime": "Default time limit",
+        "Nodes": "Node list",
+        "AllowGroups": "Allowed groups",
+        "AllowAccounts": "Allowed accounts",
+        "DenyAccounts": "Denied accounts",
+        "AllowQos": "Allowed QoS",
+        "DenyQos": "Denied QoS",
+        "Default": "Is default partition",
+        "MaxNodes": "Max nodes per job",
+        "MinNodes": "Min nodes per job",
+    },
+    "nodes": {
+        "name": "Node name",
+        "state": "Node state",
+        "cpus": "Number of CPUs",
+        "real_memory": "Real memory (MB)",
+        "tmp_disk": "Tmp disk space",
+        "features": "Node features",
+        "gres": "Generic resources",
+        "partitions": "Partitions this node belongs to",
+        "reason": "State reason (if down/drained)",
+        "comment": "Node comment",
+    },
+    "users": {
+        "name": "Username",
+        "default_account": "Default account",
+        "admin_level": "Admin level",
+    },
+    "coordinators": {
+        "account": "Account name",
+        "name": "Coordinator username",
+    },
+}
+
+
+def show_profile_help(resource: str) -> bool:
+    """Show available fields for a resource.
+
+    Args:
+        resource: Resource type name (can be short form like 'res')
+
+    Returns:
+        True if help was shown, False otherwise
+    """
+    # Map short resource names to full names
+    resource_map = {
+        "res": "reservations",
+        "acc": "accounts",
+        "part": "partitions",
+        "node": "nodes",
+        "user": "users",
+        "coord": "coordinators",
+        "conf": "config",
+    }
+
+    # Try to match by prefix
+    full_resource = resource
+    for prefix, full_name in resource_map.items():
+        if resource.startswith(prefix):
+            full_resource = full_name
+            break
+
+    if full_resource not in RESOURCE_FIELDS:
+        print(f"No field documentation for resource: {resource}")
+        print(
+            f"Available resources: {', '.join(RESOURCE_FIELDS.keys())}"
+        )
+        return True
+
+    fields = RESOURCE_FIELDS[full_resource]
+    print(f"\nAvailable fields for '{full_resource}':\n")
+    print("  Field                      Description")
+    print("  " + "-" * 55)
+    for field, desc in sorted(fields.items()):
+        print(f"  {field:<24}  {desc}")
+    print()
+    print("Template syntax:")
+    print("  {field}           - Show field value")
+    print("  {?field TEXT}     - Show TEXT only if field is not empty")
+    print("  [color]...[/]     - Rich markup for colors")
+    print("  \\n                - Newline")
+    print()
+    print("Example:")
+    print('  --profile-str "[cyan]{name}[/] - description"')
+    print()
+    return True
+
+
+def is_profile_help(profile_str: Optional[str]) -> bool:
+    """Check if profile_str is a help request."""
+    return profile_str is not None and profile_str.lower() == "help"

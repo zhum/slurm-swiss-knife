@@ -8,7 +8,7 @@ from rich.box import SIMPLE_HEAVY
 from rich.table import Table
 
 from .base_resource import BaseSlurmResource
-from .profiles import get_profile_config
+from .profiles import format_with_template, get_profile_config
 from .utils import console
 
 
@@ -144,6 +144,14 @@ class Qos(BaseSlurmResource):
                 console.print_json(
                     json.dumps({"qos": qos_list}, indent=2)
                 )
+            elif template_cfg and style == "pretty":
+                # Use template-based output
+                for qos in qos_list:
+                    prepared = cls._prepare_template_data(qos)
+                    output = format_with_template(
+                        template_cfg, prepared, resource="qos"
+                    )
+                    console.print(output)
             elif style in ["csv", "pretty"]:
                 # Column definitions (used by both CSV and pretty styles)
                 column_definitions = [
@@ -416,3 +424,88 @@ class Qos(BaseSlurmResource):
             console.print(
                 f"[red]Failed to parse JSON output:[/red] {e}"
             )
+
+    @classmethod
+    def _prepare_template_data(cls, qos: dict) -> dict:
+        """Prepare QoS data for template formatting."""
+        result = dict(qos)
+
+        # Helper to extract set/number values
+        def get_set_value(obj):
+            if isinstance(obj, dict):
+                if obj.get("set", False):
+                    return obj.get("number")
+            return None
+
+        # Flatten common nested values
+        result["priority"] = (
+            get_set_value(qos.get("priority", {})) or "-"
+        )
+        result["usage_factor"] = (
+            get_set_value(qos.get("usage_factor", {})) or "1.0"
+        )
+        result["grace_time"] = (
+            get_set_value(qos.get("grace_time", {})) or "-"
+        )
+
+        # Format flags
+        flags = qos.get("flags", [])
+        result["flags"] = ",".join(flags) if flags else "-"
+
+        # Format preempt mode
+        preempt = qos.get("preempt", {})
+        preempt_mode = preempt.get("mode", [])
+        result["preempt_mode"] = (
+            ",".join(preempt_mode) if preempt_mode else "-"
+        )
+
+        # Format limits - extract nested values
+        limits = qos.get("limits", {})
+        max_limits = limits.get("max", {})
+
+        # Max jobs
+        max_jobs = max_limits.get("jobs", {})
+        result["max_jobs_per_user"] = (
+            get_set_value(max_jobs.get("per", {}).get("user", {}))
+            or "-"
+        )
+        result["max_jobs_active_per_user"] = (
+            get_set_value(
+                max_limits.get("active_jobs", {})
+                .get("per", {})
+                .get("user", {})
+            )
+            or "-"
+        )
+
+        # Max wall time
+        max_wall = (
+            max_limits.get("wall_clock", {})
+            .get("per", {})
+            .get("job", {})
+        )
+        result["max_wall"] = get_set_value(max_wall) or "-"
+
+        # Format TRES lists
+        def format_tres(tres_list):
+            if not tres_list:
+                return "-"
+            parts = []
+            for tres in tres_list:
+                if isinstance(tres, dict):
+                    name = tres.get("name") or tres.get("type", "")
+                    count = tres.get("count", "")
+                    if name and count:
+                        parts.append(f"{name}={count}")
+            return ",".join(parts) if parts else "-"
+
+        tres = max_limits.get("tres", {})
+        result["max_tres_per_job"] = format_tres(
+            tres.get("per", {}).get("job", [])
+        )
+        result["max_tres_per_user"] = format_tres(
+            tres.get("per", {}).get("user", [])
+        )
+        result["max_tres_total"] = format_tres(tres.get("total", []))
+
+        return result

@@ -33,6 +33,7 @@ from .utils.config import ROUTES, VERBS
 from .utils.coordinators import Coordinator
 from .utils.nodes import Node
 from .utils.partitions import Partition
+from .utils.profiles import is_profile_help, show_profile_help
 from .utils.qos import Qos
 from .utils.reservations import Reservation
 from .utils.resources import Resource
@@ -703,6 +704,12 @@ def show(
     canonical_resource, field, data = ensure_resource_name(
         resource, field, force_update
     )
+
+    # Check for --profile-str=help
+    if is_profile_help(profile_str):
+        show_profile_help(canonical_resource)
+        return
+
     # TODO: eliminate double checking of cached resource
     if canonical_resource[:4] == "conf":
         Config.show(
