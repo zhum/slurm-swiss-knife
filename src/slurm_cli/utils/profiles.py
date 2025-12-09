@@ -402,7 +402,7 @@ class ProfileManager:
         while i < len(profile_str):
             if profile_str[i] == ";":
                 # Look ahead to see if this looks like a new setting
-                rest = profile_str[i + 1 :].lstrip()
+                rest = profile_str[(i + 1) :].lstrip()
                 # Check if rest starts with word.word= pattern
                 if re.match(r"^\w+\.\w+=", rest):
                     # This is a separator between settings
@@ -774,84 +774,42 @@ def extract_fields_from_template(template: str) -> List[str]:
     return [m[0] or m[1] for m in matches if m[0] or m[1]]
 
 
+def _get_resource_fields() -> Dict[str, Dict[str, str]]:
+    """Build RESOURCE_FIELDS from resource classes.
+
+    Lazily imports resource classes to avoid circular imports.
+    """
+    # Import here to avoid circular imports
+    from .accounts import Account
+    from .coordinators import Coordinator
+    from .nodes import Node
+    from .partitions import Partition
+    from .qos import Qos
+    from .reservations import Reservation
+    from .users import User
+
+    return {
+        "accounts": Account.get_profile_fields(),
+        "qos": Qos.get_profile_fields(),
+        "reservations": Reservation.get_profile_fields(),
+        "partitions": Partition.get_profile_fields(),
+        "nodes": Node.get_profile_fields(),
+        "users": User.get_profile_fields(),
+        "coordinators": Coordinator.get_profile_fields(),
+    }
+
+
 # Available fields for each resource type (for --profile-str=help)
-RESOURCE_FIELDS: Dict[str, Dict[str, str]] = {
-    "accounts": {
-        "name": "Account name",
-        "description": "Account description",
-        "organization": "Organization name",
-        "coordinators": "List of coordinator usernames",
-    },
-    "qos": {
-        "name": "QoS name",
-        "id": "QoS ID",
-        "description": "QoS description",
-        "priority": "Priority value",
-        "usage_factor": "Usage factor (default: 1.0)",
-        "grace_time": "Grace time in seconds",
-        "flags": "QoS flags (comma-separated)",
-        "preempt_mode": "Preempt mode",
-        "max_jobs_per_user": "Max jobs per user",
-        "max_jobs_active_per_user": "Max active jobs per user",
-        "max_wall": "Max wall clock time per job",
-        "max_tres_per_job": "Max TRES per job",
-        "max_tres_per_user": "Max TRES per user",
-        "max_tres_total": "Max TRES total",
-    },
-    "reservations": {
-        "name": "Reservation name",
-        "partition": "Partition name",
-        "start_time": "Start time (formatted)",
-        "end_time": "End time (formatted)",
-        "time_status": "Time status (e.g., 'ends in 5d 3h')",
-        "node_count": "Number of nodes",
-        "core_count": "Number of cores",
-        "node_list": "List of nodes",
-        "users": "Allowed users",
-        "accounts": "Allowed accounts",
-        "flags": "Reservation flags",
-        "tres": "TRES specification",
-        "max_start_delay": "Max start delay",
-    },
-    "partitions": {
-        "PartitionName": "Partition name",
-        "State": "Partition state",
-        "TotalNodes": "Total nodes in partition",
-        "TotalCPUs": "Total CPUs in partition",
-        "MaxTime": "Max time limit",
-        "DefaultTime": "Default time limit",
-        "Nodes": "Node list",
-        "AllowGroups": "Allowed groups",
-        "AllowAccounts": "Allowed accounts",
-        "DenyAccounts": "Denied accounts",
-        "AllowQos": "Allowed QoS",
-        "DenyQos": "Denied QoS",
-        "Default": "Is default partition",
-        "MaxNodes": "Max nodes per job",
-        "MinNodes": "Min nodes per job",
-    },
-    "nodes": {
-        "name": "Node name",
-        "state": "Node state",
-        "cpus": "Number of CPUs",
-        "real_memory": "Real memory (MB)",
-        "tmp_disk": "Tmp disk space",
-        "features": "Node features",
-        "gres": "Generic resources",
-        "partitions": "Partitions this node belongs to",
-        "reason": "State reason (if down/drained)",
-        "comment": "Node comment",
-    },
-    "users": {
-        "name": "Username",
-        "default_account": "Default account",
-        "admin_level": "Admin level",
-    },
-    "coordinators": {
-        "account": "Account name",
-        "name": "Coordinator username",
-    },
-}
+# Lazily initialized to avoid circular imports
+_RESOURCE_FIELDS: Optional[Dict[str, Dict[str, str]]] = None
+
+
+def get_resource_fields() -> Dict[str, Dict[str, str]]:
+    """Get available fields for each resource type."""
+    global _RESOURCE_FIELDS
+    if _RESOURCE_FIELDS is None:
+        _RESOURCE_FIELDS = _get_resource_fields()
+    return _RESOURCE_FIELDS
 
 
 def show_profile_help(resource: str) -> bool:
@@ -881,14 +839,15 @@ def show_profile_help(resource: str) -> bool:
             full_resource = full_name
             break
 
-    if full_resource not in RESOURCE_FIELDS:
+    resource_fields = get_resource_fields()
+    if full_resource not in resource_fields:
         print(f"No field documentation for resource: {resource}")
         print(
-            f"Available resources: {', '.join(RESOURCE_FIELDS.keys())}"
+            f"Available resources: {', '.join(resource_fields.keys())}"
         )
         return True
 
-    fields = RESOURCE_FIELDS[full_resource]
+    fields = resource_fields[full_resource]
     print(f"\nAvailable fields for '{full_resource}':\n")
     print("  Field                      Description")
     print("  " + "-" * 55)

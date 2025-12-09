@@ -60,9 +60,21 @@ elif [ "$1" = "show" ] && [ "$2" = "users" ]; then
             exit 1
         fi
     fi
+elif [ "$1" = "create" ] || [ "$1" = "add" ]; then
+    # Mock create/add command - print the command that would be executed
+    echo "MOCK: sacctmgr $*"
+    exit 0
+elif [ "$1" = "modify" ] || [ "$1" = "update" ]; then
+    # Mock modify/update command - print the command that would be executed
+    echo "MOCK: sacctmgr $*"
+    exit 0
+elif [ "$1" = "delete" ] || [ "$1" = "remove" ]; then
+    # Mock delete/remove command - print the command that would be executed
+    echo "MOCK: sacctmgr $*"
+    exit 0
 else
     # For other arguments, show usage or error
-    echo "Usage: $0 show {qos|accounts|users} [--json] [format=...]" >&2
+    echo "Usage: $0 {show|create|modify|delete} {qos|accounts|users|...} [options]" >&2
     echo "This is a mock sacctmgr script for testing purposes." >&2
     echo "Arguments received: $*" >&2
     exit 1

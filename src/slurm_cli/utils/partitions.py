@@ -15,6 +15,28 @@ from .utils import console
 
 class Partition(BaseSlurmResource):
     _WIDTH = None
+
+    @classmethod
+    def get_profile_fields(cls) -> dict:
+        """Return field names and descriptions for profile templates."""
+        return {
+            "PartitionName": "Partition name",
+            "State": "Partition state",
+            "TotalNodes": "Total nodes in partition",
+            "TotalCPUs": "Total CPUs in partition",
+            "MaxTime": "Max time limit",
+            "DefaultTime": "Default time limit",
+            "Nodes": "Node list",
+            "AllowGroups": "Allowed groups",
+            "AllowAccounts": "Allowed accounts",
+            "DenyAccounts": "Denied accounts",
+            "AllowQos": "Allowed QoS",
+            "DenyQos": "Denied QoS",
+            "Default": "Is default partition",
+            "MaxNodes": "Max nodes per job",
+            "MinNodes": "Min nodes per job",
+        }
+
     valid_args = {
         "allowaccounts": {
             "type": "list",

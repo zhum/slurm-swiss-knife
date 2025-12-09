@@ -19,6 +19,22 @@ class Node(BaseSlurmResource):
         self.kwargs = kwargs
 
     @classmethod
+    def get_profile_fields(cls) -> dict:
+        """Return field names and descriptions for profile templates."""
+        return {
+            "name": "Node name",
+            "state": "Node state",
+            "cpus": "Number of CPUs",
+            "real_memory": "Real memory (MB)",
+            "tmp_disk": "Tmp disk space",
+            "features": "Node features",
+            "gres": "Generic resources",
+            "partitions": "Partitions this node belongs to",
+            "reason": "State reason (if down/drained)",
+            "comment": "Node comment",
+        }
+
+    @classmethod
     def max_width(cls) -> int:
         """Get the maximum width of the console."""
         if cls._WIDTH is None:
@@ -26,7 +42,9 @@ class Node(BaseSlurmResource):
         return cls._WIDTH
 
     @classmethod
-    def create(cls, name: str, **kwargs: Any) -> None:
+    def create(
+        cls, name: str, verbose: bool = False, **kwargs: Any
+    ) -> None:
         """Create a new node."""
         console.print(f"Creating node: {name}")
         args = ["scontrol", "create", "node", f"name={name}"]

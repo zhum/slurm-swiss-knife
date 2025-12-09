@@ -14,6 +14,14 @@ class Coordinator(BaseSlurmResource):
         self.kwargs = kwargs
 
     @classmethod
+    def get_profile_fields(cls) -> dict:
+        """Return field names and descriptions for profile templates."""
+        return {
+            "account": "Account name",
+            "name": "Coordinator username",
+        }
+
+    @classmethod
     def create(
         cls,
         name: str,

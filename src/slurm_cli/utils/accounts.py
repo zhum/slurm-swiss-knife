@@ -11,6 +11,32 @@ from .base_resource import BaseSlurmResource
 from .profiles import format_with_template, get_profile_config
 from .utils import console
 
+# Account configuration options (sacctmgr field names)
+ACCOUNT_OPTIONS: List[str] = [
+    "Cluster",
+    "DefaultQOS",
+    "Description",
+    "Fairshare",
+    "GrpJobs",
+    "GrpJobsAccrue",
+    "GrpSubmit",
+    "GrpSubmitJobs",
+    "GrpTRES",
+    "GrpTRESMins",
+    "GrpTRESRunMins",
+    "GrpWall",
+    "MaxJobs",
+    "MaxJobsAccrue",
+    "MaxSubmit",
+    "MaxSubmitJobs",
+    "MaxTRES",
+    "MaxTRESMins",
+    "MaxWall",
+    "Organization",
+    "Parent",
+    "RawUsage",
+]
+
 
 class Account(BaseSlurmResource):
     def __init__(self, name: str, **kwargs: Any):
@@ -18,7 +44,82 @@ class Account(BaseSlurmResource):
         self.kwargs = kwargs
 
     @classmethod
-    def create(cls, name: str, **kwargs: Any) -> None:
+    def get_profile_fields(cls) -> dict:
+        """Return field names and descriptions for profile templates."""
+        return {
+            "name": "Account name",
+            "description": "Account description",
+            "organization": "Organization name",
+            "coordinators": "List of coordinator usernames",
+        }
+
+    @classmethod
+    def generate_autocomplete_options(cls) -> str:
+        """Generate bash autocomplete script for account options."""
+        valid_keys = [opt.lower() for opt in ACCOUNT_OPTIONS]
+
+        script = f"""
+_slurm_cli_accounts_autocomplete() {{
+    local cmd="$1"
+    local pos="$2"
+
+    name="${{COMP_WORDS[$pos]}}"
+    cur="${{COMP_WORDS[COMP_CWORD]}}"
+    prev="${{COMP_WORDS[COMP_CWORD-1]}}"
+
+    # If we're on the name field (right after 'accounts')
+    if [[ $name == accounts && $prev == accounts ]]; then
+        if [ -f "/tmp/slurm_cli_accounts.json" ]; then
+            COMPREPLY=($(compgen -W "$(jq -r 'keys[]' /tmp/slurm_cli_accounts.json)" -- "$cur"))
+        fi
+        return
+    fi
+
+    case "$cmd" in
+        show|delete)
+            return
+            ;;
+        create|update)
+            if [[ $cur == = || $prev == = ]]; then
+                local key
+                if [[ $cur == = ]]; then
+                    key=${{COMP_WORDS[COMP_CWORD-1]}}
+                else
+                    key=${{COMP_WORDS[COMP_CWORD-2]}}
+                fi
+                key=${{key,,}}
+
+                case "$key" in
+                    defaultqos)
+                        if [ -f "/tmp/slurm_cli_qos.json" ]; then
+                            COMPREPLY=($(compgen -W "$(jq -r 'keys[]' /tmp/slurm_cli_qos.json)" -- "${{cur#*=}}"))
+                        fi
+                        ;;
+                    parent)
+                        if [ -f "/tmp/slurm_cli_accounts.json" ]; then
+                            COMPREPLY=($(compgen -W "$(jq -r 'keys[]' /tmp/slurm_cli_accounts.json)" -- "${{cur#*=}}"))
+                        fi
+                        ;;
+                esac
+                return
+            else
+                local -a valid_keys=({'= '.join(valid_keys)}=)
+                if [[ $cur == '' ]]; then
+                    COMPREPLY=(${{valid_keys[@]}})
+                else
+                    COMPREPLY=($(compgen -W "${{valid_keys[*]}}" "$cur"))
+                fi
+            fi
+            ;;
+    esac
+}}
+"""  # noqa: E501
+        return script
+
+    @classmethod
+    def create(
+        cls, name: str, verbose: bool = False, **kwargs: Any
+    ) -> None:
         """Create a new account."""
         console.print(f"Creating account: {name}")
         args = ["sacctmgr", "create", "account", name]

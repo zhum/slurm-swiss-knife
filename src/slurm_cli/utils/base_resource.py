@@ -42,6 +42,14 @@ class BaseSlurmResource:
     valid_args: Dict[str, Dict[str, str]] = {}
 
     @classmethod
+    def get_profile_fields(cls) -> Dict[str, str]:
+        """Return field names and descriptions for profile templates.
+
+        Subclasses should override this to provide their specific fields.
+        """
+        return {}
+
+    @classmethod
     def _check_args(
         cls,
         kwargs: Any,
