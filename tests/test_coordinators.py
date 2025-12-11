@@ -4,7 +4,7 @@ import io
 import subprocess
 import sys
 from contextlib import redirect_stdout
-from unittest.mock import patch, MagicMock
+from unittest.mock import MagicMock, patch
 
 import pytest  # noqa: F401
 
@@ -14,7 +14,9 @@ sys.path.insert(0, "src")
 from slurm_cli.utils.coordinators import Coordinator  # noqa: E402
 
 
-def create_mock_subprocess_result(stdout: str = "", returncode: int = 0):
+def create_mock_subprocess_result(
+    stdout: str = "", returncode: int = 0
+):
     """Create a mock subprocess.CompletedProcess result."""
     mock_result = MagicMock()
     mock_result.stdout = stdout
@@ -86,7 +88,9 @@ class TestCoordinatorCreate:
         with patch.object(
             subprocess, "run", return_value=mock_result
         ) as mock_run:
-            Coordinator.create("myaccount", value="user1", names=("extra",))
+            Coordinator.create(
+                "myaccount", value="user1", names=("extra",)
+            )
 
             mock_run.assert_called_once()
             call_args = mock_run.call_args[0][0]
@@ -296,4 +300,3 @@ class TestCoordinatorInheritance:
         assert callable(Coordinator.update)
         assert callable(Coordinator.delete)
         assert callable(Coordinator.show)
-

@@ -16,6 +16,26 @@ from .utils import console
 
 class Reservation(BaseSlurmResource):
     _WIDTH = None
+
+    @classmethod
+    def get_profile_fields(cls) -> dict:
+        """Return field names and descriptions for profile templates."""
+        return {
+            "name": "Reservation name",
+            "partition": "Partition name",
+            "start_time": "Start time (formatted)",
+            "end_time": "End time (formatted)",
+            "time_status": "Time status (e.g., 'ends in 5d 3h')",
+            "node_count": "Number of nodes",
+            "core_count": "Number of cores",
+            "node_list": "List of nodes",
+            "users": "Allowed users",
+            "accounts": "Allowed accounts",
+            "flags": "Reservation flags",
+            "tres": "TRES specification",
+            "max_start_delay": "Max start delay",
+        }
+
     valid_args = {
         "accounts": {
             "type": "list",

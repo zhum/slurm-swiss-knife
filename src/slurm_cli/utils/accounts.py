@@ -14,24 +14,26 @@ from .utils import console
 # Account configuration options (sacctmgr field names)
 ACCOUNT_OPTIONS: List[str] = [
     "Cluster",
-    "DefaultQOS",
+    # "DefaultQOS",
     "Description",
-    "Fairshare",
-    "GrpJobs",
-    "GrpJobsAccrue",
-    "GrpSubmit",
-    "GrpSubmitJobs",
-    "GrpTRES",
-    "GrpTRESMins",
-    "GrpTRESRunMins",
-    "GrpWall",
-    "MaxJobs",
-    "MaxJobsAccrue",
-    "MaxSubmit",
-    "MaxSubmitJobs",
-    "MaxTRES",
-    "MaxTRESMins",
-    "MaxWall",
+    "Flags",
+    "Name",
+    # "Fairshare",
+    # "GrpJobs",
+    # "GrpJobsAccrue",
+    # "GrpSubmit",
+    # "GrpSubmitJobs",
+    # "GrpTRES",
+    # "GrpTRESMins",
+    # "GrpTRESRunMins",
+    # "GrpWall",
+    # "MaxJobs",
+    # "MaxJobsAccrue",
+    # "MaxSubmit",
+    # "MaxSubmitJobs",
+    # "MaxTRES",
+    # "MaxTRESMins",
+    # "MaxWall",
     "Organization",
     "Parent",
     "RawUsage",
@@ -67,19 +69,53 @@ _slurm_cli_accounts_autocomplete() {{
     cur="${{COMP_WORDS[COMP_CWORD]}}"
     prev="${{COMP_WORDS[COMP_CWORD-1]}}"
 
+    # Get cached account names if available (space-separated)
+    local cached_accounts=""
+    if [ -f "/tmp/slurm_cli_accounts.json" ]; then
+        cached_accounts=$(jq -r '.accounts[].name' /tmp/slurm_cli_accounts.json 2>/dev/null | tr '\\n' ' ')
+    fi
+
+    # ACCOUNT_OPTIONS for filtering/updating
+    local filter_options="{'= '.join(valid_keys)}="
+    local update_options="$filter_options set"
+
     # If we're on the name field (right after 'accounts')
     if [[ $name == accounts && $prev == accounts ]]; then
-        if [ -f "/tmp/slurm_cli_accounts.json" ]; then
-            COMPREPLY=($(compgen -W "$(jq -r 'keys[]' /tmp/slurm_cli_accounts.json)" -- "$cur"))
-        fi
-        return
+        case "$cmd" in
+            show)
+                # For show, allow both account names and filter options
+                local all_options="$cached_accounts $filter_options"
+                if [[ $cur == '' ]]; then
+                    COMPREPLY=($(compgen -W "$all_options"))
+                else
+                    COMPREPLY=($(compgen -W "$all_options" -- "$cur"))
+                fi
+                return
+                ;;
+            delete)
+                if [ -n "$cached_accounts" ]; then
+                    COMPREPLY=($(compgen -W "$cached_accounts" -- "$cur"))
+                fi
+                return
+                ;;
+            update)
+                # For update, show both cached account names and ACCOUNT_OPTIONS
+                local all_options="$cached_accounts $update_options"
+                if [[ $cur == '' ]]; then
+                    COMPREPLY=($(compgen -W "$all_options"))
+                else
+                    COMPREPLY=($(compgen -W "$all_options" -- "$cur"))
+                fi
+                return
+                ;;
+        esac
     fi
 
     case "$cmd" in
-        show|delete)
+        delete)
             return
             ;;
-        create|update)
+        show|create|update)
             if [[ $cur == = || $prev == = ]]; then
                 local key
                 if [[ $cur == = ]]; then
@@ -95,19 +131,23 @@ _slurm_cli_accounts_autocomplete() {{
                             COMPREPLY=($(compgen -W "$(jq -r 'keys[]' /tmp/slurm_cli_qos.json)" -- "${{cur#*=}}"))
                         fi
                         ;;
-                    parent)
-                        if [ -f "/tmp/slurm_cli_accounts.json" ]; then
-                            COMPREPLY=($(compgen -W "$(jq -r 'keys[]' /tmp/slurm_cli_accounts.json)" -- "${{cur#*=}}"))
+                    parent|organization)
+                        if [ -n "$cached_accounts" ]; then
+                            COMPREPLY=($(compgen -W "$cached_accounts" -- "${{cur#*=}}"))
                         fi
                         ;;
                 esac
                 return
             else
-                local -a valid_keys=({'= '.join(valid_keys)}=)
+                # For show: filter options only; for update/create: include 'set' keyword
+                local opts="$filter_options"
+                if [[ $cmd == "update" || $cmd == "create" ]]; then
+                    opts="$update_options"
+                fi
                 if [[ $cur == '' ]]; then
-                    COMPREPLY=(${{valid_keys[@]}})
+                    COMPREPLY=($(compgen -W "$opts"))
                 else
-                    COMPREPLY=($(compgen -W "${{valid_keys[*]}}" "$cur"))
+                    COMPREPLY=($(compgen -W "$opts" -- "$cur"))
                 fi
             fi
             ;;
@@ -122,7 +162,7 @@ _slurm_cli_accounts_autocomplete() {{
     ) -> None:
         """Create a new account."""
         console.print(f"Creating account: {name}")
-        args = ["sacctmgr", "create", "account", name]
+        args = ["sacctmgr", "create", "account", f"name={name}"]
         for key, value in kwargs.items():
             args.append(f"{key}={value}")
 
@@ -145,9 +185,72 @@ _slurm_cli_accounts_autocomplete() {{
             )
 
     @classmethod
-    def update(cls, name: str, **kwargs: Any) -> None:
-        """Update an account."""
-        console.print(f"Updating account: {name}")
+    def update(
+        cls,
+        name: str,
+        verbose: bool = False,
+        where_conditions: Optional[List[str]] = None,
+        set_values: Optional[List[str]] = None,
+        **kwargs: Any,
+    ) -> None:
+        """Update an account.
+
+        Two calling modes:
+        1. Simple: update(name, key=value, ...) - updates account by name
+        2. Where: update(name, where_conditions=[...], set_values=[...])
+           - uses WHERE/SET syntax for bulk updates
+
+        Args:
+            name: Account name (simple mode) or ignored (where mode)
+            verbose: Enable verbose output
+            where_conditions: List of WHERE conditions (e.g., ["cluster=test"])
+            set_values: List of SET values (e.g., ["description=foo"])
+            **kwargs: Additional SET values (simple mode only)
+        """
+        # Build sacctmgr command
+        args = ["sacctmgr", "-i", "modify", "account"]
+
+        if where_conditions is not None:
+            # WHERE/SET mode
+            args.append("where")
+            args.extend(where_conditions)
+            args.append("set")
+            if set_values:
+                args.extend(set_values)
+            where_str = " ".join(where_conditions)
+            set_str = " ".join(set_values) if set_values else ""
+            console.print(
+                f"Updating accounts where {where_str} set {set_str}"
+            )
+        else:
+            # Simple mode - update by name
+            args.append("where")
+            args.append(f"name={name}")
+            args.append("set")
+            for key, value in kwargs.items():
+                if value is not None:
+                    args.append(f"{key}={value}")
+                else:
+                    args.append(key)
+            console.print(f"Updating account: {name}")
+
+        try:
+            result = subprocess.run(
+                args,
+                check=True,
+                capture_output=True,
+                text=True,
+            )
+            if result.stdout:
+                console.print(result.stdout)
+            if verbose:
+                console.print(
+                    "[green]Account updated successfully.[/green]"
+                )
+        except subprocess.CalledProcessError as e:
+            console.print(
+                f"[red]Failed to update account:[/red] {e.stderr or e}"
+            )
 
     @classmethod
     def delete(cls, name: str) -> None:
@@ -160,12 +263,16 @@ _slurm_cli_accounts_autocomplete() {{
         "description",
         "organization",
         "coordinators",
+        "flags",
+        "associations",
     ]
     DEFAULT_STYLES = {
         "name": "cyan",
         "description": "white",
         "organization": "green",
         "coordinators": "yellow",
+        "flags": "magenta",
+        "associations": "blue",
     }
 
     @classmethod
@@ -197,12 +304,48 @@ _slurm_cli_accounts_autocomplete() {{
     def _format_value(cls, account: Dict[str, Any], column: str) -> str:
         """Format a value for display."""
         value = account.get(column, "")
-        if column == "coordinators":
+        # Handle array fields
+        if column in ("coordinators", "flags", "associations"):
             if isinstance(value, list):
-                return ", ".join(value) if value else "-"
+                return (
+                    ", ".join(str(v) for v in value) if value else "-"
+                )
         if value is None or value == "":
             return "-"
         return str(value)
+
+    @classmethod
+    def _parse_filter(cls, filter_str: str) -> Optional[tuple]:
+        """Parse a filter string like 'organization=nvidia'.
+
+        Returns:
+            Tuple of (key, value) if valid filter, None otherwise.
+        """
+        if "=" in filter_str:
+            key, value = filter_str.split("=", 1)
+            return (key.lower(), value)
+        return None
+
+    @classmethod
+    def _apply_filters(
+        cls, accounts: List[Dict[str, Any]], filters: List[tuple]
+    ) -> List[Dict[str, Any]]:
+        """Apply filters to account list.
+
+        Args:
+            accounts: List of account dictionaries
+            filters: List of (key, value) tuples to filter by
+
+        Returns:
+            Filtered list of accounts
+        """
+        for key, value in filters:
+            accounts = [
+                acc
+                for acc in accounts
+                if str(acc.get(key, "")).lower() == value.lower()
+            ]
+        return accounts
 
     @classmethod
     def show(
@@ -218,7 +361,7 @@ _slurm_cli_accounts_autocomplete() {{
         """Show account information.
 
         Args:
-            field: Optional account name to filter by
+            field: Optional account name or filter (e.g., organization=nvidia)
             style: Output style ("pretty", "json", or "csv")
             force_cache_update: Whether to force cache update (unused)
             delimiter: Delimiter for CSV output (default: ";")
@@ -243,16 +386,33 @@ _slurm_cli_accounts_autocomplete() {{
             data = json.loads(result.stdout)
             accounts = data.get("accounts", [])
 
-            # Filter by field (account name) if specified
+            # Filter by field if specified
             if field:
-                accounts = [
-                    acc for acc in accounts if acc.get("name") == field
-                ]
-                if not accounts:
-                    console.print(
-                        f"[yellow]Account '{field}' not found.[/yellow]"
+                # Check if field is a filter (contains '=') or a name
+                parsed_filter = cls._parse_filter(field)
+                if parsed_filter:
+                    # It's a filter like organization=nvidia
+                    accounts = cls._apply_filters(
+                        accounts, [parsed_filter]
                     )
-                    return
+                    if not accounts:
+                        console.print(
+                            f"[yellow]No accounts match filter "
+                            f"'{field}'.[/yellow]"
+                        )
+                        return
+                else:
+                    # It's an account name
+                    accounts = [
+                        acc
+                        for acc in accounts
+                        if acc.get("name") == field
+                    ]
+                    if not accounts:
+                        console.print(
+                            f"[yellow]Account '{field}' not found.[/yellow]"
+                        )
+                        return
 
             if style == "json":
                 # Print filtered JSON

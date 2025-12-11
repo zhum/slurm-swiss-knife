@@ -6,7 +6,7 @@ import subprocess
 import sys
 from contextlib import redirect_stdout
 from typing import Any, Dict, List
-from unittest.mock import patch, MagicMock
+from unittest.mock import MagicMock, patch
 
 import pytest
 
@@ -14,8 +14,8 @@ import pytest
 sys.path.insert(0, "src")
 
 from slurm_cli.utils.accounts import Account  # noqa: E402
-from slurm_cli.utils.qos import Qos  # noqa: E402
 from slurm_cli.utils.profiles import format_with_template  # noqa: E402
+from slurm_cli.utils.qos import Qos  # noqa: E402
 
 
 def create_mock_subprocess_result(stdout: str):
@@ -42,7 +42,9 @@ class TestCSVOutput:
             ]
         }
 
-        mock_result = create_mock_subprocess_result(json.dumps(mock_data))
+        mock_result = create_mock_subprocess_result(
+            json.dumps(mock_data)
+        )
         with patch.object(subprocess, "run", return_value=mock_result):
             output = io.StringIO()
             with redirect_stdout(output):
@@ -65,7 +67,9 @@ class TestCSVOutput:
             ]
         }
 
-        mock_result = create_mock_subprocess_result(json.dumps(mock_data))
+        mock_result = create_mock_subprocess_result(
+            json.dumps(mock_data)
+        )
         with patch.object(subprocess, "run", return_value=mock_result):
             output = io.StringIO()
             with redirect_stdout(output):
@@ -87,7 +91,9 @@ class TestCSVOutput:
             ]
         }
 
-        mock_result = create_mock_subprocess_result(json.dumps(mock_data))
+        mock_result = create_mock_subprocess_result(
+            json.dumps(mock_data)
+        )
         with patch.object(subprocess, "run", return_value=mock_result):
             output = io.StringIO()
             with redirect_stdout(output):
@@ -118,7 +124,9 @@ class TestCSVOutput:
             ]
         }
 
-        mock_result = create_mock_subprocess_result(json.dumps(mock_data))
+        mock_result = create_mock_subprocess_result(
+            json.dumps(mock_data)
+        )
         with patch.object(subprocess, "run", return_value=mock_result):
             output = io.StringIO()
             with redirect_stdout(output):
@@ -143,7 +151,9 @@ class TestJSONOutput:
             ]
         }
 
-        mock_result = create_mock_subprocess_result(json.dumps(mock_data))
+        mock_result = create_mock_subprocess_result(
+            json.dumps(mock_data)
+        )
         with patch.object(subprocess, "run", return_value=mock_result):
             output = io.StringIO()
             with redirect_stdout(output):
@@ -165,7 +175,9 @@ class TestJSONOutput:
             ]
         }
 
-        mock_result = create_mock_subprocess_result(json.dumps(mock_data))
+        mock_result = create_mock_subprocess_result(
+            json.dumps(mock_data)
+        )
         with patch.object(subprocess, "run", return_value=mock_result):
             output = io.StringIO()
             with redirect_stdout(output):
@@ -192,7 +204,9 @@ class TestPrettyOutput:
             ]
         }
 
-        mock_result = create_mock_subprocess_result(json.dumps(mock_data))
+        mock_result = create_mock_subprocess_result(
+            json.dumps(mock_data)
+        )
         with patch.object(subprocess, "run", return_value=mock_result):
             # Pretty output should use Rich Table
             # This test verifies it doesn't crash
@@ -218,7 +232,9 @@ class TestPrettyOutput:
             ]
         }
 
-        mock_result = create_mock_subprocess_result(json.dumps(mock_data))
+        mock_result = create_mock_subprocess_result(
+            json.dumps(mock_data)
+        )
         with patch.object(subprocess, "run", return_value=mock_result):
             output = io.StringIO()
             with redirect_stdout(output):
@@ -294,7 +310,9 @@ class TestQosOutput:
             ]
         }
 
-        mock_result = create_mock_subprocess_result(json.dumps(mock_data))
+        mock_result = create_mock_subprocess_result(
+            json.dumps(mock_data)
+        )
         with patch.object(subprocess, "run", return_value=mock_result):
             output = io.StringIO()
             with redirect_stdout(output):
@@ -319,7 +337,9 @@ class TestQosOutput:
             ]
         }
 
-        mock_result = create_mock_subprocess_result(json.dumps(mock_data))
+        mock_result = create_mock_subprocess_result(
+            json.dumps(mock_data)
+        )
         with patch.object(subprocess, "run", return_value=mock_result):
             output = io.StringIO()
             with redirect_stdout(output):
@@ -346,7 +366,9 @@ class TestOutputFormatSelection:
             ]
         }
 
-        mock_result = create_mock_subprocess_result(json.dumps(mock_data))
+        mock_result = create_mock_subprocess_result(
+            json.dumps(mock_data)
+        )
         with patch.object(subprocess, "run", return_value=mock_result):
             output = io.StringIO()
             with redirect_stdout(output):
@@ -370,7 +392,9 @@ class TestOutputFormatSelection:
             ]
         }
 
-        mock_result = create_mock_subprocess_result(json.dumps(mock_data))
+        mock_result = create_mock_subprocess_result(
+            json.dumps(mock_data)
+        )
         with patch.object(subprocess, "run", return_value=mock_result):
             # Invalid style should fall back gracefully or raise
             try:
@@ -467,7 +491,9 @@ class TestAccountsWithProfiles:
             ]
         }
 
-        mock_result = create_mock_subprocess_result(json.dumps(mock_data))
+        mock_result = create_mock_subprocess_result(
+            json.dumps(mock_data)
+        )
         with patch.object(subprocess, "run", return_value=mock_result):
             output = io.StringIO()
             with redirect_stdout(output):
@@ -488,7 +514,9 @@ class TestEmptyDataHandling:
         """Test handling of empty accounts list."""
         mock_data = {"accounts": []}
 
-        mock_result = create_mock_subprocess_result(json.dumps(mock_data))
+        mock_result = create_mock_subprocess_result(
+            json.dumps(mock_data)
+        )
         with patch.object(subprocess, "run", return_value=mock_result):
             output = io.StringIO()
             with redirect_stdout(output):
@@ -510,7 +538,9 @@ class TestEmptyDataHandling:
             ]
         }
 
-        mock_result = create_mock_subprocess_result(json.dumps(mock_data))
+        mock_result = create_mock_subprocess_result(
+            json.dumps(mock_data)
+        )
         with patch.object(subprocess, "run", return_value=mock_result):
             output = io.StringIO()
             with redirect_stdout(output):

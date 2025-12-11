@@ -5,7 +5,7 @@ import json
 import subprocess
 import sys
 from contextlib import redirect_stdout
-from unittest.mock import patch, MagicMock
+from unittest.mock import MagicMock, patch
 
 import pytest  # noqa: F401
 
@@ -15,7 +15,9 @@ sys.path.insert(0, "src")
 from slurm_cli.utils.qos import Qos  # noqa: E402
 
 
-def create_mock_subprocess_result(stdout: str = "", returncode: int = 0):
+def create_mock_subprocess_result(
+    stdout: str = "", returncode: int = 0
+):
     """Create a mock subprocess.CompletedProcess result."""
     mock_result = MagicMock()
     mock_result.stdout = stdout
@@ -278,9 +280,7 @@ class TestQosShow:
 
     def test_show_with_field_not_found(self):
         """Test show with field filter that doesn't match."""
-        mock_data = {
-            "qos": [{"name": "normal", "id": 1}]
-        }
+        mock_data = {"qos": [{"name": "normal", "id": 1}]}
         mock_result = create_mock_subprocess_result(
             stdout=json.dumps(mock_data)
         )
@@ -333,9 +333,20 @@ class TestQosShow:
                     "usage_factor": {"set": True, "number": 1.0},
                     "limits": {
                         "max": {
-                            "jobs": {"per": {"user": {"set": True, "number": 10}}},
-                            "tres": {"per": {"job": [], "user": []}, "total": []},
-                            "wall_clock": {"per": {"job": {"set": True, "number": 3600}}},
+                            "jobs": {
+                                "per": {
+                                    "user": {"set": True, "number": 10}
+                                }
+                            },
+                            "tres": {
+                                "per": {"job": [], "user": []},
+                                "total": [],
+                            },
+                            "wall_clock": {
+                                "per": {
+                                    "job": {"set": True, "number": 3600}
+                                }
+                            },
                         }
                     },
                 }
@@ -349,7 +360,7 @@ class TestQosShow:
             with redirect_stdout(output):
                 Qos.show(
                     style="pretty",
-                    profile_str="[cyan]{name}[/] - {description}"
+                    profile_str="[cyan]{name}[/] - {description}",
                 )
 
             result = output.getvalue()
@@ -370,7 +381,9 @@ class TestQosShow:
 
     def test_show_json_decode_error(self):
         """Test show with invalid JSON response."""
-        mock_result = create_mock_subprocess_result(stdout="invalid json {")
+        mock_result = create_mock_subprocess_result(
+            stdout="invalid json {"
+        )
         with patch.object(subprocess, "run", return_value=mock_result):
             output = io.StringIO()
             with redirect_stdout(output):
@@ -399,9 +412,13 @@ class TestQosShow:
                                         {"name": "cpu", "count": 64},
                                         {"type": "gpu", "count": 4},
                                     ],
-                                    "user": [{"name": "mem", "count": 256}],
+                                    "user": [
+                                        {"name": "mem", "count": 256}
+                                    ],
                                 },
-                                "total": [{"name": "node", "count": 10}],
+                                "total": [
+                                    {"name": "node", "count": 10}
+                                ],
                             }
                         }
                     },
@@ -429,8 +446,14 @@ class TestQosShow:
                     "description": "",
                     "priority": {"set": True, "number": 0},  # Default
                     "flags": [],
-                    "preempt": {"mode": ["DISABLED"], "list": []},  # Default
-                    "usage_factor": {"set": True, "number": 1.0},  # Default
+                    "preempt": {
+                        "mode": ["DISABLED"],
+                        "list": [],
+                    },  # Default
+                    "usage_factor": {
+                        "set": True,
+                        "number": 1.0,
+                    },  # Default
                     "limits": {},
                 }
             ]
@@ -630,4 +653,3 @@ class TestQosInheritance:
         assert callable(Qos.delete)
         assert callable(Qos.show)
         assert callable(Qos._prepare_template_data)
-

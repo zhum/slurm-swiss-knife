@@ -107,9 +107,7 @@ class TestPartitionMaxWidth:
     def test_max_width_caching(self):
         """Test max_width caches the value."""
         Partition._WIDTH = None  # Reset
-        with mock.patch.object(
-            Partition, "_WIDTH", None
-        ):
+        with mock.patch.object(Partition, "_WIDTH", None):
             width = Partition.max_width()
             assert width > 0
             # Second call should return cached value
@@ -142,7 +140,9 @@ class TestPartitionCreate:
             stdout="Partition created", returncode=0
         )
 
-        Partition.create("test-partition", verbose=True, nodes="node001")
+        Partition.create(
+            "test-partition", verbose=True, nodes="node001"
+        )
 
         assert mock_print.call_count >= 1
 
@@ -183,7 +183,9 @@ class TestPartitionCreate:
         Partition.create("test-partition", state="UP")
 
         call_args = [str(c) for c in mock_print.call_args_list]
-        assert any("Failed" in str(c) or "red" in str(c) for c in call_args)
+        assert any(
+            "Failed" in str(c) or "red" in str(c) for c in call_args
+        )
 
 
 class TestPartitionUpdate:
@@ -211,7 +213,9 @@ class TestPartitionUpdate:
             stdout="Updated", returncode=0
         )
 
-        Partition.update("test-partition", verbose=True, maxtime="2-00:00:00")
+        Partition.update(
+            "test-partition", verbose=True, maxtime="2-00:00:00"
+        )
 
         assert mock_print.call_count >= 1
 
@@ -246,7 +250,9 @@ class TestPartitionUpdate:
         Partition.update("test-partition", state="UP")
 
         call_args = [str(c) for c in mock_print.call_args_list]
-        assert any("Failed" in str(c) or "red" in str(c) for c in call_args)
+        assert any(
+            "Failed" in str(c) or "red" in str(c) for c in call_args
+        )
 
 
 class TestPartitionDelete:
@@ -287,7 +293,9 @@ class TestPartitionDelete:
         Partition.delete("nonexistent")
 
         call_args = [str(c) for c in mock_print.call_args_list]
-        assert any("Failed" in str(c) or "red" in str(c) for c in call_args)
+        assert any(
+            "Failed" in str(c) or "red" in str(c) for c in call_args
+        )
 
 
 class TestPartitionShow:
@@ -463,7 +471,9 @@ class TestPartitionShowOnePretty:
         Partition.show_one_pretty("gpu", data)
 
         call_args = [str(c) for c in mock_print.call_args_list]
-        assert any("DRN" in str(c) or "DRAIN" in str(c) for c in call_args)
+        assert any(
+            "DRN" in str(c) or "DRAIN" in str(c) for c in call_args
+        )
 
     @mock.patch("slurm_cli.utils.partitions.console.print")
     def test_show_one_pretty_down_state(self, mock_print):
@@ -474,7 +484,9 @@ class TestPartitionShowOnePretty:
         Partition.show_one_pretty("gpu", data)
 
         call_args = [str(c) for c in mock_print.call_args_list]
-        assert any("DWN" in str(c) or "DOWN" in str(c) for c in call_args)
+        assert any(
+            "DWN" in str(c) or "DOWN" in str(c) for c in call_args
+        )
 
     @mock.patch("slurm_cli.utils.partitions.console.print")
     def test_show_one_pretty_inactive_state(self, mock_print):
@@ -485,19 +497,25 @@ class TestPartitionShowOnePretty:
         Partition.show_one_pretty("gpu", data)
 
         call_args = [str(c) for c in mock_print.call_args_list]
-        assert any("INA" in str(c) or "INACTIVE" in str(c) for c in call_args)
+        assert any(
+            "INA" in str(c) or "INACTIVE" in str(c) for c in call_args
+        )
 
     @mock.patch("slurm_cli.utils.partitions.console.print")
     def test_show_one_pretty_long_nodelist(self, mock_print):
         """Test show_one_pretty truncates long node list."""
         data = dict(create_sample_partition_data()["gpu"])
-        data["Nodes"] = "node[" + ",".join(str(i) for i in range(1, 1000)) + "]"
+        data["Nodes"] = (
+            "node[" + ",".join(str(i) for i in range(1, 1000)) + "]"
+        )
 
         # Mock console width to force truncation
         with mock.patch.object(Partition, "_WIDTH", 80):
             Partition.show_one_pretty("gpu", data)
 
-        call_args_str = "".join(str(c) for c in mock_print.call_args_list)
+        call_args_str = "".join(
+            str(c) for c in mock_print.call_args_list
+        )
         # Should be truncated with ...
         assert "..." in call_args_str or "node[" in call_args_str
 
@@ -511,7 +529,10 @@ class TestPartitionShowOnePretty:
 
         call_args = [str(c) for c in mock_print.call_args_list]
         # Should have warning about unknown fields
-        assert any("Warning" in str(c) or "Unknown" in str(c) for c in call_args)
+        assert any(
+            "Warning" in str(c) or "Unknown" in str(c)
+            for c in call_args
+        )
 
 
 class TestPartitionValidArgs:
@@ -563,4 +584,3 @@ class TestPartitionInheritance:
         assert hasattr(Partition, "update")
         assert hasattr(Partition, "delete")
         assert hasattr(Partition, "show")
-

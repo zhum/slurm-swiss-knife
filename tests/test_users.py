@@ -5,7 +5,7 @@ import json
 import subprocess
 import sys
 from contextlib import redirect_stdout
-from unittest.mock import patch, MagicMock
+from unittest.mock import MagicMock, patch
 
 import pytest  # noqa: F401
 
@@ -15,7 +15,9 @@ sys.path.insert(0, "src")
 from slurm_cli.utils.users import User  # noqa: E402
 
 
-def create_mock_subprocess_result(stdout: str = "", returncode: int = 0):
+def create_mock_subprocess_result(
+    stdout: str = "", returncode: int = 0
+):
     """Create a mock subprocess.CompletedProcess result."""
     mock_result = MagicMock()
     mock_result.stdout = stdout
@@ -36,7 +38,10 @@ class TestUserInit:
         """Test User initialization with additional kwargs."""
         user = User("testuser", account="myaccount", partition="gpu")
         assert user.name == "testuser"
-        assert user.kwargs == {"account": "myaccount", "partition": "gpu"}
+        assert user.kwargs == {
+            "account": "myaccount",
+            "partition": "gpu",
+        }
 
 
 class TestUserCreate:
@@ -264,9 +269,13 @@ class TestUserShow:
 
     def test_show_json_calls_correct_command(self):
         """Test that JSON style calls sacctmgr with --json flag."""
-        mock_result = create_mock_subprocess_result(stdout='{"users": []}')
+        mock_result = create_mock_subprocess_result(
+            stdout='{"users": []}'
+        )
         with patch.object(
-            subprocess, "run", return_value=mock_result,
+            subprocess,
+            "run",
+            return_value=mock_result,
         ) as mock_run:
             User.show(style="json")
 
@@ -276,9 +285,13 @@ class TestUserShow:
 
     def test_show_pretty_calls_correct_command(self):
         """Test that pretty style calls sacctmgr without --json flag."""
-        mock_result = create_mock_subprocess_result(stdout="User DefAcct\n")
+        mock_result = create_mock_subprocess_result(
+            stdout="User DefAcct\n"
+        )
         with patch.object(
-            subprocess, "run", return_value=mock_result,
+            subprocess,
+            "run",
+            return_value=mock_result,
         ) as mock_run:
             User.show(style="pretty")
 
@@ -306,4 +319,3 @@ class TestUserInheritance:
         assert callable(User.update)
         assert callable(User.delete)
         assert callable(User.show)
-

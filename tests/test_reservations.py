@@ -21,8 +21,14 @@ def create_sample_reservation_data():
     now = datetime.now().timestamp()
     return {
         "maint-window": {
-            "start_time": {"set": True, "number": now + 3600},  # 1 hour from now
-            "end_time": {"set": True, "number": now + 7200},  # 2 hours from now
+            "start_time": {
+                "set": True,
+                "number": now + 3600,
+            },  # 1 hour from now
+            "end_time": {
+                "set": True,
+                "number": now + 7200,
+            },  # 2 hours from now
             "partition": "gpu",
             "node_count": 10,
             "core_count": 100,
@@ -34,8 +40,14 @@ def create_sample_reservation_data():
             "purge_completed": False,
         },
         "research-booking": {
-            "start_time": {"set": True, "number": now - 1800},  # 30 min ago
-            "end_time": {"set": True, "number": now + 5400},  # 90 min from now
+            "start_time": {
+                "set": True,
+                "number": now - 1800,
+            },  # 30 min ago
+            "end_time": {
+                "set": True,
+                "number": now + 5400,
+            },  # 90 min from now
             "partition": "cpu",
             "node_count": 5,
             "core_count": 50,
@@ -84,7 +96,10 @@ class TestReservationInit:
             "maint-window", partition="gpu", nodes="node[001-010]"
         )
         assert r.name == "maint-window"
-        assert r.kwargs == {"partition": "gpu", "nodes": "node[001-010]"}
+        assert r.kwargs == {
+            "partition": "gpu",
+            "nodes": "node[001-010]",
+        }
 
 
 class TestReservationMaxWidth:
@@ -93,9 +108,7 @@ class TestReservationMaxWidth:
     def test_max_width_caching(self):
         """Test max_width caches the value."""
         Reservation._WIDTH = None  # Reset
-        with mock.patch.object(
-            Reservation, "_WIDTH", None
-        ):
+        with mock.patch.object(Reservation, "_WIDTH", None):
             width = Reservation.max_width()
             assert width > 0
             # Second call should return cached value
@@ -167,7 +180,9 @@ class TestReservationCreate:
         Reservation.create("test-res", accounts="testaccount")
 
         call_args = [str(c) for c in mock_print.call_args_list]
-        assert any("Failed" in str(c) or "red" in str(c) for c in call_args)
+        assert any(
+            "Failed" in str(c) or "red" in str(c) for c in call_args
+        )
 
 
 class TestReservationUpdate:
@@ -191,7 +206,9 @@ class TestReservationUpdate:
     @mock.patch("slurm_cli.utils.reservations.console.print")
     def test_update_with_verbose(self, mock_print, mock_run):
         """Test update with verbose output."""
-        mock_run.return_value = mock.Mock(stdout="Updated", returncode=0)
+        mock_run.return_value = mock.Mock(
+            stdout="Updated", returncode=0
+        )
 
         Reservation.update("test-res", verbose=True, duration="2:00:00")
 
@@ -229,7 +246,9 @@ class TestReservationUpdate:
         Reservation.update("test-res", accounts="newaccount")
 
         call_args = [str(c) for c in mock_print.call_args_list]
-        assert any("Failed" in str(c) or "red" in str(c) for c in call_args)
+        assert any(
+            "Failed" in str(c) or "red" in str(c) for c in call_args
+        )
 
 
 class TestReservationDelete:
@@ -270,7 +289,9 @@ class TestReservationDelete:
         Reservation.delete("nonexistent")
 
         call_args = [str(c) for c in mock_print.call_args_list]
-        assert any("Failed" in str(c) or "red" in str(c) for c in call_args)
+        assert any(
+            "Failed" in str(c) or "red" in str(c) for c in call_args
+        )
 
 
 class TestReservationShow:
@@ -339,7 +360,9 @@ class TestReservationShow:
         output = io.StringIO()
 
         with redirect_stdout(output):
-            Reservation.show(name="maint-window", data=data, style="csv")
+            Reservation.show(
+                name="maint-window", data=data, style="csv"
+            )
 
         result = output.getvalue()
         lines = result.strip().split("\n")
@@ -396,7 +419,9 @@ class TestReservationPrepareTemplateData:
     def test_prepare_template_data_basic(self):
         """Test _prepare_template_data with basic data."""
         data = create_sample_reservation_data()["maint-window"]
-        result = Reservation._prepare_template_data("maint-window", data)
+        result = Reservation._prepare_template_data(
+            "maint-window", data
+        )
 
         assert result["name"] == "maint-window"
         assert "start_time" in result
@@ -406,7 +431,10 @@ class TestReservationPrepareTemplateData:
     def test_prepare_template_data_users_list(self):
         """Test _prepare_template_data joins users list."""
         data = {
-            "start_time": {"set": True, "number": datetime.now().timestamp()},
+            "start_time": {
+                "set": True,
+                "number": datetime.now().timestamp(),
+            },
             "end_time": {
                 "set": True,
                 "number": datetime.now().timestamp() + 3600,
@@ -421,7 +449,10 @@ class TestReservationPrepareTemplateData:
     def test_prepare_template_data_accounts_list(self):
         """Test _prepare_template_data joins accounts list."""
         data = {
-            "start_time": {"set": True, "number": datetime.now().timestamp()},
+            "start_time": {
+                "set": True,
+                "number": datetime.now().timestamp(),
+            },
             "end_time": {
                 "set": True,
                 "number": datetime.now().timestamp() + 3600,
@@ -437,7 +468,10 @@ class TestReservationPrepareTemplateData:
         """Test _prepare_template_data for future reservation."""
         now = datetime.now().timestamp()
         data = {
-            "start_time": {"set": True, "number": now + 7200},  # 2 hours
+            "start_time": {
+                "set": True,
+                "number": now + 7200,
+            },  # 2 hours
             "end_time": {"set": True, "number": now + 10800},  # 3 hours
             "partition": "test",
         }
@@ -449,7 +483,10 @@ class TestReservationPrepareTemplateData:
         """Test _prepare_template_data for active reservation."""
         now = datetime.now().timestamp()
         data = {
-            "start_time": {"set": True, "number": now - 1800},  # 30 min ago
+            "start_time": {
+                "set": True,
+                "number": now - 1800,
+            },  # 30 min ago
             "end_time": {"set": True, "number": now + 1800},  # 30 min
             "partition": "test",
         }
@@ -506,7 +543,10 @@ class TestReservationShowCsv:
         """Test _show_csv handles list values."""
         data = {
             "test-res": {
-                "start_time": {"set": True, "number": datetime.now().timestamp()},
+                "start_time": {
+                    "set": True,
+                    "number": datetime.now().timestamp(),
+                },
                 "end_time": {
                     "set": True,
                     "number": datetime.now().timestamp() + 3600,
@@ -534,7 +574,10 @@ class TestReservationShowCsv:
         """Test _show_csv handles dict values with set/number."""
         data = {
             "test-res": {
-                "start_time": {"set": True, "number": datetime.now().timestamp()},
+                "start_time": {
+                    "set": True,
+                    "number": datetime.now().timestamp(),
+                },
                 "end_time": {
                     "set": True,
                     "number": datetime.now().timestamp() + 3600,
@@ -654,7 +697,9 @@ class TestReservationPrintOnePretty:
     @mock.patch("slurm_cli.utils.reservations.console.print")
     def test_print_one_pretty_with_watts(self, mock_print):
         """Test print_one_pretty with watts field."""
-        data = dict(create_sample_reservation_data()["research-booking"])
+        data = dict(
+            create_sample_reservation_data()["research-booking"]
+        )
 
         Reservation.print_one_pretty("research-booking", data)
 
@@ -688,7 +733,9 @@ class TestReservationPrintOnePretty:
 
         Reservation.print_one_pretty("maint-window", data)
 
-        call_args_str = "".join(str(c) for c in mock_print.call_args_list)
+        call_args_str = "".join(
+            str(c) for c in mock_print.call_args_list
+        )
         assert "hot_pink" in call_args_str
 
     @mock.patch("slurm_cli.utils.reservations.console.print")
@@ -779,7 +826,9 @@ class TestReservationCreateVerbose:
         """Test verbose create success message."""
         mock_run.return_value = mock.Mock(stdout="", returncode=0)
 
-        Reservation.create("test-res", verbose=True, accounts="testaccount")
+        Reservation.create(
+            "test-res", verbose=True, accounts="testaccount"
+        )
 
         # Should have success message
         call_args = [str(c) for c in mock_print.call_args_list]
@@ -795,7 +844,9 @@ class TestReservationUpdateVerbose:
         """Test verbose update success message."""
         mock_run.return_value = mock.Mock(stdout="Output", returncode=0)
 
-        Reservation.update("test-res", verbose=True, accounts="newaccount")
+        Reservation.update(
+            "test-res", verbose=True, accounts="newaccount"
+        )
 
         # Should have multiple prints (output + success)
         assert mock_print.call_count >= 2
@@ -826,4 +877,3 @@ class TestReservationShowTemplate:
         # Normal show should work
         Reservation.show(data=data, style="pretty")
         assert mock_print.call_count >= 1
-

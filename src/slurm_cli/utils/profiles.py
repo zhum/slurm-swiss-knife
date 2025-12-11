@@ -543,8 +543,9 @@ def _normalize_profile_str(
 ) -> Optional[str]:
     """Normalize profile string, adding resource prefix if missing.
 
-    If profile_str doesn't contain 'resource.' prefix, treat it as a
-    template for the current resource.
+    Supports shorthand formats:
+    - "name,organization" -> "resource.columns=name,organization"
+    - "[cyan]{name}[/]" -> "resource.template=[cyan]{name}[/]"
 
     Args:
         profile_str: Raw profile string
@@ -564,6 +565,27 @@ def _normalize_profile_str(
         else False
     ):
         return profile_str
+
+    # Check if it looks like a column list (comma-separated words,
+    # no template markers like { [ or =)
+    if (
+        "," in profile_str
+        and "{" not in profile_str
+        and "[" not in profile_str
+        and "=" not in profile_str
+    ):
+        # Treat as column list
+        return f"{resource}.columns={profile_str}"
+
+    # Check if it's a single word without template markers (single column)
+    if (
+        "{" not in profile_str
+        and "[" not in profile_str
+        and "=" not in profile_str
+        and " " not in profile_str
+    ):
+        # Treat as single column
+        return f"{resource}.columns={profile_str}"
 
     # No resource prefix - treat as raw template for current resource
     return f"{resource}.template={profile_str}"

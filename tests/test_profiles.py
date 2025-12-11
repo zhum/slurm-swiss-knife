@@ -1,9 +1,9 @@
 """Tests for the profiles module."""
 
+import os
 import sys
 import tempfile
-import os
-from typing import Dict, Any, Optional
+from typing import Any, Dict, Optional
 from unittest.mock import patch
 
 import pytest
@@ -12,20 +12,20 @@ import pytest
 sys.path.insert(0, "src")
 
 from slurm_cli.utils.profiles import (  # noqa: E402
+    DEFAULT_FIELD_VALUES,
+    DEFAULT_PROFILES,
     ProfileManager,
-    get_profile_manager,
-    get_profile_config,
-    get_columns_for_resource,
-    get_styles_for_resource,
-    get_template_for_resource,
-    format_with_template,
-    is_field_empty,
     _normalize_profile_str,
     extract_fields_from_template,
+    format_with_template,
+    get_columns_for_resource,
+    get_profile_config,
+    get_profile_manager,
+    get_resource_fields,
+    get_styles_for_resource,
+    get_template_for_resource,
+    is_field_empty,
     show_profile_help,
-    DEFAULT_PROFILES,
-    DEFAULT_FIELD_VALUES,
-    RESOURCE_FIELDS,
 )
 
 
@@ -53,7 +53,9 @@ class TestProfileManager:
             "users",
         ]
         for resource in expected_resources:
-            assert resource in default, f"Resource {resource} not in default"
+            assert (
+                resource in default
+            ), f"Resource {resource} not in default"
 
     def test_profile_manager_singleton(self):
         """Test that get_profile_manager returns a singleton."""
@@ -112,7 +114,10 @@ accounts.styles.name = cyan bold
                         "name",
                         "description",
                     ]
-                    assert profile["accounts"]["styles"]["name"] == "cyan bold"
+                    assert (
+                        profile["accounts"]["styles"]["name"]
+                        == "cyan bold"
+                    )
             finally:
                 os.unlink(f.name)
 
@@ -211,7 +216,10 @@ qos.columns = name,priority
                         "name",
                         "description",
                     ]
-                    assert test2["qos"]["columns"] == ["name", "priority"]
+                    assert test2["qos"]["columns"] == [
+                        "name",
+                        "priority",
+                    ]
             finally:
                 os.unlink(f.name)
 
@@ -259,7 +267,10 @@ class TestProfileStringParsing:
             "accounts.template=[cyan]{name}[/] - {description}"
         )
         assert "accounts" in result
-        assert result["accounts"]["template"] == "[cyan]{name}[/] - {description}"
+        assert (
+            result["accounts"]["template"]
+            == "[cyan]{name}[/] - {description}"
+        )
 
     def test_parse_multiple_settings(self):
         """Test parsing multiple settings separated by semicolon."""
@@ -280,7 +291,10 @@ class TestProfileStringParsing:
         )
         assert "accounts" in result
         # Semicolon should be preserved since it's not followed by resource.key=
-        assert "name: {name}; desc: {description}" in result["accounts"]["template"]
+        assert (
+            "name: {name}; desc: {description}"
+            in result["accounts"]["template"]
+        )
 
     def test_parse_styles(self):
         """Test parsing style settings."""
@@ -304,9 +318,7 @@ class TestNormalizeProfileStr:
 
     def test_normalize_without_prefix(self):
         """Test that strings without prefix get resource.template= added."""
-        result = _normalize_profile_str(
-            "[cyan]{name}[/]", "accounts"
-        )
+        result = _normalize_profile_str("[cyan]{name}[/]", "accounts")
         assert result == "accounts.template=[cyan]{name}[/]"
 
     def test_normalize_none(self):
@@ -316,8 +328,36 @@ class TestNormalizeProfileStr:
 
     def test_normalize_different_resources(self):
         """Test normalization with different resource types."""
-        result = _normalize_profile_str("{name} - {users}", "reservations")
+        result = _normalize_profile_str(
+            "{name} - {users}", "reservations"
+        )
         assert result == "reservations.template={name} - {users}"
+
+    def test_normalize_column_list_shorthand(self):
+        """Test that comma-separated words become columns."""
+        result = _normalize_profile_str(
+            "name,organization,flags", "accounts"
+        )
+        assert result == "accounts.columns=name,organization,flags"
+
+    def test_normalize_single_column_shorthand(self):
+        """Test that single word without markers becomes column."""
+        result = _normalize_profile_str("name", "accounts")
+        assert result == "accounts.columns=name"
+
+    def test_normalize_column_vs_template(self):
+        """Test distinguishing columns from templates."""
+        # With braces -> template
+        result = _normalize_profile_str("{name}", "accounts")
+        assert result == "accounts.template={name}"
+
+        # With brackets -> template
+        result = _normalize_profile_str("[cyan]name[/]", "accounts")
+        assert result == "accounts.template=[cyan]name[/]"
+
+        # Plain comma-separated -> columns
+        result = _normalize_profile_str("name,desc", "accounts")
+        assert result == "accounts.columns=name,desc"
 
 
 class TestGetProfileConfig:
@@ -325,7 +365,9 @@ class TestGetProfileConfig:
 
     def test_get_default_config(self):
         """Test getting default profile config."""
-        columns, styles, template = get_profile_config("default", "accounts")
+        columns, styles, template = get_profile_config(
+            "default", "accounts"
+        )
         assert columns == "*"
         assert "name" in styles
         assert template is None  # default uses columns, not template
@@ -335,7 +377,7 @@ class TestGetProfileConfig:
         columns, styles, template = get_profile_config(
             "default",
             "accounts",
-            profile_str="accounts.template=[cyan]{name}[/]"
+            profile_str="accounts.template=[cyan]{name}[/]",
         )
         assert template == "[cyan]{name}[/]"
 
@@ -344,7 +386,7 @@ class TestGetProfileConfig:
         columns, styles, template = get_profile_config(
             "default",
             "accounts",
-            profile_str="[cyan]{name}[/] - {description}"
+            profile_str="[cyan]{name}[/] - {description}",
         )
         assert template == "[cyan]{name}[/] - {description}"
 
@@ -379,7 +421,9 @@ class TestIsFieldEmpty:
 
     def test_set_dict_is_set(self):
         """Test set/number pattern when set."""
-        assert not is_field_empty("timestamp", {"set": True, "number": 12345})
+        assert not is_field_empty(
+            "timestamp", {"set": True, "number": 12345}
+        )
 
     def test_default_value_empty(self):
         """Test that default values are considered empty."""
@@ -390,7 +434,9 @@ class TestIsFieldEmpty:
 
     def test_non_default_not_empty(self):
         """Test that non-default values are not empty."""
-        assert not is_field_empty("coordinators", ["user1"], resource="accounts")
+        assert not is_field_empty(
+            "coordinators", ["user1"], resource="accounts"
+        )
 
 
 class TestFormatWithTemplate:
@@ -398,33 +444,26 @@ class TestFormatWithTemplate:
 
     def test_simple_substitution(self):
         """Test simple field substitution."""
-        result = format_with_template(
-            "Name: {name}",
-            {"name": "test"}
-        )
+        result = format_with_template("Name: {name}", {"name": "test"})
         assert result == "Name: test"
 
     def test_multiple_fields(self):
         """Test multiple field substitutions."""
         result = format_with_template(
             "{name} - {description}",
-            {"name": "test", "description": "A test item"}
+            {"name": "test", "description": "A test item"},
         )
         assert result == "test - A test item"
 
     def test_newline_escape(self):
         """Test that \\n is converted to newline."""
-        result = format_with_template(
-            "Line1\\nLine2",
-            {}
-        )
+        result = format_with_template("Line1\\nLine2", {})
         assert result == "Line1\nLine2"
 
     def test_missing_field(self):
         """Test that missing fields are replaced with placeholder."""
         result = format_with_template(
-            "{name} - {missing}",
-            {"name": "test"}
+            "{name} - {missing}", {"name": "test"}
         )
         # Missing fields get a placeholder value (e.g., "-" or empty)
         assert "test - " in result
@@ -433,7 +472,7 @@ class TestFormatWithTemplate:
         """Test conditional {?field TEXT} when field has value."""
         result = format_with_template(
             "Name: {name}{?users , Users: {users}}",
-            {"name": "test", "users": "root,admin"}
+            {"name": "test", "users": "root,admin"},
         )
         assert result == "Name: test, Users: root,admin"
 
@@ -441,7 +480,7 @@ class TestFormatWithTemplate:
         """Test conditional {?field TEXT} when field is empty."""
         result = format_with_template(
             "Name: {name}{?users , Users: {users}}",
-            {"name": "test", "users": ""}
+            {"name": "test", "users": ""},
         )
         assert result == "Name: test"
 
@@ -449,7 +488,7 @@ class TestFormatWithTemplate:
         """Test conditional when field is None."""
         result = format_with_template(
             "Name: {name}{?users , Users: {users}}",
-            {"name": "test", "users": None}
+            {"name": "test", "users": None},
         )
         assert result == "Name: test"
 
@@ -458,7 +497,7 @@ class TestFormatWithTemplate:
         result = format_with_template(
             "Name: {name}{?accounts , Accounts: {accounts}}",
             {"name": "test", "accounts": ""},
-            resource="reservations"
+            resource="reservations",
         )
         # accounts default for reservations is ""
         assert result == "Name: test"
@@ -466,8 +505,7 @@ class TestFormatWithTemplate:
     def test_rich_markup_preserved(self):
         """Test that Rich markup is preserved in output."""
         result = format_with_template(
-            "[cyan]{name}[/cyan]",
-            {"name": "test"}
+            "[cyan]{name}[/cyan]", {"name": "test"}
         )
         assert result == "[cyan]test[/cyan]"
 
@@ -480,15 +518,14 @@ class TestFormatWithTemplate:
         result = format_with_template(
             "Name: {name}",
             {"name": "test"},
-            value_formatter=uppercase_formatter
+            value_formatter=uppercase_formatter,
         )
         assert result == "Name: TEST"
 
     def test_nested_conditional(self):
         """Test conditional with field placeholder inside."""
         result = format_with_template(
-            "{?users Users: [hot_pink]{users}[/]}",
-            {"users": "root"}
+            "{?users Users: [hot_pink]{users}[/]}", {"users": "root"}
         )
         assert result == "Users: [hot_pink]root[/]"
 
@@ -578,9 +615,13 @@ accounts.template = Line1\\n\\
                     profile = manager.get_profile("test")
                     template = profile["accounts"]["template"]
                     # Should contain \n escapes
-                    assert "\\n" in template or "\n" not in template.replace(
-                        "Line1", ""
-                    ).replace("Line2", "").replace("Line3", "")
+                    assert (
+                        "\\n" in template
+                        or "\n"
+                        not in template.replace("Line1", "")
+                        .replace("Line2", "")
+                        .replace("Line3", "")
+                    )
             finally:
                 os.unlink(f.name)
 
@@ -622,13 +663,17 @@ class TestEdgeCases:
         import slurm_cli.utils.profiles as profiles_mod
 
         with patch.object(
-            profiles_mod, "PROFILE_FILES", ["/nonexistent/path/profiles.conf"]
+            profiles_mod,
+            "PROFILE_FILES",
+            ["/nonexistent/path/profiles.conf"],
         ):
             manager = ProfileManager()
             manager._loaded = False
             # Should not raise, just skip missing files
             profiles = manager.list_profiles()
-            assert "default" in profiles  # Built-in defaults still present
+            assert (
+                "default" in profiles
+            )  # Built-in defaults still present
 
     def test_profile_without_resources(self):
         """Test parsing profile with no resource settings."""
@@ -658,7 +703,7 @@ class TestEdgeCases:
         """Test template with special characters."""
         result = format_with_template(
             "CPU: {cpu}% | RAM: {ram}GB | Temp: {temp}°C",
-            {"cpu": "85", "ram": "16", "temp": "72"}
+            {"cpu": "85", "ram": "16", "temp": "72"},
         )
         assert "CPU: 85%" in result
         assert "RAM: 16GB" in result
@@ -668,7 +713,7 @@ class TestEdgeCases:
         """Test template with Unicode characters."""
         result = format_with_template(
             "Status: {status} ✓ Users: {users} 👥",
-            {"status": "active", "users": "5"}
+            {"status": "active", "users": "5"},
         )
         assert "✓" in result
         assert "👥" in result
@@ -727,8 +772,13 @@ class TestMergeProfiles:
         manager._merge_profiles(new_profiles)
 
         assert "custom" in manager._profiles
-        assert manager._profiles["custom"]["accounts"]["columns"] == ["name"]
-        assert manager._profiles["custom"]["accounts"]["styles"]["name"] == "bold"
+        assert manager._profiles["custom"]["accounts"]["columns"] == [
+            "name"
+        ]
+        assert (
+            manager._profiles["custom"]["accounts"]["styles"]["name"]
+            == "bold"
+        )
 
 
 class TestDeepMerge:
@@ -737,20 +787,8 @@ class TestDeepMerge:
     def test_deep_merge_nested_dicts(self):
         """Test deep merge with nested dicts."""
         manager = ProfileManager()
-        base = {
-            "level1": {
-                "level2": {
-                    "key1": "value1"
-                }
-            }
-        }
-        override = {
-            "level1": {
-                "level2": {
-                    "key2": "value2"
-                }
-            }
-        }
+        base = {"level1": {"level2": {"key1": "value1"}}}
+        override = {"level1": {"level2": {"key2": "value2"}}}
         manager._deep_merge(base, override)
 
         assert base["level1"]["level2"]["key1"] == "value1"
@@ -772,9 +810,7 @@ class TestIsFieldEmptyWithDefaults:
     def test_field_matches_default(self):
         """Test field that matches its default value."""
         # If DEFAULT_FIELD_VALUES has a value for accounts.coordinators
-        result = is_field_empty(
-            "coordinators", "", resource="accounts"
-        )
+        result = is_field_empty("coordinators", "", resource="accounts")
         assert result is True
 
     def test_field_differs_from_default(self):
@@ -791,24 +827,21 @@ class TestFormatWithTemplateDict:
     def test_dict_with_set_number(self):
         """Test formatting dict with set=True and number."""
         result = format_with_template(
-            "{value}",
-            {"value": {"set": True, "number": 42}}
+            "{value}", {"value": {"set": True, "number": 42}}
         )
         assert "42" in result
 
     def test_dict_with_infinite(self):
         """Test formatting dict with infinite=True."""
         result = format_with_template(
-            "{value}",
-            {"value": {"infinite": True}}
+            "{value}", {"value": {"infinite": True}}
         )
         assert "∞" in result
 
     def test_dict_without_set(self):
         """Test formatting dict without set flag."""
         result = format_with_template(
-            "{value}",
-            {"value": {"some_key": "some_val"}}
+            "{value}", {"value": {"some_key": "some_val"}}
         )
         # Should stringify the dict
         assert "some_key" in result or "some_val" in result
@@ -865,14 +898,19 @@ class TestShowProfileHelp:
 
 
 class TestResourceFields:
-    """Tests for RESOURCE_FIELDS constant."""
+    """Tests for get_resource_fields() function."""
 
     def test_all_resources_have_fields(self):
         """Test all expected resources have field definitions."""
+        resource_fields = get_resource_fields()
         expected = [
-            "accounts", "qos", "partitions", "nodes",
-            "reservations", "coordinators", "users"
+            "accounts",
+            "qos",
+            "partitions",
+            "nodes",
+            "reservations",
+            "coordinators",
+            "users",
         ]
         for resource in expected:
-            assert resource in RESOURCE_FIELDS
-
+            assert resource in resource_fields

@@ -72,7 +72,9 @@ class TestConfigUpdate:
         Config.update("test")
 
         call_args = [str(c) for c in mock_print.call_args_list]
-        assert any("Failed" in str(c) or "red" in str(c) for c in call_args)
+        assert any(
+            "Failed" in str(c) or "red" in str(c) for c in call_args
+        )
 
     @mock.patch("subprocess.run")
     @mock.patch("slurm_cli.utils.slurm_config.console.print")
@@ -85,7 +87,9 @@ class TestConfigUpdate:
         Config.update("test")
 
         call_args = [str(c) for c in mock_print.call_args_list]
-        assert any("Failed" in str(c) or "red" in str(c) for c in call_args)
+        assert any(
+            "Failed" in str(c) or "red" in str(c) for c in call_args
+        )
 
     @mock.patch("subprocess.run")
     @mock.patch("slurm_cli.utils.slurm_config.console.print")
@@ -117,7 +121,9 @@ class TestConfigShow:
         assert "show" in args
         assert "config" in args
         assert "--json" in args
-        mock_print_json.assert_called_once_with('{"ClusterName": "test"}')
+        mock_print_json.assert_called_once_with(
+            '{"ClusterName": "test"}'
+        )
 
     @mock.patch("subprocess.run")
     @mock.patch("slurm_cli.utils.slurm_config.console.print")
@@ -164,7 +170,9 @@ class TestConfigShow:
         Config.show()
 
         call_args = [str(c) for c in mock_print.call_args_list]
-        assert any("Failed" in str(c) or "red" in str(c) for c in call_args)
+        assert any(
+            "Failed" in str(c) or "red" in str(c) for c in call_args
+        )
 
     @mock.patch("subprocess.run")
     @mock.patch("slurm_cli.utils.slurm_config.console.print")
@@ -177,7 +185,9 @@ class TestConfigShow:
         Config.show(style="json")
 
         call_args = [str(c) for c in mock_print.call_args_list]
-        assert any("Failed" in str(c) or "red" in str(c) for c in call_args)
+        assert any(
+            "Failed" in str(c) or "red" in str(c) for c in call_args
+        )
 
     @mock.patch("subprocess.run")
     @mock.patch("slurm_cli.utils.slurm_config.console.print_json")
@@ -281,4 +291,3 @@ class TestConfigInheritance:
         # Config doesn't implement create/delete like other resources
         # but may inherit stubs from base class
         pass
-

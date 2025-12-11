@@ -5,7 +5,7 @@ import json
 import subprocess
 import sys
 from contextlib import redirect_stdout
-from unittest.mock import patch, MagicMock
+from unittest.mock import MagicMock, patch
 
 import pytest  # noqa: F401
 
@@ -15,7 +15,9 @@ sys.path.insert(0, "src")
 from slurm_cli.utils.nodes import Node  # noqa: E402
 
 
-def create_mock_subprocess_result(stdout: str = "", returncode: int = 0):
+def create_mock_subprocess_result(
+    stdout: str = "", returncode: int = 0
+):
     """Create a mock subprocess.CompletedProcess result."""
     mock_result = MagicMock()
     mock_result.stdout = stdout
@@ -594,4 +596,3 @@ class TestNodeInheritance:
         assert callable(Node.show_csv)
         assert callable(Node.show_one_pretty)
         assert callable(Node.max_width)
-

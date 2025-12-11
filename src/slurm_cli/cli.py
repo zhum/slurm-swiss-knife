@@ -102,7 +102,7 @@ def resolve_command_alias(command: str) -> str:
     main_commands = {
         "show": ["show", "get"],
         "create": ["new", "add", "create"],
-        "update": ["edit", "change", "modify", "update"],
+        "update": ["edit", "change", "modify", "update", "set"],
         "delete": ["delete", "remove", "rm"],
         "list-resources": ["ls", "list"],
         "autocomplete": ["autocomplete"],
@@ -626,11 +626,6 @@ def register_commands() -> None:
     main.add_command(help, name="help")
     main.add_command(version, name="version")
 
-    # for command, aliases in COMMANDS_ALIASES.items():
-    #     command = command.replace("-", "_")
-    #     for alias in aliases:
-    #         main.add_command(globals()[command], name=alias)
-
     # Modify help text to show aliases inline
     show.help = "Show information about Slurm resources (aliases: get)"
     update.help = (
@@ -896,6 +891,10 @@ def update(
 
     # Parse additional arguments into key-value pairs
     update_options = {}
+    # Include value if it's a key=value format
+    if value and "=" in value:
+        key, value_part = value.split("=", 1)
+        update_options[key] = value_part
     if names:
         for arg in names:
             if "=" in arg:
@@ -905,6 +904,51 @@ def update(
             else:
                 # Treat as a simple value
                 update_options[arg] = None
+
+    # Special handling for accounts with WHERE/SET syntax
+    # Format: modify accounts key=value [...] set newkey=newvalue [...]
+    if canonical_resource[:3] == "acc" and "=" in field:
+        # WHERE mode - collect all args and split on "set"
+        all_args = [field, value] + list(names) if value else [field]
+        where_conditions = []
+        set_values = []
+        found_set = False
+
+        for arg in all_args:
+            if arg and arg.lower() == "set":
+                found_set = True
+                continue
+            if arg:
+                if found_set:
+                    set_values.append(arg)
+                else:
+                    where_conditions.append(arg)
+
+        if not found_set or not set_values:
+            console.print(
+                "[red]WHERE mode requires 'set' keyword followed by "
+                "values to set.[/red]"
+            )
+            console.print(
+                "Usage: modify accounts key=value [...] set "
+                "newkey=newvalue [...]"
+            )
+            return
+
+        if dry_run:
+            console.print(
+                f"[yellow]DRY RUN:[/yellow] Would update accounts "
+                f"where {' '.join(where_conditions)} "
+                f"set {' '.join(set_values)}"
+            )
+        else:
+            Account.update(
+                "",
+                verbose,
+                where_conditions=where_conditions,
+                set_values=set_values,
+            )
+        return
 
     # Build the update message
     if names:
@@ -942,16 +986,32 @@ def update(
                     f"[red]Resource '{canonical_resource}' not found.[/red]"
                 )
     else:
-        # If no additional arguments, show general update message
-        if dry_run:
-            console.print(
-                f"[yellow]DRY RUN:[/yellow] Would update "
-                f"{canonical_resource} {field} '{value}'"
-            )
+        # Simple mode: modify accounts NAME key=value
+        if canonical_resource[:3] == "acc":
+            if dry_run:
+                console.print(
+                    f"[yellow]DRY RUN:[/yellow] Would update "
+                    f"account {field} set {value}"
+                )
+            else:
+                Account.update(
+                    field,
+                    verbose,
+                    **{value.split("=")[0]: value.split("=")[1]}
+                    if "=" in value
+                    else {},
+                )
         else:
-            console.print(
-                f"Updating {canonical_resource} {field} '{value}'"
-            )
+            # If no additional arguments, show general update message
+            if dry_run:
+                console.print(
+                    f"[yellow]DRY RUN:[/yellow] Would update "
+                    f"{canonical_resource} {field} '{value}'"
+                )
+            else:
+                console.print(
+                    f"Updating {canonical_resource} {field} '{value}'"
+                )
 
 
 # Create command group with resource subcommands
@@ -1488,12 +1548,14 @@ _slurm_cli_initialize_autocomplete() {{
 """
     )  # noqa: E501
     print(Reservation.generate_autocomplete_options())
+    print(Qos.generate_autocomplete_options())
+    print(Account.generate_autocomplete_options())
     print(
         """
-
-# Register the completion function
-complete -F _slurm_cli_initialize_autocomplete slurm-cli
-    """
+# Register the completion function for various invocation methods
+complete -o default -o bashdefault -F _slurm_cli_initialize_autocomplete slurm-cli
+complete -o default -o bashdefault -F _slurm_cli_initialize_autocomplete ./slurm-cli
+    """  # noqa: E501
     )
     return
 

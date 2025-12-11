@@ -14,7 +14,18 @@ class User(BaseSlurmResource):
         self.kwargs = kwargs
 
     @classmethod
-    def create(cls, name: str, **kwargs: Any) -> None:
+    def get_profile_fields(cls) -> dict:
+        """Return field names and descriptions for profile templates."""
+        return {
+            "name": "Username",
+            "default_account": "Default account",
+            "admin_level": "Admin level",
+        }
+
+    @classmethod
+    def create(
+        cls, name: str, verbose: bool = False, **kwargs: Any
+    ) -> None:
         """Create a new user."""
         console.print(f"Creating user: {name}")
         args = ["sacctmgr", "create", "user", name]

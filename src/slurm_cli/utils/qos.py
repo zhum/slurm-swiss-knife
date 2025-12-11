@@ -2,7 +2,7 @@
 
 import json
 import subprocess
-from typing import Any, Optional
+from typing import Any, List, Optional
 
 from rich.box import SIMPLE_HEAVY
 from rich.table import Table
@@ -11,6 +11,88 @@ from .base_resource import BaseSlurmResource
 from .profiles import format_with_template, get_profile_config
 from .utils import console
 
+# QoS configuration options (sacctmgr field names)
+QOS_OPTIONS: List[str] = [
+    "Description",
+    "Flags",
+    "GraceTime",
+    "GrpJobs",
+    "GrpJobsAccrue",
+    "GrpSubmit",
+    "GrpSubmitJobs",
+    "GrpTRES",
+    "GrpTRESMins",
+    "GrpTRESRunMins",
+    "GrpWall",
+    "LimitFactor",
+    "MaxJobsAccruePA",
+    "MaxJobsAccruePerAccount",
+    "MaxJobsAccruePU",
+    "MaxJobsAccruePerUser",
+    "MaxJobsPA",
+    "MaxJobsPerAccount",
+    "MaxJobsPU",
+    "MaxJobsPerUser",
+    "MaxSubmitJobsPA",
+    "MaxSubmitJobsPerAccount",
+    "MaxSubmitJobsPU",
+    "MaxSubmitJobsPerUser",
+    "MaxTRES",
+    "MaxTRESPJ",
+    "MaxTRESPerJob",
+    "MaxTRESMins",
+    "MaxTRESMinsPJ",
+    "MaxTRESMinsPerJob",
+    "MaxTRESPA",
+    "MaxTRESPerAccount",
+    "MaxTRESPN",
+    "MaxTRESPerNode",
+    "MaxTRESPU",
+    "MaxTRESPerUser",
+    "MaxTRESRunMinsPA",
+    "MaxTRESRunMinsPerAccount",
+    "MaxTRESRunMinsPU",
+    "MaxTRESRunMinsPerUser",
+    "MaxWall",
+    "MaxWallDurationPerJob",
+    "MinPrioThreshold",
+    "MinTRES",
+    "MinTRESPerJob",
+    "Name",
+    "Preempt",
+    "PreemptExemptTime",
+    "PreemptMode",
+    "Priority",
+    "RawUsage",
+    "UsageFactor",
+    "UsageThreshold",
+]
+
+# Valid QoS flags
+QOS_FLAGS: List[str] = [
+    "DenyOnLimit",
+    "EnforceUsageThreshold",
+    "NoDecay",
+    "NoReserve",
+    "OverPartQOS",
+    "PartitionMaxNodes",
+    "PartitionMinNodes",
+    "PartitionTimeLimit",
+    "Relative",
+    "RequiresReservation",
+    "UsageFactorSafe",
+]
+
+# Valid PreemptMode values
+PREEMPT_MODE_VALUES: List[str] = [
+    "OFF",
+    "CANCEL",
+    "GANG",
+    "REQUEUE",
+    "SUSPEND",
+    "WITHIN",
+]
+
 
 class Qos(BaseSlurmResource):
     def __init__(self, name: str, **kwargs: Any):
@@ -18,7 +100,52 @@ class Qos(BaseSlurmResource):
         self.kwargs = kwargs
 
     @classmethod
-    def create(cls, name: str, **kwargs: Any) -> None:
+    def get_profile_fields(cls) -> dict:
+        """Return field names and descriptions for profile templates."""
+        return {
+            "name": "QoS name",
+            "id": "QoS ID",
+            "description": "QoS description",
+            "priority": "Priority value",
+            "usage_factor": "Usage factor (default: 1.0)",
+            "usage_threshold": "Usage threshold",
+            "grace_time": "Grace time in seconds",
+            "flags": f"QoS flags: {', '.join(QOS_FLAGS)}",
+            "preempt_mode": f"Preempt mode: {', '.join(PREEMPT_MODE_VALUES)}",
+            "preempt_list": "List of QoS names that can be preempted",
+            "preempt_exempt_time": "Preempt exempt time in seconds",
+            "limit_factor": "Limit factor",
+            "min_prio_threshold": "Minimum priority threshold",
+            "grp_jobs": "Max running jobs for all users in QoS",
+            "grp_jobs_accrue": "Max accruing jobs for all users in QoS",
+            "grp_submit": "Max submitted jobs for all users in QoS",
+            "grp_tres": "Max TRES for all users in QoS",
+            "grp_tres_mins": "Max TRES minutes for all users in QoS",
+            "grp_tres_run_mins": "Max TRES run mins for all users",
+            "grp_wall": "Max wall clock time for all users in QoS",
+            "max_jobs_per_user": "Max running jobs per user",
+            "max_jobs_per_account": "Max running jobs per account",
+            "max_jobs_accrue_per_user": "Max accruing jobs per user",
+            "max_jobs_accrue_per_account": "Max accruing jobs per account",
+            "max_submit_jobs_per_user": "Max submitted jobs per user",
+            "max_submit_jobs_per_account": "Max submitted jobs per account",
+            "max_wall": "Max wall clock time per job",
+            "max_tres_per_job": "Max TRES per job",
+            "max_tres_per_user": "Max TRES per user",
+            "max_tres_per_account": "Max TRES per account",
+            "max_tres_per_node": "Max TRES per node",
+            "max_tres_mins_per_job": "Max TRES minutes per job",
+            "max_tres_run_mins_per_user": "Max TRES run mins per user",
+            "max_tres_run_mins_per_account": "Max TRES run mins per account",
+            "max_tres_total": "Max TRES total",
+            "min_tres_per_job": "Min TRES per job",
+            "raw_usage": "Raw usage value",
+        }
+
+    @classmethod
+    def create(
+        cls, name: str, verbose: bool = False, **kwargs: Any
+    ) -> None:
         """Create a new QoS."""
         console.print(f"Creating QoS: {name}")
         args = ["sacctmgr", "create", "qos", name]
@@ -509,3 +636,74 @@ class Qos(BaseSlurmResource):
         result["max_tres_total"] = format_tres(tres.get("total", []))
 
         return result
+
+    @classmethod
+    def generate_autocomplete_options(cls) -> str:
+        """Generate bash autocomplete script for QoS options."""
+        # Generate option keys for completion (with = suffix)
+        valid_keys = [opt.lower() for opt in QOS_OPTIONS]
+        flags_str = " ".join(QOS_FLAGS)
+        preempt_modes_str = " ".join(PREEMPT_MODE_VALUES)
+
+        script = f"""
+_slurm_cli_qos_autocomplete() {{
+    # slurm-cli -x -y -z COMMAND qos name key=value
+    #                    cmd         ^ pos      ^ COMP_CWORD
+    local cmd="$1"
+    local pos="$2"
+
+    name="${{COMP_WORDS[$pos]}}"
+    cur="${{COMP_WORDS[COMP_CWORD]}}"
+    prev="${{COMP_WORDS[COMP_CWORD-1]}}"
+
+    # If we're on the name field (right after 'qos')
+    if [[ $name == qos && $prev == qos ]]; then
+        if [ -f "/tmp/slurm_cli_qos.json" ]; then
+            COMPREPLY=($(compgen -W "$(jq -r 'keys[]' /tmp/slurm_cli_qos.json)" -- "$cur"))
+        fi
+        return
+    fi
+
+    case "$cmd" in
+        show|delete)
+            return
+            ;;
+        create|update)
+            # Check if we're completing a value (after =)
+            if [[ $cur == = || $prev == = ]]; then
+                local key
+                if [[ $cur == = ]]; then
+                    key=${{COMP_WORDS[COMP_CWORD-1]}}
+                else
+                    key=${{COMP_WORDS[COMP_CWORD-2]}}
+                fi
+                key=${{key,,}}  # lowercase
+
+                case "$key" in
+                    flags)
+                        COMPREPLY=($(compgen -W "{flags_str}" -- "${{cur#*=}}"))
+                        ;;
+                    preemptmode)
+                        COMPREPLY=($(compgen -W "{preempt_modes_str}" -- "${{cur#*=}}"))
+                        ;;
+                    preempt)
+                        if [ -f "/tmp/slurm_cli_qos.json" ]; then
+                            COMPREPLY=($(compgen -W "$(jq -r 'keys[]' /tmp/slurm_cli_qos.json)" -- "${{cur#*=}}"))
+                        fi
+                        ;;
+                esac
+                return
+            else
+                # Completing an option name
+                local -a valid_keys=({'= '.join(valid_keys)}=)
+                if [[ $cur == '' ]]; then
+                    COMPREPLY=(${{valid_keys[@]}})
+                else
+                    COMPREPLY=($(compgen -W "${{valid_keys[*]}}" "$cur"))
+                fi
+            fi
+            ;;
+    esac
+}}
+"""  # noqa: E501
+        return script

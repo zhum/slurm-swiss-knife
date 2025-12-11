@@ -89,7 +89,9 @@ class TestGuessResourceType:
 
     @mock.patch.object(Resource, "cached_resource_list")
     @mock.patch.object(Resource, "cached_resource")
-    def test_guess_jobs_by_underscore_numeric(self, mock_cached, mock_list):
+    def test_guess_jobs_by_underscore_numeric(
+        self, mock_cached, mock_list
+    ):
         """Test guessing jobs by numeric with underscore."""
         mock_list.return_value = []
         result, _ = Resource.guess_resource_type("123_456")
@@ -307,8 +309,12 @@ class TestUpdateCache:
             original_files = dict(Resource.CACHE_FILES)
             original_list = dict(Resource.CACHE_LIST_FILES)
             try:
-                Resource.CACHE_FILES["partitions"] = f"{tmpdir}/part.json"
-                Resource.CACHE_LIST_FILES["partitions"] = f"{tmpdir}/part.list"
+                Resource.CACHE_FILES[
+                    "partitions"
+                ] = f"{tmpdir}/part.json"
+                Resource.CACHE_LIST_FILES[
+                    "partitions"
+                ] = f"{tmpdir}/part.list"
 
                 result = Resource.update_cache("partitions")
 
@@ -332,10 +338,12 @@ class TestUpdateCache:
             original_files = dict(Resource.CACHE_FILES)
             original_list = dict(Resource.CACHE_LIST_FILES)
             try:
-                Resource.CACHE_FILES["reservations"] = f"{tmpdir}/res.json"
-                Resource.CACHE_LIST_FILES["reservations"] = (
-                    f"{tmpdir}/res.list"
-                )
+                Resource.CACHE_FILES[
+                    "reservations"
+                ] = f"{tmpdir}/res.json"
+                Resource.CACHE_LIST_FILES[
+                    "reservations"
+                ] = f"{tmpdir}/res.list"
 
                 result = Resource.update_cache("reservations")
 
@@ -361,7 +369,9 @@ class TestUpdateCache:
             original_list = dict(Resource.CACHE_LIST_FILES)
             try:
                 Resource.CACHE_FILES["nodes"] = f"{tmpdir}/nodes.json"
-                Resource.CACHE_LIST_FILES["nodes"] = f"{tmpdir}/nodes.list"
+                Resource.CACHE_LIST_FILES[
+                    "nodes"
+                ] = f"{tmpdir}/nodes.list"
 
                 result = Resource.update_cache("nodes")
 
@@ -429,7 +439,9 @@ class TestCachedResource:
 
     @mock.patch.object(Resource, "update_cache")
     @mock.patch("slurm_cli.utils.resources.console.status")
-    def test_cached_resource_expired_cache(self, mock_status, mock_update):
+    def test_cached_resource_expired_cache(
+        self, mock_status, mock_update
+    ):
         """Test updating expired cache."""
         mock_update.return_value = {"updated": "data"}
         mock_status.return_value.__enter__ = mock.Mock()
@@ -461,7 +473,9 @@ class TestCachedResource:
 
     @mock.patch.object(Resource, "update_cache")
     @mock.patch("slurm_cli.utils.resources.console.status")
-    def test_cached_resource_force_update(self, mock_status, mock_update):
+    def test_cached_resource_force_update(
+        self, mock_status, mock_update
+    ):
         """Test forcing cache update."""
         mock_update.return_value = {"forced": "data"}
         mock_status.return_value.__enter__ = mock.Mock()
@@ -477,7 +491,9 @@ class TestCachedResource:
                 with open(cache_file, "w") as f:
                     json.dump({"cached": "data"}, f)
 
-                result = Resource.cached_resource("qos", force_update=True)
+                result = Resource.cached_resource(
+                    "qos", force_update=True
+                )
 
                 assert result == {"forced": "data"}
                 mock_update.assert_called_once()
@@ -794,4 +810,3 @@ PartitionName=cpu
 
         assert result["test"]["Nodes"] == "node[001-010,020-030]"
         assert result["test"]["AllowGroups"] == "group1,group2"
-

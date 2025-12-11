@@ -8,8 +8,23 @@
 # Get the directory where this script is located (same as mocks directory)
 MOCKS_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
+# Find command and resource by skipping flags
+CMD=""
+RESOURCE=""
+for arg in "$@"; do
+    if [[ "$arg" == -* ]]; then
+        continue  # Skip flags
+    fi
+    if [ -z "$CMD" ]; then
+        CMD="$arg"
+    elif [ -z "$RESOURCE" ]; then
+        RESOURCE="$arg"
+        break
+    fi
+done
+
 # Parse arguments (sacctmgr can have format= anywhere in the command)
-if [ "$1" = "show" ] && [ "$2" = "qos" ]; then
+if [ "$CMD" = "show" ] && [ "$RESOURCE" = "qos" ]; then
     # Check if --json is in arguments
     if [[ "$*" == *"--json"* ]]; then
         if [ -f "$MOCKS_DIR/data/qos.json" ]; then
@@ -26,7 +41,7 @@ if [ "$1" = "show" ] && [ "$2" = "qos" ]; then
             exit 1
         fi
     fi
-elif [ "$1" = "show" ] && [ "$2" = "accounts" ]; then
+elif [ "$CMD" = "show" ] && [ "$RESOURCE" = "accounts" ]; then
     # Check if --json is in arguments
     if [[ "$*" == *"--json"* ]]; then
         if [ -f "$MOCKS_DIR/data/accounts.json" ]; then
@@ -43,7 +58,7 @@ elif [ "$1" = "show" ] && [ "$2" = "accounts" ]; then
             exit 1
         fi
     fi
-elif [ "$1" = "show" ] && [ "$2" = "users" ]; then
+elif [ "$CMD" = "show" ] && [ "$RESOURCE" = "users" ]; then
     # Check if --json is in arguments
     if [[ "$*" == *"--json"* ]]; then
         if [ -f "$MOCKS_DIR/data/users.json" ]; then
@@ -60,15 +75,15 @@ elif [ "$1" = "show" ] && [ "$2" = "users" ]; then
             exit 1
         fi
     fi
-elif [ "$1" = "create" ] || [ "$1" = "add" ]; then
+elif [ "$CMD" = "create" ] || [ "$CMD" = "add" ]; then
     # Mock create/add command - print the command that would be executed
     echo "MOCK: sacctmgr $*"
     exit 0
-elif [ "$1" = "modify" ] || [ "$1" = "update" ]; then
+elif [ "$CMD" = "modify" ] || [ "$CMD" = "update" ]; then
     # Mock modify/update command - print the command that would be executed
     echo "MOCK: sacctmgr $*"
     exit 0
-elif [ "$1" = "delete" ] || [ "$1" = "remove" ]; then
+elif [ "$CMD" = "delete" ] || [ "$CMD" = "remove" ]; then
     # Mock delete/remove command - print the command that would be executed
     echo "MOCK: sacctmgr $*"
     exit 0
