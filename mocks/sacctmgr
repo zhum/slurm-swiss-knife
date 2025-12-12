@@ -75,6 +75,23 @@ elif [ "$CMD" = "show" ] && [ "$RESOURCE" = "users" ]; then
             exit 1
         fi
     fi
+elif [ "$CMD" = "show" ] && [ "$RESOURCE" = "associations" ]; then
+    # Check if --json is in arguments
+    if [[ "$*" == *"--json"* ]]; then
+        if [ -f "$MOCKS_DIR/data/associations.json" ]; then
+            cat "$MOCKS_DIR/data/associations.json"
+        else
+            echo "Error: associations.json file not found in $MOCKS_DIR/data" >&2
+            exit 1
+        fi
+    else
+        if [ -f "$MOCKS_DIR/data/associations" ]; then
+            cat "$MOCKS_DIR/data/associations"
+        else
+            echo "Error: associations file not found in $MOCKS_DIR/data" >&2
+            exit 1
+        fi
+    fi
 elif [ "$CMD" = "create" ] || [ "$CMD" = "add" ]; then
     # Mock create/add command - print the command that would be executed
     echo "MOCK: sacctmgr $*"

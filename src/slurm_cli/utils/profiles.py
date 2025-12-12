@@ -105,6 +105,15 @@ DEFAULT_PROFILES: Dict[str, Dict[str, Any]] = {
                 "name": "cyan",
             },
         },
+        "associations": {
+            "columns": "*",
+            "styles": {
+                "account": "cyan",
+                "user": "green",
+                "cluster": "yellow",
+                "partition": "magenta",
+            },
+        },
     },
     "compact": {
         "accounts": {
@@ -141,6 +150,10 @@ DEFAULT_PROFILES: Dict[str, Dict[str, Any]] = {
             "columns": ["name", "default_account"],
             "styles": {"name": "cyan"},
         },
+        "associations": {
+            "columns": ["account", "user", "cluster", "partition"],
+            "styles": {"account": "cyan"},
+        },
     },
     "minimal": {
         "accounts": {"columns": ["name"]},
@@ -150,6 +163,7 @@ DEFAULT_PROFILES: Dict[str, Dict[str, Any]] = {
         "reservations": {"columns": ["name"]},
         "coordinators": {"columns": ["account", "name"]},
         "users": {"columns": ["name"]},
+        "associations": {"columns": ["account", "user"]},
     },
     # Template-based profiles
     "oneline": {
@@ -803,6 +817,7 @@ def _get_resource_fields() -> Dict[str, Dict[str, str]]:
     """
     # Import here to avoid circular imports
     from .accounts import Account
+    from .associations import Association
     from .coordinators import Coordinator
     from .nodes import Node
     from .partitions import Partition
@@ -812,6 +827,7 @@ def _get_resource_fields() -> Dict[str, Dict[str, str]]:
 
     return {
         "accounts": Account.get_profile_fields(),
+        "associations": Association.get_profile_fields(),
         "qos": Qos.get_profile_fields(),
         "reservations": Reservation.get_profile_fields(),
         "partitions": Partition.get_profile_fields(),
@@ -847,6 +863,7 @@ def show_profile_help(resource: str) -> bool:
     resource_map = {
         "res": "reservations",
         "acc": "accounts",
+        "assoc": "associations",
         "part": "partitions",
         "node": "nodes",
         "user": "users",

@@ -52,6 +52,13 @@ ROUTES = {
             "partitions": "partitions",
             "qos": "qos",
         },
+        "associations": {
+            "account": "account",
+            "user": "user",
+            "cluster": "cluster",
+            "partition": "partition",
+            "qos": "qos",
+        },
         "reservations": {
             "name": "name",
             "users": "users",
@@ -66,6 +73,7 @@ ROUTES = {
         "users": {},
         "qos": {},
         "accounts": {},
+        "associations": {},
         "reservations": {},
         "coordinators": {},
     },

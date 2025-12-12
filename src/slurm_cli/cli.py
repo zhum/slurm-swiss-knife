@@ -29,6 +29,7 @@ from rich.box import SIMPLE_HEAVY
 from rich.table import Table
 
 from .utils.accounts import Account
+from .utils.associations import Association
 from .utils.config import ROUTES, VERBS
 from .utils.coordinators import Coordinator
 from .utils.nodes import Node
@@ -49,6 +50,7 @@ RESOURCES_ALIASES = {
     "users": ["user"],
     "qos": ["q"],
     "accounts": ["acc", "account"],
+    "associations": ["assoc", "association"],
     "reservations": ["res", "reservation"],
     "coordinators": ["coord", "coordinator"],
 }
@@ -278,7 +280,7 @@ def ensure_resource_name(
         return "problems", field, []
     elif resource[:4] == "stat":
         return "stats", field, []
-    elif resource[:4] == "assoc":
+    elif resource[:5] == "assoc":
         return "associations", field, []
     elif resource[:4] == "dump":
         return "dump", field, []
@@ -823,6 +825,24 @@ def show(
                 profile=profile,
                 profile_str=profile_str,
             )
+    elif canonical_resource[:5] == "assoc":
+        if field:
+            Association.show(
+                field=field,
+                style=style,
+                delimiter=delimiter,
+                zebra=zebra,
+                profile=profile,
+                profile_str=profile_str,
+            )
+        else:
+            Association.show(
+                style=style,
+                delimiter=delimiter,
+                zebra=zebra,
+                profile=profile,
+                profile_str=profile_str,
+            )
     elif canonical_resource[:5] == "coord":
         if field:
             Coordinator.show(
@@ -905,9 +925,12 @@ def update(
                 # Treat as a simple value
                 update_options[arg] = None
 
-    # Special handling for accounts with WHERE/SET syntax
+    # Special handling for accounts/associations with WHERE/SET syntax
     # Format: modify accounts key=value [...] set newkey=newvalue [...]
-    if canonical_resource[:3] == "acc" and "=" in field:
+    if (
+        canonical_resource[:3] == "acc"
+        or canonical_resource[:5] == "assoc"
+    ) and "=" in field:
         # WHERE mode - collect all args and split on "set"
         all_args = [field, value] + list(names) if value else [field]
         where_conditions = []
@@ -930,24 +953,32 @@ def update(
                 "values to set.[/red]"
             )
             console.print(
-                "Usage: modify accounts key=value [...] set "
+                f"Usage: modify {canonical_resource} key=value [...] set "
                 "newkey=newvalue [...]"
             )
             return
 
         if dry_run:
             console.print(
-                f"[yellow]DRY RUN:[/yellow] Would update accounts "
+                f"[yellow]DRY RUN:[/yellow] Would update {canonical_resource} "
                 f"where {' '.join(where_conditions)} "
                 f"set {' '.join(set_values)}"
             )
         else:
-            Account.update(
-                "",
-                verbose,
-                where_conditions=where_conditions,
-                set_values=set_values,
-            )
+            if canonical_resource[:5] == "assoc":
+                Association.update(
+                    "",
+                    verbose,
+                    where_conditions=where_conditions,
+                    set_values=set_values,
+                )
+            else:
+                Account.update(
+                    "",
+                    verbose,
+                    where_conditions=where_conditions,
+                    set_values=set_values,
+                )
         return
 
     # Build the update message
@@ -975,6 +1006,8 @@ def update(
                 Qos.update(field, verbose, **update_options)
             elif canonical_resource[:3] == "acc":
                 Account.update(field, verbose, **update_options)
+            elif canonical_resource[:5] == "assoc":
+                Association.update(field, verbose, **update_options)
             elif canonical_resource[:3] == "res":
                 Reservation.update(field, verbose, **update_options)
             elif canonical_resource[:5] == "coord":
@@ -986,7 +1019,7 @@ def update(
                     f"[red]Resource '{canonical_resource}' not found.[/red]"
                 )
     else:
-        # Simple mode: modify accounts NAME key=value
+        # Simple mode: modify accounts/associations NAME key=value
         if canonical_resource[:3] == "acc":
             if dry_run:
                 console.print(
@@ -995,6 +1028,20 @@ def update(
                 )
             else:
                 Account.update(
+                    field,
+                    verbose,
+                    **{value.split("=")[0]: value.split("=")[1]}
+                    if "=" in value
+                    else {},
+                )
+        elif canonical_resource[:5] == "assoc":
+            if dry_run:
+                console.print(
+                    f"[yellow]DRY RUN:[/yellow] Would update "
+                    f"association account={field} set {value}"
+                )
+            else:
+                Association.update(
                     field,
                     verbose,
                     **{value.split("=")[0]: value.split("=")[1]}
@@ -1169,10 +1216,43 @@ def delete(
 
     # Handle multiple names - prioritize positional names over --name option
     if names:
-        resource_names = names
+        resource_names = list(names)
     elif name:
         resource_names = [name]
     else:
+        resource_names = []
+
+    # Special handling for associations - all args are filter conditions
+    if canonical_resource == "associations":
+        if not resource_names:
+            console.print(
+                "[red]No conditions specified. Use key=value pairs "
+                "(e.g., user=john partition=batch)[/red]"
+            )
+            return
+
+        # All names are filter conditions for associations
+        conditions_str = " ".join(resource_names)
+
+        if dry_run:
+            console.print(
+                f"[yellow]DRY RUN:[/yellow] Would delete associations "
+                f"where {conditions_str}"
+            )
+            return
+
+        if not force and not click.confirm(
+            f"Are you sure you want to delete associations "
+            f"where {conditions_str}?"
+        ):
+            console.print("[red]Operation cancelled.[/red]")
+            raise click.Abort()
+
+        Association.delete(resource_names, dry_run=dry_run, force=True)
+        return
+
+    # Standard handling for other resources
+    if not resource_names:
         resource_names = [None]
 
     for resource_name in resource_names:
@@ -1198,10 +1278,6 @@ def delete(
 
         if resource_name:
             if verbose:
-                console.print(
-                    f"Deleting {canonical_resource} '{resource_name}'"
-                )
-            else:
                 console.print(
                     f"Deleting {canonical_resource} '{resource_name}'"
                 )
@@ -1550,6 +1626,7 @@ _slurm_cli_initialize_autocomplete() {{
     print(Reservation.generate_autocomplete_options())
     print(Qos.generate_autocomplete_options())
     print(Account.generate_autocomplete_options())
+    print(Association.generate_autocomplete_options())
     print(
         """
 # Register the completion function for various invocation methods
