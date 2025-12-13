@@ -92,6 +92,14 @@ elif [ "$CMD" = "show" ] && [ "$RESOURCE" = "associations" ]; then
             exit 1
         fi
     fi
+elif [ "$CMD" = "list" ] && [ "$RESOURCE" = "event" ]; then
+    # Serve events data (pipe-delimited, no JSON support)
+    if [ -f "$MOCKS_DIR/data/events" ]; then
+        cat "$MOCKS_DIR/data/events"
+    else
+        echo "Error: events file not found in $MOCKS_DIR/data" >&2
+        exit 1
+    fi
 elif [ "$CMD" = "create" ] || [ "$CMD" = "add" ]; then
     # Mock create/add command - print the command that would be executed
     echo "MOCK: sacctmgr $*"

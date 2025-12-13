@@ -32,6 +32,7 @@ from .utils.accounts import Account
 from .utils.associations import Association
 from .utils.config import ROUTES, VERBS
 from .utils.coordinators import Coordinator
+from .utils.events import Event
 from .utils.nodes import Node
 from .utils.partitions import Partition
 from .utils.profiles import is_profile_help, show_profile_help
@@ -53,6 +54,7 @@ RESOURCES_ALIASES = {
     "associations": ["assoc", "association"],
     "reservations": ["res", "reservation"],
     "coordinators": ["coord", "coordinator"],
+    "events": ["event", "ev"],
 }
 
 
@@ -861,6 +863,16 @@ def show(
                 profile=profile,
                 profile_str=profile_str,
             )
+    elif canonical_resource[:5] == "event":
+        Event.show(
+            field=field,
+            style=style,
+            force_cache_update=force_update,
+            delimiter=delimiter,
+            zebra=zebra,
+            profile=profile,
+            profile_str=profile_str,
+        )
     else:
         console.print(f"[red]Resource '{resource}' not found.[/red]")
 
@@ -1422,7 +1434,11 @@ _slurm_cli_initialize_autocomplete() {{
     # Guess the command by prefix, using the same commands as in get_command
     local guessed="no"
     case "$cmd" in
-        s*)
+        se*)
+            guessed="set"
+            cmd="update"
+            ;;
+        sh*|s)
             guessed="show"
             cmd="show"
             ;;
@@ -1458,7 +1474,7 @@ _slurm_cli_initialize_autocomplete() {{
             guessed="modify"
             cmd="update"
             ;;
-        d*)
+        de*)
             guessed="delete"
             cmd="delete"
             ;;
@@ -1553,7 +1569,6 @@ _slurm_cli_initialize_autocomplete() {{
             ;;
         ev*)
             guessed="events"
-            # _slurm_cli_event_autocomplete "$cmd" "$cur" "$prev"
             ;;
         b*)
             guessed="bad"
@@ -1583,13 +1598,22 @@ _slurm_cli_initialize_autocomplete() {{
     # show resource list
     if [[ -z "$resource" ]] || [[ $j -ge $COMP_CWORD ]]; then
         if [[ $guessed != "no" ]]; then
+            # Events are read-only, don't suggest for update/delete
+            if [[ "$guessed" == "events" ]] && [[ "$cmd" == "update" || "$cmd" == "delete" ]]; then
+                return
+            fi
             COMPREPLY=($(compgen -W "$guessed" -- "$cur"))
             return
         else
-            COMPREPLY=($(compgen -W "reservations nodes partitions accounts \\
+            # Base resources for all commands
+            local all_resources="reservations nodes partitions accounts \\
                 qos users coordinators problems stats associations dumps \\
-                events licenses bad runawayjobs tres archives transactions" \\
-                -- "$cur"))
+                licenses bad runawayjobs tres archives transactions"
+            # Events are read-only, only available for show command
+            if [[ "$cmd" == "show" ]]; then
+                all_resources="$all_resources events"
+            fi
+            COMPREPLY=($(compgen -W "$all_resources" -- "$cur"))
             return
         fi
     fi
@@ -1622,13 +1646,14 @@ _slurm_cli_initialize_autocomplete() {{
 
     # echo "${{COMP_REPLY[@]}}"
 }}
-"""
+"""  # noqa: E501
     )  # noqa: E501
     print(Reservation.generate_autocomplete_options())
     print(Qos.generate_autocomplete_options())
     print(Account.generate_autocomplete_options())
     print(Association.generate_autocomplete_options())
     print(Coordinator.generate_autocomplete_options())
+    print(Event.generate_autocomplete_options())
     print(
         """
 # Register the completion function for various invocation methods

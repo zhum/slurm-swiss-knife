@@ -65,6 +65,13 @@ ROUTES = {
             "partitions": "partitions",
         },
         "coordinators": {"user": "user", "accounts": "account"},
+        "events": {
+            "cluster": "cluster",
+            "node": "node",
+            "state": "state",
+            "user": "user",
+            "reason": "reason",
+        },
         "config": {},
     },
     "create": {
