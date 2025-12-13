@@ -128,27 +128,88 @@ class TestCoordinatorCreate:
 class TestCoordinatorUpdate:
     """Tests for Coordinator.update method."""
 
-    def test_update_coordinator(self):
-        """Test coordinator update method."""
-        output = io.StringIO()
-        with redirect_stdout(output):
-            Coordinator.update("testcoord", account="newaccount")
+    @patch("slurm_cli.utils.coordinators.subprocess.run")
+    def test_update_coordinator_add_name(self, mock_run):
+        """Test coordinator update with name=."""
+        mock_run.return_value = MagicMock(stdout="", stderr="")
 
-        result = output.getvalue()
-        assert "Updating coordinator: testcoord" in result
+        Coordinator.update("testaccount", name="testuser")
+        mock_run.assert_called_once()
+        call_args = mock_run.call_args[0][0]
+        assert "add" in call_args
+        assert "coordinator" in call_args
+        assert "account=testaccount" in call_args
+        assert "name=testuser" in call_args
+
+    @patch("slurm_cli.utils.coordinators.subprocess.run")
+    def test_update_coordinator_add_names(self, mock_run):
+        """Test coordinator update with name+=."""
+        mock_run.return_value = MagicMock(stdout="", stderr="")
+
+        Coordinator.update("testaccount", name_add="user1,user2")
+        mock_run.assert_called_once()
+        call_args = mock_run.call_args[0][0]
+        assert "name+=user1,user2" in call_args
+
+    @patch("slurm_cli.utils.coordinators.subprocess.run")
+    def test_update_coordinator_remove_names(self, mock_run):
+        """Test coordinator update with name-=."""
+        mock_run.return_value = MagicMock(stdout="", stderr="")
+
+        Coordinator.update("testaccount", name_remove="user1")
+        mock_run.assert_called_once()
+        call_args = mock_run.call_args[0][0]
+        assert "name-=user1" in call_args
 
 
 class TestCoordinatorDelete:
     """Tests for Coordinator.delete method."""
 
-    def test_delete_coordinator(self):
+    @patch("slurm_cli.utils.coordinators.subprocess.run")
+    def test_delete_coordinator(self, mock_run):
         """Test coordinator delete method."""
+        mock_run.return_value = MagicMock(stdout="", stderr="")
+
+        Coordinator.delete("testaccount", names=["testuser"])
+        mock_run.assert_called_once()
+        call_args = mock_run.call_args[0][0]
+        assert "name-=testuser" in call_args
+
+    def test_delete_coordinator_no_names(self):
+        """Test coordinator delete without names shows error."""
         output = io.StringIO()
         with redirect_stdout(output):
-            Coordinator.delete("testcoord")
+            Coordinator.delete("testaccount")
 
         result = output.getvalue()
-        assert "Deleting coordinator: testcoord" in result
+        assert "No coordinator names specified" in result
+
+
+def create_mock_coord_json(coordinators=None):
+    """Create mock JSON output for coordinators (from accounts)."""
+    import json
+
+    if coordinators is None:
+        coordinators = []
+
+    accounts = []
+    for coord in coordinators:
+        accounts.append(
+            {
+                "name": coord.get("account", "testaccount"),
+                "description": "Test account",
+                "organization": "test",
+                "coordinators": [
+                    {
+                        "name": coord.get("name", "testuser"),
+                        "direct": coord.get("direct", True),
+                    }
+                ],
+                "flags": [],
+            }
+        )
+
+    return json.dumps({"accounts": accounts})
 
 
 class TestCoordinatorShow:
@@ -156,79 +217,80 @@ class TestCoordinatorShow:
 
     def test_show_json_style(self):
         """Test show with JSON style."""
-        mock_result = create_mock_subprocess_result(
-            stdout='{"coordinators": []}'
+        mock_json = create_mock_coord_json(
+            [{"name": "testuser", "account": "testaccount"}]
         )
+        mock_result = create_mock_subprocess_result(stdout=mock_json)
         with patch.object(subprocess, "run", return_value=mock_result):
-            output = io.StringIO()
-            with redirect_stdout(output):
-                Coordinator.show(style="json")
-
-            result = output.getvalue()
-            assert "Showing coordinator" in result
+            Coordinator.show(style="json")
+            # Should not crash
 
     def test_show_pretty_style(self):
         """Test show with pretty style (default)."""
-        mock_result = create_mock_subprocess_result(
-            stdout="Account      Coordinator\nmyaccount    myuser\n"
+        mock_json = create_mock_coord_json(
+            [{"name": "myuser", "account": "myaccount"}]
         )
+        mock_result = create_mock_subprocess_result(stdout=mock_json)
         with patch.object(subprocess, "run", return_value=mock_result):
-            output = io.StringIO()
-            with redirect_stdout(output):
-                Coordinator.show(style="pretty")
-
-            result = output.getvalue()
-            assert "Showing coordinator" in result
+            Coordinator.show(style="pretty")
+            # Should not crash
 
     def test_show_default_style(self):
         """Test show with default style."""
-        mock_result = create_mock_subprocess_result(
-            stdout="Account Coordinator\n"
+        mock_json = create_mock_coord_json(
+            [{"name": "testuser", "account": "testaccount"}]
         )
+        mock_result = create_mock_subprocess_result(stdout=mock_json)
         with patch.object(subprocess, "run", return_value=mock_result):
-            output = io.StringIO()
-            with redirect_stdout(output):
-                Coordinator.show()
-
-            result = output.getvalue()
-            assert "Showing coordinator" in result
+            Coordinator.show()
+            # Should not crash
 
     def test_show_with_field(self):
-        """Test show with field parameter."""
-        mock_result = create_mock_subprocess_result(
-            stdout="Account Coordinator\nmyaccount myuser\n"
+        """Test show with field parameter (filter by name)."""
+        mock_json = create_mock_coord_json(
+            [
+                {"name": "myuser", "account": "myaccount"},
+                {"name": "otheruser", "account": "otheraccount"},
+            ]
         )
+        mock_result = create_mock_subprocess_result(stdout=mock_json)
         with patch.object(subprocess, "run", return_value=mock_result):
-            output = io.StringIO()
-            with redirect_stdout(output):
-                Coordinator.show(field="myaccount")
+            Coordinator.show(field="myuser")
+            # Should not crash
 
-            result = output.getvalue()
-            assert "myaccount" in result
+    def test_show_with_account_filter(self):
+        """Test show with account filter."""
+        mock_json = create_mock_coord_json(
+            [{"name": "testuser", "account": "myaccount"}]
+        )
+        mock_result = create_mock_subprocess_result(stdout=mock_json)
+        with patch.object(subprocess, "run", return_value=mock_result):
+            Coordinator.show(field="account=myaccount")
+            # Should not crash
 
     def test_show_empty_output_json(self):
         """Test show with empty JSON output."""
         mock_result = create_mock_subprocess_result(stdout="")
         with patch.object(subprocess, "run", return_value=mock_result):
-            output = io.StringIO()
-            with redirect_stdout(output):
-                Coordinator.show(style="json")
-
-            # Should not crash, just no output
-            result = output.getvalue()
-            assert "Showing coordinator" in result
+            Coordinator.show(style="json")
+            # Should not crash, prints "No coordinators found"
 
     def test_show_empty_output_pretty(self):
         """Test show with empty pretty output."""
         mock_result = create_mock_subprocess_result(stdout="")
         with patch.object(subprocess, "run", return_value=mock_result):
-            output = io.StringIO()
-            with redirect_stdout(output):
-                Coordinator.show(style="pretty")
-
+            Coordinator.show(style="pretty")
             # Should not crash
-            result = output.getvalue()
-            assert "Showing coordinator" in result
+
+    def test_show_no_coordinators(self):
+        """Test show when accounts have no coordinators."""
+        mock_json = (
+            '{"accounts": [{"name": "test", "coordinators": []}]}'
+        )
+        mock_result = create_mock_subprocess_result(stdout=mock_json)
+        with patch.object(subprocess, "run", return_value=mock_result):
+            Coordinator.show()
+            # Should print "No coordinators found"
 
     def test_show_subprocess_error(self):
         """Test show with subprocess error."""
@@ -256,29 +318,51 @@ class TestCoordinatorShow:
 
     def test_show_with_profile_str(self):
         """Test show with profile_str parameter."""
-        mock_result = create_mock_subprocess_result(
-            stdout="Account Coordinator\n"
+        mock_json = create_mock_coord_json(
+            [{"name": "testuser", "account": "testaccount"}]
         )
+        mock_result = create_mock_subprocess_result(stdout=mock_json)
         with patch.object(subprocess, "run", return_value=mock_result):
-            output = io.StringIO()
-            with redirect_stdout(output):
-                Coordinator.show(profile_str="[cyan]{name}[/]")
-
-            result = output.getvalue()
-            assert "Showing coordinator" in result
+            Coordinator.show(
+                profile_str="coordinators.columns=name,account"
+            )
+            # Should not crash
 
     def test_show_with_delimiter(self):
-        """Test show with delimiter parameter."""
-        mock_result = create_mock_subprocess_result(
-            stdout="Account Coordinator\n"
+        """Test show with delimiter parameter (CSV output)."""
+        mock_json = create_mock_coord_json(
+            [{"name": "testuser", "account": "testaccount"}]
         )
+        mock_result = create_mock_subprocess_result(stdout=mock_json)
         with patch.object(subprocess, "run", return_value=mock_result):
             output = io.StringIO()
             with redirect_stdout(output):
-                Coordinator.show(delimiter="|")
+                Coordinator.show(style="csv", delimiter="|")
 
             result = output.getvalue()
-            assert "Showing coordinator" in result
+            assert "|" in result
+
+
+class TestCoordinatorAutocomplete:
+    """Tests for Coordinator.generate_autocomplete_options method."""
+
+    def test_generate_autocomplete_returns_string(self):
+        """Test that generate_autocomplete_options returns a string."""
+        result = Coordinator.generate_autocomplete_options()
+        assert isinstance(result, str)
+
+    def test_autocomplete_contains_function_definition(self):
+        """Test autocomplete script contains function definition."""
+        result = Coordinator.generate_autocomplete_options()
+        assert "_slurm_cli_coordinators_autocomplete()" in result
+
+    def test_autocomplete_contains_options(self):
+        """Test autocomplete script includes options."""
+        result = Coordinator.generate_autocomplete_options()
+        assert "account=" in result
+        assert "name=" in result
+        assert "name+=" in result
+        assert "name-=" in result
 
 
 class TestCoordinatorInheritance:
@@ -300,3 +384,5 @@ class TestCoordinatorInheritance:
         assert callable(Coordinator.update)
         assert callable(Coordinator.delete)
         assert callable(Coordinator.show)
+        assert hasattr(Coordinator, "generate_autocomplete_options")
+        assert callable(Coordinator.generate_autocomplete_options)

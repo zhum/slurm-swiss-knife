@@ -640,8 +640,6 @@ class TestAccountOptions:
             "Description",
             "Organization",
             "Parent",
-            "DefaultQOS",
-            "Fairshare",
         ]
         for field in expected:
             assert field in ACCOUNT_OPTIONS

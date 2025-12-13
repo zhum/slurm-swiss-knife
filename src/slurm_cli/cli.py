@@ -849,6 +849,7 @@ def show(
                 field=field,
                 style=style,
                 delimiter=delimiter,
+                zebra=zebra,
                 profile=profile,
                 profile_str=profile_str,
             )
@@ -856,6 +857,7 @@ def show(
             Coordinator.show(
                 style=style,
                 delimiter=delimiter,
+                zebra=zebra,
                 profile=profile,
                 profile_str=profile_str,
             )
@@ -1571,7 +1573,6 @@ _slurm_cli_initialize_autocomplete() {{
             ;;
         co*)
             guessed="coordinators"
-            # _slurm_cli_coordinator_autocomplete "$cmd" "$cur" "$prev"
             ;;
     esac
 
@@ -1627,6 +1628,7 @@ _slurm_cli_initialize_autocomplete() {{
     print(Qos.generate_autocomplete_options())
     print(Account.generate_autocomplete_options())
     print(Association.generate_autocomplete_options())
+    print(Coordinator.generate_autocomplete_options())
     print(
         """
 # Register the completion function for various invocation methods
