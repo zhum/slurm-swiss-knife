@@ -321,7 +321,7 @@ def test_style_options_with_aliases(runner):
             call_args = mock_show.call_args
             assert call_args[1]["style"] == "json"
 
-    # Test with 's' alias
+    # Test with 'sho' alias (not 's' which is now ambiguous with 'set')
     with patch("slurm_cli.cli.ensure_resource_name") as mock_ensure:
         mock_ensure.return_value = (
             "partitions",
@@ -332,7 +332,7 @@ def test_style_options_with_aliases(runner):
             "slurm_cli.utils.partitions.Partition.show"
         ) as mock_show:
             result = runner.invoke(
-                main, ["--pretty", "s", "partitions"]
+                main, ["--pretty", "sho", "partitions"]
             )
             assert result.exit_code == 0
             mock_show.assert_called_once()
@@ -368,7 +368,7 @@ def test_force_cache_update_with_aliases(runner):
                 ensure_call_args[0][2] is True
             )  # force_update parameter
 
-    # Test with 's' alias
+    # Test with 'sho' alias (not 's' which is now ambiguous with 'set')
     with patch("slurm_cli.cli.ensure_resource_name") as mock_ensure:
         mock_ensure.return_value = (
             "partitions",
@@ -379,7 +379,7 @@ def test_force_cache_update_with_aliases(runner):
             "slurm_cli.utils.partitions.Partition.show"
         ) as mock_show:
             result = runner.invoke(
-                main, ["--force-update", "s", "partitions"]
+                main, ["--force-update", "sho", "partitions"]
             )
             assert result.exit_code == 0
             mock_show.assert_called_once()

@@ -123,7 +123,7 @@ def resolve_command_alias(command: str) -> str:
     if len(matches) == 1:
         return matches[0][0]
     elif len(matches) > 1:
-        click.fail(
+        raise click.ClickException(
             f"Ambiguous command: {command}. "
             f"Could be: {', '.join([f'{alias}' for _, alias in matches])}"
         )
@@ -498,6 +498,12 @@ def show_command_help_with_resources(
     help="Force update of SLURM data, bypassing cache timeout",
 )
 @click.option(
+    "--yes",
+    "-y",
+    is_flag=True,
+    help="Skip confirmation prompts in delete/update operations",
+)
+@click.option(
     "--cache-timeout",
     "-t",
     type=int,
@@ -528,6 +534,7 @@ def main(
     delimiter: str,
     zebra: bool,
     force_update: bool,
+    yes: bool,
     cache_timeout: int,
     profile: str,
     profile_str: str,
@@ -548,6 +555,7 @@ def main(
     ctx.obj["delimiter"] = delimiter
     ctx.obj["zebra"] = zebra
     ctx.obj["force_update"] = force_update
+    ctx.obj["yes"] = yes
     ctx.obj["profile"] = profile
     ctx.obj["profile_str"] = profile_str
 
@@ -1226,6 +1234,10 @@ def delete(
         show_command_help(ctx, None, True)
         return
 
+    # Get global --yes option from context
+    global_yes = ctx.obj.get("yes", False) if ctx.obj else False
+    skip_confirm = force or global_yes
+
     canonical_resource = resolve_resource_alias(resource)
 
     # Handle multiple names - prioritize positional names over --name option
@@ -1255,7 +1267,7 @@ def delete(
             )
             return
 
-        if not force and not click.confirm(
+        if not skip_confirm and not click.confirm(
             f"Are you sure you want to delete associations "
             f"where {conditions_str}?"
         ):
@@ -1282,7 +1294,7 @@ def delete(
                     f"Would delete {canonical_resource}"
                 )
     else:
-        if not force and not click.confirm(
+        if not skip_confirm and not click.confirm(
             f"Are you sure you want to delete {canonical_resource}"
             + (f" '{resource_name}'" if resource_name else "")
             + "?"

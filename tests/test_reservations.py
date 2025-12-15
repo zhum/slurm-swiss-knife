@@ -184,6 +184,33 @@ class TestReservationCreate:
             "Failed" in str(c) or "red" in str(c) for c in call_args
         )
 
+    @mock.patch("subprocess.run")
+    @mock.patch("slurm_cli.utils.reservations.console.print")
+    def test_create_with_time_aliases(self, mock_print, mock_run):
+        """Test create with start/end aliases for starttime/endtime."""
+        mock_run.return_value = mock.Mock(stdout="", returncode=0)
+
+        # Use 'start' and 'end' aliases
+        Reservation.create(
+            "test-res",
+            start="now",
+            end="2025-12-31T23:59:59",
+            accounts="testaccount",
+        )
+
+        mock_run.assert_called_once()
+        args = mock_run.call_args[0][0]
+        # The options string should contain starttime= and endtime=
+        # (not start= and end=)
+        options_str = " ".join(args)
+        assert "starttime=now" in options_str
+        assert "endtime=2025-12-31T23:59:59" in options_str
+        # Should NOT contain the alias forms
+        assert (
+            "start=" not in options_str or "starttime=" in options_str
+        )
+        assert "end=" not in options_str or "endtime=" in options_str
+
 
 class TestReservationUpdate:
     """Tests for Reservation.update."""
@@ -233,6 +260,26 @@ class TestReservationUpdate:
         Reservation.update("test-res", **{"users-": "olduser"})
 
         mock_run.assert_called_once()
+
+    @mock.patch("subprocess.run")
+    @mock.patch("slurm_cli.utils.reservations.console.print")
+    def test_update_with_time_aliases(self, mock_print, mock_run):
+        """Test update with start/end aliases for starttime/endtime."""
+        mock_run.return_value = mock.Mock(stdout="", returncode=0)
+
+        # Use 'start' and 'end' aliases
+        Reservation.update(
+            "test-res",
+            start="2025-01-01T00:00:00",
+            end="2025-12-31T23:59:59",
+        )
+
+        mock_run.assert_called_once()
+        args = mock_run.call_args[0][0]
+        # The options string should contain starttime= and endtime=
+        options_str = " ".join(args)
+        assert "starttime=2025-01-01T00:00:00" in options_str
+        assert "endtime=2025-12-31T23:59:59" in options_str
 
     @mock.patch("subprocess.run")
     @mock.patch("slurm_cli.utils.reservations.console.print")
@@ -798,6 +845,21 @@ class TestReservationValidArgs:
         for key, value in Reservation.valid_args.items():
             assert "type" in value
             assert "help" in value
+
+    def test_arg_aliases_defined(self):
+        """Test arg_aliases contains expected mappings."""
+        assert "start" in Reservation.arg_aliases
+        assert "end" in Reservation.arg_aliases
+        assert Reservation.arg_aliases["start"] == "starttime"
+        assert Reservation.arg_aliases["end"] == "endtime"
+
+    def test_arg_aliases_point_to_valid_args(self):
+        """Test all aliases point to valid argument names."""
+        for alias, canonical in Reservation.arg_aliases.items():
+            assert canonical in Reservation.valid_args, (
+                f"Alias '{alias}' points to '{canonical}' "
+                "which is not in valid_args"
+            )
 
 
 class TestReservationInheritance:

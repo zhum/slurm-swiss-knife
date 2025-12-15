@@ -41,6 +41,9 @@ class BaseSlurmResource:
     # Subclasses should define their valid_args
     valid_args: Dict[str, Dict[str, str]] = {}
 
+    # Subclasses can define aliases for argument names (short -> canonical)
+    arg_aliases: Dict[str, str] = {}
+
     @classmethod
     def get_profile_fields(cls) -> Dict[str, str]:
         """Return field names and descriptions for profile templates.
@@ -66,6 +69,10 @@ class BaseSlurmResource:
             elif key[-1] == "-":
                 key = key[:-1]
                 arg_type = "delete"
+
+            # Resolve aliases first (e.g., start -> starttime)
+            if key in cls.arg_aliases:
+                key = cls.arg_aliases[key]
 
             # Try to match key as a prefix of exactly one valid_args key
             matches = [

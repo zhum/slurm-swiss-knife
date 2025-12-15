@@ -17,6 +17,12 @@ from .utils import console
 class Reservation(BaseSlurmResource):
     _WIDTH = None
 
+    # Aliases for argument names (short form -> canonical form)
+    arg_aliases = {
+        "start": "starttime",
+        "end": "endtime",
+    }
+
     @classmethod
     def get_profile_fields(cls) -> dict:
         """Return field names and descriptions for profile templates."""
@@ -538,11 +544,21 @@ class Reservation(BaseSlurmResource):
         use jq utility to extract keys from cache files.
         """
 
-        # Get valid argument keys
-        valid_keys = list(cls.valid_args.keys())
-        valid_types = " ".join(
-            [f'[{k}]="{v["type"]}"' for k, v in cls.valid_args.items()]
+        # Get valid argument keys including aliases
+        valid_keys = list(cls.valid_args.keys()) + list(
+            cls.arg_aliases.keys()
         )
+        # Build types dict including aliases pointing to their canonical types
+        valid_types_list = [
+            f'[{k}]="{v["type"]}"' for k, v in cls.valid_args.items()
+        ]
+        # Add alias types (point to same type as canonical)
+        for alias, canonical in cls.arg_aliases.items():
+            if canonical in cls.valid_args:
+                valid_types_list.append(
+                    f'[{alias}]="{cls.valid_args[canonical]["type"]}"'
+                )
+        valid_types = " ".join(valid_types_list)
         script = f"""
 _gen_comreply_for_keyvalues() {{
     local cur="$1"

@@ -1130,6 +1130,32 @@ class TestDeleteCommand:
         # Should show help
         assert result.exit_code == 0 or "Usage" in result.output
 
+    def test_delete_with_global_yes_option(self, runner):
+        """Test delete command with global --yes option skips confirmation."""
+        register_commands()
+        # Without --yes, would prompt for confirmation (and abort in test)
+        # With --yes, should proceed without prompting
+        result = runner.invoke(
+            main,
+            ["--yes", "delete", "partitions", "testpart"],
+        )
+        # Should not show "cancelled" since --yes skips confirmation
+        assert "cancelled" not in result.output.lower()
+        # Should show "Deleting" message
+        assert "delet" in result.output.lower()
+
+    def test_delete_with_short_yes_option(self, runner):
+        """Test delete command with short -y option skips confirmation."""
+        register_commands()
+        result = runner.invoke(
+            main,
+            ["-y", "delete", "partitions", "testpart"],
+        )
+        # Should not show "cancelled" since -y skips confirmation
+        assert "cancelled" not in result.output.lower()
+        # Should show "Deleting" message
+        assert "delet" in result.output.lower()
+
 
 class TestListResourcesCommand:
     """Tests for list-resources command."""
