@@ -4,24 +4,34 @@
 
 ### Core Functionality
 
-- [ ] **Reservations Management**: Add support for managing reservations
+- [x] **Reservations Management**: Add support for managing reservations
   - [x] show
-  - [ ] add
-  - [ ] delete
-  - [ ] update
+  - [x] add
+  - [x] delete
+  - [x] update
 - [ ] **Nodes Management**: Add support for managing nodes
   - [ ] show
   - [ ] add
   - [ ] delete
   - [ ] update
-- [ ] **QOS Management**: Add support for managing qos
-  - [ ] show
-  - [ ] add
+- [x] **QOS Management**: Add support for managing qos
+  - [x] show
+  - [x] create (with autocomplete for QOS_OPTIONS, QOS_FLAGS, PREEMPT_MODE_VALUES)
   - [ ] delete
   - [ ] update
 - [ ] **Partition Management**: Add support for managing partitions
-  - [ ] show
-  - [ ] add
+  - [x] show
+  - [x] create
+  - [ ] delete
+  - [ ] update
+- [ ] **Accounts Management**: Add support for managing accounts
+  - [x] show (with filter support: `organization=nvidia`)
+  - [x] create (with autocomplete for ACCOUNT_OPTIONS)
+  - [ ] delete
+  - [x] update (simple mode and WHERE/SET bulk mode)
+- [ ] **Users Management**: Add support for managing users
+  - [x] show
+  - [x] create
   - [ ] delete
   - [ ] update
 - [ ] **Associations Management**: Add support for managing user-account associations with tree-like display
@@ -30,8 +40,8 @@
   - [ ] delete
   - [ ] update
 - [ ] **Coordinators Management**: Complete coordinator management functionality
-  - [ ] show
-  - [ ] add
+  - [x] show
+  - [x] create
   - [ ] delete
   - [ ] update
 
@@ -75,7 +85,7 @@
 ### Advanced Features
 
 - [ ] **Job Management**: Implement comprehensive job management features (show, update, cancel jobs)
-- [ ] **JSON**: Add json output format
+- [x] **JSON**: Add json output format (--json or --style json)
 - [ ] **Backup/Restore**: Add slurm config backup and restore capabilities
 
 ### Integration & Compatibility
