@@ -1339,13 +1339,29 @@ def delete(
             raise click.Abort()
 
         if resource_name:
-            if verbose:
+            # Call the appropriate resource delete method
+            if canonical_resource[:3] == "qos":
+                Qos.delete(resource_name, verbose=verbose)
+            elif canonical_resource[:4] == "user":
+                User.delete(resource_name)
+            elif canonical_resource[:3] == "acc":
+                Account.delete(resource_name)
+            elif canonical_resource[:3] == "res":
+                Reservation.delete(resource_name)
+            elif canonical_resource[:4] == "part":
+                Partition.delete(resource_name)
+            elif canonical_resource[:4] == "node":
+                Node.delete(resource_name)
+            elif canonical_resource[:5] == "coord":
+                # Coordinators need account and names
+                console.print(
+                    "[red]Use: delete coordinators ACCOUNT "
+                    "names=user1,user2[/red]"
+                )
+            else:
                 console.print(
                     f"Deleting {canonical_resource} '{resource_name}'"
                 )
-            console.print(
-                f"Deleting {canonical_resource} '{resource_name}'"
-            )
         else:
             console.print(f"Deleting {canonical_resource}")
 

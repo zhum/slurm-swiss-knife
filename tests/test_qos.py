@@ -326,14 +326,75 @@ class TestQosUpdate:
 class TestQosDelete:
     """Tests for Qos.delete method."""
 
-    def test_delete_qos(self):
-        """Test QoS delete method."""
-        output = io.StringIO()
-        with redirect_stdout(output):
-            Qos.delete("oldqos")
+    def test_delete_qos_success(self):
+        """Test successful QoS deletion."""
+        mock_result = create_mock_subprocess_result(stdout="")
+        with patch.object(
+            subprocess, "run", return_value=mock_result
+        ) as mock_run:
+            output = io.StringIO()
+            with redirect_stdout(output):
+                Qos.delete("oldqos")
 
-        result = output.getvalue()
-        assert "Deleting QoS: oldqos" in result
+            mock_run.assert_called_once()
+            call_args = mock_run.call_args[0][0]
+            assert "sacctmgr" in call_args
+            assert "-i" in call_args
+            assert "delete" in call_args
+            assert "qos" in call_args
+            assert "name=oldqos" in call_args
+
+            result = output.getvalue()
+            assert "deleted successfully" in result
+
+    def test_delete_qos_with_stdout(self):
+        """Test QoS deletion with subprocess stdout."""
+        mock_result = create_mock_subprocess_result(
+            stdout="Deleting QoS..."
+        )
+        with patch.object(subprocess, "run", return_value=mock_result):
+            output = io.StringIO()
+            with redirect_stdout(output):
+                Qos.delete("testqos")
+
+            result = output.getvalue()
+            assert "Deleting QoS..." in result
+
+    def test_delete_qos_verbose(self):
+        """Test QoS deletion with verbose output."""
+        mock_result = create_mock_subprocess_result(stdout="")
+        with patch.object(subprocess, "run", return_value=mock_result):
+            output = io.StringIO()
+            with redirect_stdout(output):
+                Qos.delete("testqos", verbose=True)
+
+            result = output.getvalue()
+            assert "Running:" in result
+            assert "deleted successfully" in result
+
+    def test_delete_qos_no_name(self):
+        """Test deletion without name."""
+        with patch.object(subprocess, "run") as mock_run:
+            output = io.StringIO()
+            with redirect_stdout(output):
+                Qos.delete("")
+
+            mock_run.assert_not_called()
+            result = output.getvalue()
+            assert "No QoS name specified" in result
+
+    def test_delete_qos_failure(self):
+        """Test QoS deletion failure handling."""
+        error = subprocess.CalledProcessError(
+            1, "sacctmgr", stderr="QoS not found"
+        )
+        with patch.object(subprocess, "run", side_effect=error):
+            output = io.StringIO()
+            with redirect_stdout(output):
+                Qos.delete("nonexistent")
+
+            result = output.getvalue()
+            assert "Failed to delete QoS" in result
 
 
 class TestQosShow:

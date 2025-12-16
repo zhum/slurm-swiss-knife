@@ -270,10 +270,41 @@ class Qos(BaseSlurmResource):
             )
 
     @classmethod
-    def delete(cls, name: str) -> None:
-        """Delete a QoS."""
-        # TODO: Implement actual QoS deletion using sacctmgr delete qos
-        console.print(f"Deleting QoS: {name}")
+    def delete(cls, name: str, verbose: bool = False) -> None:
+        """Delete a QoS.
+
+        Args:
+            name: QoS name to delete
+            verbose: Enable verbose output
+        """
+        if not name:
+            console.print(
+                "[red]No QoS name specified for deletion.[/red]"
+            )
+            return
+
+        args = ["sacctmgr", "-i", "delete", "qos", f"name={name}"]
+
+        if verbose:
+            console.print(f"Running: {' '.join(args)}")
+
+        try:
+            result = subprocess.run(
+                args,
+                check=True,
+                capture_output=True,
+                text=True,
+            )
+            if result.stdout:
+                console.print(result.stdout)
+            console.print(
+                f"[green]QoS '{name}' deleted successfully.[/green]"
+            )
+        except subprocess.CalledProcessError as e:
+            console.print(
+                f"[red]Failed to delete QoS '{name}':[/red] "
+                f"{e.stderr or e}"
+            )
 
     @classmethod
     def show(
