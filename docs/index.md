@@ -14,33 +14,12 @@ Slurm CLI (`slurm-cli`) is a modern, user-friendly wrapper around Slurm's native
 
 ## Features
 
-<div class="grid cards" markdown>
-
--   :material-console:{ .lg .middle } __Unified CLI__
-
-    ---
-
-    Single interface for all Slurm operations: show, create, update, delete
-
--   :material-format-list-bulleted:{ .lg .middle } __Smart Autocomplete__
-
-    ---
-
-    Context-aware tab completion with fuzzy matching
-
--   :material-palette:{ .lg .middle } __Customizable Output__
-
-    ---
-
-    Profile-based output formatting with Rich markup support
-
--   :material-filter:{ .lg .middle } __Powerful Filtering__
-
-    ---
-
-    Filter resources by any field with key=value syntax
-
-</div>
+| Feature | Description |
+|---------|-------------|
+| **Unified CLI** | Single interface for all Slurm operations: show, create, update, delete |
+| **Smart Autocomplete** | Context-aware tab completion with fuzzy matching |
+| **Customizable Output** | Profile-based output formatting with Rich markup support |
+| **Powerful Filtering** | Filter resources by any field with key=value syntax |
 
 ## Quick Example
 
