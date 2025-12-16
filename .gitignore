@@ -198,3 +198,4 @@ DEL/slurm_swiss_knife/cli.py
 DEL/slurm_swiss_knife/utils/__init__.py
 DEL/slurm_swiss_knife/utils/config.py
 .cursorrules
+site/

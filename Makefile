@@ -34,6 +34,7 @@ format-check: ## Check code formatting
 clean: ## Clean build artifacts
 	rm -rf build/
 	rm -rf dist/
+	rm -rf site/
 	rm -rf *.egg-info/
 	rm -rf .pytest_cache/
 	rm -rf .coverage
@@ -45,10 +46,13 @@ build: ## Build the package
 	poetry build
 
 docs: ## Build documentation
-	poetry run sphinx-build -W -b html docs docs/_build/html
+	poetry run mkdocs build
 
 docs-serve: ## Serve documentation locally
-	poetry run sphinx-autobuild docs docs/_build/html
+	poetry run mkdocs serve
+
+docs-deploy: ## Deploy documentation to GitHub Pages
+	poetry run mkdocs gh-deploy
 
 demo: ## Run the CLI tool
 	poetry run slurm-cli --help

@@ -48,9 +48,11 @@ tox = "^4.0.0"
 isort = "^5.12.0"
 
 [tool.poetry.group.docs.dependencies]
-sphinx = "^5.0.0"
-sphinx-rtd-theme = "^1.0.0"
-myst-parser = "^1.0.0"
+mkdocs = "^1.5.0"
+mkdocs-material = "^9.5.0"
+mkdocstrings = {extras = ["python"], version = "^0.26.0"}
+mkdocs-autorefs = "^1.2.0"
+pymdown-extensions = "^10.0"
 
 [tool.poetry.scripts]
 slurm-cli = "slurm_cli.cli:main"

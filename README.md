@@ -116,7 +116,13 @@ poetry run tox
 ```bash
 make docs
 # or
-poetry run sphinx-build -W -b html docs docs/_build/html
+poetry run mkdocs build
+
+# Serve locally
+make docs-serve
+# or
+poetry run mkdocs serve
+# Then open http://localhost:8000
 ```
 
 ## Project Structure
