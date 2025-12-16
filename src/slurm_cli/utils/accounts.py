@@ -255,6 +255,7 @@ _slurm_cli_accounts_autocomplete() {{
     @classmethod
     def delete(cls, name: str) -> None:
         """Delete an account."""
+        # TODO: Implement actual account deletion using sacctmgr delete account
         console.print(f"Deleting account: {name}")
 
     # Default column configuration for accounts

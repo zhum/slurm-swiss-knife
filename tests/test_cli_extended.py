@@ -1156,6 +1156,30 @@ class TestDeleteCommand:
         # Should show "Deleting" message
         assert "delet" in result.output.lower()
 
+    def test_delete_with_yes_after_command(self, runner):
+        """Test delete command with -y after the command name."""
+        register_commands()
+        result = runner.invoke(
+            main,
+            ["delete", "-y", "partitions", "testpart"],
+        )
+        # Should not show "cancelled" since -y skips confirmation
+        assert "cancelled" not in result.output.lower()
+        # Should show "Deleting" message
+        assert "delet" in result.output.lower()
+
+    def test_delete_with_yes_after_resource(self, runner):
+        """Test delete command with -y after the resource."""
+        register_commands()
+        result = runner.invoke(
+            main,
+            ["delete", "partitions", "-y", "testpart"],
+        )
+        # Should not show "cancelled" since -y skips confirmation
+        assert "cancelled" not in result.output.lower()
+        # Should show "Deleting" message
+        assert "delet" in result.output.lower()
+
 
 class TestListResourcesCommand:
     """Tests for list-resources command."""

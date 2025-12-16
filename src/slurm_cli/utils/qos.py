@@ -172,11 +172,13 @@ class Qos(BaseSlurmResource):
     @classmethod
     def update(cls, name: str, **kwargs: Any) -> None:
         """Update a QoS."""
+        # TODO: Implement actual QoS update using sacctmgr modify qos
         console.print(f"Updating QoS: {name}")
 
     @classmethod
     def delete(cls, name: str) -> None:
         """Delete a QoS."""
+        # TODO: Implement actual QoS deletion using sacctmgr delete qos
         console.print(f"Deleting QoS: {name}")
 
     @classmethod

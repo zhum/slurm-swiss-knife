@@ -9,6 +9,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **QoS Options Constants**: `QOS_OPTIONS`, `QOS_FLAGS`, `PREEMPT_MODE_VALUES` for autocomplete and validation
+- **Account Options Constants**: `ACCOUNT_OPTIONS` for autocomplete and validation
+- **QoS Autocomplete**: Tab completion for QoS create/update with flags and preempt mode values
+- **Account Autocomplete**: Tab completion for account create/update with filter options and `set` keyword
+- **Account Update Modes**: Two update scenarios:
+  1. Simple: `modify accounts NAME key=value [...]`
+  1. WHERE/SET: `modify accounts key=value [...] set newkey=newvalue [...]`
+- **Account Filters**: Filter accounts by field (e.g., `show accounts organization=nvidia`)
+- **Profile Fields Refactoring**: Moved `RESOURCE_FIELDS` into resource classes via `get_profile_fields()` method
+- **Mock sacctmgr Enhancements**: Support for create, modify, delete commands with flag handling
+
+### Fixed
+
+- Fixed `Qos.create()`, `Account.create()`, `Node.create()`, `User.create()` missing `verbose` parameter
+- Fixed autocomplete registration for `./slurm-cli` invocation
+
+## [0.0.0]
+
 - **Output Profiles** for customizing pretty output format
   - Profile files loaded from `/etc/slurm/cli.profiles` or `~/.config/slurm-cli.profiles`
   - `--profile` CLI option to select named profile (default, compact, minimal, oneline, detailed)
@@ -24,6 +42,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Support for 15+ SLURM commands (nodes, partitions, reservations, qos, accounts, users, jobs, config)
   - CI/CD ready - add `mocks/` to PATH for testing without cluster access
 - Python utility `utils/show_part.py` - converted from bash/awk for partition statistics display
+
+## [0.1.0] - 2025-12-15
+
+- Initial release
+- CLI tool for Slurm cluster management
+- Autocomplete functionality for commands and parameters
+- Support for managing partitions, nodes, jobs, users, QoS, accounts, and reservations
+- Interactive command-line interface
+- Rich console output with Click and Rich libraries
+- Fast autocomplete with fuzzy matching
 - Modern Python packaging structure with src layout
 - Comprehensive test suite with pytest
 - Pre-commit hooks configuration
@@ -32,13 +60,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - CI/CD configuration with GitHub Actions
 - Development tools: black, isort, flake8, mypy
 - Tox configuration for multi-environment testing
-- Initial release
-- CLI tool for Slurm cluster management
-- Autocomplete functionality for commands and parameters
-- Support for managing partitions, nodes, jobs, users, QoS, accounts, and reservations
-- Interactive command-line interface
-- Rich console output with Click and Rich libraries
-- Fast autocomplete with fuzzy matching
 
 ### Changed
 

@@ -899,6 +899,12 @@ def show(
     "--verbose", "-v", is_flag=True, help="Enable verbose output"
 )
 @click.option(
+    "--yes",
+    "-y",
+    is_flag=True,
+    help="Skip confirmation prompts (same as global -y)",
+)
+@click.option(
     "--dry-run",
     is_flag=True,
     help="Show what would be updated without making changes",
@@ -919,10 +925,16 @@ def update(
     value: str,
     names: tuple,
     verbose: bool,
+    yes: bool,
     dry_run: bool,
     **kwargs,
 ) -> None:
     """Update Slurm resource fields (aliases: u, edit, mod, modify)."""
+    # Get global --yes option from context, combine with local --yes
+    # global_yes = ctx.obj.get("yes", False) if ctx.obj else False
+    # skip_confirm = (
+    #     yes or global_yes
+    # )  # noqa: F841 - reserved for future use
     # Show help if no resource, field, or value is provided
     if not resource or not field or not value:
         show_command_help(ctx, None, True)
@@ -947,11 +959,12 @@ def update(
                 # Treat as a simple value
                 update_options[arg] = None
 
-    # Special handling for accounts/associations with WHERE/SET syntax
+    # Special handling for accounts/associations/users with WHERE/SET syntax
     # Format: modify accounts key=value [...] set newkey=newvalue [...]
     if (
         canonical_resource[:3] == "acc"
         or canonical_resource[:5] == "assoc"
+        or canonical_resource[:4] == "user"
     ) and "=" in field:
         # WHERE mode - collect all args and split on "set"
         all_args = [field, value] + list(names) if value else [field]
@@ -989,6 +1002,13 @@ def update(
         else:
             if canonical_resource[:5] == "assoc":
                 Association.update(
+                    "",
+                    verbose,
+                    where_conditions=where_conditions,
+                    set_values=set_values,
+                )
+            elif canonical_resource[:4] == "user":
+                User.update(
                     "",
                     verbose,
                     where_conditions=where_conditions,
@@ -1202,6 +1222,12 @@ def create(
     help="Force deletion without confirmation",
 )
 @click.option(
+    "--yes",
+    "-y",
+    is_flag=True,
+    help="Skip confirmation prompts (same as global -y)",
+)
+@click.option(
     "--dry-run",
     is_flag=True,
     help="Show what would be deleted without making changes",
@@ -1224,6 +1250,7 @@ def delete(
     names: tuple,
     name: Optional[str],
     force: bool,
+    yes: bool,
     dry_run: bool,
     verbose: bool,
     **kwargs,
@@ -1234,9 +1261,10 @@ def delete(
         show_command_help(ctx, None, True)
         return
 
-    # Get global --yes option from context
+    # Get global --yes option from context,
+    # combine with local --yes and --force
     global_yes = ctx.obj.get("yes", False) if ctx.obj else False
-    skip_confirm = force or global_yes
+    skip_confirm = force or yes or global_yes
 
     canonical_resource = resolve_resource_alias(resource)
 
@@ -1666,6 +1694,7 @@ _slurm_cli_initialize_autocomplete() {{
     print(Association.generate_autocomplete_options())
     print(Coordinator.generate_autocomplete_options())
     print(Event.generate_autocomplete_options())
+    print(User.generate_autocomplete_options())
     print(
         """
 # Register the completion function for various invocation methods

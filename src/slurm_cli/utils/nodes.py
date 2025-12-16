@@ -71,11 +71,13 @@ class Node(BaseSlurmResource):
     @classmethod
     def update(cls, name: str, **kwargs: Any) -> None:
         """Update a node."""
+        # TODO: Implement actual node update using scontrol update node
         console.print(f"Updating node: {name}")
 
     @classmethod
     def delete(cls, name: str) -> None:
         """Delete a node."""
+        # TODO: Implement actual node deletion using scontrol delete node
         console.print(f"Deleting node: {name}")
 
     @classmethod
