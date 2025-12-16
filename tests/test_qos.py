@@ -116,14 +116,211 @@ class TestQosCreate:
 class TestQosUpdate:
     """Tests for Qos.update method."""
 
-    def test_update_qos(self):
-        """Test QoS update method."""
-        output = io.StringIO()
-        with redirect_stdout(output):
+    def test_update_qos_simple(self):
+        """Test simple QoS update with name."""
+        mock_result = create_mock_subprocess_result(stdout="")
+        with patch.object(
+            subprocess,
+            "run",
+            return_value=mock_result,
+        ) as mock_run:
             Qos.update("normal", priority=200)
 
-        result = output.getvalue()
-        assert "Updating QoS: normal" in result
+            mock_run.assert_called_once()
+            call_args = mock_run.call_args[0][0]
+            assert "sacctmgr" in call_args
+            assert "-i" in call_args
+            assert "modify" in call_args
+            assert "qos" in call_args
+            assert "where" in call_args
+            assert "name=normal" in call_args
+            assert "set" in call_args
+            assert "priority=200" in call_args
+
+    def test_update_qos_with_preemptmode_valid(self):
+        """Test update with valid preempt modes."""
+        for mode in [
+            "OFF",
+            "CANCEL",
+            "GANG",
+            "REQUEUE",
+            "SUSPEND",
+            "WITHIN",
+        ]:
+            mock_result = create_mock_subprocess_result(stdout="")
+            with patch.object(
+                subprocess,
+                "run",
+                return_value=mock_result,
+            ) as mock_run:
+                Qos.update("testqos", preemptmode=mode)
+
+                mock_run.assert_called_once()
+                call_args = mock_run.call_args[0][0]
+                assert f"preemptmode={mode}" in call_args
+
+    def test_update_qos_preemptmode_invalid(self):
+        """Test update with invalid preempt mode."""
+        with patch.object(subprocess, "run") as mock_run:
+            output = io.StringIO()
+            with redirect_stdout(output):
+                Qos.update("testqos", preemptmode="INVALID")
+
+            # Should NOT call subprocess.run
+            mock_run.assert_not_called()
+            result = output.getvalue()
+            assert "Invalid preemptmode" in result
+
+    def test_update_qos_multiple_kwargs(self):
+        """Test update with multiple kwargs."""
+        mock_result = create_mock_subprocess_result(stdout="")
+        with patch.object(
+            subprocess,
+            "run",
+            return_value=mock_result,
+        ) as mock_run:
+            Qos.update(
+                "testqos",
+                priority=100,
+                maxwall=3600,
+                description="Updated QoS",
+            )
+
+            mock_run.assert_called_once()
+            call_args = mock_run.call_args[0][0]
+            assert "priority=100" in call_args
+            assert "maxwall=3600" in call_args
+            assert "description=Updated QoS" in call_args
+
+    def test_update_qos_where_mode(self):
+        """Test update with where conditions."""
+        mock_result = create_mock_subprocess_result(stdout="")
+        with patch.object(
+            subprocess,
+            "run",
+            return_value=mock_result,
+        ) as mock_run:
+            Qos.update(
+                "",
+                where_conditions=["priority=100"],
+                set_values=["priority=200"],
+            )
+
+            mock_run.assert_called_once()
+            call_args = mock_run.call_args[0][0]
+            assert "where" in call_args
+            assert "priority=100" in call_args
+            assert "set" in call_args
+            assert "priority=200" in call_args
+
+    def test_update_qos_where_mode_preemptmode_validation(self):
+        """Test that invalid preemptmode is rejected in WHERE mode."""
+        with patch.object(subprocess, "run") as mock_run:
+            output = io.StringIO()
+            with redirect_stdout(output):
+                Qos.update(
+                    "",
+                    where_conditions=["priority=100"],
+                    set_values=["preemptmode=INVALID"],
+                )
+
+            # Should NOT call subprocess.run
+            mock_run.assert_not_called()
+            result = output.getvalue()
+            assert "Invalid preemptmode" in result
+
+    def test_update_qos_no_name_or_conditions(self):
+        """Test update without name or where conditions."""
+        with patch.object(subprocess, "run") as mock_run:
+            output = io.StringIO()
+            with redirect_stdout(output):
+                Qos.update("")
+
+            # Should NOT call subprocess.run
+            mock_run.assert_not_called()
+            result = output.getvalue()
+            assert "No QoS name or WHERE conditions" in result
+
+    def test_update_qos_failure(self):
+        """Test update failure handling."""
+        error = subprocess.CalledProcessError(
+            1, "sacctmgr", stderr="No matching QoS"
+        )
+        with patch.object(subprocess, "run", side_effect=error):
+            output = io.StringIO()
+            with redirect_stdout(output):
+                Qos.update("nonexistent", priority=100)
+
+            result = output.getvalue()
+            assert "Failed to update QoS" in result
+
+    def test_update_qos_verbose(self):
+        """Test update with verbose flag."""
+        mock_result = create_mock_subprocess_result(stdout="")
+        with patch.object(
+            subprocess,
+            "run",
+            return_value=mock_result,
+        ):
+            output = io.StringIO()
+            with redirect_stdout(output):
+                Qos.update("testqos", verbose=True, priority=100)
+
+            result = output.getvalue()
+            assert "Running:" in result
+            assert "updated successfully" in result
+
+    def test_update_qos_with_stdout(self):
+        """Test update with subprocess stdout."""
+        mock_result = create_mock_subprocess_result(
+            stdout="Modified QoS record(s)"
+        )
+        with patch.object(subprocess, "run", return_value=mock_result):
+            output = io.StringIO()
+            with redirect_stdout(output):
+                Qos.update("testqos", priority=100)
+
+            result = output.getvalue()
+            assert "Modified QoS record(s)" in result
+
+    def test_update_qos_skip_none_values(self):
+        """Test that None values are skipped."""
+        mock_result = create_mock_subprocess_result(stdout="")
+        with patch.object(
+            subprocess,
+            "run",
+            return_value=mock_result,
+        ) as mock_run:
+            Qos.update("testqos", priority=100, maxwall=None)
+
+            mock_run.assert_called_once()
+            call_args = mock_run.call_args[0][0]
+            assert "priority=100" in call_args
+            # maxwall should NOT be included
+            assert "maxwall=None" not in call_args
+            assert "maxwall=" not in " ".join(call_args)
+
+    def test_update_qos_where_mode_multiple_conditions(self):
+        """Test update with multiple WHERE conditions."""
+        mock_result = create_mock_subprocess_result(stdout="")
+        with patch.object(
+            subprocess,
+            "run",
+            return_value=mock_result,
+        ) as mock_run:
+            Qos.update(
+                "",
+                where_conditions=[
+                    "priority=100",
+                    "flags=NoDecay",
+                ],
+                set_values=["priority=200"],
+            )
+
+            mock_run.assert_called_once()
+            call_args = mock_run.call_args[0][0]
+            assert "priority=100" in call_args
+            assert "flags=NoDecay" in call_args
 
 
 class TestQosDelete:

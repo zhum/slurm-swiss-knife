@@ -170,10 +170,104 @@ class Qos(BaseSlurmResource):
             )
 
     @classmethod
-    def update(cls, name: str, **kwargs: Any) -> None:
-        """Update a QoS."""
-        # TODO: Implement actual QoS update using sacctmgr modify qos
-        console.print(f"Updating QoS: {name}")
+    def update(
+        cls,
+        name: str,
+        verbose: bool = False,
+        where_conditions: Optional[List[str]] = None,
+        set_values: Optional[List[str]] = None,
+        **kwargs: Any,
+    ) -> None:
+        """Update a QoS.
+
+        Two calling modes:
+        1. Simple: update(name, key=value, ...) - updates QoS by name
+        2. Where: update("", where_conditions=[...], set_values=[...])
+           - uses WHERE/SET syntax for bulk updates
+
+        Args:
+            name: QoS name to update (for simple mode)
+            verbose: Enable verbose output
+            where_conditions: List of WHERE conditions (e.g., ["priority=100"])
+            set_values: List of SET values (e.g., ["priority=200"])
+            **kwargs: SET options as keyword arguments
+        """
+        # Build the command
+        args = ["sacctmgr", "-i", "modify", "qos"]
+
+        # Determine mode and build WHERE clause
+        if where_conditions:
+            # WHERE/SET mode
+            args.append("where")
+            for cond in where_conditions:
+                args.append(cond)
+        elif name:
+            # Simple mode - update by name
+            args.extend(["where", f"name={name}"])
+        else:
+            console.print(
+                "[red]No QoS name or WHERE conditions specified.[/red]"
+            )
+            return
+
+        # Build SET clause
+        args.append("set")
+
+        # Use set_values if provided, otherwise use kwargs
+        if set_values:
+            for val in set_values:
+                # Validate preemptmode even in WHERE mode
+                if "=" in val:
+                    k, v = val.split("=", 1)
+                    if k.lower() == "preemptmode":
+                        if v.upper() not in PREEMPT_MODE_VALUES:
+                            console.print(
+                                f"[red]Invalid preemptmode '{v}'. "
+                                f"Must be one of: "
+                                f"{', '.join(PREEMPT_MODE_VALUES)}[/red]"
+                            )
+                            return
+                args.append(val)
+        else:
+            for key, value in kwargs.items():
+                if value is None:
+                    continue
+
+                key_lower = key.lower()
+
+                # Validate preemptmode values
+                if key_lower == "preemptmode":
+                    if value.upper() not in PREEMPT_MODE_VALUES:
+                        console.print(
+                            f"[red]Invalid preemptmode '{value}'. "
+                            f"Must be one of: "
+                            f"{', '.join(PREEMPT_MODE_VALUES)}[/red]"
+                        )
+                        return
+
+                args.append(f"{key_lower}={value}")
+
+        if verbose:
+            console.print(f"Running: {' '.join(args)}")
+
+        try:
+            result = subprocess.run(
+                args,
+                check=True,
+                capture_output=True,
+                text=True,
+            )
+            if result.stdout:
+                console.print(result.stdout)
+            if verbose:
+                console.print(
+                    f"[green]QoS '{name}' updated successfully.[/green]"
+                )
+        except subprocess.CalledProcessError as e:
+            console.print(
+                f"[red]Failed to update QoS '{name}':[/red] "
+                f"{e.stderr or e}"
+            )
 
     @classmethod
     def delete(cls, name: str) -> None:

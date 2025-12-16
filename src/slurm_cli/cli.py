@@ -959,12 +959,13 @@ def update(
                 # Treat as a simple value
                 update_options[arg] = None
 
-    # Special handling for accounts/associations/users with WHERE/SET syntax
+    # Special handling for accounts/associations/users/qos with WHERE/SET syntax
     # Format: modify accounts key=value [...] set newkey=newvalue [...]
     if (
         canonical_resource[:3] == "acc"
         or canonical_resource[:5] == "assoc"
         or canonical_resource[:4] == "user"
+        or canonical_resource[:3] == "qos"
     ) and "=" in field:
         # WHERE mode - collect all args and split on "set"
         all_args = [field, value] + list(names) if value else [field]
@@ -1009,6 +1010,13 @@ def update(
                 )
             elif canonical_resource[:4] == "user":
                 User.update(
+                    "",
+                    verbose,
+                    where_conditions=where_conditions,
+                    set_values=set_values,
+                )
+            elif canonical_resource[:3] == "qos":
+                Qos.update(
                     "",
                     verbose,
                     where_conditions=where_conditions,
