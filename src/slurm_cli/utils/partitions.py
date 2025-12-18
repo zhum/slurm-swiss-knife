@@ -767,7 +767,45 @@ _slurm_cli_partitions_autocomplete() {{
             ;;
         create|add|new|update|modify|set)
             # Check if we're completing a value (after =)
-            if [[ $cur == *=* ]]; then
+            # Handle case where cur is "=" (bash split key and = into separate words)
+            if [[ $cur == = ]]; then
+                local key="${{prev,,}}"
+                case "$key" in
+                    state)
+                        COMPREPLY=($(compgen -W "{state_values}"))
+                        ;;
+                    preemptmode)
+                        COMPREPLY=($(compgen -W "{preempt_values}"))
+                        ;;
+                    cpubind)
+                        COMPREPLY=($(compgen -W "{cpubind_values}"))
+                        ;;
+                    default|disablerootjobs|exclusiveuser|hidden|lln|oversubscribe|powerdownonidle|reqresv|rootonly)
+                        COMPREPLY=($(compgen -W "{yesno_values}"))
+                        ;;
+                    allowaccounts|denyaccounts)
+                        if [ -f "/tmp/slurm_cli_accounts.json" ]; then
+                            COMPREPLY=($(compgen -W "$(jq -r '.accounts[].name' /tmp/slurm_cli_accounts.json 2>/dev/null)"))
+                        fi
+                        ;;
+                    allowqos|denyqos|qos)
+                        if [ -f "/tmp/slurm_cli_qos.json" ]; then
+                            COMPREPLY=($(compgen -W "$(jq -r '.qos[].name' /tmp/slurm_cli_qos.json 2>/dev/null)"))
+                        fi
+                        ;;
+                    nodes)
+                        if [ -f "/tmp/slurm_cli_nodes.json" ]; then
+                            COMPREPLY=($(compgen -W "$(jq -r 'keys[]' /tmp/slurm_cli_nodes.json 2>/dev/null)"))
+                        fi
+                        ;;
+                    alternate)
+                        if [ -f "/tmp/slurm_cli_partitions.json" ]; then
+                            COMPREPLY=($(compgen -W "$(jq -r 'keys[]' /tmp/slurm_cli_partitions.json 2>/dev/null)"))
+                        fi
+                        ;;
+                esac
+                return
+            elif [[ $cur == *=* ]]; then
                 local key="${{cur%%=*}}"
                 local val="${{cur#*=}}"
                 key="${{key,,}}"  # lowercase
