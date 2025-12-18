@@ -58,6 +58,18 @@ elif [ "$1" = "show" ] && [ "$2" = "config" ]; then
         echo "Error: slurm_config file not found in $MOCKS_DIR/data" >&2
         exit 1
     fi
+elif [ "$1" = "create" ]; then
+    # Mock create command - just print what was received
+    echo "MOCK: scontrol $*"
+    exit 0
+elif [ "$1" = "update" ]; then
+    # Mock update command - just print what was received
+    echo "MOCK: scontrol $*"
+    exit 0
+elif [ "$1" = "delete" ]; then
+    # Mock delete command - just print what was received
+    echo "MOCK: scontrol $*"
+    exit 0
 else
     # For other arguments, show usage or error
     echo "Usage: $0 show {nodes|partitions|reservations|config} [--json]" >&2

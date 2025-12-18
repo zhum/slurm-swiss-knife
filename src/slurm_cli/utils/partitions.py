@@ -371,13 +371,15 @@ class Partition(BaseSlurmResource):
             )
 
     @classmethod
-    def delete(cls, name: str) -> None:
+    def delete(cls, name: str, verbose: bool = False) -> None:
         """Delete a partition."""
         args = [
             "scontrol",
             "delete",
-            "partitionname={name}",
+            f"partitionname={name}",
         ]
+        if verbose:
+            console.print(f"Running: {' '.join(args)}")
         try:
             result = subprocess.run(
                 args,
