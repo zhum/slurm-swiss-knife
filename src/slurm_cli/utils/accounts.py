@@ -128,7 +128,7 @@ _slurm_cli_accounts_autocomplete() {{
                 case "$key" in
                     defaultqos)
                         if [ -f "/tmp/slurm_cli_qos.json" ]; then
-                            COMPREPLY=($(compgen -W "$(jq -r 'keys[]' /tmp/slurm_cli_qos.json)" -- "${{cur#*=}}"))
+                            COMPREPLY=($(compgen -W "$(jq -r '.qos[].name' /tmp/slurm_cli_qos.json 2>/dev/null)" -- "${{cur#*=}}"))
                         fi
                         ;;
                     parent|organization)

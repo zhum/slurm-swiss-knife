@@ -786,7 +786,7 @@ _slurm_cli_qos_autocomplete() {{
     # If we're on the name field (right after 'qos')
     if [[ $name == qos && $prev == qos ]]; then
         if [ -f "/tmp/slurm_cli_qos.json" ]; then
-            COMPREPLY=($(compgen -W "$(jq -r 'keys[]' /tmp/slurm_cli_qos.json)" -- "$cur"))
+            COMPREPLY=($(compgen -W "$(jq -r '.qos[].name' /tmp/slurm_cli_qos.json 2>/dev/null)" -- "$cur"))
         fi
         return
     fi
@@ -815,7 +815,7 @@ _slurm_cli_qos_autocomplete() {{
                         ;;
                     preempt)
                         if [ -f "/tmp/slurm_cli_qos.json" ]; then
-                            COMPREPLY=($(compgen -W "$(jq -r 'keys[]' /tmp/slurm_cli_qos.json)" -- "${{cur#*=}}"))
+                            COMPREPLY=($(compgen -W "$(jq -r '.qos[].name' /tmp/slurm_cli_qos.json 2>/dev/null)" -- "${{cur#*=}}"))
                         fi
                         ;;
                 esac

@@ -1099,6 +1099,34 @@ def update(
                     if "=" in value
                     else {},
                 )
+        elif canonical_resource[:3] == "qos":
+            if dry_run:
+                console.print(
+                    f"[yellow]DRY RUN:[/yellow] Would update "
+                    f"qos {field} set {value}"
+                )
+            else:
+                Qos.update(
+                    field,
+                    verbose,
+                    **{value.split("=")[0]: value.split("=")[1]}
+                    if "=" in value
+                    else {},
+                )
+        elif canonical_resource[:4] == "user":
+            if dry_run:
+                console.print(
+                    f"[yellow]DRY RUN:[/yellow] Would update "
+                    f"user {field} set {value}"
+                )
+            else:
+                User.update(
+                    field,
+                    verbose,
+                    **{value.split("=")[0]: value.split("=")[1]}
+                    if "=" in value
+                    else {},
+                )
         else:
             # If no additional arguments, show general update message
             if dry_run:

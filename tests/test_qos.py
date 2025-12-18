@@ -342,7 +342,7 @@ class TestQosDelete:
             assert "-i" in call_args
             assert "delete" in call_args
             assert "qos" in call_args
-            assert "name=oldqos" in call_args
+            assert "names=oldqos" in call_args
 
             result = output.getvalue()
             assert "deleted successfully" in result
