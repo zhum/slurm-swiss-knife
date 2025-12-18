@@ -1748,6 +1748,7 @@ _slurm_cli_initialize_autocomplete() {{
     print(Coordinator.generate_autocomplete_options())
     print(Event.generate_autocomplete_options())
     print(User.generate_autocomplete_options())
+    print(Partition.generate_autocomplete_options())
     print(
         """
 # Register the completion function for various invocation methods

@@ -574,3 +574,25 @@ class Partition(BaseSlurmResource):
                 f"\n[yellow]Warning: Unknown partition fields "
                 f"(using defaults): {', '.join(missing_fields)}[/yellow]"
             )
+
+    @classmethod
+    def generate_autocomplete_options(cls) -> str:
+        """Generate bash autocomplete script for partition options."""
+        script = """
+_slurm_cli_partitions_autocomplete() {
+    local cmd="$1"
+    local pos="$2"
+
+    cur="${COMP_WORDS[COMP_CWORD]}"
+    prev="${COMP_WORDS[COMP_CWORD-1]}"
+
+    # If we're on the name field (right after 'partitions')
+    if [[ $prev == partitions || $prev == part || $prev == parts ]]; then
+        if [ -f "/tmp/slurm_cli_partitions.json" ]; then
+            COMPREPLY=($(compgen -W "$(jq -r 'keys[]' /tmp/slurm_cli_partitions.json 2>/dev/null)" -- "$cur"))
+        fi
+        return
+    fi
+}
+"""
+        return script
