@@ -4,10 +4,12 @@ import json
 import subprocess
 from typing import Any, Optional
 
+from rich.box import SIMPLE_HEAVY
 from rich.markup import escape
+from rich.table import Table
 
 from .base_resource import BaseSlurmResource
-from .profiles import get_profile_config
+from .profiles import format_with_template, get_profile_config
 
 # from .resources import Resource, ResourceType
 from .utils import console
@@ -405,13 +407,15 @@ class Partition(BaseSlurmResource):
         delimiter: str = ";",
         profile: str = "default",
         profile_str: Optional[str] = None,
+        zebra: bool = False,
     ) -> None:
         """Show partition information."""
-        # Get profile configuration (for future enhancement)
-        _, _, _ = get_profile_config(profile, "partitions", profile_str)
-        if style == "pretty":
-            cls.show_pretty(name, data)
-        elif style == "json":
+        # Get profile configuration
+        columns_cfg, styles_cfg, template_cfg = get_profile_config(
+            profile, "partitions", profile_str
+        )
+
+        if style == "json":
             if name:
                 console.print_json(
                     json.dumps(
@@ -426,10 +430,107 @@ class Partition(BaseSlurmResource):
                         indent=4,
                     )
                 )
+        elif template_cfg and style == "pretty":
+            # Use template-based output (e.g., oneline profile)
+            partitions_to_show = (
+                {name: data[name]} if name and name in data else data
+            )
+            for part_name, part_data in sorted(
+                partitions_to_show.items()
+            ):
+                # Prepare data with PartitionName included
+                prepared = {"PartitionName": part_name, **part_data}
+                output = format_with_template(
+                    template_cfg, prepared, resource="partitions"
+                )
+                console.print(output)
+        elif columns_cfg and columns_cfg != "*" and style == "pretty":
+            # Use column-based table output (e.g., compact, minimal)
+            cls.show_columns(name, data, columns_cfg, styles_cfg, zebra)
+        elif style == "pretty":
+            # Default pretty output
+            cls.show_pretty(name, data)
         elif style == "csv":
-            cls.show_csv(name, data, delimiter)
+            cls.show_csv(name, data, delimiter, columns_cfg)
         else:
             console.print(f"[red]Invalid style '{style}'.[/red]")
+
+    @classmethod
+    def show_columns(
+        cls,
+        name: str = None,
+        partitions: dict = None,
+        columns: list = None,
+        styles: dict = None,
+        zebra: bool = False,
+    ) -> None:
+        """Show partitions in a column-based table."""
+        if not partitions:
+            console.print("[red]No partitions found.[/red]")
+            return
+
+        partitions_to_show = (
+            {name: partitions[name]}
+            if name and name in partitions
+            else partitions
+        )
+
+        # Create table
+        row_styles = ["", "dim"] if zebra else None
+        table = Table(
+            title="Partitions",
+            box=SIMPLE_HEAVY,
+            pad_edge=False,
+            row_styles=row_styles,
+        )
+
+        # Normalize column names - handle both lowercase and original case
+        normalized_columns = []
+        for col in columns:
+            col_lower = col.lower()
+            if col_lower in ["name", "partitionname"]:
+                normalized_columns.append("PartitionName")
+            elif col_lower == "state":
+                normalized_columns.append("State")
+            elif col_lower == "nodes":
+                normalized_columns.append("TotalNodes")
+            elif col_lower == "totalnodes":
+                normalized_columns.append("TotalNodes")
+            elif col_lower == "totalcpus":
+                normalized_columns.append("TotalCPUs")
+            elif col_lower == "maxtime":
+                normalized_columns.append("MaxTime")
+            elif col_lower == "defaulttime":
+                normalized_columns.append("DefaultTime")
+            else:
+                # Try to find matching field (case-insensitive)
+                for key in next(
+                    iter(partitions_to_show.values()), {}
+                ).keys():
+                    if key.lower() == col_lower:
+                        normalized_columns.append(key)
+                        break
+                else:
+                    normalized_columns.append(col)
+
+        # Add columns to table
+        styles = styles or {}
+        for col in normalized_columns:
+            style = styles.get(col.lower(), styles.get("name", "cyan"))
+            table.add_column(col, style=style)
+
+        # Add rows
+        for part_name in sorted(partitions_to_show.keys()):
+            part_data = partitions_to_show[part_name]
+            row = []
+            for col in normalized_columns:
+                if col == "PartitionName":
+                    row.append(part_name)
+                else:
+                    row.append(str(part_data.get(col, "")))
+            table.add_row(*row)
+
+        console.print(table)
 
     @classmethod
     def show_csv(
@@ -437,46 +538,94 @@ class Partition(BaseSlurmResource):
         name: str = None,
         partitions: dict = None,
         delimiter: str = ";",
+        columns: list = None,
     ) -> None:
         """Show partition information in CSV format."""
         if not partitions:
             console.print("[red]No partitions found.[/red]")
             return
 
-        # Determine all unique fields across all partitions
-        all_fields = set()
         partitions_to_show = (
             {name: partitions[name]}
             if name and name in partitions
             else partitions
         )
 
-        for partition_data in partitions_to_show.values():
-            all_fields.update(partition_data.keys())
+        if columns and columns != "*":
+            # Use specified columns
+            # Normalize column names
+            normalized_columns = []
+            for col in columns:
+                col_lower = col.lower()
+                if col_lower in ["name", "partitionname"]:
+                    normalized_columns.append("PartitionName")
+                elif col_lower == "state":
+                    normalized_columns.append("State")
+                elif col_lower == "nodes":
+                    normalized_columns.append("TotalNodes")
+                elif col_lower == "totalnodes":
+                    normalized_columns.append("TotalNodes")
+                elif col_lower == "totalcpus":
+                    normalized_columns.append("TotalCPUs")
+                elif col_lower == "maxtime":
+                    normalized_columns.append("MaxTime")
+                elif col_lower == "defaulttime":
+                    normalized_columns.append("DefaultTime")
+                else:
+                    # Try to find matching field
+                    for key in next(
+                        iter(partitions_to_show.values()), {}
+                    ).keys():
+                        if key.lower() == col_lower:
+                            normalized_columns.append(key)
+                            break
+                    else:
+                        normalized_columns.append(col)
 
-        # Sort fields for consistent output (with common fields first)
-        priority_fields = [
-            "State",
-            "TotalNodes",
-            "TotalCPUs",
-            "MaxTime",
-            "DefaultTime",
-        ]
-        sorted_fields = [
-            f for f in priority_fields if f in all_fields
-        ] + sorted([f for f in all_fields if f not in priority_fields])
+            # Print CSV header
+            print(delimiter.join(normalized_columns))
 
-        # Print CSV header
-        headers = ["PartitionName"] + sorted_fields
-        print(delimiter.join(headers))
+            # Print data rows
+            for partition_name in sorted(partitions_to_show.keys()):
+                data = partitions_to_show[partition_name]
+                row = []
+                for col in normalized_columns:
+                    if col == "PartitionName":
+                        row.append(partition_name)
+                    else:
+                        row.append(str(data.get(col, "")))
+                print(delimiter.join(row))
+        else:
+            # Show all fields
+            all_fields = set()
+            for partition_data in partitions_to_show.values():
+                all_fields.update(partition_data.keys())
 
-        # Print data rows
-        for partition_name in sorted(partitions_to_show.keys()):
-            data = partitions_to_show[partition_name]
-            row = [partition_name] + [
-                str(data.get(field, "")) for field in sorted_fields
+            # Sort fields for consistent output
+            priority_fields = [
+                "State",
+                "TotalNodes",
+                "TotalCPUs",
+                "MaxTime",
+                "DefaultTime",
             ]
-            print(delimiter.join(row))
+            sorted_fields = [
+                f for f in priority_fields if f in all_fields
+            ] + sorted(
+                [f for f in all_fields if f not in priority_fields]
+            )
+
+            # Print CSV header
+            headers = ["PartitionName"] + sorted_fields
+            print(delimiter.join(headers))
+
+            # Print data rows
+            for partition_name in sorted(partitions_to_show.keys()):
+                data = partitions_to_show[partition_name]
+                row = [partition_name] + [
+                    str(data.get(field, "")) for field in sorted_fields
+                ]
+                print(delimiter.join(row))
 
     @classmethod
     def show_pretty(
@@ -578,21 +727,120 @@ class Partition(BaseSlurmResource):
     @classmethod
     def generate_autocomplete_options(cls) -> str:
         """Generate bash autocomplete script for partition options."""
-        script = """
-_slurm_cli_partitions_autocomplete() {
+        # Get option keys for completion
+        valid_keys = list(cls.valid_args.keys())
+        state_values = "up down drain inactive UP DOWN DRAIN INACTIVE"
+        preempt_values = (
+            "off cancel requeue suspend OFF CANCEL REQUEUE SUSPEND"
+        )
+        yesno_values = "yes no YES NO"
+        cpubind_values = "none socket ldom core thread off"
+
+        script = f"""
+_slurm_cli_partitions_autocomplete() {{
     local cmd="$1"
     local pos="$2"
 
-    cur="${COMP_WORDS[COMP_CWORD]}"
-    prev="${COMP_WORDS[COMP_CWORD-1]}"
+    cur="${{COMP_WORDS[COMP_CWORD]}}"
+    prev="${{COMP_WORDS[COMP_CWORD-1]}}"
 
     # If we're on the name field (right after 'partitions')
     if [[ $prev == partitions || $prev == part || $prev == parts ]]; then
-        if [ -f "/tmp/slurm_cli_partitions.json" ]; then
-            COMPREPLY=($(compgen -W "$(jq -r 'keys[]' /tmp/slurm_cli_partitions.json 2>/dev/null)" -- "$cur"))
-        fi
+        case "$cmd" in
+            show|delete)
+                if [ -f "/tmp/slurm_cli_partitions.json" ]; then
+                    COMPREPLY=($(compgen -W "$(jq -r 'keys[]' /tmp/slurm_cli_partitions.json 2>/dev/null)" -- "$cur"))
+                fi
+                ;;
+            create|add|new|update|modify|set)
+                # For create, show option names
+                local -a valid_keys=({' '.join(k + '=' for k in valid_keys)})
+                COMPREPLY=($(compgen -W "${{valid_keys[*]}}" -- "$cur"))
+                ;;
+        esac
         return
     fi
-}
-"""
+
+    case "$cmd" in
+        show|delete)
+            return
+            ;;
+        create|add|new|update|modify|set)
+            # Check if we're completing a value (after =)
+            if [[ $cur == *=* ]]; then
+                local key="${{cur%%=*}}"
+                local val="${{cur#*=}}"
+                key="${{key,,}}"  # lowercase
+
+                case "$key" in
+                    state)
+                        COMPREPLY=($(compgen -W "{state_values}" -- "$val"))
+                        ;;
+                    preemptmode)
+                        COMPREPLY=($(compgen -W "{preempt_values}" -- "$val"))
+                        ;;
+                    cpubind)
+                        COMPREPLY=($(compgen -W "{cpubind_values}" -- "$val"))
+                        ;;
+                    default|disablerootjobs|exclusiveuser|hidden|lln|oversubscribe|powerdownonidle|reqresv|rootonly)
+                        COMPREPLY=($(compgen -W "{yesno_values}" -- "$val"))
+                        ;;
+                    allowaccounts|denyaccounts)
+                        if [ -f "/tmp/slurm_cli_accounts.json" ]; then
+                            COMPREPLY=($(compgen -W "$(jq -r '.accounts[].name' /tmp/slurm_cli_accounts.json 2>/dev/null)" -- "$val"))
+                        fi
+                        ;;
+                    allowqos|denyqos|qos)
+                        if [ -f "/tmp/slurm_cli_qos.json" ]; then
+                            COMPREPLY=($(compgen -W "$(jq -r '.qos[].name' /tmp/slurm_cli_qos.json 2>/dev/null)" -- "$val"))
+                        fi
+                        ;;
+                    nodes)
+                        if [ -f "/tmp/slurm_cli_nodes.json" ]; then
+                            COMPREPLY=($(compgen -W "$(jq -r 'keys[]' /tmp/slurm_cli_nodes.json 2>/dev/null)" -- "$val"))
+                        fi
+                        ;;
+                    alternate)
+                        if [ -f "/tmp/slurm_cli_partitions.json" ]; then
+                            COMPREPLY=($(compgen -W "$(jq -r 'keys[]' /tmp/slurm_cli_partitions.json 2>/dev/null)" -- "$val"))
+                        fi
+                        ;;
+                esac
+                # Add = prefix back
+                if [[ ${{#COMPREPLY[@]}} -gt 0 ]]; then
+                    COMPREPLY=("${{COMPREPLY[@]/#/$key=}}")
+                fi
+                return
+            elif [[ $prev == = ]]; then
+                local key="${{COMP_WORDS[COMP_CWORD-2]}}"
+                key="${{key,,}}"
+
+                case "$key" in
+                    state)
+                        COMPREPLY=($(compgen -W "{state_values}" -- "$cur"))
+                        ;;
+                    preemptmode)
+                        COMPREPLY=($(compgen -W "{preempt_values}" -- "$cur"))
+                        ;;
+                    cpubind)
+                        COMPREPLY=($(compgen -W "{cpubind_values}" -- "$cur"))
+                        ;;
+                    default|disablerootjobs|exclusiveuser|hidden|lln|oversubscribe|powerdownonidle|reqresv|rootonly)
+                        COMPREPLY=($(compgen -W "{yesno_values}" -- "$cur"))
+                        ;;
+                esac
+                return
+            else
+                # Completing an option name
+                local -a valid_keys=({' '.join(k + '=' for k in valid_keys)})
+                if [[ $cur == '' ]]; then
+                    COMPREPLY=(${{valid_keys[@]}})
+                else
+                    COMPREPLY=($(compgen -W "${{valid_keys[*]}}" -- "$cur"))
+                fi
+            fi
+            ;;
+    esac
+}}
+"""  # noqa: E501
         return script
