@@ -17,7 +17,7 @@
 - [x] **QOS Management**: Add support for managing qos
   - [x] show
   - [x] create (with autocomplete for QOS_OPTIONS, QOS_FLAGS, PREEMPT_MODE_VALUES)
-  - [ ] delete
+  - [x] delete
   - [ ] update
 - [ ] **Partition Management**: Add support for managing partitions
   - [x] show

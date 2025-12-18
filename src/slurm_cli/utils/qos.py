@@ -283,7 +283,7 @@ class Qos(BaseSlurmResource):
             )
             return
 
-        args = ["sacctmgr", "-i", "delete", "qos", f"name={name}"]
+        args = ["sacctmgr", "-i", "delete", "qos", f"names={name}"]
 
         if verbose:
             console.print(f"Running: {' '.join(args)}")

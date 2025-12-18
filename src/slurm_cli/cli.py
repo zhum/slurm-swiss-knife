@@ -959,7 +959,8 @@ def update(
                 # Treat as a simple value
                 update_options[arg] = None
 
-    # Special handling for accounts/associations/users/qos with WHERE/SET syntax
+    # Special handling for accounts/associations/users/qos
+    # with WHERE/SET syntax
     # Format: modify accounts key=value [...] set newkey=newvalue [...]
     if (
         canonical_resource[:3] == "acc"
