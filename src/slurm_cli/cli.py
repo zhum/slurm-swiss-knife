@@ -1718,7 +1718,21 @@ _slurm_cli_initialize_autocomplete() {{
             COMPREPLY=($(compgen -W "{' '.join(STYLE_OPTIONS)}" -- "$cur"))
             return
             ;;
-        --delimiter|-d|--cache-timeout|-t)
+        --profile|-P)
+            # Profile names - built-in plus any from config files
+            local profiles="default compact minimal oneline detailed"
+            if [ -f "$HOME/.config/slurm-cli.profiles" ]; then
+                local user_profiles=$(grep -oE '^[a-z_]+:' "$HOME/.config/slurm-cli.profiles" 2>/dev/null | tr -d ':' | tr '\\n' ' ')
+                profiles="$profiles $user_profiles"
+            fi
+            if [ -f "/etc/slurm/cli.profiles" ]; then
+                local sys_profiles=$(grep -oE '^[a-z_]+:' "/etc/slurm/cli.profiles" 2>/dev/null | tr -d ':' | tr '\\n' ' ')
+                profiles="$profiles $sys_profiles"
+            fi
+            COMPREPLY=($(compgen -W "$profiles" -- "$cur"))
+            return
+            ;;
+        --delimiter|-d|--cache-timeout|-t|--profile-str)
             # These options need a value, no completion
             return
             ;;
