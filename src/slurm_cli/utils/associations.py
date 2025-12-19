@@ -664,7 +664,7 @@ _slurm_cli_associations_autocomplete() {{
                     # Use buffer-based console to prevent column truncation
                     buf = io.StringIO()
                     wide_console = Console(
-                        file=buf, width=500, force_terminal=False
+                        file=buf, width=500, force_terminal=True
                     )
                     wide_console.print(table)
                     output = buf.getvalue()
