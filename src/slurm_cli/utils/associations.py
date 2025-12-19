@@ -178,6 +178,25 @@ _slurm_cli_associations_autocomplete() {{
         "shares_raw",
         "qos",
     ]
+    # All available columns from Slurm JSON output
+    ALL_COLUMNS = [
+        "account",
+        "user",
+        "cluster",
+        "partition",
+        "shares_raw",
+        "priority",
+        "qos",
+        "is_default",
+        "lineage",
+        "parent_account",
+        "id",
+        "comment",
+        "flags",
+        "default",
+        "max",
+        "min",
+    ]
     DEFAULT_STYLES = {
         "account": "cyan",
         "user": "green",
@@ -202,8 +221,11 @@ _slurm_cli_associations_autocomplete() {{
             profile, "associations", profile_str
         )
 
-        # Use default columns if profile specifies "*" or no columns
-        if columns == "*" or columns is None:
+        # Use all columns if profile specifies "*"
+        if columns == "*":
+            columns = cls.ALL_COLUMNS
+        # Use default columns if no columns specified
+        elif columns is None:
             columns = cls.DEFAULT_COLUMNS
 
         # Merge with default styles
@@ -225,6 +247,38 @@ _slurm_cli_associations_autocomplete() {{
         # Handle nested id field
         if column == "id" and isinstance(value, dict):
             return str(value.get("id", "-"))
+        # Handle priority field (may be a dict with set/number)
+        if column == "priority" and isinstance(value, dict):
+            if value.get("set"):
+                return str(value.get("number", 0))
+            return "-"
+        # Handle nested 'default' field (contains qos)
+        if column == "default" and isinstance(value, dict):
+            qos = value.get("qos", "")
+            return qos if qos else "-"
+        # Handle nested 'max' and 'min' fields (complex limit structures)
+        if column in ("max", "min") and isinstance(value, dict):
+            # Summarize the nested structure
+            parts = []
+            if "jobs" in value:
+                jobs = value["jobs"]
+                if isinstance(jobs, dict):
+                    active = jobs.get("active", {})
+                    if isinstance(active, dict) and active.get("set"):
+                        parts.append(f"jobs={active.get('number', 0)}")
+            if "tres" in value:
+                tres = value["tres"]
+                if isinstance(tres, dict):
+                    for tres_type in ("per", "minutes"):
+                        if tres_type in tres and isinstance(
+                            tres[tres_type], dict
+                        ):
+                            for k, v in tres[tres_type].items():
+                                if isinstance(v, dict) and v.get("set"):
+                                    parts.append(
+                                        f"{k}={v.get('number', 0)}"
+                                    )
+            return ", ".join(parts) if parts else "-"
         if value is None or value == "":
             return "-"
         return str(value)
