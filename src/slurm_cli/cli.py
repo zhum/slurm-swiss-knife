@@ -1307,12 +1307,15 @@ def create(
                 user_name = field
 
             # Get name from options if not set from positional arg
+            # Accept both name= and user= as the username
             if not user_name:
-                user_name = create_options.pop("name", None)
+                user_name = create_options.pop(
+                    "name", None
+                ) or create_options.pop("user", None)
 
             if not user_name:
                 console.print(
-                    "[red]Error: User name required. Use 'name=' "
+                    "[red]Error: User name required. Use 'name=' or 'user=' "
                     "or provide name as first argument.[/red]"
                 )
                 return
