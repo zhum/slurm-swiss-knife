@@ -241,9 +241,7 @@ _slurm_cli_associations_autocomplete() {{
         # Handle array fields
         if column in ("qos", "flags", "accounting"):
             if isinstance(value, list):
-                return (
-                    ", ".join(str(v) for v in value) if value else "-"
-                )
+                return ",".join(str(v) for v in value) if value else "-"
         # Handle nested id field
         if column == "id" and isinstance(value, dict):
             return str(value.get("id", "-"))
