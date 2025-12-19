@@ -736,6 +736,7 @@ def show(
                 data=data,
                 style=style,
                 delimiter=delimiter,
+                zebra=zebra,
                 profile=profile,
                 profile_str=profile_str,
             )
@@ -744,6 +745,7 @@ def show(
                 data=data,
                 style=style,
                 delimiter=delimiter,
+                zebra=zebra,
                 profile=profile,
                 profile_str=profile_str,
             )
@@ -754,6 +756,7 @@ def show(
                 data=data,
                 style=style,
                 delimiter=delimiter,
+                zebra=zebra,
                 profile=profile,
                 profile_str=profile_str,
             )
@@ -762,6 +765,7 @@ def show(
                 data=data,
                 style=style,
                 delimiter=delimiter,
+                zebra=zebra,
                 profile=profile,
                 profile_str=profile_str,
             )
@@ -773,6 +777,7 @@ def show(
                 style=style,
                 verbose=verbose,
                 delimiter=delimiter,
+                zebra=zebra,
                 profile=profile,
                 profile_str=profile_str,
             )
@@ -781,6 +786,7 @@ def show(
                 data=data,
                 style=style,
                 delimiter=delimiter,
+                zebra=zebra,
                 profile=profile,
                 profile_str=profile_str,
             )
@@ -791,6 +797,7 @@ def show(
                 data=data,
                 style=style,
                 delimiter=delimiter,
+                zebra=zebra,
                 profile=profile,
                 profile_str=profile_str,
             )
@@ -799,6 +806,7 @@ def show(
                 data=data,
                 style=style,
                 delimiter=delimiter,
+                zebra=zebra,
                 profile=profile,
                 profile_str=profile_str,
             )

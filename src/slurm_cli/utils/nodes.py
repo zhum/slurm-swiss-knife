@@ -89,6 +89,7 @@ class Node(BaseSlurmResource):
         verbose: bool = False,
         force_cache_update: bool = False,
         delimiter: str = ";",
+        zebra: bool = False,
         profile: str = "default",
         profile_str: Optional[str] = None,
     ) -> None:

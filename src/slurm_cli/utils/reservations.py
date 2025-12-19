@@ -278,6 +278,7 @@ class Reservation(BaseSlurmResource):
         data: dict = None,
         style: str = "pretty",
         delimiter: str = ";",
+        zebra: bool = False,
         profile: str = "default",
         profile_str: Optional[str] = None,
     ) -> None:
