@@ -73,6 +73,51 @@ The tree view also works with CSV output:
 slurm-cli show associations --tree --csv
 ```
 
+## Create Associations
+
+Create user associations to link users to accounts with specific limits:
+
+```bash
+# Basic creation (positional username)
+slurm-cli create associations testuser account=myaccount
+
+# Using name= syntax
+slurm-cli create associations name=testuser account=myaccount
+
+# Using user= syntax (alias for name=)
+slurm-cli create associations user=testuser account=myaccount
+
+# With partition and QoS
+slurm-cli create associations user=testuser account=myaccount \
+    partition=batch \
+    qos=normal
+
+# With resource limits
+slurm-cli create associations user=testuser account=myaccount \
+    fairshare=100 \
+    maxjobs=50 \
+    maxsubmit=100
+```
+
+### Create Options
+
+| Option | Description |
+|--------|-------------|
+| `name` / `user` | Username (required) |
+| `account` | Account name |
+| `cluster` | Cluster name |
+| `partition` | Partition name |
+| `fairshare` | Fairshare value |
+| `defaultqos` | Default QoS |
+| `qos` | Allowed QoS list |
+| `grpjobs` | Group jobs limit |
+| `grpsubmit` | Group submit limit |
+| `grptres` | Group TRES limits |
+| `maxjobs` | Max running jobs |
+| `maxsubmit` | Max submitted jobs |
+| `maxtrespj` | Max TRES per job |
+| `maxwall` | Max wall time |
+
 ## Update Associations
 
 ### Simple Mode

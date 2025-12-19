@@ -1,10 +1,9 @@
 """Utilities for managing associations."""
 
+import io
 import json
 import subprocess
 from typing import Any, Dict, List, Optional
-
-import io
 
 from rich.box import SIMPLE_HEAVY
 from rich.console import Console

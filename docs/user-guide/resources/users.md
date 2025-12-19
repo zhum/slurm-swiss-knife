@@ -24,8 +24,11 @@ slurm-cli show users --json
 ## Create Users
 
 ```bash
-# Basic user creation
+# Basic user creation (positional username)
 slurm-cli create users newuser account=myaccount defaultaccount=myaccount
+
+# Using name= syntax
+slurm-cli create users name=newuser account=myaccount defaultaccount=myaccount
 
 # With additional options
 slurm-cli create users newuser \
@@ -34,6 +37,19 @@ slurm-cli create users newuser \
     adminlevel=None \
     partition=batch
 ```
+
+!!! warning "Account or WCKey Required"
+    When creating a user without specifying `account=` or `wckey=`, the command
+    will warn that it may fail and prompt for confirmation. Use `--yes` or `--force`
+    to skip the confirmation:
+
+    ```bash
+    # Will prompt for confirmation
+    slurm-cli create users newuser
+
+    # Skip confirmation
+    slurm-cli create users newuser --yes
+    ```
 
 ## Update Users
 

@@ -9,6 +9,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Association Create Command**: Create user associations with `slurm-cli create associations`
+  - Supports positional username or `name=`/`user=` syntax
+  - Accepts all association options (account, partition, qos, fairshare, limits)
+- **User Create `name=` Syntax**: Allow `name=username` anywhere in create arguments
+- **User Create Validation**: Warns if account/wckey not specified, prompts for confirmation
+- **Tree View for Associations**: `--tree` option for hierarchical display
+  - `--indent` option for custom indentation string
 - **QoS Options Constants**: `QOS_OPTIONS`, `QOS_FLAGS`, `PREEMPT_MODE_VALUES` for autocomplete and validation
 - **Account Options Constants**: `ACCOUNT_OPTIONS` for autocomplete and validation
 - **QoS Autocomplete**: Tab completion for QoS create/update with flags and preempt mode values
