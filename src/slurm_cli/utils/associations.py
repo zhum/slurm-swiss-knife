@@ -4,7 +4,10 @@ import json
 import subprocess
 from typing import Any, Dict, List, Optional
 
+import io
+
 from rich.box import SIMPLE_HEAVY
+from rich.console import Console
 from rich.table import Table
 
 from .base_resource import BaseSlurmResource
@@ -428,6 +431,7 @@ _slurm_cli_associations_autocomplete() {{
                         pad_edge=False,
                         padding=(0, 0),
                         row_styles=row_styles,
+                        expand=False,
                     )
 
                     # Add columns based on profile
@@ -436,7 +440,7 @@ _slurm_cli_associations_autocomplete() {{
                             col.title(),
                             style=styles.get(col, ""),
                             no_wrap=True,
-                            overflow="fold",
+                            overflow="ignore",
                         )
 
                     # Add rows
@@ -447,7 +451,14 @@ _slurm_cli_associations_autocomplete() {{
                         ]
                         table.add_row(*row)
 
-                    console.print(table)
+                    # Use buffer-based console to prevent column truncation
+                    buf = io.StringIO()
+                    wide_console = Console(
+                        file=buf, width=500, force_terminal=False
+                    )
+                    wide_console.print(table)
+                    output = buf.getvalue()
+                    print(output, end="")
 
         except subprocess.CalledProcessError as e:
             error_msg = e.stderr or e

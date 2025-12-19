@@ -580,6 +580,10 @@ def _normalize_profile_str(
     ):
         return profile_str
 
+    # Check if it starts with "columns=" or "template=" or "styles="
+    if profile_str.startswith(("columns=", "template=", "styles=")):
+        return f"{resource}.{profile_str}"
+
     # Check if it looks like a column list (comma-separated words,
     # no template markers like { [ or =)
     if (
