@@ -435,9 +435,8 @@ _slurm_cli_associations_autocomplete() {{
                         table.add_column(
                             col.title(),
                             style=styles.get(col, ""),
-                            no_wrap=(
-                                col in ("account", "user", "cluster")
-                            ),
+                            no_wrap=True,
+                            overflow="fold",
                         )
 
                     # Add rows
