@@ -16,6 +16,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **User Create Validation**: Warns if account/wckey not specified, prompts for confirmation
 - **Tree View for Associations**: `--tree` option for hierarchical display
   - `--indent` option for custom indentation string
+- **Resource-Specific Help**: Context-aware `--help` for action+resource combinations
+  - Shows syntax, examples, and available options for each resource type
+  - Example: `slurm-cli add coord --help` shows coordinator-specific help
 - **QoS Options Constants**: `QOS_OPTIONS`, `QOS_FLAGS`, `PREEMPT_MODE_VALUES` for autocomplete and validation
 - **Account Options Constants**: `ACCOUNT_OPTIONS` for autocomplete and validation
 - **QoS Autocomplete**: Tab completion for QoS create/update with flags and preempt mode values
@@ -29,6 +32,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- Fixed `resolve_resource_alias()` not actually resolving aliases
 - Fixed `Qos.create()`, `Account.create()`, `Node.create()`, `User.create()` missing `verbose` parameter
 - Fixed autocomplete registration for `./slurm-cli` invocation
 

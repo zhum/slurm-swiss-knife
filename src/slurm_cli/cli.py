@@ -47,7 +47,349 @@ from .utils.users import User
 from .utils.utils import console
 
 CONTEXT_SETTINGS = dict(help_option_names=["-h", "--help"])
+# Context settings without automatic help (for commands with custom help callback)
+CONTEXT_SETTINGS_NO_HELP = dict(help_option_names=[])
 STYLE_OPTIONS = ["pretty", "json", "csv"]
+
+# Resource-specific help texts for each action
+RESOURCE_HELP = {
+    "coordinators": {
+        "description": "Manage Slurm account coordinators",
+        "create": {
+            "syntax": "slurm-cli add coord USERNAME account=ACCOUNT",
+            "examples": [
+                "slurm-cli add coord john account=research",
+                "slurm-cli add coord name=jane account=engineering",
+            ],
+            "options": ["name", "account"],
+        },
+        "delete": {
+            "syntax": "slurm-cli del coord USERNAME [account=ACCOUNT]",
+            "examples": [
+                "slurm-cli del coord john",
+                "slurm-cli del coord john account=research",
+            ],
+            "options": ["name", "account"],
+        },
+        "show": {
+            "syntax": "slurm-cli show coord [account=ACCOUNT]",
+            "examples": [
+                "slurm-cli show coord",
+                "slurm-cli show coord account=research",
+            ],
+            "options": ["account"],
+        },
+    },
+    "users": {
+        "description": "Manage Slurm user accounts",
+        "create": {
+            "syntax": "slurm-cli add users USERNAME [OPTIONS]",
+            "examples": [
+                "slurm-cli add users john account=research",
+                "slurm-cli add users name=jane account=eng defaultaccount=eng",
+            ],
+            "options": [
+                "name",
+                "account",
+                "adminlevel",
+                "cluster",
+                "defaultaccount",
+                "defaultwckey",
+                "partition",
+            ],
+        },
+        "delete": {
+            "syntax": "slurm-cli del users USERNAME",
+            "examples": [
+                "slurm-cli del users john",
+                "slurm-cli del users -y john",
+            ],
+            "options": ["name"],
+        },
+        "update": {
+            "syntax": "slurm-cli mod users USERNAME set KEY=VALUE",
+            "examples": [
+                "slurm-cli mod users john set adminlevel=operator",
+                "slurm-cli mod users defaultaccount=old set defaultaccount=new",
+            ],
+            "options": [
+                "adminlevel",
+                "defaultaccount",
+                "defaultwckey",
+                "newname",
+                "partition",
+            ],
+        },
+        "show": {
+            "syntax": "slurm-cli show users [FILTER]",
+            "examples": [
+                "slurm-cli show users",
+                "slurm-cli show users adminlevel=Admin",
+            ],
+            "options": ["name", "account", "adminlevel", "cluster"],
+        },
+    },
+    "associations": {
+        "description": "Manage Slurm user-account associations",
+        "create": {
+            "syntax": "slurm-cli add assoc user=USERNAME account=ACCOUNT [OPTIONS]",
+            "examples": [
+                "slurm-cli add assoc user=john account=research",
+                "slurm-cli add assoc name=jane account=eng qos=normal,high",
+            ],
+            "options": [
+                "name/user",
+                "account",
+                "cluster",
+                "partition",
+                "fairshare",
+                "qos",
+                "defaultqos",
+                "maxjobs",
+                "maxsubmit",
+            ],
+        },
+        "update": {
+            "syntax": "slurm-cli mod assoc user=USER account=ACCOUNT set KEY=VALUE",
+            "examples": [
+                "slurm-cli mod assoc user=john account=research set fairshare=100",
+                "slurm-cli mod assoc account=eng set defaultqos=normal",
+            ],
+            "options": [
+                "fairshare",
+                "qos",
+                "defaultqos",
+                "grpjobs",
+                "grpsubmit",
+                "maxjobs",
+                "maxsubmit",
+                "maxwall",
+            ],
+        },
+        "show": {
+            "syntax": "slurm-cli show assoc [FILTER] [--tree]",
+            "examples": [
+                "slurm-cli show assoc",
+                "slurm-cli show assoc user=john",
+                "slurm-cli show assoc account=research --tree",
+            ],
+            "options": [
+                "user",
+                "account",
+                "cluster",
+                "partition",
+                "--tree",
+                "--indent",
+            ],
+        },
+    },
+    "accounts": {
+        "description": "Manage Slurm accounts hierarchy",
+        "create": {
+            "syntax": "slurm-cli add accounts NAME [OPTIONS]",
+            "examples": [
+                "slurm-cli add accounts research organization=university",
+                "slurm-cli add accounts eng parent=root description='Engineering'",
+            ],
+            "options": [
+                "name",
+                "organization",
+                "parent",
+                "description",
+                "defaultqos",
+            ],
+        },
+        "update": {
+            "syntax": "slurm-cli mod accounts NAME set KEY=VALUE",
+            "examples": [
+                "slurm-cli mod accounts research set description='New desc'",
+                "slurm-cli mod accounts parent=old set parent=new",
+            ],
+            "options": [
+                "description",
+                "organization",
+                "parent",
+                "defaultqos",
+            ],
+        },
+        "delete": {
+            "syntax": "slurm-cli del accounts NAME",
+            "examples": ["slurm-cli del accounts oldaccount"],
+            "options": ["name"],
+        },
+        "show": {
+            "syntax": "slurm-cli show accounts [FILTER]",
+            "examples": [
+                "slurm-cli show accounts",
+                "slurm-cli show accounts organization=nvidia",
+            ],
+            "options": [
+                "name",
+                "organization",
+                "parent",
+                "description",
+            ],
+        },
+    },
+    "qos": {
+        "description": "Manage Slurm Quality of Service settings",
+        "create": {
+            "syntax": "slurm-cli add qos NAME [OPTIONS]",
+            "examples": [
+                "slurm-cli add qos highprio priority=1000",
+                "slurm-cli add qos express maxwall=1:00:00 preemptmode=cancel",
+            ],
+            "options": [
+                "name",
+                "priority",
+                "maxwall",
+                "maxjobspu",
+                "grpjobs",
+                "preemptmode",
+                "flags",
+            ],
+        },
+        "update": {
+            "syntax": "slurm-cli mod qos NAME set KEY=VALUE",
+            "examples": [
+                "slurm-cli mod qos normal set priority=500",
+                "slurm-cli mod qos batch set maxjobspu=10 preemptmode=requeue",
+            ],
+            "options": [
+                "priority",
+                "maxwall",
+                "maxjobspu",
+                "grpjobs",
+                "preemptmode",
+            ],
+        },
+        "delete": {
+            "syntax": "slurm-cli del qos NAME",
+            "examples": ["slurm-cli del qos oldqos"],
+            "options": ["name"],
+        },
+        "show": {
+            "syntax": "slurm-cli show qos [NAME]",
+            "examples": [
+                "slurm-cli show qos",
+                "slurm-cli show qos normal",
+            ],
+            "options": ["name"],
+        },
+    },
+    "partitions": {
+        "description": "Manage Slurm partitions",
+        "create": {
+            "syntax": "slurm-cli add part NAME [OPTIONS]",
+            "examples": [
+                "slurm-cli add part batch nodes=node[01-10]",
+                "slurm-cli add part gpu nodes=gpu[01-04] state=up",
+            ],
+            "options": [
+                "name",
+                "nodes",
+                "state",
+                "maxtime",
+                "default",
+                "hidden",
+            ],
+        },
+        "update": {
+            "syntax": "slurm-cli mod part NAME set KEY=VALUE",
+            "examples": [
+                "slurm-cli mod part batch set state=drain",
+                "slurm-cli mod part gpu set maxtime=24:00:00",
+            ],
+            "options": [
+                "state",
+                "maxtime",
+                "nodes",
+                "default",
+                "hidden",
+            ],
+        },
+        "delete": {
+            "syntax": "slurm-cli del part NAME",
+            "examples": ["slurm-cli del part oldpartition"],
+            "options": ["name"],
+        },
+        "show": {
+            "syntax": "slurm-cli show part [NAME]",
+            "examples": [
+                "slurm-cli show part",
+                "slurm-cli show part batch",
+            ],
+            "options": ["name", "state"],
+        },
+    },
+    "nodes": {
+        "description": "Manage Slurm compute nodes",
+        "update": {
+            "syntax": "slurm-cli mod nodes NAME set KEY=VALUE",
+            "examples": [
+                "slurm-cli mod nodes node01 set state=drain reason='Maintenance'",
+                "slurm-cli mod nodes gpu[01-04] set state=resume",
+            ],
+            "options": ["state", "reason", "weight", "features"],
+        },
+        "show": {
+            "syntax": "slurm-cli show nodes [NAME]",
+            "examples": [
+                "slurm-cli show nodes",
+                "slurm-cli show nodes node01",
+                "slurm-cli show nodes state=idle",
+            ],
+            "options": ["name", "state", "partition"],
+        },
+    },
+    "reservations": {
+        "description": "Manage Slurm reservations",
+        "create": {
+            "syntax": "slurm-cli add res NAME [OPTIONS]",
+            "examples": [
+                "slurm-cli add res maint starttime=now duration=2:00:00 nodes=ALL",
+                "slurm-cli add res team users=john,jane nodes=node[01-04]",
+            ],
+            "options": [
+                "name",
+                "starttime",
+                "duration",
+                "endtime",
+                "nodes",
+                "users",
+                "accounts",
+            ],
+        },
+        "update": {
+            "syntax": "slurm-cli mod res NAME set KEY=VALUE",
+            "examples": [
+                "slurm-cli mod res maint set duration=4:00:00",
+                "slurm-cli mod res team set users+=newuser",
+            ],
+            "options": [
+                "duration",
+                "endtime",
+                "nodes",
+                "users",
+                "accounts",
+            ],
+        },
+        "delete": {
+            "syntax": "slurm-cli del res NAME",
+            "examples": ["slurm-cli del res oldreservation"],
+            "options": ["name"],
+        },
+        "show": {
+            "syntax": "slurm-cli show res [NAME]",
+            "examples": [
+                "slurm-cli show res",
+                "slurm-cli show res maint",
+            ],
+            "options": ["name"],
+        },
+    },
+}
+
 RESOURCES_ALIASES = {
     "partitions": ["part", "parts"],
     "nodes": ["node"],
@@ -97,9 +439,13 @@ def get_show_resource_choices() -> List[str]:
 
 def resolve_resource_alias(resource: str) -> str:
     """Resolve resource alias to canonical name."""
-    for orig, alias_list in RESOURCES_ALIASES.items():
-        if orig in alias_list:
-            return orig
+    # Check if resource is already a canonical name
+    if resource in RESOURCES_ALIASES:
+        return resource
+    # Check if resource is an alias
+    for canonical, alias_list in RESOURCES_ALIASES.items():
+        if resource in alias_list:
+            return canonical
     return resource
 
 
@@ -242,8 +588,60 @@ def get_profile_str(
     return ctx.obj.get("profile_str")
 
 
+def show_resource_help(action: str, resource: str) -> bool:
+    """Show resource-specific help for an action.
+
+    Args:
+        action: The action (create, update, delete, show)
+        resource: The resource name or alias
+
+    Returns:
+        True if help was shown, False if no help available
+    """
+    # Resolve resource alias to canonical name
+    canonical = resolve_resource_alias(resource)
+
+    # Get help info for this resource
+    help_info = RESOURCE_HELP.get(canonical)
+    if not help_info:
+        return False
+
+    # Get action-specific help
+    action_help = help_info.get(action)
+    if not action_help:
+        # Show general resource description only
+        console.print(
+            f"\n[bold]{help_info.get('description', canonical)}[/bold]"
+        )
+        console.print(
+            f"\n[yellow]No '{action}' action available for {canonical}[/yellow]"
+        )
+        return True
+
+    # Show help
+    console.print(
+        f"\n[bold]{help_info.get('description', canonical)}[/bold]"
+    )
+    console.print(
+        f"\n[cyan]Syntax:[/cyan] {action_help.get('syntax', '')}"
+    )
+
+    if action_help.get("examples"):
+        console.print("\n[cyan]Examples:[/cyan]")
+        for example in action_help["examples"]:
+            console.print(f"  {example}")
+
+    if action_help.get("options"):
+        console.print("\n[cyan]Options:[/cyan]")
+        options = ", ".join(action_help["options"])
+        console.print(f"  {options}")
+
+    console.print()
+    return True
+
+
 def print_help(command: str, ctx: click.Context) -> None:
-    """Print help for a command."""
+    """Print help for a command (legacy function)."""
     if command[:12] == "create coord":
         click.echo(
             "Create a coordinator(s).\n"
@@ -368,8 +766,59 @@ def show_command_help(
     if not value or ctx.resilient_parsing:
         return
 
+    # Check if we have a resource argument to show resource-specific help
+    # Parse the raw arguments to find the resource
+    import sys
+
+    args = sys.argv[1:]
+
+    # Find the action (command name from context)
+    action = None
+    resource = None
+    command_name = ctx.info_name if ctx else None
+
+    # Map command names to actions
+    action_map = {
+        "create": "create",
+        "add": "create",
+        "new": "create",
+        "update": "update",
+        "modify": "update",
+        "mod": "update",
+        "edit": "update",
+        "set": "update",
+        "delete": "delete",
+        "del": "delete",
+        "remove": "delete",
+        "rm": "delete",
+        "show": "show",
+        "sh": "show",
+        "list": "show",
+        "ls": "show",
+    }
+
+    if command_name:
+        action = action_map.get(command_name, command_name)
+
+    # Find resource in args (skip options starting with -)
+    for arg in args:
+        if arg.startswith("-"):
+            continue
+        if arg in action_map:
+            continue
+        # This might be the resource
+        resource = arg
+        break
+
+    # Try to show resource-specific help
+    if action and resource:
+        if show_resource_help(action, resource):
+            ctx.exit()
+            return
+
     # Show the standard command help
     click.echo(ctx.get_help())
+    ctx.exit()
 
 
 def show_command_help_with_resources(
@@ -656,7 +1105,7 @@ def register_commands() -> None:
 
 
 # Show command
-@click.command(context_settings=CONTEXT_SETTINGS)
+@click.command(context_settings=CONTEXT_SETTINGS_NO_HELP)
 @click.argument(
     "resource",
     type=click.Choice(get_show_resource_choices()),
@@ -914,7 +1363,7 @@ def show(
 
 
 # Update command
-@click.command(context_settings=CONTEXT_SETTINGS)
+@click.command(context_settings=CONTEXT_SETTINGS_NO_HELP)
 @click.argument(
     "resource",
     type=click.Choice(get_resource_choices()),
@@ -1169,7 +1618,7 @@ def update(
 
 
 # Create command group with resource subcommands
-@click.command(context_settings=CONTEXT_SETTINGS)
+@click.command(context_settings=CONTEXT_SETTINGS_NO_HELP)
 @click.argument(
     "resource",
     type=click.Choice(get_resource_choices()),
@@ -1344,7 +1793,7 @@ def create(
 
 
 # delete command
-@click.command(context_settings=CONTEXT_SETTINGS)
+@click.command(context_settings=CONTEXT_SETTINGS_NO_HELP)
 @click.argument(
     "resource",
     type=click.Choice(get_resource_choices()),

@@ -34,11 +34,11 @@
   - [x] create
   - [x] delete
   - [x] update
-- [ ] **Associations Management**: Add support for managing user-account associations with tree-like display
+- [x] **Associations Management**: Add support for managing user-account associations with tree-like display
   - [x] show
   - [x] add
-  - [ ] delete
-  - [ ] update
+  - [x] delete
+  - [x] update
 - [ ] **Coordinators Management**: Complete coordinator management functionality
   - [x] show
   - [x] create
