@@ -319,12 +319,13 @@ _slurm_cli_associations_autocomplete() {{
 
     @classmethod
     def _sort_hierarchically(
-        cls, associations: List[Dict[str, Any]]
+        cls, associations: List[Dict[str, Any]], indent: str = "  "
     ) -> List[Dict[str, Any]]:
         """Sort associations hierarchically and add depth/indent info.
 
         Args:
             associations: List of association dictionaries
+            indent: Indentation string per level (default: two spaces)
 
         Returns:
             Sorted list with '_depth' and '_indent' keys added
@@ -374,7 +375,7 @@ _slurm_cli_associations_autocomplete() {{
             if info.get("account_assoc"):
                 assoc = info["account_assoc"].copy()
                 assoc["_depth"] = depth
-                assoc["_indent"] = "  " * depth
+                assoc["_indent"] = indent * depth
                 result.append(assoc)
 
             # Add users (sorted)
@@ -384,7 +385,7 @@ _slurm_cli_associations_autocomplete() {{
             for user_assoc in users:
                 assoc = user_assoc.copy()
                 assoc["_depth"] = depth + 1
-                assoc["_indent"] = "  " * (depth + 1)
+                assoc["_indent"] = indent * (depth + 1)
                 result.append(assoc)
 
             # Add child accounts (sorted)
@@ -522,6 +523,7 @@ _slurm_cli_associations_autocomplete() {{
         profile: str = "default",
         profile_str: Optional[str] = None,
         tree: bool = False,
+        indent: str = "  ",
     ) -> None:
         """Show association information.
 
@@ -533,6 +535,7 @@ _slurm_cli_associations_autocomplete() {{
             zebra: Use zebra striping for table rows (default: False)
             profile: Profile name to use for output formatting
             profile_str: Inline profile string (overrides profile)
+            indent: Indentation string for tree mode (default: two spaces)
             tree: Show associations in hierarchical tree format
         """
         try:
@@ -583,7 +586,9 @@ _slurm_cli_associations_autocomplete() {{
 
             if tree:
                 # Tree mode - sort hierarchically and add indent
-                associations = cls._sort_hierarchically(associations)
+                associations = cls._sort_hierarchically(
+                    associations, indent
+                )
             if style == "json":
                 # Print filtered JSON
                 filtered_data = {"associations": associations}

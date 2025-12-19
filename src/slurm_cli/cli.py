@@ -673,6 +673,11 @@ def register_commands() -> None:
     help="Show associations in hierarchical tree format",
 )
 @click.option(
+    "--indent",
+    default="  ",
+    help="Indentation string for tree mode (default: two spaces)",
+)
+@click.option(
     "--help",
     "-h",
     is_flag=True,
@@ -688,6 +693,7 @@ def show(
     field: Optional[str],
     verbose: bool,
     tree: bool = False,
+    indent: str = "  ",
     style: Optional[str] = None,
     pretty: bool = False,
     json: bool = False,
@@ -863,6 +869,7 @@ def show(
                 profile=profile,
                 profile_str=profile_str,
                 tree=tree,
+                indent=indent,
             )
         else:
             Association.show(
@@ -872,6 +879,7 @@ def show(
                 profile=profile,
                 profile_str=profile_str,
                 tree=tree,
+                indent=indent,
             )
     elif canonical_resource[:5] == "coord":
         if field:
