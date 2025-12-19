@@ -24,10 +24,10 @@
   - [x] create
   - [x] delete
   - [x] update
-- [ ] **Accounts Management**: Add support for managing accounts
+- [x] **Accounts Management**: Add support for managing accounts
   - [x] show (with filter support: `organization=nvidia`)
   - [x] create (with autocomplete for ACCOUNT_OPTIONS)
-  - [ ] delete
+  - [x] delete
   - [x] update (simple mode and WHERE/SET bulk mode)
 - [ ] **Users Management**: Add support for managing users
   - [x] show
