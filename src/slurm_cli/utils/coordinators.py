@@ -79,7 +79,7 @@ _slurm_cli_coordinators_autocomplete() {
         show|delete)   _slurm_complete "$filter_options" "$cur" ;;
     esac
 }
-"""
+"""  # noqa: E501
         return script
 
     @classmethod
