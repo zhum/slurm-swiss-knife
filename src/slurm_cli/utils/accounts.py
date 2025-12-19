@@ -12,11 +12,11 @@ from .profiles import format_with_template, get_profile_config
 from .utils import console
 
 # Account configuration options (sacctmgr field names)
+# Note: Flags is read-only (shows status like "Deleted"), not settable
 ACCOUNT_OPTIONS: List[str] = [
     "Cluster",
     # "DefaultQOS",
     "Description",
-    "Flags",
     "Name",
     # "Fairshare",
     # "GrpJobs",
