@@ -20,6 +20,57 @@ slurm-cli show associations account=myaccount
 
 # JSON output
 slurm-cli show associations --json
+
+# Tree view (hierarchical display)
+slurm-cli show associations --tree
+
+# Tree view with custom indentation
+slurm-cli show associations --tree --indent=">>> "
+slurm-cli show associations --tree --indent=$'\t'   # tab indentation
+```
+
+## Tree View
+
+The `--tree` option displays associations in a hierarchical format, showing the account hierarchy with proper indentation:
+
+```bash
+slurm-cli show associations --tree
+```
+
+Output:
+
+```
+Account          User          Cluster        Shares_Raw Qos
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+root             -             cluster        1          normal
+  root           alice         cluster        1          normal
+  root           bob           cluster        1          normal
+  engineering    -             cluster        100        normal,high
+    engineering  carol         cluster        1          normal,high
+    engineering  dave          cluster        1          normal,high
+```
+
+### Custom Indentation
+
+Use `--indent` to specify a custom indentation string (default: two spaces):
+
+```bash
+# Use 4 spaces
+slurm-cli show associations --tree --indent="    "
+
+# Use arrows
+slurm-cli show associations --tree --indent=">>> "
+
+# Use tabs
+slurm-cli show associations --tree --indent=$'\t'
+```
+
+### Tree View with CSV
+
+The tree view also works with CSV output:
+
+```bash
+slurm-cli show associations --tree --csv
 ```
 
 ## Update Associations

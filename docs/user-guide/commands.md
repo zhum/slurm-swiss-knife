@@ -30,6 +30,8 @@ slurm-cli show <resource> [name] [filters...] [options]
 | `--profile=NAME` | Use named output profile |
 | `--profile-str=STR` | Inline profile specification |
 | `--zebra` | Zebra striping for tables |
+| `--tree`, `-T` | Hierarchical tree view (associations only) |
+| `--indent=STR` | Indentation string for tree mode (default: two spaces) |
 | `--force-cache-update` | Refresh cached data |
 
 ### Examples
