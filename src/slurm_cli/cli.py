@@ -1170,6 +1170,18 @@ def update(
     "--verbose", "-v", is_flag=True, help="Enable verbose output"
 )
 @click.option(
+    "--force",
+    "-f",
+    is_flag=True,
+    help="Skip confirmation prompts",
+)
+@click.option(
+    "--yes",
+    "-y",
+    is_flag=True,
+    help="Skip confirmation prompts (alias for --force)",
+)
+@click.option(
     "--help",
     "-h",
     is_flag=True,
@@ -1186,6 +1198,8 @@ def create(
     names: tuple,
     verbose: bool,
     dry_run: bool,
+    force: bool,
+    yes: bool,
     **kwargs,
 ) -> None:
     """Create Slurm resource fields (aliases: c, new, add)."""
@@ -1245,6 +1259,32 @@ def create(
                         "provide name as first argument.[/red]"
                     )
                     return
+
+            # Check if account or wckey is specified
+            global_yes = ctx.obj.get("yes", False) if ctx.obj else False
+            skip_confirm = force or yes or global_yes
+            has_account = any(
+                k.lower() in ("account", "defaultaccount")
+                for k in create_options
+            )
+            has_wckey = any(
+                k.lower() in ("wckey", "defaultwckey")
+                for k in create_options
+            )
+            if not has_account and not has_wckey:
+                console.print(
+                    "[yellow]Warning: Neither 'account' nor 'wckey' "
+                    "is specified.[/yellow]"
+                )
+                console.print(
+                    "[yellow]User creation will likely fail without "
+                    "an account association.[/yellow]"
+                )
+                if not skip_confirm:
+                    if not click.confirm("Do you want to continue?"):
+                        console.print("Aborted.")
+                        return
+
             User.create(user_name, verbose, **create_options)
         elif canonical_resource[:3] == "qos":
             Qos.create(field, verbose, **create_options)
