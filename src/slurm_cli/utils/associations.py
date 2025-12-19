@@ -318,6 +318,113 @@ _slurm_cli_associations_autocomplete() {{
         return associations
 
     @classmethod
+    def _show_tree(cls, associations: List[Dict[str, Any]]) -> None:
+        """Display associations in a hierarchical tree format.
+
+        Groups associations by account hierarchy and shows users under
+        their respective accounts with proper indentation.
+
+        Args:
+            associations: List of association dictionaries
+        """
+        from rich.tree import Tree
+
+        # Build account hierarchy
+        # First, find all unique accounts and their parent relationships
+        accounts = {}  # account -> {parent, users, children}
+        for assoc in associations:
+            account = assoc.get("account", "")
+            parent = assoc.get("parent_account", "")
+            user = assoc.get("user", "")
+            partition = assoc.get("partition", "")
+            qos = assoc.get("qos", [])
+            if isinstance(qos, list):
+                qos = ",".join(qos) if qos else ""
+
+            if account not in accounts:
+                accounts[account] = {
+                    "parent": parent,
+                    "users": [],
+                    "children": [],
+                    "partition": partition,
+                    "qos": qos,
+                }
+
+            # If this is a user association, add to users list
+            if user:
+                accounts[account]["users"].append(
+                    {"user": user, "partition": partition, "qos": qos}
+                )
+
+        # Build parent-child relationships
+        for account, info in accounts.items():
+            parent = info["parent"]
+            if parent and parent in accounts:
+                if account not in accounts[parent]["children"]:
+                    accounts[parent]["children"].append(account)
+
+        # Find root accounts (no parent or parent not in list)
+        root_accounts = [
+            acc
+            for acc, info in accounts.items()
+            if not info["parent"] or info["parent"] not in accounts
+        ]
+
+        # Sort root accounts
+        root_accounts.sort()
+
+        # Create the tree
+        tree = Tree("[bold cyan]Associations[/bold cyan]")
+
+        def add_account_node(
+            parent_node, account_name: str, depth: int = 0
+        ):
+            """Recursively add account and its children/users to tree."""
+            info = accounts.get(account_name, {})
+            qos_str = (
+                f" [dim]qos={info.get('qos', '')}[/dim]"
+                if info.get("qos")
+                else ""
+            )
+            part_str = (
+                f" [dim]partition={info.get('partition', '')}[/dim]"
+                if info.get("partition")
+                else ""
+            )
+
+            # Add account node
+            account_node = parent_node.add(
+                f"[bold yellow]{account_name}[/bold yellow]{part_str}{qos_str}"
+            )
+
+            # Add users under this account
+            users = info.get("users", [])
+            users.sort(key=lambda u: u["user"])
+            for user_info in users:
+                user = user_info["user"]
+                u_qos = user_info.get("qos", "")
+                u_part = user_info.get("partition", "")
+                u_qos_str = f" [dim]qos={u_qos}[/dim]" if u_qos else ""
+                u_part_str = (
+                    f" [dim]partition={u_part}[/dim]" if u_part else ""
+                )
+                account_node.add(
+                    f"[green]{user}[/green]{u_part_str}{u_qos_str}"
+                )
+
+            # Add child accounts
+            children = info.get("children", [])
+            children.sort()
+            for child in children:
+                add_account_node(account_node, child, depth + 1)
+
+        # Build tree from root accounts
+        for root in root_accounts:
+            add_account_node(tree, root)
+
+        console.print(tree)
+
+    @classmethod
     def show(
         cls,
         field: str = None,
@@ -327,6 +434,7 @@ _slurm_cli_associations_autocomplete() {{
         zebra: bool = False,
         profile: str = "default",
         profile_str: Optional[str] = None,
+        tree: bool = False,
     ) -> None:
         """Show association information.
 
@@ -338,6 +446,7 @@ _slurm_cli_associations_autocomplete() {{
             zebra: Use zebra striping for table rows (default: False)
             profile: Profile name to use for output formatting
             profile_str: Inline profile string (overrides profile)
+            tree: Show associations in hierarchical tree format
         """
         try:
             # Always get JSON output from sacctmgr
@@ -385,7 +494,10 @@ _slurm_cli_associations_autocomplete() {{
                         )
                         return
 
-            if style == "json":
+            if tree:
+                # Tree display mode
+                cls._show_tree(associations)
+            elif style == "json":
                 # Print filtered JSON
                 filtered_data = {"associations": associations}
                 console.print_json(json.dumps(filtered_data, indent=2))

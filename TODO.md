@@ -29,14 +29,14 @@
   - [x] create (with autocomplete for ACCOUNT_OPTIONS)
   - [x] delete
   - [x] update (simple mode and WHERE/SET bulk mode)
-- [ ] **Users Management**: Add support for managing users
+- [x] **Users Management**: Add support for managing users
   - [x] show
   - [x] create
   - [x] delete
   - [x] update
 - [ ] **Associations Management**: Add support for managing user-account associations with tree-like display
   - [x] show
-  - [ ] add
+  - [x] add
   - [ ] delete
   - [ ] update
 - [ ] **Coordinators Management**: Complete coordinator management functionality

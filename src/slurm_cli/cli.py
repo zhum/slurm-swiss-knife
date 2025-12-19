@@ -667,6 +667,12 @@ def register_commands() -> None:
     "--verbose", "-v", is_flag=True, help="Enable verbose output"
 )
 @click.option(
+    "--tree",
+    "-T",
+    is_flag=True,
+    help="Show associations in hierarchical tree format",
+)
+@click.option(
     "--help",
     "-h",
     is_flag=True,
@@ -681,6 +687,7 @@ def show(
     resource: Optional[str],
     field: Optional[str],
     verbose: bool,
+    tree: bool = False,
     style: Optional[str] = None,
     pretty: bool = False,
     json: bool = False,
@@ -855,6 +862,7 @@ def show(
                 zebra=zebra,
                 profile=profile,
                 profile_str=profile_str,
+                tree=tree,
             )
         else:
             Association.show(
@@ -863,6 +871,7 @@ def show(
                 zebra=zebra,
                 profile=profile,
                 profile_str=profile_str,
+                tree=tree,
             )
     elif canonical_resource[:5] == "coord":
         if field:
