@@ -79,8 +79,8 @@ _slurm_cli_accounts_autocomplete() {{
     local filter_options="{'= '.join(valid_keys)}="
     local update_options="$filter_options set"
 
-    # If we're on the name field (right after 'accounts')
-    if [[ $name == accounts && $prev == accounts ]]; then
+    # If we're on the name field (right after 'accounts') and not completing a value
+    if [[ $name == accounts && $prev == accounts && $cur != *=* ]]; then
         case "$cmd" in
             show)
                 # For show, allow both account names and filter options
@@ -116,24 +116,58 @@ _slurm_cli_accounts_autocomplete() {{
             return
             ;;
         show|create|update)
-            if [[ $cur == = || $prev == = ]]; then
-                local key
-                if [[ $cur == = ]]; then
-                    key=${{COMP_WORDS[COMP_CWORD-1]}}
-                else
-                    key=${{COMP_WORDS[COMP_CWORD-2]}}
-                fi
+            # Handle case where = is a separate word
+            if [[ $cur == = ]]; then
+                local key="${{COMP_WORDS[COMP_CWORD-1]}}"
                 key=${{key,,}}
-
                 case "$key" in
                     defaultqos)
                         if [ -f "/tmp/slurm_cli_qos.json" ]; then
-                            COMPREPLY=($(compgen -W "$(jq -r '.qos[].name' /tmp/slurm_cli_qos.json 2>/dev/null)" -- "${{cur#*=}}"))
+                            COMPREPLY=($(compgen -W "$(jq -r '.qos[].name' /tmp/slurm_cli_qos.json 2>/dev/null)"))
                         fi
                         ;;
                     parent|organization)
                         if [ -n "$cached_accounts" ]; then
-                            COMPREPLY=($(compgen -W "$cached_accounts" -- "${{cur#*=}}"))
+                            COMPREPLY=($(compgen -W "$cached_accounts"))
+                        fi
+                        ;;
+                esac
+                return
+            # Handle case where key=value is a single word (including key=)
+            elif [[ $cur == *=* ]]; then
+                local key="${{cur%%=*}}"
+                local val="${{cur#*=}}"
+                key=${{key,,}}
+                case "$key" in
+                    defaultqos)
+                        if [ -f "/tmp/slurm_cli_qos.json" ]; then
+                            COMPREPLY=($(compgen -W "$(jq -r '.qos[].name' /tmp/slurm_cli_qos.json 2>/dev/null)" -- "$val"))
+                        fi
+                        ;;
+                    parent|organization)
+                        if [ -n "$cached_accounts" ]; then
+                            COMPREPLY=($(compgen -W "$cached_accounts" -- "$val"))
+                        fi
+                        ;;
+                esac
+                # Add key= prefix back
+                if [[ ${{#COMPREPLY[@]}} -gt 0 ]]; then
+                    COMPREPLY=("${{COMPREPLY[@]/#/$key=}}")
+                fi
+                return
+            # Handle case where = is a separate word and we're after it
+            elif [[ $prev == = ]]; then
+                local key="${{COMP_WORDS[COMP_CWORD-2]}}"
+                key=${{key,,}}
+                case "$key" in
+                    defaultqos)
+                        if [ -f "/tmp/slurm_cli_qos.json" ]; then
+                            COMPREPLY=($(compgen -W "$(jq -r '.qos[].name' /tmp/slurm_cli_qos.json 2>/dev/null)" -- "$cur"))
+                        fi
+                        ;;
+                    parent|organization)
+                        if [ -n "$cached_accounts" ]; then
+                            COMPREPLY=($(compgen -W "$cached_accounts" -- "$cur"))
                         fi
                         ;;
                 esac

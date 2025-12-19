@@ -19,11 +19,11 @@
   - [x] create (with autocomplete for QOS_OPTIONS, QOS_FLAGS, PREEMPT_MODE_VALUES)
   - [x] delete
   - [x] update
-- [ ] **Partition Management**: Add support for managing partitions
+- [x] **Partition Management**: Add support for managing partitions
   - [x] show
   - [x] create
-  - [ ] delete
-  - [ ] update
+  - [x] delete
+  - [x] update
 - [ ] **Accounts Management**: Add support for managing accounts
   - [x] show (with filter support: `organization=nvidia`)
   - [x] create (with autocomplete for ACCOUNT_OPTIONS)
