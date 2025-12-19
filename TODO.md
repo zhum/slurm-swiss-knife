@@ -47,7 +47,7 @@
 
 ### User Interface Improvements
 
-- [ ] **Tree-like Associations Display**: Optionally show associations in hierarchical tree format
+- [x] **Tree-like Associations Display**: Optionally show associations in hierarchical tree format
 - [ ] **Enhanced Output Formats**: Add more output format options (CSV, YAML, XML)
 - [ ] **Interactive Mode**: Add interactive shell mode for better user experience
 - [ ] **Progress Indicators**: Add progress bars for long-running operations
