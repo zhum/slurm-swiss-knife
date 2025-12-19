@@ -1297,6 +1297,21 @@ def create(
                 print_help("create coordinator", ctx)
                 return
             Coordinator.create(field, verbose, **create_options)
+        elif canonical_resource[:5] == "assoc":
+            # Support account= syntax: if field contains =, parse it as option
+            account_name = field
+            if "=" in field:
+                key, value_part = field.split("=", 1)
+                create_options[key] = value_part
+                # Get account from options
+                account_name = create_options.pop("account", None)
+                if not account_name:
+                    console.print(
+                        "[red]Error: Account name required. Use 'account=' "
+                        "or provide account as first argument.[/red]"
+                    )
+                    return
+            Association.create(account_name, verbose, **create_options)
         else:
             console.print(
                 f"[red]Resource '{canonical_resource}' not found.[/red]"
