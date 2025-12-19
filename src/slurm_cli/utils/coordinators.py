@@ -52,9 +52,9 @@ _slurm_cli_coordinators_autocomplete() {
     local cached_accounts="$(_slurm_cache_accounts)"
     local cached_users="$(_slurm_cache_users)"
     local filter_options="account= name="
-    local update_options="account= name= name+= name-="
+    local create_options="account= name="
 
-    # Handle key=value, key+=value, or key-=value completion
+    # Handle key=value completion
     if _slurm_parse_keyval_ext "$cur" "$prev"; then
         case "$_key" in
             account) _slurm_complete_value "$cached_accounts" "$_key" "$_val" "$cur" ;;
@@ -68,14 +68,14 @@ _slurm_cli_coordinators_autocomplete() {
        [[ $name == coord && $prev == coord ]]; then
         case "$cmd" in
             show|delete)   _slurm_complete "$filter_options $cached_accounts" "$cur" ;;
-            create|update) _slurm_complete "$update_options" "$cur" ;;
+            create|update) _slurm_complete "$create_options $cached_accounts" "$cur" ;;
         esac
         return
     fi
 
-    # Default completion for subsequent arguments
+    # Default completion for subsequent arguments (users for second+ args)
     case "$cmd" in
-        create|update) _slurm_complete "$update_options" "$cur" ;;
+        create|update) _slurm_complete "$create_options $cached_users" "$cur" ;;
         show|delete)   _slurm_complete "$filter_options" "$cur" ;;
     esac
 }
