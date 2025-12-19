@@ -251,7 +251,23 @@ _slurm_cli_users_autocomplete() {{
     fi
 
     case "$cmd" in
-        delete) _slurm_complete "$filter_options" "$cur"; return ;;
+        delete)
+            if _slurm_parse_keyval "$cur" "$prev"; then
+                case "$_key" in
+                    user|name)
+                        _slurm_complete_value "$cached_users" "$_key" "$_val" "$cur" ;;
+                    account|defaultaccount)
+                        _slurm_complete_value "$(_slurm_cache_accounts)" "$_key" "$_val" "$cur" ;;
+                    partition)
+                        _slurm_complete_value "$(_slurm_cache_partitions)" "$_key" "$_val" "$cur" ;;
+                    adminlevel)
+                        _slurm_complete_value "{admin_levels}" "$_key" "$_val" "$cur" ;;
+                esac
+                return
+            fi
+            _slurm_complete "$filter_options" "$cur"
+            return
+            ;;
         update)
             # After 'set' keyword, show SET options
             if [[ $found_set -eq 1 ]]; then
