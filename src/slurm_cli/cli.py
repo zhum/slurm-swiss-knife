@@ -1232,7 +1232,20 @@ def create(
         elif canonical_resource[:4] == "node":
             Node.create(field, verbose, **create_options)
         elif canonical_resource[:4] == "user":
-            User.create(field, verbose, **create_options)
+            # Support name= syntax: if field contains =, parse it as option
+            user_name = field
+            if "=" in field:
+                key, value_part = field.split("=", 1)
+                create_options[key] = value_part
+                # Get name from options
+                user_name = create_options.pop("name", None)
+                if not user_name:
+                    console.print(
+                        "[red]Error: User name required. Use 'name=' or "
+                        "provide name as first argument.[/red]"
+                    )
+                    return
+            User.create(user_name, verbose, **create_options)
         elif canonical_resource[:3] == "qos":
             Qos.create(field, verbose, **create_options)
         elif canonical_resource[:3] == "acc":

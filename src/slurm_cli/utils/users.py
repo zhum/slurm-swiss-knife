@@ -203,6 +203,7 @@ class User(BaseSlurmResource):
         where_opts = [opt.lower() for opt in USER_UPDATE_WHERE_OPTIONS]
         set_opts = [opt.lower() for opt in USER_UPDATE_SET_OPTIONS]
         create_opts = [
+            "name",
             "account",
             "adminlevel",
             "cluster",
@@ -308,6 +309,8 @@ _slurm_cli_users_autocomplete() {{
         create)
             if _slurm_parse_keyval "$cur" "$prev"; then
                 case "$_key" in
+                    name)
+                        _slurm_complete_value "$cached_users" "$_key" "$_val" "$cur" ;;
                     account|defaultaccount)
                         _slurm_complete_value "$(_slurm_cache_accounts)" "$_key" "$_val" "$cur" ;;
                     partition)
