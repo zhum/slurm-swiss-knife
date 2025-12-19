@@ -81,6 +81,28 @@ class Association(BaseSlurmResource):
             "is_default": "Whether this is the default association",
             "lineage": "Account lineage path",
             "parent_account": "Parent account name",
+            # SET options
+            "default_qos": "Default QOS for association",
+            "fairshare": "Fairshare value",
+            "grp_jobs": "Group jobs limit",
+            "grp_jobs_accrue": "Group jobs accrue limit",
+            "grp_submit": "Group submit limit",
+            "grp_submit_jobs": "Group submit jobs limit",
+            "grp_tres": "Group TRES limits",
+            "grp_tres_mins": "Group TRES minutes limit",
+            "grp_tres_run_mins": "Group TRES running minutes limit",
+            "grp_wall": "Group wall time limit",
+            "max_jobs": "Maximum jobs limit",
+            "max_jobs_accrue": "Maximum jobs accrue limit",
+            "max_submit": "Maximum submit limit",
+            "max_submit_jobs": "Maximum submit jobs limit",
+            "max_tres": "Maximum TRES limits",
+            "max_tres_pj": "Maximum TRES per job",
+            "max_tres_mins": "Maximum TRES minutes",
+            "max_tres_mins_pj": "Maximum TRES minutes per job",
+            "max_tres_pn": "Maximum TRES per node",
+            "max_wall": "Maximum wall time limit",
+            "max_wall_pj": "Maximum wall time per job",
         }
 
     @classmethod
