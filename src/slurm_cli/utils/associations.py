@@ -373,30 +373,10 @@ _slurm_cli_associations_autocomplete() {{
         # Sort root accounts
         root_accounts.sort()
 
-        # Create the tree
-        tree = Tree("[bold cyan]Associations[/bold cyan]")
-
-        def add_account_node(
-            parent_node, account_name: str, depth: int = 0
+        def add_children_to_node(
+            parent_node, account_name: str, info: dict
         ):
-            """Recursively add account and its children/users to tree."""
-            info = accounts.get(account_name, {})
-            qos_str = (
-                f" [dim]qos={info.get('qos', '')}[/dim]"
-                if info.get("qos")
-                else ""
-            )
-            part_str = (
-                f" [dim]partition={info.get('partition', '')}[/dim]"
-                if info.get("partition")
-                else ""
-            )
-
-            # Add account node
-            account_node = parent_node.add(
-                f"[bold yellow]{account_name}[/bold yellow]{part_str}{qos_str}"
-            )
-
+            """Add users and child accounts to a node."""
             # Add users under this account
             users = info.get("users", [])
             users.sort(key=lambda u: u["user"])
@@ -408,7 +388,7 @@ _slurm_cli_associations_autocomplete() {{
                 u_part_str = (
                     f" [dim]partition={u_part}[/dim]" if u_part else ""
                 )
-                account_node.add(
+                parent_node.add(
                     f"[green]{user}[/green]{u_part_str}{u_qos_str}"
                 )
 
@@ -416,13 +396,40 @@ _slurm_cli_associations_autocomplete() {{
             children = info.get("children", [])
             children.sort()
             for child in children:
-                add_account_node(account_node, child, depth + 1)
+                child_info = accounts.get(child, {})
+                qos_str = (
+                    f" [dim]qos={child_info.get('qos', '')}[/dim]"
+                    if child_info.get("qos")
+                    else ""
+                )
+                part_str = (
+                    f" [dim]partition={child_info.get('partition', '')}[/dim]"
+                    if child_info.get("partition")
+                    else ""
+                )
+                child_node = parent_node.add(
+                    f"[bold yellow]{child}[/bold yellow]{part_str}{qos_str}"
+                )
+                add_children_to_node(child_node, child, child_info)
 
-        # Build tree from root accounts
+        # Build and print tree for each root account
         for root in root_accounts:
-            add_account_node(tree, root)
-
-        console.print(tree)
+            info = accounts.get(root, {})
+            qos_str = (
+                f" [dim]qos={info.get('qos', '')}[/dim]"
+                if info.get("qos")
+                else ""
+            )
+            part_str = (
+                f" [dim]partition={info.get('partition', '')}[/dim]"
+                if info.get("partition")
+                else ""
+            )
+            tree = Tree(
+                f"[bold yellow]{root}[/bold yellow]{part_str}{qos_str}"
+            )
+            add_children_to_node(tree, root, info)
+            console.print(tree)
 
     @classmethod
     def show(
