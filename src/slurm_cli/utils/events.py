@@ -493,64 +493,34 @@ class Event(BaseSlurmResource):
     def generate_autocomplete_options(cls) -> str:
         """Generate bash autocomplete script for event options."""
         filter_opts = " ".join(
-            [f"{opt}=" for opt in EVENT_FILTER_OPTIONS]
+            f"{opt}=" for opt in EVENT_FILTER_OPTIONS
         )
+        states = "DOWN DRAIN FAIL FUTR IDLE MAINT POWER REBOOT"
 
         script = f"""
 _slurm_cli_events_autocomplete() {{
     local cmd="$1"
     local pos="$2"
 
-    name="${{COMP_WORDS[$pos]}}"
-    cur="${{COMP_WORDS[COMP_CWORD]}}"
-    prev="${{COMP_WORDS[COMP_CWORD-1]}}"
-
-    # Event filter options
+    local cur="${{COMP_WORDS[COMP_CWORD]}}"
+    local prev="${{COMP_WORDS[COMP_CWORD-1]}}"
     local filter_options="{filter_opts}"
 
-    # Check if we're completing a value after key=
-    local key=""
-    local val_prefix=""
-
-    if [[ $cur == *=* ]]; then
-        key=${{cur%%=*}}
-        val_prefix=${{cur#*=}}
-    elif [[ $prev == "=" ]]; then
-        key="${{COMP_WORDS[COMP_CWORD-2]}}"
-        val_prefix="$cur"
-    elif [[ $prev == *= ]]; then
-        key=${{prev%%=}}
-        val_prefix="$cur"
-    fi
-
-    if [ -n "$key" ]; then
-        key=${{key,,}}
-        case "$key" in
+    # Handle key=value completion
+    if _slurm_parse_keyval "$cur" "$prev"; then
+        case "$_key" in
             condflags)
-                COMPREPLY=($(compgen -W "Open" -- "$val_prefix"))
-                ;;
+                _slurm_complete_value "Open" "$_key" "$_val" "$cur" ;;
             states)
-                COMPREPLY=($(compgen -W "DOWN DRAIN FAIL FUTR IDLE MAINT POWER REBOOT" -- "$val_prefix"))
-                ;;
+                _slurm_complete_value "{states}" "$_key" "$_val" "$cur" ;;
             events)
-                COMPREPLY=($(compgen -W "Cluster Node" -- "$val_prefix"))
-                ;;
+                _slurm_complete_value "Cluster Node" "$_key" "$_val" "$cur" ;;
         esac
-        if [ ${{#COMPREPLY[@]}} -gt 0 ]; then
-            return
-        fi
+        [[ ${{#COMPREPLY[@]}} -gt 0 ]] && return
     fi
 
     # Default: show filter options
-    case "$cmd" in
-        show)
-            if [[ $cur == '' ]]; then
-                COMPREPLY=($(compgen -W "$filter_options"))
-            else
-                COMPREPLY=($(compgen -W "$filter_options" -- "$cur"))
-            fi
-            ;;
-    esac
+    [[ $cmd == "show" ]] && _slurm_complete "$filter_options" "$cur"
 }}
-"""  # noqa: E501
+"""
         return script

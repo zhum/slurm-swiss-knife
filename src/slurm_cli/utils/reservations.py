@@ -559,95 +559,60 @@ class Reservation(BaseSlurmResource):
                     f'[{alias}]="{cls.valid_args[canonical]["type"]}"'
                 )
         valid_types = " ".join(valid_types_list)
-        script = f"""
-_gen_comreply_for_keyvalues() {{
-    local cur="$1"
-    local file="$2"
-    list="$(jq -r 'keys[]' $file)"
-    if [[ $cur = = ]]; then
-        COMPREPLY=($list)
-    else
-        COMPREPLY=($(compgen -W "$list" -- "$cur"))
-    fi
-}}
+        options = " ".join(f"{k}=" for k in valid_keys)
+        flags = (
+            "ANY_NODES DAILY FLEX IGNORE_JOBS HOURLY LICENSE_ONLY MAINT "
+            "MAGNETIC NO_HOLD_JOBS_AFTER OVERLAP PART_NODES PURGE_COMP "
+            "REPLACE REPLACE_DOWN SPEC_NODES STATIC_ALLOC TIME_FLOAT "
+            "WEEKDAY WEEKEND WEEKLY"
+        )
 
+        script = f"""
 _slurm_cli_reservations_autocomplete() {{
-    # slurm-cli -x -y -z COMMAND reservation abc def ghi
-    #                    cmd                 ^ pos   ^ COMP_CWORD
     local cmd="$1"
     local pos="$2"
 
-    name="${{COMP_WORDS[$pos]}}"
-    cur="${{COMP_WORDS[COMP_CWORD]}}"
-    prev="${{COMP_WORDS[COMP_CWORD-1]}}"
+    local cur="${{COMP_WORDS[COMP_CWORD]}}"
+    local prev="${{COMP_WORDS[COMP_CWORD-1]}}"
+    local name="${{COMP_WORDS[$pos]}}"
 
-    if [[ $name == reservations && $prev == reservations ]]; then # we're on the name field
-        if [ -f "/tmp/slurm_cli_reservations.json" ]; then
-            COMPREPLY=($(compgen -W "$(jq -r 'keys[]' /tmp/slurm_cli_reservations.json)" -- "$cur"))
-        fi
+    local cached_reservations="$(_slurm_cache_reservations)"
+    local options="{options}"
+
+    # First argument after 'reservations'
+    if [[ $name == reservations && $prev == reservations ]]; then
+        _slurm_complete "$cached_reservations" "$cur"
         return
     fi
-    # echo -e "\\ncmd=$cmd pos=$pos name=$name cur=$cur; prev=$prev COMP_CWORD=${{COMP_CWORD}} ${{COMP_WORDS[@]}}"
-    case "$cmd" in
-        show|delete)
-            return
-            ;;
-        create|update)
-            # Check if we're completing an option (key=value format)
-            if [[ $cur == = || $prev == = ]]; then
-                # completing a value
-                local -A valid_types=({valid_types})
-                local key
 
-                if [[ $cur == = ]]; then   # abc=
-                    key=${{COMP_WORDS[COMP_CWORD-1]}}
-                else                       # abc=q
-                    key=${{COMP_WORDS[COMP_CWORD-2]}}
-                fi
-                local type=${{valid_types[$key]}}
-                # echo -e "\\n key=$key; type=$type; cur=$cur"
+    case "$cmd" in
+        show|delete) return ;;
+        create|update)
+            if _slurm_parse_keyval "$cur" "$prev"; then
+                local -A valid_types=({valid_types})
+                local type=${{valid_types[$_key]}}
                 case "$type" in
                     nodes)
-                        if [ -f "/tmp/slurm_cli_nodes.json" ]; then
-                            _gen_comreply_for_keyvalues "$cur" /tmp/slurm_cli_nodes.json
-                        fi
-                        ;;
+                        _slurm_complete_value "$(_slurm_cache_nodes)" "$_key" "$_val" "$cur" ;;
                     partition)
-                        if [ -f "/tmp/slurm_cli_partitions.json" ]; then
-                            _gen_comreply_for_keyvalues "$cur" "/tmp/slurm_cli_partitions.json"
-                        fi
-                        ;;
+                        _slurm_complete_value "$(_slurm_cache_partitions)" "$_key" "$_val" "$cur" ;;
                     account)
-                        if [ -f "/tmp/slurm_cli_accounts.json" ]; then
-                            _gen_comreply_for_keyvalues "$cur" "/tmp/slurm_cli_accounts.json"
-                        fi
-                        ;;
-                    int|time)
-                        ;;
+                        _slurm_complete_value "$(_slurm_cache_accounts)" "$_key" "$_val" "$cur" ;;
+                    int|time) ;;
                     *)
-                        case "$key" in
-                        flags)
-                            COMPREPLY=($(compgen -W "ANY_NODES DAILY FLEX IGNORE_JOBS HOURLY LICENSE_ONLY MAINT MAGNETIC NO_HOLD_JOBS_AFTER OVERLAP PART_NODES PURGE_COMP REPLACE REPLACE_DOWN SPEC_NODES STATIC_ALLOC TIME_FLOAT WEEKDAY WEEKEND WEEKLY" -- "${{cur#*=}}"))
-                            ;;
-                        skip)
-                            COMPREPLY=($(compgen -W "yes no y n 1 0" -- "${{cur#*=}}"))
-                            ;;
+                        case "$_key" in
+                            flags)
+                                _slurm_complete_value "{flags}" "$_key" "$_val" "$cur" ;;
+                            skip)
+                                _slurm_complete_value "yes no y n 1 0" "$_key" "$_val" "$cur" ;;
                         esac
-                    ;;
+                        ;;
                 esac
-                # echo "${{COMPREPLY}}"
                 return
-            else
-                # completing an option name
-                local -a valid_keys=({'= '.join(valid_keys)}=)
-                if [[ $cur == '' ]]; then
-                    COMPREPLY=(${{valid_keys[@]}})
-                else
-                    COMPREPLY=($(compgen -W "${{valid_keys[*]}}" "$cur"))
-                fi
             fi
+            _slurm_complete "$options" "$cur"
             ;;
     esac
 }}
-"""  # noqa: E501
+"""
         return script

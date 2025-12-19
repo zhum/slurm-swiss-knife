@@ -202,213 +202,103 @@ class User(BaseSlurmResource):
         valid_keys = [opt.lower() for opt in USER_OPTIONS]
         where_opts = [opt.lower() for opt in USER_UPDATE_WHERE_OPTIONS]
         set_opts = [opt.lower() for opt in USER_UPDATE_SET_OPTIONS]
+        filter_opts = " ".join(f"{k}=" for k in valid_keys)
+        where_options = " ".join(f"{k}=" for k in where_opts)
+        set_options = " ".join(f"{k}=" for k in set_opts)
+        admin_levels = "None Admin Operator"
 
         script = f"""
 _slurm_cli_users_autocomplete() {{
     local cmd="$1"
     local pos="$2"
 
-    name="${{COMP_WORDS[$pos]}}"
-    cur="${{COMP_WORDS[COMP_CWORD]}}"
-    prev="${{COMP_WORDS[COMP_CWORD-1]}}"
+    local cur="${{COMP_WORDS[COMP_CWORD]}}"
+    local prev="${{COMP_WORDS[COMP_CWORD-1]}}"
+    local name="${{COMP_WORDS[$pos]}}"
 
-    # Get cached user names if available (space-separated)
-    local cached_users=""
-    if [ -f "/tmp/slurm_cli_users.json" ]; then
-        cached_users=$(jq -r '.users[].name // .users[].user.name // keys[]' /tmp/slurm_cli_users.json 2>/dev/null | tr '\\n' ' ')
-    fi
-
-    # USER_OPTIONS for filtering/updating
-    local filter_options="{'= '.join(valid_keys)}="
-    local where_options="{'= '.join(where_opts)}="
-    local set_options="{'= '.join(set_opts)}="
+    local cached_users="$(_slurm_cache_users)"
+    local filter_options="{filter_opts}"
+    local where_options="{where_options}"
+    local set_options="{set_options}"
     local update_options="$cached_users $where_options set"
 
-    # Check if 'set' keyword has been typed (for update command)
+    # Check if 'set' keyword has been typed
     local found_set=0
     for word in "${{COMP_WORDS[@]}}"; do
-        if [[ "$word" == "set" ]]; then
-            found_set=1
-            break
-        fi
+        [[ "$word" == "set" ]] && found_set=1 && break
     done
 
-    # If we're on the name field (right after 'users')
+    # First argument after 'users'
     if [[ $name == users && $prev == users ]]; then
         case "$cmd" in
-            show)
-                # For show, allow both user names and filter options
-                local all_options="$cached_users $filter_options"
-                if [[ $cur == '' ]]; then
-                    COMPREPLY=($(compgen -W "$all_options"))
-                else
-                    COMPREPLY=($(compgen -W "$all_options" -- "$cur"))
-                fi
-                return
-                ;;
-            delete)
-                if [ -n "$cached_users" ]; then
-                    COMPREPLY=($(compgen -W "$cached_users" -- "$cur"))
-                fi
-                return
-                ;;
-            create)
-                # For create, just show options
-                if [[ $cur == '' ]]; then
-                    COMPREPLY=($(compgen -W "$filter_options"))
-                else
-                    COMPREPLY=($(compgen -W "$filter_options" -- "$cur"))
-                fi
-                return
-                ;;
-            update)
-                # For update, show both cached user names and options
-                if [[ $cur == '' ]]; then
-                    COMPREPLY=($(compgen -W "$update_options"))
-                else
-                    COMPREPLY=($(compgen -W "$update_options" -- "$cur"))
-                fi
-                return
-                ;;
+            show|delete) _slurm_complete "$cached_users $filter_options" "$cur" ;;
+            create)      _slurm_complete "$filter_options" "$cur" ;;
+            update)      _slurm_complete "$update_options" "$cur" ;;
         esac
+        return
     fi
 
     case "$cmd" in
-        delete)
-            return
-            ;;
+        delete) _slurm_complete "$filter_options" "$cur"; return ;;
         update)
             # After 'set' keyword, show SET options
             if [[ $found_set -eq 1 ]]; then
-                if [[ $cur == = || $prev == = ]]; then
-                    local key
-                    if [[ $cur == = ]]; then
-                        key=${{COMP_WORDS[COMP_CWORD-1]}}
-                    else
-                        key=${{COMP_WORDS[COMP_CWORD-2]}}
-                    fi
-                    key=${{key,,}}
-                    case "$key" in
+                if _slurm_parse_keyval "$cur" "$prev"; then
+                    case "$_key" in
                         adminlevel)
-                            COMPREPLY=($(compgen -W "None Admin Operator" -- "${{cur#*=}}"))
-                            ;;
+                            _slurm_complete_value "{admin_levels}" "$_key" "$_val" "$cur" ;;
                         newname|name)
-                            if [ -n "$cached_users" ]; then
-                                COMPREPLY=($(compgen -W "$cached_users" -- "${{cur#*=}}"))
-                            fi
-                            ;;
+                            _slurm_complete_value "$cached_users" "$_key" "$_val" "$cur" ;;
                         defaultaccount)
-                            if [ -f "/tmp/slurm_cli_accounts.json" ]; then
-                                COMPREPLY=($(compgen -W "$(jq -r '.accounts[].name // keys[]' /tmp/slurm_cli_accounts.json 2>/dev/null)" -- "${{cur#*=}}"))
-                            fi
-                            ;;
+                            _slurm_complete_value "$(_slurm_cache_accounts)" "$_key" "$_val" "$cur" ;;
                         partition)
-                            if [ -f "/tmp/slurm_cli_partitions.json" ]; then
-                                COMPREPLY=($(compgen -W "$(jq -r 'keys[]' /tmp/slurm_cli_partitions.json 2>/dev/null)" -- "${{cur#*=}}"))
-                            fi
-                            ;;
+                            _slurm_complete_value "$(_slurm_cache_partitions)" "$_key" "$_val" "$cur" ;;
                     esac
                     return
-                else
-                    if [[ $cur == '' ]]; then
-                        COMPREPLY=($(compgen -W "$set_options"))
-                    else
-                        COMPREPLY=($(compgen -W "$set_options" -- "$cur"))
-                    fi
                 fi
+                _slurm_complete "$set_options" "$cur"
                 return
             fi
             # Before 'set' keyword, show WHERE options and 'set'
-            if [[ $cur == = || $prev == = ]]; then
-                local key
-                if [[ $cur == = ]]; then
-                    key=${{COMP_WORDS[COMP_CWORD-1]}}
-                else
-                    key=${{COMP_WORDS[COMP_CWORD-2]}}
-                fi
-                key=${{key,,}}
-                case "$key" in
+            if _slurm_parse_keyval "$cur" "$prev"; then
+                case "$_key" in
                     user|name)
-                        if [ -n "$cached_users" ]; then
-                            COMPREPLY=($(compgen -W "$cached_users" -- "${{cur#*=}}"))
-                        fi
-                        ;;
+                        _slurm_complete_value "$cached_users" "$_key" "$_val" "$cur" ;;
                     account|defaultaccount)
-                        if [ -f "/tmp/slurm_cli_accounts.json" ]; then
-                            COMPREPLY=($(compgen -W "$(jq -r '.accounts[].name // keys[]' /tmp/slurm_cli_accounts.json 2>/dev/null)" -- "${{cur#*=}}"))
-                        fi
-                        ;;
+                        _slurm_complete_value "$(_slurm_cache_accounts)" "$_key" "$_val" "$cur" ;;
                     partition)
-                        if [ -f "/tmp/slurm_cli_partitions.json" ]; then
-                            COMPREPLY=($(compgen -W "$(jq -r 'keys[]' /tmp/slurm_cli_partitions.json 2>/dev/null)" -- "${{cur#*=}}"))
-                        fi
-                        ;;
+                        _slurm_complete_value "$(_slurm_cache_partitions)" "$_key" "$_val" "$cur" ;;
                     adminlevel)
-                        COMPREPLY=($(compgen -W "None Admin Operator" -- "${{cur#*=}}"))
-                        ;;
+                        _slurm_complete_value "{admin_levels}" "$_key" "$_val" "$cur" ;;
                 esac
                 return
-            else
-                if [[ $cur == '' ]]; then
-                    COMPREPLY=($(compgen -W "$where_options set"))
-                else
-                    COMPREPLY=($(compgen -W "$where_options set" -- "$cur"))
-                fi
             fi
+            _slurm_complete "$where_options set" "$cur"
             return
             ;;
         show|create)
-            if [[ $cur == = || $prev == = ]]; then
-                local key
-                if [[ $cur == = ]]; then
-                    key=${{COMP_WORDS[COMP_CWORD-1]}}
-                else
-                    key=${{COMP_WORDS[COMP_CWORD-2]}}
-                fi
-                key=${{key,,}}
-
-                case "$key" in
+            if _slurm_parse_keyval "$cur" "$prev"; then
+                case "$_key" in
                     user|name)
-                        if [ -n "$cached_users" ]; then
-                            COMPREPLY=($(compgen -W "$cached_users" -- "${{cur#*=}}"))
-                        fi
-                        ;;
+                        _slurm_complete_value "$cached_users" "$_key" "$_val" "$cur" ;;
                     account|defaultaccount)
-                        if [ -f "/tmp/slurm_cli_accounts.json" ]; then
-                            COMPREPLY=($(compgen -W "$(jq -r '.accounts[].name // keys[]' /tmp/slurm_cli_accounts.json 2>/dev/null)" -- "${{cur#*=}}"))
-                        fi
-                        ;;
+                        _slurm_complete_value "$(_slurm_cache_accounts)" "$_key" "$_val" "$cur" ;;
                     partition)
-                        if [ -f "/tmp/slurm_cli_partitions.json" ]; then
-                            COMPREPLY=($(compgen -W "$(jq -r 'keys[]' /tmp/slurm_cli_partitions.json 2>/dev/null)" -- "${{cur#*=}}"))
-                        fi
-                        ;;
+                        _slurm_complete_value "$(_slurm_cache_partitions)" "$_key" "$_val" "$cur" ;;
                     qos)
-                        if [ -f "/tmp/slurm_cli_qos.json" ]; then
-                            COMPREPLY=($(compgen -W "$(jq -r '.qos[].name' /tmp/slurm_cli_qos.json 2>/dev/null)" -- "${{cur#*=}}"))
-                        fi
-                        ;;
+                        _slurm_complete_value "$(_slurm_cache_qos)" "$_key" "$_val" "$cur" ;;
                     adminlevel)
-                        COMPREPLY=($(compgen -W "None Operator Admin" -- "${{cur#*=}}"))
-                        ;;
+                        _slurm_complete_value "{admin_levels}" "$_key" "$_val" "$cur" ;;
                 esac
                 return
-            else
-                # Complete option names
-                local opts="$filter_options"
-                if [[ $cmd == "update" || $cmd == "create" ]]; then
-                    opts="$update_options"
-                fi
-                if [[ $cur == '' ]]; then
-                    COMPREPLY=($(compgen -W "$opts"))
-                else
-                    COMPREPLY=($(compgen -W "$opts" -- "$cur"))
-                fi
             fi
+            local opts="$filter_options"
+            [[ $cmd == "create" ]] && opts="$update_options"
+            _slurm_complete "$opts" "$cur"
             ;;
     esac
 }}
-"""  # noqa: E501
+"""
         return script
 
     @classmethod

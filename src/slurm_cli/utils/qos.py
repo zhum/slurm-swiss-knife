@@ -767,69 +767,49 @@ class Qos(BaseSlurmResource):
     @classmethod
     def generate_autocomplete_options(cls) -> str:
         """Generate bash autocomplete script for QoS options."""
-        # Generate option keys for completion (with = suffix)
         valid_keys = [opt.lower() for opt in QOS_OPTIONS]
+        filter_opts = " ".join(f"{k}=" for k in valid_keys)
         flags_str = " ".join(QOS_FLAGS)
         preempt_modes_str = " ".join(PREEMPT_MODE_VALUES)
 
         script = f"""
 _slurm_cli_qos_autocomplete() {{
-    # slurm-cli -x -y -z COMMAND qos name key=value
-    #                    cmd         ^ pos      ^ COMP_CWORD
     local cmd="$1"
     local pos="$2"
 
-    name="${{COMP_WORDS[$pos]}}"
-    cur="${{COMP_WORDS[COMP_CWORD]}}"
-    prev="${{COMP_WORDS[COMP_CWORD-1]}}"
+    local cur="${{COMP_WORDS[COMP_CWORD]}}"
+    local prev="${{COMP_WORDS[COMP_CWORD-1]}}"
+    local name="${{COMP_WORDS[$pos]}}"
 
-    # If we're on the name field (right after 'qos')
+    local cached_qos="$(_slurm_cache_qos)"
+    local options="{filter_opts}"
+
+    # First argument after 'qos'
     if [[ $name == qos && $prev == qos ]]; then
-        if [ -f "/tmp/slurm_cli_qos.json" ]; then
-            COMPREPLY=($(compgen -W "$(jq -r '.qos[].name' /tmp/slurm_cli_qos.json 2>/dev/null)" -- "$cur"))
-        fi
+        case "$cmd" in
+            show|delete) _slurm_complete "$cached_qos $options" "$cur" ;;
+            create|update) _slurm_complete "$cached_qos $options" "$cur" ;;
+        esac
         return
     fi
 
-    case "$cmd" in
-        show|delete)
-            return
-            ;;
-        create|update)
-            # Check if we're completing a value (after =)
-            if [[ $cur == = || $prev == = ]]; then
-                local key
-                if [[ $cur == = ]]; then
-                    key=${{COMP_WORDS[COMP_CWORD-1]}}
-                else
-                    key=${{COMP_WORDS[COMP_CWORD-2]}}
-                fi
-                key=${{key,,}}  # lowercase
+    # Handle key=value completion
+    if _slurm_parse_keyval "$cur" "$prev"; then
+        case "$_key" in
+            flags)
+                _slurm_complete_value "{flags_str}" "$_key" "$_val" "$cur" ;;
+            preemptmode)
+                _slurm_complete_value "{preempt_modes_str}" "$_key" "$_val" "$cur" ;;
+            preempt|name)
+                _slurm_complete_value "$cached_qos" "$_key" "$_val" "$cur" ;;
+        esac
+        return
+    fi
 
-                case "$key" in
-                    flags)
-                        COMPREPLY=($(compgen -W "{flags_str}" -- "${{cur#*=}}"))
-                        ;;
-                    preemptmode)
-                        COMPREPLY=($(compgen -W "{preempt_modes_str}" -- "${{cur#*=}}"))
-                        ;;
-                    preempt)
-                        if [ -f "/tmp/slurm_cli_qos.json" ]; then
-                            COMPREPLY=($(compgen -W "$(jq -r '.qos[].name' /tmp/slurm_cli_qos.json 2>/dev/null)" -- "${{cur#*=}}"))
-                        fi
-                        ;;
-                esac
-                return
-            else
-                # Completing an option name
-                local -a valid_keys=({'= '.join(valid_keys)}=)
-                if [[ $cur == '' ]]; then
-                    COMPREPLY=(${{valid_keys[@]}})
-                else
-                    COMPREPLY=($(compgen -W "${{valid_keys[*]}}" "$cur"))
-                fi
-            fi
-            ;;
+    # Complete option names
+    case "$cmd" in
+        show|delete) _slurm_complete "$options" "$cur" ;;
+        create|update) _slurm_complete "$options" "$cur" ;;
     esac
 }}
 """  # noqa: E501

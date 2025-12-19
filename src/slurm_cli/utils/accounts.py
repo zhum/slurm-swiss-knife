@@ -59,135 +59,48 @@ class Account(BaseSlurmResource):
     def generate_autocomplete_options(cls) -> str:
         """Generate bash autocomplete script for account options."""
         valid_keys = [opt.lower() for opt in ACCOUNT_OPTIONS]
+        filter_opts = " ".join(f"{k}=" for k in valid_keys)
 
         script = f"""
 _slurm_cli_accounts_autocomplete() {{
     local cmd="$1"
     local pos="$2"
 
-    name="${{COMP_WORDS[$pos]}}"
-    cur="${{COMP_WORDS[COMP_CWORD]}}"
-    prev="${{COMP_WORDS[COMP_CWORD-1]}}"
+    local cur="${{COMP_WORDS[COMP_CWORD]}}"
+    local prev="${{COMP_WORDS[COMP_CWORD-1]}}"
+    local name="${{COMP_WORDS[$pos]}}"
 
-    # Get cached account names if available (space-separated)
-    local cached_accounts=""
-    if [ -f "/tmp/slurm_cli_accounts.json" ]; then
-        cached_accounts=$(jq -r '.accounts[].name' /tmp/slurm_cli_accounts.json 2>/dev/null | tr '\\n' ' ')
-    fi
-
-    # ACCOUNT_OPTIONS for filtering/updating
-    local filter_options="{'= '.join(valid_keys)}="
+    local cached_accounts="$(_slurm_cache_accounts)"
+    local filter_options="{filter_opts}"
     local update_options="$filter_options set"
 
-    # If we're on the name field (right after 'accounts') and not completing a value
+    # First argument after 'accounts' (not completing a value)
     if [[ $name == accounts && $prev == accounts && $cur != *=* ]]; then
         case "$cmd" in
-            show)
-                # For show, allow both account names and filter options
-                local all_options="$cached_accounts $filter_options"
-                if [[ $cur == '' ]]; then
-                    COMPREPLY=($(compgen -W "$all_options"))
-                else
-                    COMPREPLY=($(compgen -W "$all_options" -- "$cur"))
-                fi
-                return
-                ;;
-            delete)
-                if [ -n "$cached_accounts" ]; then
-                    COMPREPLY=($(compgen -W "$cached_accounts" -- "$cur"))
-                fi
-                return
-                ;;
-            update)
-                # For update, show both cached account names and ACCOUNT_OPTIONS
-                local all_options="$cached_accounts $update_options"
-                if [[ $cur == '' ]]; then
-                    COMPREPLY=($(compgen -W "$all_options"))
-                else
-                    COMPREPLY=($(compgen -W "$all_options" -- "$cur"))
-                fi
-                return
-                ;;
+            show|delete) _slurm_complete "$cached_accounts $filter_options" "$cur" ;;
+            update)      _slurm_complete "$cached_accounts $update_options" "$cur" ;;
         esac
+        return
     fi
 
+    # Handle key=value completion
+    if _slurm_parse_keyval "$cur" "$prev"; then
+        case "$_key" in
+            defaultqos)
+                _slurm_complete_value "$(_slurm_cache_qos)" "$_key" "$_val" "$cur" ;;
+            parent|organization|name)
+                _slurm_complete_value "$cached_accounts" "$_key" "$_val" "$cur" ;;
+        esac
+        return
+    fi
+
+    # Complete option names
     case "$cmd" in
-        delete)
-            return
-            ;;
-        show|create|update)
-            # Handle case where = is a separate word
-            if [[ $cur == = ]]; then
-                local key="${{COMP_WORDS[COMP_CWORD-1]}}"
-                key=${{key,,}}
-                case "$key" in
-                    defaultqos)
-                        if [ -f "/tmp/slurm_cli_qos.json" ]; then
-                            COMPREPLY=($(compgen -W "$(jq -r '.qos[].name' /tmp/slurm_cli_qos.json 2>/dev/null)"))
-                        fi
-                        ;;
-                    parent|organization)
-                        if [ -n "$cached_accounts" ]; then
-                            COMPREPLY=($(compgen -W "$cached_accounts"))
-                        fi
-                        ;;
-                esac
-                return
-            # Handle case where key=value is a single word (including key=)
-            elif [[ $cur == *=* ]]; then
-                local key="${{cur%%=*}}"
-                local val="${{cur#*=}}"
-                key=${{key,,}}
-                case "$key" in
-                    defaultqos)
-                        if [ -f "/tmp/slurm_cli_qos.json" ]; then
-                            COMPREPLY=($(compgen -W "$(jq -r '.qos[].name' /tmp/slurm_cli_qos.json 2>/dev/null)" -- "$val"))
-                        fi
-                        ;;
-                    parent|organization)
-                        if [ -n "$cached_accounts" ]; then
-                            COMPREPLY=($(compgen -W "$cached_accounts" -- "$val"))
-                        fi
-                        ;;
-                esac
-                # Add key= prefix back
-                if [[ ${{#COMPREPLY[@]}} -gt 0 ]]; then
-                    COMPREPLY=("${{COMPREPLY[@]/#/$key=}}")
-                fi
-                return
-            # Handle case where = is a separate word and we're after it
-            elif [[ $prev == = ]]; then
-                local key="${{COMP_WORDS[COMP_CWORD-2]}}"
-                key=${{key,,}}
-                case "$key" in
-                    defaultqos)
-                        if [ -f "/tmp/slurm_cli_qos.json" ]; then
-                            COMPREPLY=($(compgen -W "$(jq -r '.qos[].name' /tmp/slurm_cli_qos.json 2>/dev/null)" -- "$cur"))
-                        fi
-                        ;;
-                    parent|organization)
-                        if [ -n "$cached_accounts" ]; then
-                            COMPREPLY=($(compgen -W "$cached_accounts" -- "$cur"))
-                        fi
-                        ;;
-                esac
-                return
-            else
-                # For show: filter options only; for update/create: include 'set' keyword
-                local opts="$filter_options"
-                if [[ $cmd == "update" || $cmd == "create" ]]; then
-                    opts="$update_options"
-                fi
-                if [[ $cur == '' ]]; then
-                    COMPREPLY=($(compgen -W "$opts"))
-                else
-                    COMPREPLY=($(compgen -W "$opts" -- "$cur"))
-                fi
-            fi
-            ;;
+        show|delete) _slurm_complete "$filter_options" "$cur" ;;
+        create|update) _slurm_complete "$update_options" "$cur" ;;
     esac
 }}
-"""  # noqa: E501
+"""
         return script
 
     @classmethod

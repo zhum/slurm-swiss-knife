@@ -45,112 +45,41 @@ _slurm_cli_coordinators_autocomplete() {
     local cmd="$1"
     local pos="$2"
 
-    name="${COMP_WORDS[$pos]}"
-    cur="${COMP_WORDS[COMP_CWORD]}"
-    prev="${COMP_WORDS[COMP_CWORD-1]}"
+    local cur="${COMP_WORDS[COMP_CWORD]}"
+    local prev="${COMP_WORDS[COMP_CWORD-1]}"
+    local name="${COMP_WORDS[$pos]}"
 
-    # Get cached account names if available
-    local cached_accounts=""
-    if [ -f "/tmp/slurm_cli_accounts.json" ]; then
-        cached_accounts=$(jq -r '.accounts[].name' /tmp/slurm_cli_accounts.json 2>/dev/null | tr '\\n' ' ')
-    fi
-
-    # Get cached user names if available
-    local cached_users=""
-    if [ -f "/tmp/slurm_cli_users.json" ]; then
-        cached_users=$(jq -r '.users[].name' /tmp/slurm_cli_users.json 2>/dev/null | tr '\\n' ' ')
-    fi
-
-    # Options for coordinators
+    local cached_accounts="$(_slurm_cache_accounts)"
+    local cached_users="$(_slurm_cache_users)"
     local filter_options="account= name="
     local update_options="account= name= name+= name-="
 
-    # Check if we're completing a value after key= or key+= or key-=
-    local key=""
-    local val_prefix=""
-
-    if [[ $cur == *[-+]=* ]] || [[ $cur == *=* ]]; then
-        key=${cur%%[-+]*=*}
-        key=${key%%=*}
-        val_prefix=${cur#*=}
-    elif [[ $prev == "=" ]] || [[ $prev == "+=" ]] || [[ $prev == "-=" ]]; then
-        key="${COMP_WORDS[COMP_CWORD-2]}"
-        val_prefix="$cur"
-    elif [[ $prev == *[-+]= ]] || [[ $prev == *= ]]; then
-        key=${prev%%[-+]*=}
-        key=${key%%=}
-        val_prefix="$cur"
-    fi
-
-    if [ -n "$key" ]; then
-        key=${key,,}
-        case "$key" in
-            account)
-                if [ -n "$cached_accounts" ]; then
-                    COMPREPLY=($(compgen -W "$cached_accounts" -- "$val_prefix"))
-                fi
-                ;;
-            name)
-                if [ -n "$cached_users" ]; then
-                    COMPREPLY=($(compgen -W "$cached_users" -- "$val_prefix"))
-                fi
-                ;;
+    # Handle key=value, key+=value, or key-=value completion
+    if _slurm_parse_keyval_ext "$cur" "$prev"; then
+        case "$_key" in
+            account) _slurm_complete_value "$cached_accounts" "$_key" "$_val" "$cur" ;;
+            name)    _slurm_complete_value "$cached_users" "$_key" "$_val" "$cur" ;;
         esac
-        if [ ${#COMPREPLY[@]} -gt 0 ]; then
-            return
-        fi
+        [[ ${#COMPREPLY[@]} -gt 0 ]] && return
     fi
 
-    # Position-based completion
-    if [[ $name == coordinators && $prev == coordinators ]] || [[ $name == coord && $prev == coord ]]; then
+    # Position-based completion (first arg after 'coordinators')
+    if [[ $name == coordinators && $prev == coordinators ]] || \
+       [[ $name == coord && $prev == coord ]]; then
         case "$cmd" in
-            show)
-                local all_options="$cached_accounts $filter_options"
-                if [[ $cur == '' ]]; then
-                    COMPREPLY=($(compgen -W "$all_options"))
-                else
-                    COMPREPLY=($(compgen -W "$all_options" -- "$cur"))
-                fi
-                return
-                ;;
-            create|update)
-                if [[ $cur == '' ]]; then
-                    COMPREPLY=($(compgen -W "$update_options"))
-                else
-                    COMPREPLY=($(compgen -W "$update_options" -- "$cur"))
-                fi
-                return
-                ;;
-            delete)
-                if [[ $cur == '' ]]; then
-                    COMPREPLY=($(compgen -W "$filter_options"))
-                else
-                    COMPREPLY=($(compgen -W "$filter_options" -- "$cur"))
-                fi
-                return
-                ;;
+            show|delete)   _slurm_complete "$cached_accounts $filter_options" "$cur" ;;
+            create|update) _slurm_complete "$update_options" "$cur" ;;
         esac
+        return
     fi
 
     # Default completion for subsequent arguments
     case "$cmd" in
-        create|update)
-            if [[ $cur == '' ]]; then
-                COMPREPLY=($(compgen -W "$update_options"))
-            else
-                COMPREPLY=($(compgen -W "$update_options" -- "$cur"))
-            fi
-            ;;
-        show|delete)
-            if [[ $cur == '' ]]; then
-                COMPREPLY=($(compgen -W "$filter_options"))
-            else
-                COMPREPLY=($(compgen -W "$filter_options" -- "$cur"))
-            fi
-            ;;
+        create|update) _slurm_complete "$update_options" "$cur" ;;
+        show|delete)   _slurm_complete "$filter_options" "$cur" ;;
     esac
 }
-"""  # noqa: E501
+"""
         return script
 
     @classmethod

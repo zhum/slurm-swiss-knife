@@ -681,21 +681,21 @@ class TestAccountAutocomplete:
         result = Account.generate_autocomplete_options()
         # Check that update command case shows both cached accounts and options
         assert "update)" in result
-        # Check that it loads cached accounts
+        # Check that it uses helper function for cached accounts
         assert "cached_accounts" in result
-        assert "/tmp/slurm_cli_accounts.json" in result
-        # Check that update case combines accounts with valid_keys
-        assert "all_options" in result
+        assert "_slurm_cache_accounts" in result
+        # Check that update includes update_options
+        assert "update_options" in result
 
     def test_autocomplete_show_includes_filter_options(self):
         """Test autocomplete script for show includes filter options."""
         result = Account.generate_autocomplete_options()
-        # Check that show command case exists and includes filter options
-        assert "show)" in result
+        # Check that show/delete command case exists
+        assert "show|delete)" in result
         # Check filter_options variable is defined
         assert "filter_options" in result
-        # Show should allow filtering with organization=, cluster=, etc.
-        assert "show|create|update)" in result
+        # Check helper functions are used
+        assert "_slurm_complete" in result
 
 
 class TestAccountProfileFields:

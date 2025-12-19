@@ -729,157 +729,66 @@ class Partition(BaseSlurmResource):
     @classmethod
     def generate_autocomplete_options(cls) -> str:
         """Generate bash autocomplete script for partition options."""
-        # Get option keys for completion
         valid_keys = list(cls.valid_args.keys())
+        options = " ".join(f"{k}=" for k in valid_keys)
         state_values = "up down drain inactive UP DOWN DRAIN INACTIVE"
         preempt_values = (
             "off cancel requeue suspend OFF CANCEL REQUEUE SUSPEND"
         )
         yesno_values = "yes no YES NO"
         cpubind_values = "none socket ldom core thread off"
+        yesno_keys = (
+            "default|disablerootjobs|exclusiveuser|hidden|lln|"
+            "oversubscribe|powerdownonidle|reqresv|rootonly"
+        )
 
         script = f"""
 _slurm_cli_partitions_autocomplete() {{
     local cmd="$1"
     local pos="$2"
 
-    cur="${{COMP_WORDS[COMP_CWORD]}}"
-    prev="${{COMP_WORDS[COMP_CWORD-1]}}"
+    local cur="${{COMP_WORDS[COMP_CWORD]}}"
+    local prev="${{COMP_WORDS[COMP_CWORD-1]}}"
 
-    # If we're on the name field (right after 'partitions')
+    local cached_partitions="$(_slurm_cache_partitions)"
+    local options="{options}"
+
+    # First argument after 'partitions'
     if [[ $prev == partitions || $prev == part || $prev == parts ]]; then
         case "$cmd" in
-            show|delete)
-                if [ -f "/tmp/slurm_cli_partitions.json" ]; then
-                    COMPREPLY=($(compgen -W "$(jq -r 'keys[]' /tmp/slurm_cli_partitions.json 2>/dev/null)" -- "$cur"))
-                fi
-                ;;
-            create|add|new|update|modify|set)
-                # For create, show option names
-                local -a valid_keys=({' '.join(k + '=' for k in valid_keys)})
-                COMPREPLY=($(compgen -W "${{valid_keys[*]}}" -- "$cur"))
-                ;;
+            show|delete) _slurm_complete "$cached_partitions $options" "$cur" ;;
+            create|add|new|update|modify|set) _slurm_complete "$options" "$cur" ;;
         esac
         return
     fi
 
+    # Handle key=value completion
+    if _slurm_parse_keyval "$cur" "$prev"; then
+        case "$_key" in
+            state)
+                _slurm_complete_value "{state_values}" "$_key" "$_val" "$cur" ;;
+            preemptmode)
+                _slurm_complete_value "{preempt_values}" "$_key" "$_val" "$cur" ;;
+            cpubind)
+                _slurm_complete_value "{cpubind_values}" "$_key" "$_val" "$cur" ;;
+            {yesno_keys})
+                _slurm_complete_value "{yesno_values}" "$_key" "$_val" "$cur" ;;
+            allowaccounts|denyaccounts)
+                _slurm_complete_value "$(_slurm_cache_accounts)" "$_key" "$_val" "$cur" ;;
+            allowqos|denyqos|qos)
+                _slurm_complete_value "$(_slurm_cache_qos)" "$_key" "$_val" "$cur" ;;
+            nodes)
+                _slurm_complete_value "$(_slurm_cache_nodes)" "$_key" "$_val" "$cur" ;;
+            alternate|partitionname)
+                _slurm_complete_value "$cached_partitions" "$_key" "$_val" "$cur" ;;
+        esac
+        return
+    fi
+
+    # Complete option names
     case "$cmd" in
-        show|delete)
-            return
-            ;;
-        create|add|new|update|modify|set)
-            # Check if we're completing a value (after =)
-            # Handle case where cur is "=" (bash split key and = into separate words)
-            if [[ $cur == = ]]; then
-                local key="${{prev,,}}"
-                case "$key" in
-                    state)
-                        COMPREPLY=($(compgen -W "{state_values}"))
-                        ;;
-                    preemptmode)
-                        COMPREPLY=($(compgen -W "{preempt_values}"))
-                        ;;
-                    cpubind)
-                        COMPREPLY=($(compgen -W "{cpubind_values}"))
-                        ;;
-                    default|disablerootjobs|exclusiveuser|hidden|lln|oversubscribe|powerdownonidle|reqresv|rootonly)
-                        COMPREPLY=($(compgen -W "{yesno_values}"))
-                        ;;
-                    allowaccounts|denyaccounts)
-                        if [ -f "/tmp/slurm_cli_accounts.json" ]; then
-                            COMPREPLY=($(compgen -W "$(jq -r '.accounts[].name' /tmp/slurm_cli_accounts.json 2>/dev/null)"))
-                        fi
-                        ;;
-                    allowqos|denyqos|qos)
-                        if [ -f "/tmp/slurm_cli_qos.json" ]; then
-                            COMPREPLY=($(compgen -W "$(jq -r '.qos[].name' /tmp/slurm_cli_qos.json 2>/dev/null)"))
-                        fi
-                        ;;
-                    nodes)
-                        if [ -f "/tmp/slurm_cli_nodes.json" ]; then
-                            COMPREPLY=($(compgen -W "$(jq -r 'keys[]' /tmp/slurm_cli_nodes.json 2>/dev/null)"))
-                        fi
-                        ;;
-                    alternate)
-                        if [ -f "/tmp/slurm_cli_partitions.json" ]; then
-                            COMPREPLY=($(compgen -W "$(jq -r 'keys[]' /tmp/slurm_cli_partitions.json 2>/dev/null)"))
-                        fi
-                        ;;
-                esac
-                return
-            elif [[ $cur == *=* ]]; then
-                local key="${{cur%%=*}}"
-                local val="${{cur#*=}}"
-                key="${{key,,}}"  # lowercase
-
-                case "$key" in
-                    state)
-                        COMPREPLY=($(compgen -W "{state_values}" -- "$val"))
-                        ;;
-                    preemptmode)
-                        COMPREPLY=($(compgen -W "{preempt_values}" -- "$val"))
-                        ;;
-                    cpubind)
-                        COMPREPLY=($(compgen -W "{cpubind_values}" -- "$val"))
-                        ;;
-                    default|disablerootjobs|exclusiveuser|hidden|lln|oversubscribe|powerdownonidle|reqresv|rootonly)
-                        COMPREPLY=($(compgen -W "{yesno_values}" -- "$val"))
-                        ;;
-                    allowaccounts|denyaccounts)
-                        if [ -f "/tmp/slurm_cli_accounts.json" ]; then
-                            COMPREPLY=($(compgen -W "$(jq -r '.accounts[].name' /tmp/slurm_cli_accounts.json 2>/dev/null)" -- "$val"))
-                        fi
-                        ;;
-                    allowqos|denyqos|qos)
-                        if [ -f "/tmp/slurm_cli_qos.json" ]; then
-                            COMPREPLY=($(compgen -W "$(jq -r '.qos[].name' /tmp/slurm_cli_qos.json 2>/dev/null)" -- "$val"))
-                        fi
-                        ;;
-                    nodes)
-                        if [ -f "/tmp/slurm_cli_nodes.json" ]; then
-                            COMPREPLY=($(compgen -W "$(jq -r 'keys[]' /tmp/slurm_cli_nodes.json 2>/dev/null)" -- "$val"))
-                        fi
-                        ;;
-                    alternate)
-                        if [ -f "/tmp/slurm_cli_partitions.json" ]; then
-                            COMPREPLY=($(compgen -W "$(jq -r 'keys[]' /tmp/slurm_cli_partitions.json 2>/dev/null)" -- "$val"))
-                        fi
-                        ;;
-                esac
-                # Add = prefix back
-                if [[ ${{#COMPREPLY[@]}} -gt 0 ]]; then
-                    COMPREPLY=("${{COMPREPLY[@]/#/$key=}}")
-                fi
-                return
-            elif [[ $prev == = ]]; then
-                local key="${{COMP_WORDS[COMP_CWORD-2]}}"
-                key="${{key,,}}"
-
-                case "$key" in
-                    state)
-                        COMPREPLY=($(compgen -W "{state_values}" -- "$cur"))
-                        ;;
-                    preemptmode)
-                        COMPREPLY=($(compgen -W "{preempt_values}" -- "$cur"))
-                        ;;
-                    cpubind)
-                        COMPREPLY=($(compgen -W "{cpubind_values}" -- "$cur"))
-                        ;;
-                    default|disablerootjobs|exclusiveuser|hidden|lln|oversubscribe|powerdownonidle|reqresv|rootonly)
-                        COMPREPLY=($(compgen -W "{yesno_values}" -- "$cur"))
-                        ;;
-                esac
-                return
-            else
-                # Completing an option name
-                local -a valid_keys=({' '.join(k + '=' for k in valid_keys)})
-                if [[ $cur == '' ]]; then
-                    COMPREPLY=(${{valid_keys[@]}})
-                else
-                    COMPREPLY=($(compgen -W "${{valid_keys[*]}}" -- "$cur"))
-                fi
-            fi
-            ;;
+        show|delete) _slurm_complete "$options" "$cur" ;;
+        create|add|new|update|modify|set) _slurm_complete "$options" "$cur" ;;
     esac
 }}
 """  # noqa: E501

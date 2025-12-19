@@ -600,8 +600,7 @@ class TestUserAutocomplete:
     def test_generate_autocomplete_options_handles_commands(self):
         """Test that autocomplete script handles different commands."""
         result = User.generate_autocomplete_options()
-        assert "show)" in result
-        assert "delete)" in result
+        assert "show|delete)" in result
         assert "create)" in result
         assert "update)" in result
 

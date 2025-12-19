@@ -30,6 +30,9 @@ from rich.table import Table
 
 from .utils.accounts import Account
 from .utils.associations import Association
+from .utils.autocomplete_helpers import (
+    get_common_autocomplete_functions,
+)
 from .utils.config import ROUTES, VERBS
 from .utils.coordinators import Coordinator
 from .utils.events import Event
@@ -1755,6 +1758,9 @@ _slurm_cli_initialize_autocomplete() {{
 }}
 """  # noqa: E501
     )  # noqa: E501
+    # Print common helper functions first
+    print(get_common_autocomplete_functions())
+    # Print resource-specific autocomplete functions
     print(Reservation.generate_autocomplete_options())
     print(Qos.generate_autocomplete_options())
     print(Account.generate_autocomplete_options())
