@@ -1729,7 +1729,7 @@ _slurm_cli_initialize_autocomplete() {{
             COMPREPLY=($(compgen -W "{' '.join(STYLE_OPTIONS)}" -- "$cur"))
             return
             ;;
-        --profile|-P)
+        --profile|-P|=)
             # Profile names - built-in plus any from config files
             local profiles="default compact minimal oneline detailed"
             if [ -f "$HOME/.config/slurm-cli.profiles" ]; then
@@ -1739,6 +1739,13 @@ _slurm_cli_initialize_autocomplete() {{
             if [ -f "/etc/slurm/cli.profiles" ]; then
                 local sys_profiles=$(grep -oE '^[a-z_]+:' "/etc/slurm/cli.profiles" 2>/dev/null | tr -d ':' | tr '\\n' ' ')
                 profiles="$profiles $sys_profiles"
+            fi
+            # Handle --profile=value format
+            if [[ "$prev" == "=" && ${{COMP_CWORD}} -ge 2 ]]; then
+                local opt="${{COMP_WORDS[COMP_CWORD-2]}}"
+                if [[ "$opt" != "--profile" && "$opt" != "-P" ]]; then
+                    break
+                fi
             fi
             COMPREPLY=($(compgen -W "$profiles" -- "$cur"))
             return
