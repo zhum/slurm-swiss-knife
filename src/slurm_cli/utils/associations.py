@@ -318,6 +318,86 @@ _slurm_cli_associations_autocomplete() {{
         return associations
 
     @classmethod
+    def _sort_hierarchically(
+        cls, associations: List[Dict[str, Any]]
+    ) -> List[Dict[str, Any]]:
+        """Sort associations hierarchically and add depth/indent info.
+
+        Args:
+            associations: List of association dictionaries
+
+        Returns:
+            Sorted list with '_depth' and '_indent' keys added
+        """
+        # Build account hierarchy
+        accounts = {}  # account -> {parent, users, children, assocs}
+        for assoc in associations:
+            account = assoc.get("account", "")
+            parent = assoc.get("parent_account", "")
+            user = assoc.get("user", "")
+
+            if account not in accounts:
+                accounts[account] = {
+                    "parent": parent,
+                    "users": [],
+                    "children": [],
+                    "account_assoc": None,
+                }
+
+            if user:
+                accounts[account]["users"].append(assoc)
+            else:
+                accounts[account]["account_assoc"] = assoc
+
+        # Build parent-child relationships
+        for account, info in accounts.items():
+            parent = info["parent"]
+            if parent and parent in accounts:
+                if account not in accounts[parent]["children"]:
+                    accounts[parent]["children"].append(account)
+
+        # Find root accounts
+        root_accounts = [
+            acc
+            for acc, info in accounts.items()
+            if not info["parent"] or info["parent"] not in accounts
+        ]
+        root_accounts.sort()
+
+        # Traverse tree and build sorted list with depth
+        result = []
+
+        def add_account(account_name: str, depth: int):
+            info = accounts.get(account_name, {})
+
+            # Add account-level association
+            if info.get("account_assoc"):
+                assoc = info["account_assoc"].copy()
+                assoc["_depth"] = depth
+                assoc["_indent"] = "  " * depth
+                result.append(assoc)
+
+            # Add users (sorted)
+            users = sorted(
+                info.get("users", []), key=lambda u: u.get("user", "")
+            )
+            for user_assoc in users:
+                assoc = user_assoc.copy()
+                assoc["_depth"] = depth + 1
+                assoc["_indent"] = "  " * (depth + 1)
+                result.append(assoc)
+
+            # Add child accounts (sorted)
+            children = sorted(info.get("children", []))
+            for child in children:
+                add_account(child, depth + 1)
+
+        for root in root_accounts:
+            add_account(root, 0)
+
+        return result
+
+    @classmethod
     def _show_tree(cls, associations: List[Dict[str, Any]]) -> None:
         """Display associations in a hierarchical tree format.
 
@@ -502,9 +582,9 @@ _slurm_cli_associations_autocomplete() {{
                         return
 
             if tree:
-                # Tree display mode
-                cls._show_tree(associations)
-            elif style == "json":
+                # Tree mode - sort hierarchically and add indent
+                associations = cls._sort_hierarchically(associations)
+            if style == "json":
                 # Print filtered JSON
                 filtered_data = {"associations": associations}
                 console.print_json(json.dumps(filtered_data, indent=2))
@@ -520,9 +600,13 @@ _slurm_cli_associations_autocomplete() {{
 
                 # Data rows
                 for assoc in associations:
-                    row = [
-                        cls._format_value(assoc, col) for col in columns
-                    ]
+                    row = []
+                    for i, col in enumerate(columns):
+                        value = cls._format_value(assoc, col)
+                        # Add indent to first column in tree mode
+                        if i == 0 and tree and "_indent" in assoc:
+                            value = assoc["_indent"] + value
+                        row.append(value)
                     # Replace "-" with empty for CSV
                     row = ["" if v == "-" else v for v in row]
                     print(delimiter.join(row))
@@ -564,10 +648,13 @@ _slurm_cli_associations_autocomplete() {{
 
                     # Add rows
                     for assoc in associations:
-                        row = [
-                            cls._format_value(assoc, col)
-                            for col in columns
-                        ]
+                        row = []
+                        for i, col in enumerate(columns):
+                            value = cls._format_value(assoc, col)
+                            # Add indent to first column in tree mode
+                            if i == 0 and tree and "_indent" in assoc:
+                                value = assoc["_indent"] + value
+                            row.append(value)
                         table.add_row(*row)
 
                     # Use buffer-based console to prevent column truncation
