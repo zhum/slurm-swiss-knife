@@ -1298,19 +1298,24 @@ def create(
                 return
             Coordinator.create(field, verbose, **create_options)
         elif canonical_resource[:5] == "assoc":
-            # Support name= syntax: if field contains =, parse it as option
-            user_name = field
+            # Parse first arg if it's a key=value
             if "=" in field:
                 key, value_part = field.split("=", 1)
                 create_options[key] = value_part
-                # Get name from options
+                user_name = None
+            else:
+                user_name = field
+
+            # Get name from options if not set from positional arg
+            if not user_name:
                 user_name = create_options.pop("name", None)
-                if not user_name:
-                    console.print(
-                        "[red]Error: User name required. Use 'name=' "
-                        "or provide name as first argument.[/red]"
-                    )
-                    return
+
+            if not user_name:
+                console.print(
+                    "[red]Error: User name required. Use 'name=' "
+                    "or provide name as first argument.[/red]"
+                )
+                return
             Association.create(user_name, verbose, **create_options)
         else:
             console.print(
