@@ -231,9 +231,9 @@ _slurm_cli_users_autocomplete() {{
     # First argument after 'users'
     if [[ $name == users && $prev == users ]]; then
         case "$cmd" in
-            show|delete) _slurm_complete "$cached_users $filter_options" "$cur" ;;
+            show|delete) _slurm_complete "$filter_options $cached_users" "$cur" ;;
             create)      _slurm_complete "$filter_options" "$cur" ;;
-            update)      _slurm_complete "$update_options" "$cur" ;;
+            update)      _slurm_complete "$update_options $cached_users" "$cur" ;;
         esac
         return
     fi

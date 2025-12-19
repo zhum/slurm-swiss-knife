@@ -787,8 +787,8 @@ _slurm_cli_qos_autocomplete() {{
     # First argument after 'qos'
     if [[ $name == qos && $prev == qos ]]; then
         case "$cmd" in
-            show|delete) _slurm_complete "$cached_qos $options" "$cur" ;;
-            create|update) _slurm_complete "$cached_qos $options" "$cur" ;;
+            show|delete) _slurm_complete "$options $cached_qos" "$cur" ;;
+            create|update) _slurm_complete "$options $cached_qos" "$cur" ;;
         esac
         return
     fi

@@ -130,9 +130,9 @@ _slurm_cli_associations_autocomplete() {{
     # First argument after 'associations'
     if [[ $name == associations && $prev == associations ]]; then
         case "$cmd" in
-            show|delete) _slurm_complete "$cached_accounts $filter_options" "$cur" ;;
+            show|delete) _slurm_complete "$filter_options $cached_accounts" "$cur" ;;
             create)      _slurm_complete "$create_options" "$cur" ;;
-            update)      _slurm_complete "$cached_accounts $update_options" "$cur" ;;
+            update)      _slurm_complete "$update_options $cached_accounts" "$cur" ;;
         esac
         return
     fi

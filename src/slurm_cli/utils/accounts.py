@@ -77,8 +77,8 @@ _slurm_cli_accounts_autocomplete() {{
     # First argument after 'accounts' (not completing a value)
     if [[ $name == accounts && $prev == accounts && $cur != *=* ]]; then
         case "$cmd" in
-            show|delete) _slurm_complete "$cached_accounts $filter_options" "$cur" ;;
-            update)      _slurm_complete "$cached_accounts $update_options" "$cur" ;;
+            show|delete) _slurm_complete "$filter_options $cached_accounts" "$cur" ;;
+            update)      _slurm_complete "$update_options $cached_accounts" "$cur" ;;
         esac
         return
     fi

@@ -67,7 +67,7 @@ _slurm_cli_coordinators_autocomplete() {
     if [[ $name == coordinators && $prev == coordinators ]] || \
        [[ $name == coord && $prev == coord ]]; then
         case "$cmd" in
-            show|delete)   _slurm_complete "$cached_accounts $filter_options" "$cur" ;;
+            show|delete)   _slurm_complete "$filter_options $cached_accounts" "$cur" ;;
             create|update) _slurm_complete "$update_options" "$cur" ;;
         esac
         return
