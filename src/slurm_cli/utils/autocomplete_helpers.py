@@ -107,20 +107,22 @@ _slurm_parse_keyval_ext() {
     return 1
 }
 
-# Complete value and add key= prefix back if needed
+# Complete value and add key= (or key+= / key-=) prefix back if needed
 # Usage: _slurm_complete_value "word1 word2" "$_key" "$_val" "$cur"
 #        If cur contains =, prefix is added back to completions
+#        Uses $_op if set by _slurm_parse_keyval_ext (defaults to "=")
 _slurm_complete_value() {
     local words="$1"
     local key="$2"
     local val="$3"
     local cur="$4"
+    local op="${_op:-=}"
 
     COMPREPLY=($(compgen -W "$words" -- "$val"))
 
-    # If cur contains =, add key= prefix back to completions
+    # If cur contains =, add key+op prefix back to completions
     if [[ $cur == *=* && ${#COMPREPLY[@]} -gt 0 ]]; then
-        COMPREPLY=("${COMPREPLY[@]/#/$key=}")
+        COMPREPLY=("${COMPREPLY[@]/#/$key$op}")
     fi
 }
 

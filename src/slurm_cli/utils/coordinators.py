@@ -52,7 +52,7 @@ _slurm_cli_coordinators_autocomplete() {
     local cached_accounts="$(_slurm_cache_accounts)"
     local cached_users="$(_slurm_cache_users)"
     local filter_options="account= name="
-    local create_options="account= name="
+    local create_options="account= name= name+= name-="
 
     # Handle key=value completion
     if _slurm_parse_keyval_ext "$cur" "$prev"; then
