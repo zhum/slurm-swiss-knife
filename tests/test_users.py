@@ -366,14 +366,44 @@ class TestUserUpdate:
 class TestUserDelete:
     """Tests for User.delete method."""
 
-    def test_delete_user(self):
-        """Test user delete method."""
+    @patch("subprocess.run")
+    def test_delete_user_success(self, mock_run):
+        """Test successful user deletion."""
+        mock_run.return_value = create_mock_subprocess_result(
+            stdout="User testuser deleted"
+        )
+
         output = io.StringIO()
         with redirect_stdout(output):
             User.delete("testuser")
 
         result = output.getvalue()
         assert "Deleting user: testuser" in result
+        assert "deleted successfully" in result
+
+        # Verify sacctmgr was called correctly
+        mock_run.assert_called_once()
+        call_args = mock_run.call_args[0][0]
+        assert "sacctmgr" in call_args
+        assert "-i" in call_args
+        assert "delete" in call_args
+        assert "user" in call_args
+        assert "name=testuser" in call_args
+
+    @patch("subprocess.run")
+    def test_delete_user_failure(self, mock_run):
+        """Test failed user deletion."""
+        mock_run.side_effect = subprocess.CalledProcessError(
+            1, "sacctmgr", stderr="User not found"
+        )
+
+        output = io.StringIO()
+        with redirect_stdout(output):
+            User.delete("nonexistent")
+
+        result = output.getvalue()
+        assert "Deleting user: nonexistent" in result
+        assert "Failed to delete" in result
 
 
 class TestUserShow:

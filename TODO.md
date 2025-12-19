@@ -32,7 +32,7 @@
 - [ ] **Users Management**: Add support for managing users
   - [x] show
   - [x] create
-  - [ ] delete
+  - [x] delete
   - [x] update
 - [ ] **Associations Management**: Add support for managing user-account associations with tree-like display
   - [ ] show

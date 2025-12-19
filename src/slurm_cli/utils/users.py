@@ -483,10 +483,32 @@ _slurm_cli_users_autocomplete() {{
             )
 
     @classmethod
-    def delete(cls, name: str) -> None:
-        """Delete a user."""
-        # TODO: Implement actual user deletion using sacctmgr delete user
+    def delete(cls, name: str, verbose: bool = False) -> None:
+        """Delete a user.
+
+        Args:
+            name: Username to delete
+            verbose: Enable verbose output
+        """
         console.print(f"Deleting user: {name}")
+        args = ["sacctmgr", "-i", "delete", "user", f"name={name}"]
+
+        try:
+            result = subprocess.run(
+                args,
+                check=True,
+                capture_output=True,
+                text=True,
+            )
+            console.print(
+                f"[green]User '{name}' deleted successfully.[/green]"
+            )
+            if result.stdout:
+                console.print(result.stdout)
+        except subprocess.CalledProcessError as e:
+            console.print(
+                f"[red]Failed to delete user '{name}':[/red] {e.stderr or e}"
+            )
 
     @classmethod
     def show(

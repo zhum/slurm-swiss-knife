@@ -1396,7 +1396,7 @@ def delete(
             if canonical_resource[:3] == "qos":
                 Qos.delete(resource_name, verbose=verbose)
             elif canonical_resource[:4] == "user":
-                User.delete(resource_name)
+                User.delete(resource_name, verbose=verbose)
             elif canonical_resource[:3] == "acc":
                 Account.delete(resource_name)
             elif canonical_resource[:3] == "res":
