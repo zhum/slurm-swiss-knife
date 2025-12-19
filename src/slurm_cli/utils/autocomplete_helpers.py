@@ -148,4 +148,4 @@ _slurm_cache_users() {
 _slurm_cache_reservations() {
     _slurm_cache_get "/tmp/slurm_cli_reservations.json" 'keys[]'
 }
-"""
+"""  # noqa: E501

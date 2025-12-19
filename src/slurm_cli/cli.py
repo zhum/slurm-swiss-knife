@@ -1772,8 +1772,8 @@ _slurm_cli_initialize_autocomplete() {{
     print(
         """
 # Register the completion function for various invocation methods
-complete -o default -o bashdefault -F _slurm_cli_initialize_autocomplete slurm-cli
-complete -o default -o bashdefault -F _slurm_cli_initialize_autocomplete ./slurm-cli
+complete -o default -o bashdefault -o nosort -F _slurm_cli_initialize_autocomplete slurm-cli
+complete -o default -o bashdefault -o nosort -F _slurm_cli_initialize_autocomplete ./slurm-cli
     """  # noqa: E501
     )
     return
