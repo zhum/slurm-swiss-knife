@@ -35,7 +35,7 @@
   - [x] delete
   - [x] update
 - [ ] **Associations Management**: Add support for managing user-account associations with tree-like display
-  - [ ] show
+  - [x] show
   - [ ] add
   - [ ] delete
   - [ ] update

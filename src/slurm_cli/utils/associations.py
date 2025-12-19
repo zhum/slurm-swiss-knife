@@ -472,16 +472,24 @@ _slurm_cli_associations_autocomplete() {{
 
     @classmethod
     def create(
-        cls, account: str, verbose: bool = False, **kwargs: Any
+        cls, name: str, verbose: bool = False, **kwargs: Any
     ) -> None:
-        """Create a new association."""
-        console.print(f"Creating association for account: {account}")
+        """Create a new association.
+
+        Uses 'sacctmgr create user' command which creates user associations.
+
+        Args:
+            name: Username for the association
+            verbose: Enable verbose output
+            **kwargs: Additional options (account, partition, qos, etc.)
+        """
+        console.print(f"Creating association for user: {name}")
         args = [
             "sacctmgr",
             "-i",
             "create",
-            "association",
-            f"account={account}",
+            "user",
+            f"name={name}",
         ]
         for key, value in kwargs.items():
             if value is not None:
@@ -495,7 +503,7 @@ _slurm_cli_associations_autocomplete() {{
                 text=True,
             )
             console.print(
-                f"[green]Association for '{account}' created "
+                f"[green]Association for user '{name}' created "
                 f"successfully.[/green]"
             )
             if result.stdout:
@@ -503,14 +511,14 @@ _slurm_cli_associations_autocomplete() {{
         except subprocess.CalledProcessError as e:
             error_msg = e.stderr or e
             console.print(
-                f"[red]Failed to create association for "
-                f"'{account}':[/red] {error_msg}"
+                f"[red]Failed to create association for user "
+                f"'{name}':[/red] {error_msg}"
             )
 
     @classmethod
     def update(
         cls,
-        account: str,
+        name: str,
         verbose: bool = False,
         where_conditions: Optional[List[str]] = None,
         set_values: Optional[List[str]] = None,
@@ -518,14 +526,16 @@ _slurm_cli_associations_autocomplete() {{
     ) -> None:
         """Update an association.
 
+        Uses 'sacctmgr modify user' command.
+
         Args:
-            account: Account name
+            name: Username for the association
             verbose: Enable verbose output
             where_conditions: List of WHERE conditions
             set_values: List of SET values
             **kwargs: Additional SET values
         """
-        args = ["sacctmgr", "-i", "modify", "association"]
+        args = ["sacctmgr", "-i", "modify", "user"]
 
         if where_conditions is not None:
             args.append("where")
@@ -534,18 +544,16 @@ _slurm_cli_associations_autocomplete() {{
             if set_values:
                 args.extend(set_values)
             console.print(
-                f"Updating associations where {' '.join(where_conditions)}"
+                f"Updating user associations where {' '.join(where_conditions)}"
             )
         else:
             args.append("where")
-            args.append(f"account={account}")
+            args.append(f"name={name}")
             args.append("set")
             for key, value in kwargs.items():
                 if value is not None:
                     args.append(f"{key}={value}")
-            console.print(
-                f"Updating association for account: {account}"
-            )
+            console.print(f"Updating association for user: {name}")
 
         try:
             result = subprocess.run(
