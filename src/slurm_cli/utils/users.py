@@ -202,9 +202,19 @@ class User(BaseSlurmResource):
         valid_keys = [opt.lower() for opt in USER_OPTIONS]
         where_opts = [opt.lower() for opt in USER_UPDATE_WHERE_OPTIONS]
         set_opts = [opt.lower() for opt in USER_UPDATE_SET_OPTIONS]
+        create_opts = [
+            "account",
+            "adminlevel",
+            "cluster",
+            "defaultaccount",
+            "defaultwckey",
+            "partition",
+            "rawusage",
+        ]
         filter_opts = " ".join(f"{k}=" for k in valid_keys)
         where_options = " ".join(f"{k}=" for k in where_opts)
         set_options = " ".join(f"{k}=" for k in set_opts)
+        create_options = " ".join(f"{k}=" for k in create_opts)
         admin_levels = "None Admin Operator"
 
         script = f"""
@@ -220,6 +230,7 @@ _slurm_cli_users_autocomplete() {{
     local filter_options="{filter_opts}"
     local where_options="{where_options}"
     local set_options="{set_options}"
+    local create_options="{create_options}"
     local update_options="$cached_users $where_options set"
 
     # Check if 'set' keyword has been typed
@@ -232,7 +243,7 @@ _slurm_cli_users_autocomplete() {{
     if [[ $name == users && $prev == users ]]; then
         case "$cmd" in
             show|delete) _slurm_complete "$filter_options $cached_users" "$cur" ;;
-            create)      _slurm_complete "$filter_options" "$cur" ;;
+            create)      _slurm_complete "$create_options" "$cur" ;;
             update)      _slurm_complete "$update_options $cached_users" "$cur" ;;
         esac
         return
@@ -276,7 +287,7 @@ _slurm_cli_users_autocomplete() {{
             _slurm_complete "$where_options set" "$cur"
             return
             ;;
-        show|create)
+        show)
             if _slurm_parse_keyval "$cur" "$prev"; then
                 case "$_key" in
                     user|name)
@@ -292,9 +303,21 @@ _slurm_cli_users_autocomplete() {{
                 esac
                 return
             fi
-            local opts="$filter_options"
-            [[ $cmd == "create" ]] && opts="$update_options"
-            _slurm_complete "$opts" "$cur"
+            _slurm_complete "$filter_options" "$cur"
+            ;;
+        create)
+            if _slurm_parse_keyval "$cur" "$prev"; then
+                case "$_key" in
+                    account|defaultaccount)
+                        _slurm_complete_value "$(_slurm_cache_accounts)" "$_key" "$_val" "$cur" ;;
+                    partition)
+                        _slurm_complete_value "$(_slurm_cache_partitions)" "$_key" "$_val" "$cur" ;;
+                    adminlevel)
+                        _slurm_complete_value "{admin_levels}" "$_key" "$_val" "$cur" ;;
+                esac
+                return
+            fi
+            _slurm_complete "$create_options" "$cur"
             ;;
     esac
 }}
