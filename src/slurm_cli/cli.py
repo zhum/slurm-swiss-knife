@@ -56,18 +56,19 @@ RESOURCE_HELP = {
     "coordinators": {
         "description": "Manage Slurm account coordinators",
         "create": {
-            "syntax": "slurm-cli add coord USERNAME account=ACCOUNT",
+            "syntax": "slurm-cli add coord USER account=ACCOUNT",
             "examples": [
                 "slurm-cli add coord john account=research",
                 "slurm-cli add coord name=jane account=engineering",
+                "slurm-cli add coord account=eng name+=alice name+=bob",
             ],
-            "options": ["name", "account"],
+            "options": ["name", "name+=", "name-=", "account"],
         },
         "delete": {
-            "syntax": "slurm-cli del coord USERNAME [account=ACCOUNT]",
+            "syntax": "slurm-cli del coord name=USER account=ACCOUNT",
             "examples": [
-                "slurm-cli del coord john",
-                "slurm-cli del coord john account=research",
+                "slurm-cli del coord name=john account=research",
+                "slurm-cli del coord account=eng name=alice -y",
             ],
             "options": ["name", "account"],
         },
