@@ -97,7 +97,7 @@
 # partitions.columns = name,state,nodes
 # partitions.styles.name = cyan bold
 
-# nodes.columns = name,state,cpus,memory
+# nodes.columns = name,state,cpus,memory,gres
 # nodes.styles.name = cyan
 
 # reservations.columns = name,start_time,end_time,nodes,users
@@ -118,7 +118,7 @@
 # accounts.columns = name
 # qos.columns = name
 # partitions.columns = name,state
-# nodes.columns = name,state
+# nodes.columns = name,state,gres
 # reservations.columns = name
 # coordinators.columns = account,name
 # users.columns = name
@@ -131,7 +131,7 @@
 # accounts.template = [cyan]{name}[/cyan] - {description} ({organization})
 # qos.template = [cyan bold]{name}[/cyan bold] priority=[green]{priority}[/green]
 # partitions.template = [cyan bold]{PartitionName}[/cyan bold] state=[green]{State}[/green] nodes={TotalNodes}
-# nodes.template = [cyan]{name}[/cyan] state=[green]{state}[/green] cpus={cpus} mem={real_memory}
+# nodes.template = [cyan]{name}[/cyan] state=[green]{state}[/green] cpus={cpus} mem={real_memory} gres={gres}
 # reservations.template = [cyan bold]{name}[/cyan bold] {start_time} -> {end_time} users=[hot_pink]{users}[/hot_pink]
 # coordinators.template = [cyan]{account}[/cyan]: [green]{name}[/green]
 # users.template = [cyan]{name}[/cyan] ({default_account})
