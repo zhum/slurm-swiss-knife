@@ -589,6 +589,41 @@ def get_profile_str(
     return ctx.obj.get("profile_str")
 
 
+# CLI options per action
+ACTION_OPTIONS = {
+    "create": [
+        ("-v, --verbose", "Enable verbose output"),
+        ("-y, --yes", "Skip confirmation prompts"),
+        ("-f, --force", "Skip confirmation prompts"),
+        ("--dry-run", "Show what would be created"),
+    ],
+    "update": [
+        ("-v, --verbose", "Enable verbose output"),
+        ("--dry-run", "Show what would be updated"),
+    ],
+    "delete": [
+        ("-v, --verbose", "Enable verbose output"),
+        ("-y, --yes", "Skip confirmation prompts"),
+        ("-f, --force", "Skip confirmation prompts"),
+        ("--dry-run", "Show what would be deleted"),
+    ],
+    "show": [
+        ("-j, --json", "Output in JSON format"),
+        ("--csv", "Output in CSV format"),
+        ("-p, --pretty", "Output in pretty format (default)"),
+        ("-z, --zebra", "Use zebra-striped rows"),
+        ("-P, --profile NAME", "Use output profile"),
+        ("--profile-str STR", "Inline profile string"),
+        ("-T, --tree", "Tree view (associations only)"),
+    ],
+}
+
+# Global options available for all commands
+GLOBAL_OPTIONS = [
+    ("-h, --help", "Show this help message"),
+]
+
+
 def show_resource_help(action: str, resource: str) -> bool:
     """Show resource-specific help for an action.
 
@@ -633,9 +668,21 @@ def show_resource_help(action: str, resource: str) -> bool:
             console.print(f"  {example}")
 
     if action_help.get("options"):
-        console.print("\n[cyan]Options:[/cyan]")
+        console.print("\n[cyan]Resource Options:[/cyan]")
         options = ", ".join(action_help["options"])
         console.print(f"  {options}")
+
+    # Show CLI options for this action
+    cli_options = ACTION_OPTIONS.get(action, [])
+    if cli_options:
+        console.print("\n[cyan]Command Options:[/cyan]")
+        for opt, desc in cli_options:
+            console.print(f"  {opt:<22} {desc}")
+
+    # Show global options
+    console.print("\n[cyan]Global Options:[/cyan]")
+    for opt, desc in GLOBAL_OPTIONS:
+        console.print(f"  {opt:<22} {desc}")
 
     console.print()
     return True
