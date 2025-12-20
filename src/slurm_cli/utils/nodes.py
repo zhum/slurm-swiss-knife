@@ -4,10 +4,12 @@ import json
 import subprocess
 from typing import Any, Optional
 
+from rich.box import SIMPLE_HEAVY
 from rich.markup import escape
+from rich.table import Table
 
 from .base_resource import BaseSlurmResource
-from .profiles import get_profile_config
+from .profiles import format_with_template, get_profile_config
 from .utils import console
 
 
@@ -40,6 +42,28 @@ class Node(BaseSlurmResource):
         "power_down",
         "power_up",
     ]
+
+    # Default columns for table output
+    DEFAULT_COLUMNS = [
+        "name",
+        "state",
+        "cpus",
+        "alloc_cpus",
+        "real_memory",
+        "alloc_memory",
+        "gres",
+    ]
+
+    # Default styles for table columns
+    DEFAULT_STYLES = {
+        "name": "cyan",
+        "state": "green",
+        "cpus": "yellow",
+        "alloc_cpus": "yellow",
+        "real_memory": "blue",
+        "alloc_memory": "blue",
+        "gres": "magenta",
+    }
 
     def __init__(self, name: str, **kwargs: Any):
         self.name = name
@@ -174,10 +198,12 @@ _slurm_cli_nodes_autocomplete() {{
         profile_str: Optional[str] = None,
     ) -> None:
         """Show node information."""
-        # Get profile configuration (for future enhancement)
-        _, _, _ = get_profile_config(profile, "nodes", profile_str)
+        # Get profile configuration
+        columns_cfg, styles_cfg, template_cfg = get_profile_config(
+            profile, "nodes", profile_str
+        )
         if not data:
-            console.print_json("[red]No data available.[/red]")
+            console.print("[red]No data available.[/red]")
             return
         try:
             if style == "json":
@@ -186,8 +212,33 @@ _slurm_cli_nodes_autocomplete() {{
                 else:
                     console.print_json(json.dumps(data, indent=4))
             elif style == "csv":
-                cls.show_csv(name, data, delimiter, verbose)
-            else:  # pretty style
+                cls.show_csv(
+                    name, data, delimiter, verbose, columns_cfg
+                )
+            elif template_cfg and style == "pretty":
+                # Use template-based output (e.g., oneline profile)
+                nodes_to_show = (
+                    {name: data[name]}
+                    if name and name in data
+                    else data
+                )
+                for node_name, node_data in sorted(
+                    nodes_to_show.items()
+                ):
+                    # Prepare data with name included
+                    prepared = {"name": node_name, **node_data}
+                    output = format_with_template(
+                        template_cfg, prepared, resource="nodes"
+                    )
+                    console.print(output)
+            elif (
+                columns_cfg and columns_cfg != "*" and style == "pretty"
+            ):
+                # Use column-based table output (e.g., compact, minimal)
+                cls.show_columns(
+                    name, data, columns_cfg, styles_cfg, zebra
+                )
+            else:  # Default pretty style
                 if name:
                     cls.show_one_pretty(name, data[name], verbose)
                 else:
@@ -199,12 +250,81 @@ _slurm_cli_nodes_autocomplete() {{
             )
 
     @classmethod
+    def show_columns(
+        cls,
+        name: str = None,
+        nodes: dict = None,
+        columns: list = None,
+        styles: dict = None,
+        zebra: bool = False,
+    ) -> None:
+        """Show nodes in a column-based table."""
+        if not nodes:
+            console.print("[red]No nodes found.[/red]")
+            return
+
+        nodes_to_show = (
+            {name: nodes[name]} if name and name in nodes else nodes
+        )
+
+        # Create table
+        row_styles = ["", "dim"] if zebra else None
+        table = Table(
+            title="Nodes",
+            box=SIMPLE_HEAVY,
+            pad_edge=False,
+            row_styles=row_styles,
+        )
+
+        # Use default columns if not specified
+        if not columns:
+            columns = cls.DEFAULT_COLUMNS
+
+        # Merge with default styles
+        merged_styles = dict(cls.DEFAULT_STYLES)
+        if styles:
+            merged_styles.update(styles)
+
+        # Add columns to table
+        for col in columns:
+            style = merged_styles.get(col.lower(), "white")
+            table.add_column(col.title(), style=style)
+
+        # Add rows
+        for node_name in sorted(nodes_to_show.keys()):
+            node_data = nodes_to_show[node_name]
+            row = []
+            for col in columns:
+                col_lower = col.lower()
+                if col_lower == "name":
+                    row.append(node_name)
+                elif col_lower == "state":
+                    # State can be a list
+                    state = node_data.get("state", [])
+                    if isinstance(state, list):
+                        row.append(",".join(state))
+                    else:
+                        row.append(str(state))
+                else:
+                    value = node_data.get(
+                        col_lower, node_data.get(col, "")
+                    )
+                    if isinstance(value, list):
+                        row.append(",".join(str(v) for v in value))
+                    else:
+                        row.append(str(value) if value else "")
+            table.add_row(*row)
+
+        console.print(table)
+
+    @classmethod
     def show_csv(
         cls,
         name: str = None,
         nodes: dict = None,
         delimiter: str = ";",
         verbose: bool = False,
+        columns: list = None,
     ) -> None:
         """Show node information in CSV format."""
         if not nodes:
@@ -234,6 +354,23 @@ _slurm_cli_nodes_autocomplete() {{
         nodes_to_show = (
             {name: nodes[name]} if name and name in nodes else nodes
         )
+
+        # If specific columns specified in profile, use those
+        if columns and columns != "*":
+            headers = ["NodeName"] + [c for c in columns if c != "name"]
+            print(delimiter.join(headers))
+            for node_name in sorted(nodes_to_show.keys()):
+                node_data = nodes_to_show[node_name]
+                row = [node_name]
+                for col in columns:
+                    if col.lower() == "name":
+                        continue
+                    value = node_data.get(
+                        col.lower(), node_data.get(col, "")
+                    )
+                    row.append(flatten_value(value))
+                print(delimiter.join(row))
+            return
 
         # Find all unique fields across all nodes
         all_fields = set()
