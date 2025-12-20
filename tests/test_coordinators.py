@@ -54,10 +54,13 @@ class TestCoordinatorCreate:
         with patch.object(subprocess, "run", return_value=mock_result):
             output = io.StringIO()
             with redirect_stdout(output):
-                Coordinator.create("myaccount", value="myuser")
+                Coordinator.create(
+                    user_name="myuser", account="myaccount"
+                )
 
             result = output.getvalue()
-            assert "created successfully" in result
+            assert "added" in result.lower()
+            assert "successfully" in result.lower()
 
     def test_create_coordinator_with_stdout(self):
         """Test coordinator creation with subprocess stdout."""
@@ -67,30 +70,44 @@ class TestCoordinatorCreate:
         with patch.object(subprocess, "run", return_value=mock_result):
             output = io.StringIO()
             with redirect_stdout(output):
-                Coordinator.create("myaccount", value="myuser")
+                Coordinator.create(
+                    user_name="myuser", account="myaccount"
+                )
 
             result = output.getvalue()
             assert "Coordinator added successfully" in result
 
-    def test_create_coordinator_missing_args(self):
-        """Test coordinator creation without required args."""
+    def test_create_coordinator_missing_account(self):
+        """Test coordinator creation without account."""
         output = io.StringIO()
         with redirect_stdout(output):
-            Coordinator.create("myaccount")  # No value or names
+            Coordinator.create(user_name="myuser")
 
         result = output.getvalue()
-        assert "creation failed" in result
-        assert "slurm-cli create coordinator" in result
+        assert "account= is required" in result
 
-    def test_create_coordinator_with_names(self):
-        """Test coordinator creation with names tuple."""
+    def test_create_coordinator_missing_user(self):
+        """Test coordinator creation without user name."""
+        output = io.StringIO()
+        with redirect_stdout(output):
+            Coordinator.create(account="myaccount")
+
+        result = output.getvalue()
+        assert "User name is required" in result
+
+    def test_create_coordinator_with_verbose(self):
+        """Test coordinator creation with verbose output."""
         mock_result = create_mock_subprocess_result()
         with patch.object(
             subprocess, "run", return_value=mock_result
         ) as mock_run:
-            Coordinator.create(
-                "myaccount", value="user1", names=("extra",)
-            )
+            output = io.StringIO()
+            with redirect_stdout(output):
+                Coordinator.create(
+                    user_name="user1",
+                    account="myaccount",
+                    verbose=True,
+                )
 
             mock_run.assert_called_once()
             call_args = mock_run.call_args[0][0]
@@ -100,6 +117,9 @@ class TestCoordinatorCreate:
             assert "accounts=myaccount" in call_args
             assert "names=user1" in call_args
 
+            result = output.getvalue()
+            assert "Running:" in result
+
     def test_create_coordinator_failure(self):
         """Test coordinator creation failure handling."""
         error = subprocess.CalledProcessError(
@@ -108,7 +128,9 @@ class TestCoordinatorCreate:
         with patch.object(subprocess, "run", side_effect=error):
             output = io.StringIO()
             with redirect_stdout(output):
-                Coordinator.create("myaccount", value="myuser")
+                Coordinator.create(
+                    user_name="myuser", account="myaccount"
+                )
 
             result = output.getvalue()
             assert "Failed to create coordinator" in result
@@ -119,7 +141,9 @@ class TestCoordinatorCreate:
         with patch.object(subprocess, "run", side_effect=error):
             output = io.StringIO()
             with redirect_stdout(output):
-                Coordinator.create("myaccount", value="myuser")
+                Coordinator.create(
+                    user_name="myuser", account="myaccount"
+                )
 
             result = output.getvalue()
             assert "Failed to create coordinator" in result
@@ -128,38 +152,15 @@ class TestCoordinatorCreate:
 class TestCoordinatorUpdate:
     """Tests for Coordinator.update method."""
 
-    @patch("slurm_cli.utils.coordinators.subprocess.run")
-    def test_update_coordinator_add_name(self, mock_run):
-        """Test coordinator update with name=."""
-        mock_run.return_value = MagicMock(stdout="", stderr="")
+    def test_update_coordinator_not_supported(self):
+        """Test coordinator update shows not supported error."""
+        output = io.StringIO()
+        with redirect_stdout(output):
+            Coordinator.update("testaccount", name="testuser")
 
-        Coordinator.update("testaccount", name="testuser")
-        mock_run.assert_called_once()
-        call_args = mock_run.call_args[0][0]
-        assert "add" in call_args
-        assert "coordinator" in call_args
-        assert "account=testaccount" in call_args
-        assert "name=testuser" in call_args
-
-    @patch("slurm_cli.utils.coordinators.subprocess.run")
-    def test_update_coordinator_add_names(self, mock_run):
-        """Test coordinator update with name+=."""
-        mock_run.return_value = MagicMock(stdout="", stderr="")
-
-        Coordinator.update("testaccount", name_add="user1,user2")
-        mock_run.assert_called_once()
-        call_args = mock_run.call_args[0][0]
-        assert "name+=user1,user2" in call_args
-
-    @patch("slurm_cli.utils.coordinators.subprocess.run")
-    def test_update_coordinator_remove_names(self, mock_run):
-        """Test coordinator update with name-=."""
-        mock_run.return_value = MagicMock(stdout="", stderr="")
-
-        Coordinator.update("testaccount", name_remove="user1")
-        mock_run.assert_called_once()
-        call_args = mock_run.call_args[0][0]
-        assert "name-=user1" in call_args
+        result = output.getvalue()
+        assert "not supported" in result.lower()
+        assert "coordinators" in result.lower()
 
 
 class TestCoordinatorDelete:
@@ -173,7 +174,10 @@ class TestCoordinatorDelete:
         Coordinator.delete("testaccount", names=["testuser"])
         mock_run.assert_called_once()
         call_args = mock_run.call_args[0][0]
-        assert "name-=testuser" in call_args
+        assert "delete" in call_args
+        assert "coordinator" in call_args
+        assert "account=testaccount" in call_args
+        assert "name=testuser" in call_args
 
     def test_delete_coordinator_no_names(self):
         """Test coordinator delete without names shows error."""
@@ -361,8 +365,7 @@ class TestCoordinatorAutocomplete:
         result = Coordinator.generate_autocomplete_options()
         assert "account=" in result
         assert "name=" in result
-        assert "name+=" in result
-        assert "name-=" in result
+        assert "user=" in result
 
 
 class TestCoordinatorInheritance:

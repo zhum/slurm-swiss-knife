@@ -1,0 +1,4 @@
+---
+alwaysApply: true
+---
+After change of app behaviour, set of cli options, output modes, etc, update docs, if they are present (docs directory, README.md, etc)

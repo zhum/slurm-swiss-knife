@@ -33,6 +33,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Profile Fields Refactoring**: Moved `RESOURCE_FIELDS` into resource classes via `get_profile_fields()` method
 - **Mock sacctmgr Enhancements**: Support for create, modify, delete commands with flag handling
 
+### Changed
+
+- **Coordinator Update Disabled**: `update` operation is not supported for coordinators
+  - Use `create` to add coordinators and `delete` to remove them
+  - Running `slurm-cli update coordinators` now shows an error message
+
 ### Fixed
 
 - Fixed `resolve_resource_alias()` not actually resolving aliases

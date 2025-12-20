@@ -27,17 +27,18 @@ slurm-cli show coordinators --json
 
 ```bash
 # Add coordinator to account (positional syntax)
-slurm-cli create coordinators myaccount alice
+slurm-cli create coordinators alice account=myaccount
 
 # Using key=value syntax
-slurm-cli create coordinators account=myaccount name=alice
+slurm-cli create coordinators name=alice account=myaccount
 
-# Add multiple coordinators
-slurm-cli create coordinators myaccount name+=alice name+=bob
-
-# Add/remove coordinators with += and -=
-slurm-cli create coordinators myaccount name+=newuser name-=olduser
+# Using user= alias for name=
+slurm-cli create coordinators user=alice account=myaccount
 ```
+
+!!! note "Update Not Supported"
+    Coordinators cannot be updated. Use `create` to add new coordinators
+    and `delete` to remove existing ones.
 
 ## Delete Coordinators
 
@@ -74,12 +75,11 @@ slurm-cli create coordinators project_x lead_user
 ### Transfer Coordination
 
 ```bash
-# Remove old coordinator and add new one in single command
-slurm-cli create coordinators myaccount name-=old_lead name+=new_lead
+# Remove old coordinator
+slurm-cli delete coordinators user=old_lead account=myaccount --yes
 
-# Or separate commands
-slurm-cli delete coordinators old_lead account=myaccount --yes
-slurm-cli create coordinators myaccount new_lead
+# Add new coordinator
+slurm-cli create coordinators new_lead account=myaccount
 ```
 
 ## Coordinator Permissions

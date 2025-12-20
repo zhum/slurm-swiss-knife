@@ -61,8 +61,8 @@ _slurm_cli_coordinators_autocomplete() {
         [[ ${#COMPREPLY[@]} -gt 0 ]] && return
     fi
 
-    # For create/update, check what's already been specified
-    if [[ "$cmd" == "create" || "$cmd" == "update" ]]; then
+    # For create, check what's already been specified
+    if [[ "$cmd" == "create" ]]; then
         local has_account=false
         local has_user=false
         local has_positional_user=false
@@ -183,75 +183,21 @@ _slurm_cli_coordinators_autocomplete() {
     @classmethod
     def update(
         cls,
-        account: str,
+        account: str = None,
         verbose: bool = False,
         where_conditions: List[str] = None,
         set_values: List[str] = None,
         **kwargs: Any,
     ) -> None:
-        """Update coordinators for an account.
+        """Update operation is not supported for coordinators.
 
-        Supports two modes:
-        1. Simple: update(account, name="user1,user2") or
-            name+=... or name-=...
-        2. WHERE/SET: update("", where_conditions=["account=ACC"],
-                             set_values=["name=..."])
-
-        Args:
-            account: Account name to update coordinators for
-            verbose: Enable verbose output
-            where_conditions: List of WHERE conditions
-            set_values: List of SET values (name=, name+=, name-=)
-            **kwargs: Additional options like name=, name+=, name-=
+        Coordinators can only be added (create) or removed (delete).
         """
-        # Build sacctmgr command
-        args = ["sacctmgr", "-i", "add", "coordinator"]
-
-        if where_conditions is not None:
-            # WHERE/SET mode - extract account from conditions
-            for cond in where_conditions:
-                args.append(cond)
-            if set_values:
-                for val in set_values:
-                    args.append(val)
-            where_str = " ".join(where_conditions)
-            set_str = " ".join(set_values) if set_values else ""
-            console.print(
-                f"Updating coordinators: {where_str} {set_str}"
-            )
-        else:
-            # Simple mode - update by account name
-            args.append(f"account={account}")
-            for key, value in kwargs.items():
-                if value is not None:
-                    # Handle name, name+, name- keys
-                    if key == "name_add":
-                        args.append(f"name+={value}")
-                    elif key == "name_remove":
-                        args.append(f"name-={value}")
-                    else:
-                        args.append(f"{key}={value}")
-            console.print(
-                f"Updating coordinators for account: {account}"
-            )
-
-        try:
-            result = subprocess.run(
-                args,
-                check=True,
-                capture_output=True,
-                text=True,
-            )
-            if result.stdout:
-                console.print(result.stdout)
-            if verbose:
-                console.print(
-                    "[green]Coordinators updated successfully.[/green]"
-                )
-        except subprocess.CalledProcessError as e:
-            console.print(
-                f"[red]Failed to update coordinators:[/red] {e.stderr or e}"
-            )
+        console.print(
+            "[red]Update operation is not supported for coordinators.[/red]\n"
+            "Use 'slurm-cli create coordinators' to add coordinators or "
+            "'slurm-cli delete coordinators' to remove them."
+        )
 
     @classmethod
     def delete(
