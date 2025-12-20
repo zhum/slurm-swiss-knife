@@ -59,26 +59,26 @@ RESOURCE_HELP = {
             "syntax": "slurm-cli add coord USER account=ACCOUNT",
             "examples": [
                 "slurm-cli add coord john account=research",
-                "slurm-cli add coord name=jane account=engineering",
-                "slurm-cli add coord account=eng name+=alice name+=bob",
+                "slurm-cli add coord user=jane account=engineering",
             ],
-            "options": ["name", "name+=", "name-=", "account"],
+            "options": ["user", "name", "account"],
         },
         "delete": {
-            "syntax": "slurm-cli del coord name=USER account=ACCOUNT",
+            "syntax": "slurm-cli del coord user=USER account=ACCOUNT",
             "examples": [
-                "slurm-cli del coord name=john account=research",
-                "slurm-cli del coord account=eng name=alice -y",
+                "slurm-cli del coord user=john account=research",
+                "slurm-cli del coord account=eng user=alice -y",
             ],
-            "options": ["name", "account"],
+            "options": ["user", "name", "account"],
         },
         "show": {
-            "syntax": "slurm-cli show coord [account=ACCOUNT]",
+            "syntax": "slurm-cli show coord [account=ACCOUNT] [user=USER]",
             "examples": [
                 "slurm-cli show coord",
                 "slurm-cli show coord account=research",
+                "slurm-cli show coord user=john",
             ],
-            "options": ["account"],
+            "options": ["account", "user", "name"],
         },
     },
     "users": {
@@ -1763,29 +1763,20 @@ def create(
             if names[:2] == "-h" or names == "help":
                 print_help("create coordinator", ctx)
                 return
-            # Parse first arg if it's a key=value (handle +=, -=, =)
+            # Parse first arg if it's a key=value
             if "=" in field:
-                if "+=" in field:
-                    key, value_part = field.split("+=", 1)
-                    create_options[key] = value_part
-                elif "-=" in field:
-                    key, value_part = field.split("-=", 1)
-                    create_options[key] = value_part
-                else:
-                    key, value_part = field.split("=", 1)
-                    create_options[key] = value_part
+                key, value_part = field.split("=", 1)
+                create_options[key] = value_part
                 user_name = None
             else:
                 user_name = field
 
             # Get user from options if not set from positional arg
-            # Handle name, name+, name- keys (from name=, name+=, name-=)
+            # Handle name= or user= keys
             if not user_name:
-                user_name = (
-                    create_options.pop("name", None)
-                    or create_options.pop("name+", None)
-                    or create_options.pop("name-", None)
-                )
+                user_name = create_options.pop(
+                    "name", None
+                ) or create_options.pop("user", None)
 
             Coordinator.create(user_name, verbose, **create_options)
         elif canonical_resource[:5] == "assoc":
@@ -1937,7 +1928,7 @@ def delete(
                 coord_opts[k] = v
 
         account = coord_opts.get("account")
-        user = coord_opts.get("name")
+        user = coord_opts.get("name") or coord_opts.get("user")
 
         if not account or not user:
             console.print(

@@ -50,13 +50,13 @@ _slurm_cli_coordinators_autocomplete() {
 
     local cached_accounts="$(_slurm_cache_accounts)"
     local cached_users="$(_slurm_cache_users)"
-    local filter_options="account= name="
+    local options="account= user= name="
 
     # Handle key=value completion for current word
-    if _slurm_parse_keyval_ext "$cur" "$prev"; then
+    if _slurm_parse_keyval "$cur" "$prev"; then
         case "$_key" in
             account) _slurm_complete_value "$cached_accounts" "$_key" "$_val" "$cur" ;;
-            name)    _slurm_complete_value "$cached_users" "$_key" "$_val" "$cur" ;;
+            name|user) _slurm_complete_value "$cached_users" "$_key" "$_val" "$cur" ;;
         esac
         [[ ${#COMPREPLY[@]} -gt 0 ]] && return
     fi
@@ -64,7 +64,7 @@ _slurm_cli_coordinators_autocomplete() {
     # For create/update, check what's already been specified
     if [[ "$cmd" == "create" || "$cmd" == "update" ]]; then
         local has_account=false
-        local has_name=false
+        local has_user=false
         local has_positional_user=false
 
         # Scan previous words to see what's already specified
@@ -72,8 +72,8 @@ _slurm_cli_coordinators_autocomplete() {
             local word="${COMP_WORDS[$i]}"
             if [[ "$word" == account=* ]]; then
                 has_account=true
-            elif [[ "$word" == name=* || "$word" == name+=* || "$word" == name-=* ]]; then
-                has_name=true
+            elif [[ "$word" == name=* || "$word" == user=* ]]; then
+                has_user=true
             elif [[ "$word" != *=* && "$word" != -* ]]; then
                 # Positional argument (user)
                 has_positional_user=true
@@ -82,36 +82,36 @@ _slurm_cli_coordinators_autocomplete() {
 
         # First arg after coordinators: show options + users
         if [[ $prev == coordinators || $prev == coord ]]; then
-            _slurm_complete "account= name= name+= name-= $cached_users" "$cur"
+            _slurm_complete "$options $cached_users" "$cur"
             return
         fi
 
-        # After name= or positional user: suggest account=
-        if $has_name || $has_positional_user; then
+        # After user= or positional user: suggest account=
+        if $has_user || $has_positional_user; then
             if ! $has_account; then
-                _slurm_complete "account= name= name+= name-=" "$cur"
+                _slurm_complete "$options" "$cur"
                 return
             fi
         fi
 
-        # After account=: suggest name= with users
+        # After account=: suggest user= with users
         if $has_account; then
-            if ! $has_name && ! $has_positional_user; then
-                _slurm_complete "name= name+= name-= $cached_users" "$cur"
+            if ! $has_user && ! $has_positional_user; then
+                _slurm_complete "$options $cached_users" "$cur"
                 return
             fi
         fi
 
         # Default: show all options
-        _slurm_complete "account= name= name+= name-= $cached_users" "$cur"
+        _slurm_complete "$options $cached_users" "$cur"
         return
     fi
 
     # For show/delete
     if [[ $prev == coordinators || $prev == coord ]]; then
-        _slurm_complete "$filter_options $cached_accounts" "$cur"
+        _slurm_complete "$options $cached_accounts $cached_users" "$cur"
     else
-        _slurm_complete "$filter_options" "$cur"
+        _slurm_complete "$options" "$cur"
     fi
 }
 """  # noqa: E501
