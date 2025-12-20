@@ -120,26 +120,46 @@ _slurm_cli_coordinators_autocomplete() {
     @classmethod
     def create(
         cls,
-        name: str,
+        user_name: str = None,
         verbose: bool = False,
-        value: str = None,
-        names: tuple = None,
+        account: str = None,
+        **kwargs,
     ) -> None:
-        """Create a new coordinator."""
-        if not value and not names:
+        """Create a new coordinator.
+
+        Args:
+            user_name: User name (from positional arg or name= option)
+            verbose: Enable verbose output
+            account: Account name (from account= option)
+            **kwargs: Additional options
+        """
+        if not account:
             console.print(
-                f"[red]Coordinator '{name}' creation failed:[/]"
-                f"Use slurm-cli create coordinator <account(s)> <user(s)>"
+                "[red]Coordinator creation failed:[/] "
+                "account= is required.\n"
+                "Usage: slurm-cli create coordinators USER account=ACCOUNT"
             )
             return
+
+        if not user_name:
+            console.print(
+                "[red]Coordinator creation failed:[/] "
+                "User name is required.\n"
+                "Usage: slurm-cli create coordinators USER account=ACCOUNT"
+            )
+            return
+
         args = [
             "sacctmgr",
             "-i",
             "add",
             "coordinator",
-            f"accounts={name}",
-            f"names={value}",
+            f"accounts={account}",
+            f"names={user_name}",
         ]
+
+        if verbose:
+            console.print(f"[dim]Running: {' '.join(args)}[/dim]")
 
         try:
             result = subprocess.run(
@@ -149,14 +169,15 @@ _slurm_cli_coordinators_autocomplete() {
                 text=True,
             )
             console.print(
-                f"[green]Coordinator '{name}' created successfully.[/green]"
+                f"[green]Coordinator '{user_name}' added to account "
+                f"'{account}' successfully.[/green]"
             )
             if result.stdout:
                 console.print(result.stdout)
         except subprocess.CalledProcessError as e:
             console.print(
-                f"[red]Failed to create coordinator '{name}':[/]"
-                f"{e.stderr or e}"
+                f"[red]Failed to create coordinator '{user_name}' "
+                f"for account '{account}':[/] {e.stderr or e}"
             )
 
     @classmethod

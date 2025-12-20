@@ -1762,7 +1762,19 @@ def create(
             if names[:2] == "-h" or names == "help":
                 print_help("create coordinator", ctx)
                 return
-            Coordinator.create(field, verbose, **create_options)
+            # Parse first arg if it's a key=value
+            if "=" in field:
+                key, value_part = field.split("=", 1)
+                create_options[key] = value_part
+                user_name = None
+            else:
+                user_name = field
+
+            # Get user from options if not set from positional arg
+            if not user_name:
+                user_name = create_options.pop("name", None)
+
+            Coordinator.create(user_name, verbose, **create_options)
         elif canonical_resource[:5] == "assoc":
             # Parse first arg if it's a key=value
             if "=" in field:
