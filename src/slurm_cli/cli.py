@@ -1961,10 +1961,7 @@ def delete(
     # Special handling for coordinators - require name= and account=
     if canonical_resource[:5] == "coord":
         if not resource_names:
-            console.print(
-                "[red]Use: delete coordinators "
-                "name=USER account=ACCOUNT[/red]"
-            )
+            show_resource_help("delete", "coordinators")
             return
 
         # Parse coordinator delete options from all args
@@ -1978,10 +1975,7 @@ def delete(
         user = coord_opts.get("name") or coord_opts.get("user")
 
         if not account or not user:
-            console.print(
-                "[red]Use: delete coordinators "
-                "name=USER account=ACCOUNT[/red]"
-            )
+            show_resource_help("delete", "coordinators")
             return
 
         if dry_run:
