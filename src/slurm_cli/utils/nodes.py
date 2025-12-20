@@ -42,6 +42,16 @@ class Node(BaseSlurmResource):
         "power_down",
         "power_up",
     ]
+    # Only future and cloud states allowed for node creation
+    NODE_CREATE_STATES = ["future", "cloud"]
+    NODE_CREATE_OPTIONS = [
+        "state",
+        "cpus",
+        "features",
+        "gres",
+        "reason",
+        "weight",
+    ]
 
     # Default columns for table output
     DEFAULT_COLUMNS = [
@@ -76,7 +86,11 @@ class Node(BaseSlurmResource):
         update_opts = " ".join(
             f"{opt}=" for opt in cls.NODE_UPDATE_OPTIONS
         )
+        create_opts = " ".join(
+            f"{opt}=" for opt in cls.NODE_CREATE_OPTIONS
+        )
         states = " ".join(cls.NODE_STATES)
+        create_states = " ".join(cls.NODE_CREATE_STATES)
 
         script = f"""
 _slurm_cli_nodes_autocomplete() {{
@@ -90,12 +104,19 @@ _slurm_cli_nodes_autocomplete() {{
     local cached_partitions="$(_slurm_cache_partitions)"
     local show_options="{show_opts}"
     local update_options="{update_opts}"
+    local create_options="{create_opts}"
 
     # Handle key=value completion
     if _slurm_parse_keyval "$cur" "$prev"; then
         case "$_key" in
             state)
-                _slurm_complete_value "{states}" "$_key" "$_val" "$cur" ;;
+                # For create, only allow future/cloud states
+                if [[ "$cmd" == "create" ]]; then
+                    _slurm_complete_value "{create_states}" "$_key" "$_val" "$cur"
+                else
+                    _slurm_complete_value "{states}" "$_key" "$_val" "$cur"
+                fi
+                ;;
             partition)
                 _slurm_complete_value "$cached_partitions" "$_key" "$_val" "$cur" ;;
             name)
@@ -107,6 +128,12 @@ _slurm_cli_nodes_autocomplete() {{
     # For show command: options first, then node names
     if [[ "$cmd" == "show" ]]; then
         _slurm_complete "$show_options $cached_nodes" "$cur"
+        return
+    fi
+
+    # For create command: show create options (name is positional)
+    if [[ "$cmd" == "create" ]]; then
+        _slurm_complete "$create_options" "$cur"
         return
     fi
 
@@ -149,11 +176,30 @@ _slurm_cli_nodes_autocomplete() {{
     def create(
         cls, name: str, verbose: bool = False, **kwargs: Any
     ) -> None:
-        """Create a new node."""
-        console.print(f"Creating node: {name}")
-        args = ["scontrol", "create", "node", f"name={name}"]
+        """Create a new node.
+
+        Only 'future' and 'cloud' states are allowed for node creation.
+        Command format: scontrol create NodeName=NAME state=STATE [OPTIONS]
+        """
+        # Validate state if provided
+        state = kwargs.get("state", "").lower()
+        if state and state not in cls.NODE_CREATE_STATES:
+            console.print(
+                f"[red]Invalid state '{state}' for node creation.[/red]"
+            )
+            console.print(
+                f"Allowed states: {', '.join(cls.NODE_CREATE_STATES)}"
+            )
+            return
+
+        # Build scontrol command
+        args = ["scontrol", "create", f"NodeName={name}"]
         for key, value in kwargs.items():
-            args.append(f"{key}={value}")
+            if value is not None:
+                args.append(f"{key}={value}")
+
+        if verbose:
+            console.print(f"[dim]Running: {' '.join(args)}[/dim]")
 
         try:
             result = subprocess.run(

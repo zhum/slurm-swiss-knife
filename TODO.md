@@ -10,7 +10,7 @@
   - [x] delete
   - [x] update
 - [ ] **Nodes Management**: Add support for managing nodes
-  - [ ] show
+  - [x] show
   - [ ] add
   - [ ] delete
   - [ ] update
