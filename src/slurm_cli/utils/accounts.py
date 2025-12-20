@@ -100,7 +100,7 @@ _slurm_cli_accounts_autocomplete() {{
         create|update) _slurm_complete "$update_options" "$cur" ;;
     esac
 }}
-"""
+"""  # noqa: E501
         return script
 
     @classmethod

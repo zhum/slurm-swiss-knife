@@ -21,6 +21,7 @@ Note: This requires Click's completion support
 which is available in Click 8.0+.
 """
 
+import os
 from typing import Any, Dict, List, Optional, Tuple
 
 import click
@@ -571,6 +572,29 @@ def get_force_update(ctx: click.Context) -> bool:
     return ctx.obj.get("force_update", False)
 
 
+def get_dry_run(
+    ctx: click.Context, dry_run_override: bool = None
+) -> bool:
+    """Get the dry-run flag from context or override.
+
+    Priority:
+    1. Command-level --dry-run flag (if True)
+    2. Global --no-dry-run flag (if set, forces False)
+    3. Global --dry-run flag
+    4. SLURM_CLI_DRYRUN env var
+    """
+    # Command-level override takes highest priority
+    if dry_run_override is True:
+        return True
+
+    # Check if --no-dry-run was explicitly set
+    if ctx.obj.get("no_dry_run", False):
+        return False
+
+    # Global --dry-run or env var
+    return ctx.obj.get("dry_run", False)
+
+
 def get_profile(
     ctx: click.Context, profile_override: str = None
 ) -> str:
@@ -595,17 +619,14 @@ ACTION_OPTIONS = {
         ("-v, --verbose", "Enable verbose output"),
         ("-y, --yes", "Skip confirmation prompts"),
         ("-f, --force", "Skip confirmation prompts"),
-        ("--dry-run", "Show what would be created"),
     ],
     "update": [
         ("-v, --verbose", "Enable verbose output"),
-        ("--dry-run", "Show what would be updated"),
     ],
     "delete": [
         ("-v, --verbose", "Enable verbose output"),
         ("-y, --yes", "Skip confirmation prompts"),
         ("-f, --force", "Skip confirmation prompts"),
-        ("--dry-run", "Show what would be deleted"),
     ],
     "show": [
         ("-j, --json", "Output in JSON format"),
@@ -621,6 +642,8 @@ ACTION_OPTIONS = {
 # Global options available for all commands
 GLOBAL_OPTIONS = [
     ("-h, --help", "Show this help message"),
+    ("--dry-run", "Show what would be done (or SLURM_CLI_DRYRUN=y)"),
+    ("--no-dry-run", "Override SLURM_CLI_DRYRUN and disable dry-run"),
 ]
 
 
@@ -1004,6 +1027,18 @@ def show_command_help_with_resources(
     help="Skip confirmation prompts in delete/update operations",
 )
 @click.option(
+    "--dry-run",
+    is_flag=True,
+    default=None,
+    help="Show what would be done without making changes "
+    "(also enabled by SLURM_CLI_DRYRUN=y)",
+)
+@click.option(
+    "--no-dry-run",
+    is_flag=True,
+    help="Override SLURM_CLI_DRYRUN env var and disable dry-run",
+)
+@click.option(
     "--cache-timeout",
     "-t",
     type=int,
@@ -1035,6 +1070,8 @@ def main(
     zebra: bool,
     force_update: bool,
     yes: bool,
+    dry_run: bool,
+    no_dry_run: bool,
     cache_timeout: int,
     profile: str,
     profile_str: str,
@@ -1048,6 +1085,11 @@ def main(
     elif csv:
         style = "csv"
 
+    # Handle dry-run from env var if not explicitly set
+    if dry_run is None:
+        env_dry_run = os.environ.get("SLURM_CLI_DRYRUN", "").lower()
+        dry_run = env_dry_run in ("y", "yes", "1", "true")
+
     # Store style, delimiter, zebra, profile, and cache update flag in context
     # for subcommands to access
     ctx.ensure_object(dict)
@@ -1056,6 +1098,8 @@ def main(
     ctx.obj["zebra"] = zebra
     ctx.obj["force_update"] = force_update
     ctx.obj["yes"] = yes
+    ctx.obj["dry_run"] = dry_run
+    ctx.obj["no_dry_run"] = no_dry_run
     ctx.obj["profile"] = profile
     ctx.obj["profile_str"] = profile_str
 
@@ -1455,6 +1499,9 @@ def update(
     **kwargs,
 ) -> None:
     """Update Slurm resource fields (aliases: u, edit, mod, modify)."""
+    # Combine local and global dry-run settings
+    dry_run = get_dry_run(ctx, dry_run)
+
     # Get global --yes option from context, combine with local --yes
     # global_yes = ctx.obj.get("yes", False) if ctx.obj else False
     # skip_confirm = (
@@ -1723,6 +1770,9 @@ def create(
         show_command_help(ctx, None, True)
         return
 
+    # Combine local and global dry-run settings
+    dry_run = get_dry_run(ctx, dry_run)
+
     # Resolve resource alias to canonical name
     canonical_resource = resolve_resource_alias(resource)
 
@@ -1913,6 +1963,9 @@ def delete(
     if not resource:
         show_command_help(ctx, None, True)
         return
+
+    # Combine local and global dry-run settings
+    dry_run = get_dry_run(ctx, dry_run)
 
     # Get global --yes option from context,
     # combine with local --yes and --force
