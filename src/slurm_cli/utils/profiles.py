@@ -129,7 +129,7 @@ DEFAULT_PROFILES: Dict[str, Dict[str, Any]] = {
             "styles": {"name": "cyan bold"},
         },
         "nodes": {
-            "columns": ["name", "state", "cpus", "memory"],
+            "columns": ["name", "state", "cpus", "real_memory", "gres"],
             "styles": {"name": "cyan"},
         },
         "reservations": {
@@ -159,7 +159,7 @@ DEFAULT_PROFILES: Dict[str, Dict[str, Any]] = {
         "accounts": {"columns": ["name"]},
         "qos": {"columns": ["name"]},
         "partitions": {"columns": ["name", "state"]},
-        "nodes": {"columns": ["name", "state"]},
+        "nodes": {"columns": ["name", "state", "gres"]},
         "reservations": {"columns": ["name"]},
         "coordinators": {"columns": ["account", "name"]},
         "users": {"columns": ["name"]},
@@ -186,7 +186,7 @@ DEFAULT_PROFILES: Dict[str, Dict[str, Any]] = {
             "template": (
                 "[cyan]{name}[/cyan] "
                 "state=[green]{state}[/green] "
-                "cpus={cpus} mem={real_memory}"
+                "cpus={cpus} mem={real_memory} gres={gres}"
             )
         },
         "reservations": {

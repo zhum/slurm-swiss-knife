@@ -97,7 +97,7 @@
 # partitions.columns = name,state,nodes
 # partitions.styles.name = cyan bold
 
-# nodes.columns = name,state,cpus,memory,gres
+# nodes.columns = name,state,cpus,real_memory,gres
 # nodes.styles.name = cyan
 
 # reservations.columns = name,start_time,end_time,nodes,users
