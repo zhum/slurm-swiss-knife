@@ -173,6 +173,33 @@ These options work with any command:
 | `--help`, `-h` | Show help message |
 | `--version` | Show version |
 | `--yes`, `-y` | Skip confirmations (delete/update) |
+| `--dry-run` | Show what would be done without making changes |
+| `--no-dry-run` | Override `SLURM_CLI_DRYRUN` env var |
+
+## Environment Variables
+
+| Variable | Description |
+|----------|-------------|
+| `SLURM_CLI_DRYRUN` | Set to `y`, `yes`, `1`, or `true` to enable dry-run mode globally |
+
+### Dry-Run Mode
+
+Dry-run mode shows what would be done without making actual changes. It can be enabled in three ways:
+
+1. **Environment variable**: `SLURM_CLI_DRYRUN=y`
+1. **Global option**: `slurm-cli --dry-run ...`
+1. **Command option**: `slurm-cli delete ... --dry-run`
+
+The `--no-dry-run` option overrides the environment variable:
+
+```bash
+# Enable dry-run via env var
+export SLURM_CLI_DRYRUN=y
+slurm-cli delete users testuser  # Shows dry-run output
+
+# Override to actually execute
+slurm-cli --no-dry-run delete users testuser  # Actually deletes
+```
 
 ## Command Aliases Reference
 
