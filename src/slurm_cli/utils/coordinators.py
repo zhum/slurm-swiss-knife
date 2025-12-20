@@ -273,33 +273,37 @@ _slurm_cli_coordinators_autocomplete() {
             )
             return
 
-        # Use sacctmgr add coordinator with name-= to remove
-        args = [
-            "sacctmgr",
-            "-i",
-            "add",
-            "coordinator",
-            f"account={account}",
-            f"name-={','.join(names)}",
-        ]
+        for name in names:
+            args = [
+                "sacctmgr",
+                "-i",
+                "delete",
+                "coordinator",
+                f"account={account}",
+                f"name={name}",
+            ]
 
-        try:
-            result = subprocess.run(
-                args,
-                check=True,
-                capture_output=True,
-                text=True,
-            )
-            console.print(
-                f"[green]Removed coordinators {', '.join(names)} "
-                f"from account {account}[/green]"
-            )
-            if result.stdout:
-                console.print(result.stdout)
-        except subprocess.CalledProcessError as e:
-            console.print(
-                f"[red]Failed to delete coordinators:[/red] {e.stderr or e}"
-            )
+            if verbose:
+                console.print(f"[dim]Running: {' '.join(args)}[/dim]")
+
+            try:
+                result = subprocess.run(
+                    args,
+                    check=True,
+                    capture_output=True,
+                    text=True,
+                )
+                console.print(
+                    f"[green]Removed coordinator '{name}' "
+                    f"from account '{account}'[/green]"
+                )
+                if result.stdout:
+                    console.print(result.stdout)
+            except subprocess.CalledProcessError as e:
+                console.print(
+                    f"[red]Failed to delete coordinator '{name}':[/red] "
+                    f"{e.stderr or e}"
+                )
 
     @classmethod
     def _extract_coordinators(

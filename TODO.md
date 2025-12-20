@@ -43,7 +43,7 @@
   - [x] show
   - [x] create
   - [ ] delete
-  - [ ] update
+  - [-] update
 
 ### User Interface Improvements
 

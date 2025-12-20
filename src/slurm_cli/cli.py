@@ -1762,17 +1762,29 @@ def create(
             if names[:2] == "-h" or names == "help":
                 print_help("create coordinator", ctx)
                 return
-            # Parse first arg if it's a key=value
+            # Parse first arg if it's a key=value (handle +=, -=, =)
             if "=" in field:
-                key, value_part = field.split("=", 1)
-                create_options[key] = value_part
+                if "+=" in field:
+                    key, value_part = field.split("+=", 1)
+                    create_options[key] = value_part
+                elif "-=" in field:
+                    key, value_part = field.split("-=", 1)
+                    create_options[key] = value_part
+                else:
+                    key, value_part = field.split("=", 1)
+                    create_options[key] = value_part
                 user_name = None
             else:
                 user_name = field
 
             # Get user from options if not set from positional arg
+            # Handle name, name+, name- keys (from name=, name+=, name-=)
             if not user_name:
-                user_name = create_options.pop("name", None)
+                user_name = (
+                    create_options.pop("name", None)
+                    or create_options.pop("name+", None)
+                    or create_options.pop("name-", None)
+                )
 
             Coordinator.create(user_name, verbose, **create_options)
         elif canonical_resource[:5] == "assoc":
@@ -1947,11 +1959,27 @@ def delete(
             elif canonical_resource[:4] == "node":
                 Node.delete(resource_name)
             elif canonical_resource[:5] == "coord":
-                # Coordinators need account and names
-                console.print(
-                    "[red]Use: delete coordinators ACCOUNT "
-                    "names=user1,user2[/red]"
-                )
+                # Parse coordinator delete options from all args
+                coord_opts = {}
+                for arg in resource_names:
+                    if "=" in arg:
+                        k, v = arg.split("=", 1)
+                        coord_opts[k] = v
+
+                account = coord_opts.get("account")
+                user = coord_opts.get("name")
+
+                if not account or not user:
+                    console.print(
+                        "[red]Use: delete coordinators "
+                        "name=USER account=ACCOUNT[/red]"
+                    )
+                else:
+                    Coordinator.delete(
+                        account=account,
+                        names=[user],
+                        verbose=verbose,
+                    )
             else:
                 console.print(
                     f"Deleting {canonical_resource} '{resource_name}'"
