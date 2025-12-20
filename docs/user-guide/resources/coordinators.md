@@ -105,4 +105,3 @@ Coordinators cannot:
 - [Accounts](accounts.md) - Account management
 - [Users](users.md) - User management
 - [Associations](associations.md) - User-account associations
-

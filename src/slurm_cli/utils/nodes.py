@@ -14,9 +14,89 @@ from .utils import console
 class Node(BaseSlurmResource):
     _WIDTH = None
 
+    # Node options for autocomplete
+    NODE_SHOW_OPTIONS = [
+        "name",
+        "state",
+        "partition",
+        "features",
+        "gres",
+    ]
+    NODE_UPDATE_OPTIONS = [
+        "state",
+        "reason",
+        "features",
+        "gres",
+        "weight",
+    ]
+    NODE_STATES = [
+        "idle",
+        "alloc",
+        "drain",
+        "down",
+        "resume",
+        "undrain",
+        "fail",
+        "power_down",
+        "power_up",
+    ]
+
     def __init__(self, name: str, **kwargs: Any):
         self.name = name
         self.kwargs = kwargs
+
+    @classmethod
+    def generate_autocomplete_options(cls) -> str:
+        """Generate bash autocomplete script for node options."""
+        show_opts = " ".join(f"{opt}=" for opt in cls.NODE_SHOW_OPTIONS)
+        update_opts = " ".join(
+            f"{opt}=" for opt in cls.NODE_UPDATE_OPTIONS
+        )
+        states = " ".join(cls.NODE_STATES)
+
+        script = f"""
+_slurm_cli_nodes_autocomplete() {{
+    local cmd="$1"
+    local pos="$2"
+
+    local cur="${{COMP_WORDS[COMP_CWORD]}}"
+    local prev="${{COMP_WORDS[COMP_CWORD-1]}}"
+
+    local cached_nodes="$(_slurm_cache_nodes)"
+    local cached_partitions="$(_slurm_cache_partitions)"
+    local show_options="{show_opts}"
+    local update_options="{update_opts}"
+
+    # Handle key=value completion
+    if _slurm_parse_keyval "$cur" "$prev"; then
+        case "$_key" in
+            state)
+                _slurm_complete_value "{states}" "$_key" "$_val" "$cur" ;;
+            partition)
+                _slurm_complete_value "$cached_partitions" "$_key" "$_val" "$cur" ;;
+            name)
+                _slurm_complete_value "$cached_nodes" "$_key" "$_val" "$cur" ;;
+        esac
+        [[ ${{#COMPREPLY[@]}} -gt 0 ]] && return
+    fi
+
+    # For show command: options first, then node names
+    if [[ "$cmd" == "show" ]]; then
+        _slurm_complete "$show_options $cached_nodes" "$cur"
+        return
+    fi
+
+    # For update command: options first, then node names
+    if [[ "$cmd" == "update" ]]; then
+        _slurm_complete "$update_options $cached_nodes" "$cur"
+        return
+    fi
+
+    # Default: show node names
+    _slurm_complete "$cached_nodes" "$cur"
+}}
+"""
+        return script
 
     @classmethod
     def get_profile_fields(cls) -> dict:

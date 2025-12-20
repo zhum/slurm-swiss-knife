@@ -42,7 +42,7 @@
 - [ ] **Coordinators Management**: Complete coordinator management functionality
   - [x] show
   - [x] create
-  - [ ] delete
+  - [x] delete
   - [-] update
 
 ### User Interface Improvements
