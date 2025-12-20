@@ -178,12 +178,26 @@ _slurm_cli_nodes_autocomplete() {{
     ) -> None:
         """Create a new node.
 
+        Both NodeName and state are required.
         Only 'future' and 'cloud' states are allowed for node creation.
         Command format: scontrol create NodeName=NAME state=STATE [OPTIONS]
         """
-        # Validate state if provided
+        # State is required
         state = kwargs.get("state", "").lower()
-        if state and state not in cls.NODE_CREATE_STATES:
+        if not state:
+            console.print(
+                "[red]Node creation requires state= parameter.[/red]"
+            )
+            console.print(
+                f"Allowed states: {', '.join(cls.NODE_CREATE_STATES)}"
+            )
+            console.print(
+                "Usage: slurm-cli create nodes NODENAME state=future|cloud"
+            )
+            return
+
+        # Validate state value
+        if state not in cls.NODE_CREATE_STATES:
             console.print(
                 f"[red]Invalid state '{state}' for node creation.[/red]"
             )
