@@ -1515,6 +1515,11 @@ def update(
     # Resolve resource alias to canonical name
     canonical_resource = resolve_resource_alias(resource)
 
+    # Coordinators do not support update operation
+    if canonical_resource[:5] == "coord":
+        Coordinator.update()
+        return
+
     # Parse additional arguments into key-value pairs
     update_options = {}
     # Include value if it's a key=value format
