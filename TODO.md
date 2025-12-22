@@ -11,7 +11,7 @@
   - [x] update
 - [ ] **Nodes Management**: Add support for managing nodes
   - [x] show
-  - [ ] add
+  - [x] add (?)
   - [ ] delete
   - [ ] update
 - [x] **QOS Management**: Add support for managing qos
@@ -51,8 +51,16 @@
 - [ ] **Enhanced Output Formats**: Add more output format options (CSV, YAML, XML)
 - [ ] **Interactive Mode**: Add interactive shell mode for better user experience
 - [ ] **Progress Indicators**: Add progress bars for long-running operations
+- [ ] **Filter nodes**: Add filter options for nodes by reservation, state, partition, user
+- [ ] **Filter jobs**: Add jobs options for jobs by reservation, state, partition, user
+- [ ] **Selection objects**: Add -L option, which forces to return just list of objects via comma (or -s'separator'),
+                             for nodes add -F sub-option for folding in slurm-style.
 
 ## Medium Priority Features
+
+- [ ] **drain/undrain**: add commands `drain node-list [[reason=]'reason']`, `undrain/resume`, `reboot [asap] [nextstate=...]`;
+      use nodelist filters!
+- [ ] **hold/top**: add commands `hold {[jobs=]job-list}`, `top ...`, `unhold ...`; use joblist filters!
 
 ### Additional Functionality
 
@@ -69,7 +77,6 @@
 ### Configuration & Customization
 
 - [ ] **Configuration File**: Add support for configuration files (~/.slurm-cli/config)
-- [ ] **Theme Support**: Add customizable themes and color schemes
 - [ ] **Custom Aliases**: Allow users to define custom command aliases
 - [ ] **Plugin System**: Add plugin architecture for extending functionality
 

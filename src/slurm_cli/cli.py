@@ -2094,7 +2094,7 @@ def delete(
             elif canonical_resource[:4] == "part":
                 Partition.delete(resource_name)
             elif canonical_resource[:4] == "node":
-                Node.delete(resource_name)
+                Node.delete(resource_name, verbose=verbose)
             # Note: coordinators handled above with special logic
             else:
                 console.print(

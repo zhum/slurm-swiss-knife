@@ -239,10 +239,39 @@ _slurm_cli_nodes_autocomplete() {{
         console.print(f"Updating node: {name}")
 
     @classmethod
-    def delete(cls, name: str) -> None:
-        """Delete a node."""
-        # TODO: Implement actual node deletion using scontrol delete node
-        console.print(f"Deleting node: {name}")
+    def delete(cls, name: str, verbose: bool = False) -> None:
+        """Delete a node.
+
+        Command format: scontrol delete nodename=NODES
+        """
+        if not name:
+            console.print(
+                "[red]Node name is required for deletion.[/red]"
+            )
+            console.print("Usage: slurm-cli delete nodes NODENAME")
+            return
+
+        args = ["scontrol", "delete", f"nodename={name}"]
+
+        if verbose:
+            console.print(f"[dim]Running: {' '.join(args)}[/dim]")
+
+        try:
+            result = subprocess.run(
+                args,
+                check=True,
+                capture_output=True,
+                text=True,
+            )
+            console.print(
+                f"[green]Node '{name}' deleted successfully.[/green]"
+            )
+            if result.stdout:
+                console.print(result.stdout)
+        except subprocess.CalledProcessError as e:
+            console.print(
+                f"[red]Failed to delete node '{name}':[/red] {e.stderr or e}"
+            )
 
     @classmethod
     def show(
