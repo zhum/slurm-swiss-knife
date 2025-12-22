@@ -25,12 +25,43 @@ class Node(BaseSlurmResource):
         "gres",
     ]
     NODE_UPDATE_OPTIONS = [
-        "state",
-        "reason",
-        "features",
+        "activefeatures",
+        "availablefeatures",
+        "comment",
+        "cpubind",
+        "extra",
         "gres",
+        "instanceid",
+        "instancetype",
+        "nodeaddr",
+        "nodehostname",
+        "reason",
+        "resumeafter",
+        "state",
         "weight",
     ]
+    # Valid states for node update
+    NODE_UPDATE_STATES = [
+        "cancel_reboot",
+        "down",
+        "drain",
+        "fail",
+        "future",
+        "idle",
+        "noresp",
+        "resume",
+        "undrain",
+    ]
+    # Valid values for CpuBind option
+    NODE_CPUBIND_VALUES = [
+        "none",
+        "socket",
+        "ldom",
+        "core",
+        "thread",
+        "off",
+    ]
+    # States shown in show command (informational)
     NODE_STATES = [
         "idle",
         "alloc",
@@ -91,6 +122,8 @@ class Node(BaseSlurmResource):
         )
         states = " ".join(cls.NODE_STATES)
         create_states = " ".join(cls.NODE_CREATE_STATES)
+        update_states = " ".join(cls.NODE_UPDATE_STATES)
+        cpubind_values = " ".join(cls.NODE_CPUBIND_VALUES)
 
         script = f"""
 _slurm_cli_nodes_autocomplete() {{
@@ -110,13 +143,17 @@ _slurm_cli_nodes_autocomplete() {{
     if _slurm_parse_keyval "$cur" "$prev"; then
         case "$_key" in
             state)
-                # For create, only allow future/cloud states
+                # Different states for create vs update
                 if [[ "$cmd" == "create" ]]; then
                     _slurm_complete_value "{create_states}" "$_key" "$_val" "$cur"
+                elif [[ "$cmd" == "update" ]]; then
+                    _slurm_complete_value "{update_states}" "$_key" "$_val" "$cur"
                 else
                     _slurm_complete_value "{states}" "$_key" "$_val" "$cur"
                 fi
                 ;;
+            cpubind)
+                _slurm_complete_value "{cpubind_values}" "$_key" "$_val" "$cur" ;;
             partition)
                 _slurm_complete_value "$cached_partitions" "$_key" "$_val" "$cur" ;;
             name)
@@ -233,10 +270,76 @@ _slurm_cli_nodes_autocomplete() {{
             )
 
     @classmethod
-    def update(cls, name: str, **kwargs: Any) -> None:
-        """Update a node."""
-        # TODO: Implement actual node update using scontrol update node
-        console.print(f"Updating node: {name}")
+    def update(
+        cls, name: str, verbose: bool = False, **kwargs: Any
+    ) -> None:
+        """Update a node.
+
+        Command format: scontrol update NodeName=NAME [OPTIONS]
+
+        Valid options:
+            ActiveFeatures, AvailableFeatures, Comment, CpuBind, Extra,
+            Gres, InstanceId, InstanceType, NodeAddr, NodeHostname,
+            Reason, ResumeAfter, State, Weight
+
+        Valid states: CANCEL_REBOOT, DOWN, DRAIN, FAIL, FUTURE, IDLE,
+                      NoResp, RESUME, UNDRAIN
+        Valid CpuBind: none, socket, ldom, core, thread, off
+        """
+        if not name:
+            console.print(
+                "[red]Node name is required for update.[/red]"
+            )
+            console.print(
+                "Usage: slurm-cli update nodes NODENAME KEY=VALUE..."
+            )
+            return
+
+        # Validate state if provided
+        state = kwargs.get("state", "")
+        if state and state.lower() not in cls.NODE_UPDATE_STATES:
+            console.print(
+                f"[red]Invalid state '{state}' for node update.[/red]"
+            )
+            console.print(
+                f"Valid states: {', '.join(cls.NODE_UPDATE_STATES)}"
+            )
+            return
+
+        # Validate cpubind if provided
+        cpubind = kwargs.get("cpubind", "")
+        if cpubind and cpubind.lower() not in cls.NODE_CPUBIND_VALUES:
+            console.print(f"[red]Invalid cpubind '{cpubind}'.[/red]")
+            console.print(
+                f"Valid values: {', '.join(cls.NODE_CPUBIND_VALUES)}"
+            )
+            return
+
+        # Build scontrol command
+        args = ["scontrol", "update", f"NodeName={name}"]
+        for key, value in kwargs.items():
+            if value is not None:
+                args.append(f"{key}={value}")
+
+        if verbose:
+            console.print(f"[dim]Running: {' '.join(args)}[/dim]")
+
+        try:
+            result = subprocess.run(
+                args,
+                check=True,
+                capture_output=True,
+                text=True,
+            )
+            console.print(
+                f"[green]Node '{name}' updated successfully.[/green]"
+            )
+            if result.stdout:
+                console.print(result.stdout)
+        except subprocess.CalledProcessError as e:
+            console.print(
+                f"[red]Failed to update node '{name}':[/red] {e.stderr or e}"
+            )
 
     @classmethod
     def delete(cls, name: str, verbose: bool = False) -> None:

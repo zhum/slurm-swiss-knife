@@ -12,7 +12,7 @@
 - [ ] **Nodes Management**: Add support for managing nodes
   - [x] show
   - [x] add (?)
-  - [ ] delete
+  - [x] delete
   - [ ] update
 - [x] **QOS Management**: Add support for managing qos
   - [x] show
@@ -58,9 +58,63 @@
 
 ## Medium Priority Features
 
-- [ ] **drain/undrain**: add commands `drain node-list [[reason=]'reason']`, `undrain/resume`, `reboot [asap] [nextstate=...]`;
+- [ ] **drain/undrain**: add commands `drain node-list [[reason=]'reason']`, `undrain/resume`,
+      `reboot [asap] [nextstate=...]`, `cancel_reboot ...`;
       use nodelist filters!
-- [ ] **hold/top**: add commands `hold {[jobs=]job-list}`, `top ...`, `unhold ...`; use joblist filters!
+- [ ] **hold/top**: add commands `hold {[jobs=]job-list}`, `top ...`,
+      `unhold/release ...`, `requeue ...`, `suspend`; use joblist filters!
+- [ ] **recon[figure], ping, takeover**
+- [ ] **token [lifespan=<lifespan>] [username=<username>]** lifespan=seconds/infinite (we need specify time)
+- [ ] **vesion**
+- [ ] **batch_script job_id [filename]**
+- [ ] **write_config [filename]**
+- [ ] **new resources (r/o)** bbstat, burstbuffer, daemons, dwstat, topology
+- [ ] **schedloglevel** 0, 1, yes, no, on, off
+- [ ] **setdebug** "quiet", "fatal", "error", "info", "verbose", "debug", "debug2", "debug3", "debug4", "debug5" [nodes=...]
+- [ ] **setdebugflags** {+|-}<FLAG> [{+|-}<FLAG>] [nodes=<NODES>]
+  - Accrue           Accrue counters accounting details
+  - Agent            RPC agents (outgoing RPCs from Slurm daemons)
+  - AuditRPCs        For all inbound RPCs to slurmctld, print the originating address, authenticated user, and RPC type before the connection is processed.
+  - Backfill         Backfill scheduler details
+  - BackfillMap      Backfill scheduler to log a very verbose map of reserved resources through time. Combine with Backfill for a verbose and complete view of the backfill scheduler's work.
+  - BurstBuffer      Burst Buffer plugin
+  - Cgroup           Cgroup details
+  - CPU_Bind         CPU binding details for jobs and steps
+  - CpuFrequency     Cpu frequency details for jobs and steps using the --cpu-freq option.
+  - Data             Generic data structure details.
+  - DBD_Agent        RPC agent (outgoing RPCs to the DBD)
+  - Dependency       Job dependency debug info
+  - Elasticsearch    Elasticsearch debug info (deprecated). Alias of JobComp.
+  - Energy           AcctGatherEnergy debug info
+  - Federation       Federation scheduling debug info
+  - FrontEnd         Front end node details
+  - Gres             Generic resource details
+  - Hetjob           Heterogeneous job details
+  - Gang             Gang scheduling details
+  - GLOB_SILENCE     Do not display error message of glob "*" symbols in conf files.
+  - JobAccountGather Common job account gathering details (not plugin specific).
+  - JobComp          Job Completion plugin details
+  - JobContainer     Job container plugin details
+  - License          License management details
+  - Network          Network details. Warning: activating this flag may cause logging of passwords, tokens or other authentication credentials.
+  - NetworkRaw       Dump raw hex values of key Network communications. Warning: This flag will cause very verbose logs and may cause logging of passwords, tokens or other authentication credentials.
+  - NodeFeatures     Node Features plugin debug info
+  - NO_CONF_HASH     Do not log when the slurm.conf files differ between Slurm daemons
+  - Power            Power management plugin and power save (suspend/resume programs) details
+  - Priority         Job prioritization
+  - Profile          AcctGatherProfile plugins details
+  - Protocol         Communication protocol details
+  - Reservation      Advanced reservations
+  - Route            Message forwarding debug info
+  - Script           Debug info regarding any script called by Slurm. This includes slurmctld executed scripts such as PrologSlurmctld and EpilogSlurmctld.
+  - SelectType       Resource selection plugin
+  - Steps            Slurmctld resource allocation for job steps
+  - Switch           Switch plugin
+  - TLS              TLS plugin
+  - TraceJobs        Trace jobs in slurmctld. It will print detailed job information including state, job ids and allocated nodes counter.
+  - Triggers         Slurmctld triggers
+  - WorkQueue        Work Queue details
+
 
 ### Additional Functionality
 

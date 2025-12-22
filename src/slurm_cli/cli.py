@@ -48,7 +48,8 @@ from .utils.users import User
 from .utils.utils import console
 
 CONTEXT_SETTINGS = dict(help_option_names=["-h", "--help"])
-# Context settings without automatic help (for commands with custom help callback)
+# Context settings without automatic help
+# (for commands with custom help callback)
 CONTEXT_SETTINGS_NO_HELP = dict(help_option_names=[])
 STYLE_OPTIONS = ["pretty", "json", "csv"]
 
@@ -109,10 +110,11 @@ RESOURCE_HELP = {
             "options": ["name"],
         },
         "update": {
-            "syntax": "slurm-cli mod users USERNAME set KEY=VALUE",
+            "syntax": "slurm-cli mod users USERNAME" " set KEY=VALUE",
             "examples": [
                 "slurm-cli mod users john set adminlevel=operator",
-                "slurm-cli mod users defaultaccount=old set defaultaccount=new",
+                "slurm-cli mod users defaultaccount=old set"
+                " defaultaccount=new",
             ],
             "options": [
                 "adminlevel",
@@ -134,7 +136,8 @@ RESOURCE_HELP = {
     "associations": {
         "description": "Manage Slurm user-account associations",
         "create": {
-            "syntax": "slurm-cli add assoc user=USERNAME account=ACCOUNT [OPTIONS]",
+            "syntax": "slurm-cli add assoc user=USERNAME account=ACCOUNT"
+            " [OPTIONS]",
             "examples": [
                 "slurm-cli add assoc user=john account=research",
                 "slurm-cli add assoc name=jane account=eng qos=normal,high",
@@ -152,9 +155,11 @@ RESOURCE_HELP = {
             ],
         },
         "update": {
-            "syntax": "slurm-cli mod assoc user=USER account=ACCOUNT set KEY=VALUE",
+            "syntax": "slurm-cli mod assoc user=USER account=ACCOUNT"
+            " set KEY=VALUE",
             "examples": [
-                "slurm-cli mod assoc user=john account=research set fairshare=100",
+                "slurm-cli mod assoc user=john account=research set"
+                " fairshare=100",
                 "slurm-cli mod assoc account=eng set defaultqos=normal",
             ],
             "options": [
@@ -191,7 +196,8 @@ RESOURCE_HELP = {
             "syntax": "slurm-cli add accounts NAME [OPTIONS]",
             "examples": [
                 "slurm-cli add accounts research organization=university",
-                "slurm-cli add accounts eng parent=root description='Engineering'",
+                "slurm-cli add accounts eng parent=root"
+                " description='Engineering'",
             ],
             "options": [
                 "name",
@@ -329,7 +335,8 @@ RESOURCE_HELP = {
         "update": {
             "syntax": "slurm-cli mod nodes NAME set KEY=VALUE",
             "examples": [
-                "slurm-cli mod nodes node01 set state=drain reason='Maintenance'",
+                "slurm-cli mod nodes node01 set state=drain"
+                " reason='Maintenance'",
                 "slurm-cli mod nodes gpu[01-04] set state=resume",
             ],
             "options": ["state", "reason", "weight", "features"],
@@ -349,7 +356,8 @@ RESOURCE_HELP = {
         "create": {
             "syntax": "slurm-cli add res NAME [OPTIONS]",
             "examples": [
-                "slurm-cli add res maint starttime=now duration=2:00:00 nodes=ALL",
+                "slurm-cli add res maint starttime=now"
+                " duration=2:00:00 nodes=ALL",
                 "slurm-cli add res team users=john,jane nodes=node[01-04]",
             ],
             "options": [
@@ -673,7 +681,8 @@ def show_resource_help(action: str, resource: str) -> bool:
             f"\n[bold]{help_info.get('description', canonical)}[/bold]"
         )
         console.print(
-            f"\n[yellow]No '{action}' action available for {canonical}[/yellow]"
+            f"\n[yellow]No '{action}' action available"
+            f" for {canonical}[/yellow]"
         )
         return True
 
@@ -1698,6 +1707,48 @@ def update(
                 )
             else:
                 User.update(
+                    field,
+                    verbose,
+                    **{value.split("=")[0]: value.split("=")[1]}
+                    if "=" in value
+                    else {},
+                )
+        elif canonical_resource[:4] == "node":
+            if dry_run:
+                console.print(
+                    f"[yellow]DRY RUN:[/yellow] Would update "
+                    f"node {field} set {value}"
+                )
+            else:
+                Node.update(
+                    field,
+                    verbose,
+                    **{value.split("=")[0]: value.split("=")[1]}
+                    if "=" in value
+                    else {},
+                )
+        elif canonical_resource[:4] == "part":
+            if dry_run:
+                console.print(
+                    f"[yellow]DRY RUN:[/yellow] Would update "
+                    f"partition {field} set {value}"
+                )
+            else:
+                Partition.update(
+                    field,
+                    verbose,
+                    **{value.split("=")[0]: value.split("=")[1]}
+                    if "=" in value
+                    else {},
+                )
+        elif canonical_resource[:3] == "res":
+            if dry_run:
+                console.print(
+                    f"[yellow]DRY RUN:[/yellow] Would update "
+                    f"reservation {field} set {value}"
+                )
+            else:
+                Reservation.update(
                     field,
                     verbose,
                     **{value.split("=")[0]: value.split("=")[1]}
