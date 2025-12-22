@@ -25,6 +25,7 @@ class Node(BaseSlurmResource):
         "gres",
     ]
     NODE_UPDATE_OPTIONS = [
+        "nodename",  # Sets NEW node name (for renaming)
         "activefeatures",
         "availablefeatures",
         "comment",
@@ -183,7 +184,7 @@ _slurm_cli_nodes_autocomplete() {{
     # Default: show node names
     _slurm_complete "$cached_nodes" "$cur"
 }}
-"""
+"""  # noqa: E501
         return script
 
     @classmethod
