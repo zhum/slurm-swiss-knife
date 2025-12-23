@@ -68,11 +68,11 @@ elif [ "$1" = "show" ] && [ "$2" = "reservation" ] && [ -n "$3" ] && [ "$4" = "-
         python3 -c "
 import json
 data = json.load(open('$MOCKS_DIR/data/reservations.json'))
-res = data.get('$RES_NAME', {})
-if res:
-    print(json.dumps({'reservations': [{'name': '$RES_NAME', 'node_list': res.get('Nodes', '')}]}))
-else:
-    print(json.dumps({'reservations': []}))
+for r in data.get('reservations', []):
+    if r.get('name') == '$RES_NAME':
+        print(json.dumps({'reservations': [r]}))
+        exit()
+print(json.dumps({'reservations': []}))
 " 2>/dev/null || echo '{"reservations": []}'
     else
         echo '{"reservations": []}'
