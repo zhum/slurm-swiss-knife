@@ -140,15 +140,9 @@ class BaseSlurmResource:
                 # TODO: Check if the value is a valid qos, partition,
                 # account, or group
             elif key_type == "nodes":
-                node_list = cls.expand_nodenames(value)
-                all_nodes = Resource.cached_resource_list("nodes")
-                for node in node_list:
-                    if node not in all_nodes:
-                        console.print(
-                            f"Invalid nodes argument: {full_key}={value}. "
-                            f"Node {node} not found."
-                        )
-                        return False
+                # Skip validation - nodes from filters (partition=, state=,
+                # user=, reservation=) are already validated by Slurm.
+                # Slurm will report errors if nodes don't exist.
                 set[full_key] = value
             else:
                 console.print(
