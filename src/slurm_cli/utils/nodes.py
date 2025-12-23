@@ -111,12 +111,26 @@ class Node(BaseSlurmResource):
         self.name = name
         self.kwargs = kwargs
 
+    # Node filter options for selecting nodes (first argument)
+    NODE_FILTER_OPTIONS = [
+        "ALL",
+        "partition",
+        "state",
+        "user",
+        "reservation",
+    ]
+
     @classmethod
     def generate_autocomplete_options(cls) -> str:
         """Generate bash autocomplete script for node options."""
         show_opts = " ".join(f"{opt}=" for opt in cls.NODE_SHOW_OPTIONS)
         update_opts = " ".join(
             f"{opt}=" for opt in cls.NODE_UPDATE_OPTIONS
+        )
+        # Add node filter options for selecting nodes
+        filter_opts = " ".join(
+            f"{opt}=" if opt != "ALL" else opt
+            for opt in cls.NODE_FILTER_OPTIONS
         )
         create_opts = " ".join(
             f"{opt}=" for opt in cls.NODE_CREATE_OPTIONS
@@ -138,6 +152,7 @@ _slurm_cli_nodes_autocomplete() {{
     local cached_partitions="$(_slurm_cache_partitions)"
     local show_options="{show_opts}"
     local update_options="{update_opts}"
+    local filter_options="{filter_opts}"
     local create_options="{create_opts}"
 
     # Handle key=value completion
@@ -181,9 +196,9 @@ _slurm_cli_nodes_autocomplete() {{
         return
     fi
 
-    # For update command: options first, then node names
+    # For update command: filter options, update options, then node names
     if [[ "$cmd" == "update" ]]; then
-        _slurm_complete "$update_options $cached_nodes" "$cur"
+        _slurm_complete "$filter_options $update_options $cached_nodes" "$cur"
         return
     fi
 
