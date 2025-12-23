@@ -515,6 +515,15 @@ _slurm_cli_events_autocomplete() {{
                 _slurm_complete_value "{states}" "$_key" "$_val" "$cur" ;;
             events)
                 _slurm_complete_value "Cluster Node" "$_key" "$_val" "$cur" ;;
+            nodes)
+                local cached_nodes="$(_slurm_cache_nodes)"
+                _slurm_complete_value "$cached_nodes" "$_key" "$_val" "$cur" ;;
+            clusters)
+                # Note: clusters don't have a cache, so no value completion
+                ;;
+            user)
+                local cached_users="$(_slurm_cache_users)"
+                _slurm_complete_value "$cached_users" "$_key" "$_val" "$cur" ;;
         esac
         [[ ${{#COMPREPLY[@]}} -gt 0 ]] && return
     fi
