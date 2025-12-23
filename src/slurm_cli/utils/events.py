@@ -659,7 +659,7 @@ _slurm_cli_events_autocomplete() {{
             events)
                 _slurm_complete_value "Cluster Node" "$_key" "$_val" "$cur" ;;
             nodes)
-                _slurm_complete_nodes_value "$_val" "$cur" ;;
+                _slurm_complete_nodes_value "$_val" "$cur" "$_key" ;;
             clusters)
                 # Note: clusters don't have a cache, so no value completion
                 ;;

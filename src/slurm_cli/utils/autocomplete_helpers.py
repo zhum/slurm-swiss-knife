@@ -156,11 +156,12 @@ _slurm_cache_reservations() {
 _slurm_node_filter_prefixes="ALL partition= state= user= reservation="
 
 # Complete nodes= value with either direct nodes or filter prefixes
-# Usage: _slurm_complete_nodes_value "$_val" "$cur"
-# The prefix for completions is derived from $cur to preserve case (e.g., Nodes= vs nodes=)
+# Usage: _slurm_complete_nodes_value "$_val" "$cur" ["$_key"]
+# The prefix for completions is derived from $cur or $_key to preserve case
 _slurm_complete_nodes_value() {
     local val="$1"
     local cur="$2"
+    local key="${3:-nodes}"
     local cached_nodes="$(_slurm_cache_nodes)"
 
     # Derive prefix from cur by removing val from the end (preserves original case)
@@ -169,6 +170,9 @@ _slurm_complete_nodes_value() {
         prefix="${cur%"$val"}"
     elif [[ "$cur" == *=* ]]; then
         prefix="$cur"
+    elif [[ -n "$key" ]]; then
+        # Use key as prefix when cur doesn't have =
+        prefix="${key}="
     fi
 
     # Check if value starts with a filter prefix
