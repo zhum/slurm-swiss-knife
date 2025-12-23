@@ -10,6 +10,7 @@ from rich.box import SIMPLE_HEAVY
 from rich.table import Table
 
 from .base_resource import BaseSlurmResource
+from .node_filter import is_node_filter, resolve_node_filter
 from .profiles import get_profile_config
 from .utils import console
 
@@ -438,6 +439,23 @@ class Event(BaseSlurmResource):
                 if "=" in part:
                     key, value = part.split("=", 1)
                     filters[key] = value
+
+        # Resolve node filters (e.g., nodes=partition=defq -> nodes=node1,node2)
+        nodes_value = filters.get("nodes") or filters.get("Nodes")
+        if nodes_value and is_node_filter(nodes_value):
+            resolved = resolve_node_filter(nodes_value)
+            if resolved:
+                # Update the filter with resolved node names
+                if "nodes" in filters:
+                    filters["nodes"] = resolved
+                if "Nodes" in filters:
+                    filters["Nodes"] = resolved
+            else:
+                console.print(
+                    f"[yellow]No nodes found matching filter: "
+                    f"{nodes_value}[/yellow]"
+                )
+                return
 
         # Check if CondFlags=Open - if so, always run live
         use_cache = True
