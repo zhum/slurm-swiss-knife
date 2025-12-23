@@ -14,6 +14,40 @@ from .node_filter import is_node_filter, resolve_node_filter
 from .profiles import get_profile_config
 from .utils import console
 
+
+def expand_node_ranges(node_spec: str) -> set:
+    """Expand Slurm node range notation to individual node names.
+
+    Examples:
+        "node[1-3]" -> {"node1", "node2", "node3"}
+        "node1,node2" -> {"node1", "node2"}
+        "a[1-2],b[1-2]" -> {"a1", "a2", "b1", "b2"}
+    """
+    nodes = set()
+    for part in node_spec.split(","):
+        part = part.strip()
+        if not part:
+            continue
+        # Check for range notation like node[1-3] or node[01-03]
+        match = re.match(r"^(.+?)\[([^\]]+)\](.*)$", part)
+        if match:
+            prefix, ranges, suffix = match.groups()
+            for range_part in ranges.split(","):
+                if "-" in range_part:
+                    start, end = range_part.split("-", 1)
+                    # Preserve leading zeros
+                    width = len(start)
+                    for i in range(int(start), int(end) + 1):
+                        nodes.add(
+                            f"{prefix}{str(i).zfill(width)}{suffix}"
+                        )
+                else:
+                    nodes.add(f"{prefix}{range_part}{suffix}")
+        else:
+            nodes.add(part)
+    return nodes
+
+
 # Cache file paths
 CACHE_DIR = "/tmp/"
 EVENTS_CACHE_FILE = f"{CACHE_DIR}slurm_cli_events.txt"
@@ -196,11 +230,22 @@ class Event(BaseSlurmResource):
                     if e.get("event", "").lower() == value.lower()
                 ]
             elif key_lower == "nodes":
-                result = [
-                    e
-                    for e in result
-                    if value.lower() in e.get("node", "").lower()
-                ]
+                # Check if filter contains node ranges (has [ and ])
+                if "[" in value and "]" in value:
+                    # Expand node ranges to individual names for matching
+                    filter_nodes = expand_node_ranges(value.lower())
+                    result = [
+                        e
+                        for e in result
+                        if e.get("node", "").lower() in filter_nodes
+                    ]
+                else:
+                    # Simple substring match for partial names
+                    result = [
+                        e
+                        for e in result
+                        if value.lower() in e.get("node", "").lower()
+                    ]
             elif key_lower == "states":
                 result = [
                     e
