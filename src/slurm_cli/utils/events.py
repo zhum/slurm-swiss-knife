@@ -523,6 +523,13 @@ _slurm_cli_events_autocomplete() {{
             user)
                 local cached_users="$(_slurm_cache_users)"
                 _slurm_complete_value "$cached_users" "$_key" "$_val" "$cur" ;;
+            # Node filter nested keys (when = is a word break, these are parsed as top-level keys)
+            partition)
+                _slurm_complete_value "$(_slurm_cache_partitions)" "$_key" "$_val" "$cur" ;;
+            state)
+                _slurm_complete_value "idle alloc drain down mixed comp" "$_key" "$_val" "$cur" ;;
+            reservation)
+                _slurm_complete_value "$(_slurm_cache_reservations)" "$_key" "$_val" "$cur" ;;
         esac
         [[ ${{#COMPREPLY[@]}} -gt 0 ]] && return
     fi
