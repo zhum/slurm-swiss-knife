@@ -516,8 +516,7 @@ _slurm_cli_events_autocomplete() {{
             events)
                 _slurm_complete_value "Cluster Node" "$_key" "$_val" "$cur" ;;
             nodes)
-                local cached_nodes="$(_slurm_cache_nodes)"
-                _slurm_complete_value "$cached_nodes" "$_key" "$_val" "$cur" ;;
+                _slurm_complete_nodes_value "$_val" "$cur" ;;
             clusters)
                 # Note: clusters don't have a cache, so no value completion
                 ;;
