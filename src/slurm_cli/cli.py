@@ -60,7 +60,8 @@ def resolve_node_filters_in_options(
 ) -> Optional[Dict[str, Any]]:
     """Resolve node filter expressions in options dict.
 
-    Looks for 'nodes' key and resolves any filter expressions like:
+    Looks for 'nodes', 'nodes+', 'nodes-' keys and resolves any filter
+    expressions like:
     - partition=<name>
     - state=<state>
     - user=<username>
@@ -77,26 +78,27 @@ def resolve_node_filters_in_options(
     if not options:
         return options
 
-    # Check for 'nodes' key (case-insensitive)
-    nodes_key = None
+    # Check for nodes-related keys (nodes, nodes+, nodes-)
+    nodes_keys = []
     for key in options:
-        if key.lower() == "nodes":
-            nodes_key = key
-            break
+        key_lower = key.lower()
+        if key_lower in ("nodes", "nodes+", "nodes-"):
+            nodes_keys.append(key)
 
-    if nodes_key and options[nodes_key]:
-        value = options[nodes_key]
-        if is_node_filter(value):
-            resolved = resolve_nodes_value(value, verbose)
-            if resolved:
-                options[nodes_key] = resolved
-            else:
-                # Empty result - abort command
-                console.print(
-                    f"[red]Error: Node filter '{value}' "
-                    f"matched no nodes. Aborting.[/red]"
-                )
-                return None
+    for nodes_key in nodes_keys:
+        if options[nodes_key]:
+            value = options[nodes_key]
+            if is_node_filter(value):
+                resolved = resolve_nodes_value(value, verbose)
+                if resolved:
+                    options[nodes_key] = resolved
+                else:
+                    # Empty result - abort command
+                    console.print(
+                        f"[red]Error: Node filter '{value}' "
+                        f"matched no nodes. Aborting.[/red]"
+                    )
+                    return None
 
     return options
 

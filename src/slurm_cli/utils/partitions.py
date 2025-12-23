@@ -153,7 +153,7 @@ class Partition(BaseSlurmResource):
             "all jobs in this partition",
         },
         "nodes": {
-            "type": "list",
+            "type": "nodes",
             "help": "Identify the node(s) to be associated with this"
             " partition",
         },

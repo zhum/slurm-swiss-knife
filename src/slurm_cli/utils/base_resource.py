@@ -151,6 +151,8 @@ class BaseSlurmResource:
                 )
                 return False
             if arg_type:
+                # Remove from set dict if it was added during validation
+                set.pop(full_key, None)
                 if arg_type == "add":
                     add[full_key] = value
                 elif arg_type == "delete":
