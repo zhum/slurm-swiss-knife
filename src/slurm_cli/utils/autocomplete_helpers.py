@@ -167,22 +167,22 @@ _slurm_complete_nodes_value() {
         local filter_val="${val#partition=}"
         local partitions="$(_slurm_cache_partitions)"
         COMPREPLY=($(compgen -W "$partitions" -- "$filter_val"))
-        [[ ${#COMPREPLY[@]} -gt 0 ]] && COMPREPLY=("${COMPREPLY[@]/#/nodes=partition=}")
+        [[ "$cur" == *=* && ${#COMPREPLY[@]} -gt 0 ]] && COMPREPLY=("${COMPREPLY[@]/#/nodes=partition=}")
     elif [[ "$val" == state=* ]]; then
         local filter_val="${val#state=}"
         local states="idle alloc drain down mixed comp"
         COMPREPLY=($(compgen -W "$states" -- "$filter_val"))
-        [[ ${#COMPREPLY[@]} -gt 0 ]] && COMPREPLY=("${COMPREPLY[@]/#/nodes=state=}")
+        [[ "$cur" == *=* && ${#COMPREPLY[@]} -gt 0 ]] && COMPREPLY=("${COMPREPLY[@]/#/nodes=state=}")
     elif [[ "$val" == user=* ]]; then
         local filter_val="${val#user=}"
         local users="$(_slurm_cache_users)"
         COMPREPLY=($(compgen -W "$users" -- "$filter_val"))
-        [[ ${#COMPREPLY[@]} -gt 0 ]] && COMPREPLY=("${COMPREPLY[@]/#/nodes=user=}")
+        [[ "$cur" == *=* && ${#COMPREPLY[@]} -gt 0 ]] && COMPREPLY=("${COMPREPLY[@]/#/nodes=user=}")
     elif [[ "$val" == reservation=* ]]; then
         local filter_val="${val#reservation=}"
         local reservations="$(_slurm_cache_reservations)"
         COMPREPLY=($(compgen -W "$reservations" -- "$filter_val"))
-        [[ ${#COMPREPLY[@]} -gt 0 ]] && COMPREPLY=("${COMPREPLY[@]/#/nodes=reservation=}")
+        [[ "$cur" == *=* && ${#COMPREPLY[@]} -gt 0 ]] && COMPREPLY=("${COMPREPLY[@]/#/nodes=reservation=}")
     else
         # Not a filter prefix, show filter prefixes and cached nodes
         COMPREPLY=($(compgen -W "$_slurm_node_filter_prefixes $cached_nodes" -- "$val"))

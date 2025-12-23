@@ -785,22 +785,22 @@ _slurm_cli_partitions_autocomplete() {{
                 # Node filter: nodes=state=<state>
                 local states="idle alloc drain down mixed comp"
                 COMPREPLY=($(compgen -W "$states" -- "$_val"))
-                [[ ${{#COMPREPLY[@]}} -gt 0 ]] && COMPREPLY=("${{COMPREPLY[@]/#/nodes=state=}}")
+                [[ $cur == *=* && ${{#COMPREPLY[@]}} -gt 0 ]] && COMPREPLY=("${{COMPREPLY[@]/#/nodes=state=}}")
                 ;;
             partition)
                 # Node filter: nodes=partition=<partition>
                 COMPREPLY=($(compgen -W "$cached_partitions" -- "$_val"))
-                [[ ${{#COMPREPLY[@]}} -gt 0 ]] && COMPREPLY=("${{COMPREPLY[@]/#/nodes=partition=}}")
+                [[ $cur == *=* && ${{#COMPREPLY[@]}} -gt 0 ]] && COMPREPLY=("${{COMPREPLY[@]/#/nodes=partition=}}")
                 ;;
             user)
                 # Node filter: nodes=user=<user>
                 COMPREPLY=($(compgen -W "$(_slurm_cache_users)" -- "$_val"))
-                [[ ${{#COMPREPLY[@]}} -gt 0 ]] && COMPREPLY=("${{COMPREPLY[@]/#/nodes=user=}}")
+                [[ $cur == *=* && ${{#COMPREPLY[@]}} -gt 0 ]] && COMPREPLY=("${{COMPREPLY[@]/#/nodes=user=}}")
                 ;;
             reservation)
                 # Node filter: nodes=reservation=<reservation>
                 COMPREPLY=($(compgen -W "$(_slurm_cache_reservations)" -- "$_val"))
-                [[ ${{#COMPREPLY[@]}} -gt 0 ]] && COMPREPLY=("${{COMPREPLY[@]/#/nodes=reservation=}}")
+                [[ $cur == *=* && ${{#COMPREPLY[@]}} -gt 0 ]] && COMPREPLY=("${{COMPREPLY[@]/#/nodes=reservation=}}")
                 ;;
         esac
         return
