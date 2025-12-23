@@ -91,6 +91,7 @@ class TestEventFilters:
 def mock_exists_with_no_json_flag(path):
     """Mock os.path.exists to return True for the no-JSON flag file."""
     from slurm_cli.utils.events import EVENTS_NO_JSON_FLAG
+
     if path == EVENTS_NO_JSON_FLAG:
         return True  # Skip JSON attempt
     return False  # No cache files
@@ -100,7 +101,10 @@ class TestEventShow:
     """Tests for Event.show method."""
 
     @patch("slurm_cli.utils.events.subprocess.run")
-    @patch("slurm_cli.utils.events.os.path.exists", side_effect=mock_exists_with_no_json_flag)
+    @patch(
+        "slurm_cli.utils.events.os.path.exists",
+        side_effect=mock_exists_with_no_json_flag,
+    )
     def test_show_pretty_style(self, mock_exists, mock_run):
         """Test show with pretty style."""
         mock_run.return_value = MagicMock(
@@ -111,7 +115,10 @@ class TestEventShow:
         mock_run.assert_called_once()
 
     @patch("slurm_cli.utils.events.subprocess.run")
-    @patch("slurm_cli.utils.events.os.path.exists", side_effect=mock_exists_with_no_json_flag)
+    @patch(
+        "slurm_cli.utils.events.os.path.exists",
+        side_effect=mock_exists_with_no_json_flag,
+    )
     def test_show_json_style(self, mock_exists, mock_run):
         """Test show with json style."""
         mock_run.return_value = MagicMock(
@@ -121,7 +128,10 @@ class TestEventShow:
         mock_run.assert_called_once()
 
     @patch("slurm_cli.utils.events.subprocess.run")
-    @patch("slurm_cli.utils.events.os.path.exists", side_effect=mock_exists_with_no_json_flag)
+    @patch(
+        "slurm_cli.utils.events.os.path.exists",
+        side_effect=mock_exists_with_no_json_flag,
+    )
     def test_show_csv_style(self, mock_exists, mock_run):
         """Test show with csv style."""
         mock_run.return_value = MagicMock(
@@ -134,7 +144,10 @@ class TestEventShow:
         assert "|" in result
 
     @patch("slurm_cli.utils.events.subprocess.run")
-    @patch("slurm_cli.utils.events.os.path.exists", side_effect=mock_exists_with_no_json_flag)
+    @patch(
+        "slurm_cli.utils.events.os.path.exists",
+        side_effect=mock_exists_with_no_json_flag,
+    )
     def test_show_with_filter(self, mock_exists, mock_run):
         """Test show with filter."""
         mock_run.return_value = MagicMock(
@@ -143,7 +156,10 @@ class TestEventShow:
         Event.show(field="States=DRAIN")
         mock_run.assert_called_once()
 
-    @patch("slurm_cli.utils.events.os.path.exists", side_effect=mock_exists_with_no_json_flag)
+    @patch(
+        "slurm_cli.utils.events.os.path.exists",
+        side_effect=mock_exists_with_no_json_flag,
+    )
     def test_show_subprocess_error(self, mock_exists):
         """Test show with subprocess error."""
         error = subprocess.CalledProcessError(

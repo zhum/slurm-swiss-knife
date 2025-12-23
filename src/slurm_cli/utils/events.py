@@ -230,10 +230,20 @@ class Event(BaseSlurmResource):
                     if e.get("event", "").lower() == value.lower()
                 ]
             elif key_lower == "nodes":
-                # Check if filter contains node ranges (has [ and ])
+                # Check if filter contains node ranges or multiple nodes
                 if "[" in value and "]" in value:
                     # Expand node ranges to individual names for matching
                     filter_nodes = expand_node_ranges(value.lower())
+                    result = [
+                        e
+                        for e in result
+                        if e.get("node", "").lower() in filter_nodes
+                    ]
+                elif "," in value:
+                    # Multiple comma-separated nodes (from resolved filter)
+                    filter_nodes = {
+                        n.strip().lower() for n in value.split(",")
+                    }
                     result = [
                         e
                         for e in result
