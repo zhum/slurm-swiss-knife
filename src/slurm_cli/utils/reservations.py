@@ -636,5 +636,5 @@ _slurm_cli_reservations_autocomplete() {{
             ;;
     esac
 }}
-"""
+"""  # noqa: E501
         return script

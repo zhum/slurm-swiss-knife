@@ -144,18 +144,28 @@ def _get_nodes_by_partition_text(
 def _get_nodes_by_state(state: str, verbose: bool = False) -> str:
     """Get nodes with a specific state."""
     try:
+        # Use scontrol with JSON for reliable parsing
         result = subprocess.run(
-            ["sinfo", "-t", state, "-h", "-o", "%N"],
+            ["scontrol", "show", "nodes", "--json"],
             capture_output=True,
             text=True,
             check=True,
         )
-        nodes = result.stdout.strip()
-        # Remove duplicates if multiple lines
+        data = json.loads(result.stdout)
+        state_lower = state.lower()
         node_set = set()
-        for line in nodes.split("\n"):
-            if line.strip():
-                node_set.add(line.strip())
+        for node in data.get("nodes", []):
+            node_state = node.get("state", [])
+            # state can be a list like ["IDLE"] or ["ALLOCATED", "DRAIN"]
+            if isinstance(node_state, list):
+                state_strs = [s.lower() for s in node_state]
+            else:
+                state_strs = [str(node_state).lower()]
+            # Match if any state component matches
+            for s in state_strs:
+                if state_lower in s or s.startswith(state_lower):
+                    node_set.add(node.get("name", ""))
+                    break
         nodes = ",".join(sorted(node_set))
         if verbose:
             console.print(
@@ -167,6 +177,31 @@ def _get_nodes_by_state(state: str, verbose: bool = False) -> str:
             console.print(
                 f"[red]Failed to get nodes by state: {e.stderr}[/red]"
             )
+        return ""
+    except json.JSONDecodeError:
+        return _get_nodes_by_state_text(state, verbose)
+
+
+def _get_nodes_by_state_text(state: str, verbose: bool = False) -> str:
+    """Get nodes by state using text output (fallback)."""
+    try:
+        result = subprocess.run(
+            ["sinfo", "-t", state, "-h", "-N", "-o", "%N"],
+            capture_output=True,
+            text=True,
+            check=True,
+        )
+        node_set = set()
+        for line in result.stdout.strip().split("\n"):
+            if line.strip():
+                node_set.add(line.strip())
+        nodes = ",".join(sorted(node_set))
+        if verbose:
+            console.print(
+                f"[dim]Nodes with state '{state}': {nodes}[/dim]"
+            )
+        return nodes
+    except subprocess.CalledProcessError:
         return ""
 
 
