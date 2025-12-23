@@ -1691,6 +1691,16 @@ def update(
             if canonical_resource[:4] == "part":
                 Partition.update(field, verbose, **update_options)
             elif canonical_resource[:4] == "node":
+                # Resolve node filter if field is a filter expression
+                if is_node_filter(field):
+                    resolved = resolve_nodes_value(field, verbose)
+                    if not resolved:
+                        console.print(
+                            f"[red]Error: Node filter '{field}' "
+                            f"matched no nodes. Aborting.[/red]"
+                        )
+                        return
+                    field = resolved
                 Node.update(field, verbose, **update_options)
             elif canonical_resource[:4] == "user":
                 User.update(field, verbose, **update_options)
@@ -1769,6 +1779,16 @@ def update(
                     else {},
                 )
         elif canonical_resource[:4] == "node":
+            # Resolve node filter if field is a filter expression
+            if is_node_filter(field):
+                resolved = resolve_nodes_value(field, verbose)
+                if not resolved:
+                    console.print(
+                        f"[red]Error: Node filter '{field}' "
+                        f"matched no nodes. Aborting.[/red]"
+                    )
+                    return
+                field = resolved
             if dry_run:
                 console.print(
                     f"[yellow]DRY RUN:[/yellow] Would update "
