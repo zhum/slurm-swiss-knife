@@ -731,6 +731,8 @@ class Partition(BaseSlurmResource):
         """Generate bash autocomplete script for partition options."""
         valid_keys = list(cls.valid_args.keys())
         options = " ".join(f"{k}=" for k in valid_keys)
+        # Add nodes+= and nodes-= for adding/removing nodes
+        options += " nodes+= nodes-="
         state_values = "up down drain inactive UP DOWN DRAIN INACTIVE"
         preempt_values = (
             "off cancel requeue suspend OFF CANCEL REQUEUE SUSPEND"
@@ -769,7 +771,11 @@ _slurm_cli_partitions_autocomplete() {{
         [[ "$COMP_LINE" == *nodes=state=* || "$COMP_LINE" == *nodes=partition=* || \
            "$COMP_LINE" == *nodes=user=* || "$COMP_LINE" == *nodes=reservation=* || \
            "$COMP_LINE" == *Nodes=state=* || "$COMP_LINE" == *Nodes=partition=* || \
-           "$COMP_LINE" == *Nodes=user=* || "$COMP_LINE" == *Nodes=reservation=* ]] && in_node_filter=true
+           "$COMP_LINE" == *Nodes=user=* || "$COMP_LINE" == *Nodes=reservation=* || \
+           "$COMP_LINE" == *nodes+=state=* || "$COMP_LINE" == *nodes+=partition=* || \
+           "$COMP_LINE" == *nodes+=user=* || "$COMP_LINE" == *nodes+=reservation=* || \
+           "$COMP_LINE" == *nodes-=state=* || "$COMP_LINE" == *nodes-=partition=* || \
+           "$COMP_LINE" == *nodes-=user=* || "$COMP_LINE" == *nodes-=reservation=* ]] && in_node_filter=true
 
         case "$_key" in
             state)
@@ -793,7 +799,7 @@ _slurm_cli_partitions_autocomplete() {{
                 _slurm_complete_value "$(_slurm_cache_accounts)" "$_key" "$_val" "$cur" ;;
             allowqos|denyqos|qos)
                 _slurm_complete_value "$(_slurm_cache_qos)" "$_key" "$_val" "$cur" ;;
-            nodes)
+            nodes|nodes+|nodes-)
                 _slurm_complete_nodes_value "$_val" "$cur" ;;
             alternate|partitionname)
                 _slurm_complete_value "$cached_partitions" "$_key" "$_val" "$cur" ;;
