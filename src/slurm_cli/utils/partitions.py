@@ -756,8 +756,8 @@ _slurm_cli_partitions_autocomplete() {{
     # First argument after 'partitions'
     if [[ $prev == partitions || $prev == part || $prev == parts ]]; then
         case "$cmd" in
-            show|delete) _slurm_complete "$options $cached_partitions" "$cur" ;;
-            create|add|new|update|modify|set) _slurm_complete "$options" "$cur" ;;
+            show|delete|update|modify|set) _slurm_complete "$cached_partitions $options" "$cur" ;;
+            create|add|new) _slurm_complete "$options" "$cur" ;;
         esac
         return
     fi
@@ -807,10 +807,7 @@ _slurm_cli_partitions_autocomplete() {{
     fi
 
     # Complete option names
-    case "$cmd" in
-        show|delete) _slurm_complete "$options" "$cur" ;;
-        create|add|new|update|modify|set) _slurm_complete "$options" "$cur" ;;
-    esac
+    _slurm_complete "$options" "$cur"
 }}
 """  # noqa: E501
         return script

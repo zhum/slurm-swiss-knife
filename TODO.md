@@ -9,7 +9,7 @@
   - [x] add
   - [x] delete
   - [x] update
-- [ ] **Nodes Management**: Add support for managing nodes
+- [x] **Nodes Management**: Add support for managing nodes
   - [x] show
   - [x] add (?)
   - [x] delete
@@ -39,7 +39,7 @@
   - [x] add
   - [x] delete
   - [x] update
-- [ ] **Coordinators Management**: Complete coordinator management functionality
+- [x] **Coordinators Management**: Complete coordinator management functionality
   - [x] show
   - [x] create
   - [x] delete
@@ -65,7 +65,7 @@
       `unhold/release ...`, `requeue ...`, `suspend`; use joblist filters!
 - [ ] **recon[figure], ping, takeover**
 - [ ] **token [lifespan=<lifespan>] [username=<username>]** lifespan=seconds/infinite (we need specify time)
-- [ ] **vesion**
+- [ ] **version**
 - [ ] **batch_script job_id [filename]**
 - [ ] **write_config [filename]**
 - [ ] **new resources (r/o)** bbstat, burstbuffer, daemons, dwstat, topology
