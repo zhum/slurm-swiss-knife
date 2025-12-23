@@ -764,9 +764,12 @@ _slurm_cli_partitions_autocomplete() {{
 
     # Handle key=value completion
     if _slurm_parse_keyval "$cur" "$prev"; then
-        # Check if we're in a node filter context (prev contains nodes=)
+        # Check if we're in a node filter context by checking COMP_LINE
         local in_node_filter=false
-        [[ "$prev" == nodes=* || "${{COMP_WORDS[*]}}" == *nodes=* ]] && in_node_filter=true
+        [[ "$COMP_LINE" == *nodes=state=* || "$COMP_LINE" == *nodes=partition=* || \
+           "$COMP_LINE" == *nodes=user=* || "$COMP_LINE" == *nodes=reservation=* || \
+           "$COMP_LINE" == *Nodes=state=* || "$COMP_LINE" == *Nodes=partition=* || \
+           "$COMP_LINE" == *Nodes=user=* || "$COMP_LINE" == *Nodes=reservation=* ]] && in_node_filter=true
 
         case "$_key" in
             state)
