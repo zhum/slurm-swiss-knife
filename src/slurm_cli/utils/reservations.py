@@ -561,6 +561,8 @@ class Reservation(BaseSlurmResource):
                 )
         valid_types = " ".join(valid_types_list)
         options = " ".join(f"{k}=" for k in valid_keys)
+        # Add nodes+= and nodes-= for adding/removing nodes
+        options += " nodes+= nodes-="
         flags = (
             "ANY_NODES DAILY FLEX IGNORE_JOBS HOURLY LICENSE_ONLY MAINT "
             "MAGNETIC NO_HOLD_JOBS_AFTER OVERLAP PART_NODES PURGE_COMP "
@@ -592,6 +594,8 @@ _slurm_cli_reservations_autocomplete() {{
             if _slurm_parse_keyval "$cur" "$prev"; then
                 local -A valid_types=({valid_types})
                 local type=${{valid_types[$_key]}}
+                # Handle nodes+ and nodes- specially
+                [[ "$_key" == "nodes+" || "$_key" == "nodes-" ]] && type="nodes"
                 case "$type" in
                     nodes)
                         _slurm_complete_nodes_value "$_val" "$cur" "$_key" ;;

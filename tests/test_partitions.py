@@ -584,3 +584,54 @@ class TestPartitionInheritance:
         assert hasattr(Partition, "update")
         assert hasattr(Partition, "delete")
         assert hasattr(Partition, "show")
+
+
+class TestPartitionAutocomplete:
+    """Tests for Partition.generate_autocomplete_options."""
+
+    def test_generate_autocomplete_returns_script(self):
+        """Test generate_autocomplete_options returns bash script."""
+        script = Partition.generate_autocomplete_options()
+
+        assert "_slurm_cli_partitions_autocomplete" in script
+        assert "COMPREPLY" in script
+        assert "case" in script
+
+    def test_generate_autocomplete_contains_valid_args(self):
+        """Test autocomplete script contains valid args."""
+        script = Partition.generate_autocomplete_options()
+
+        # Should contain some valid arg keys
+        assert "state=" in script
+        assert "nodes=" in script
+
+    def test_generate_autocomplete_contains_nodes_add_remove(self):
+        """Test autocomplete script contains nodes+= and nodes-= options."""
+        script = Partition.generate_autocomplete_options()
+
+        assert "nodes+=" in script
+        assert "nodes-=" in script
+
+    def test_generate_autocomplete_handles_nodes_plus_minus(self):
+        """Test autocomplete handles nodes+ and nodes- as nodes type."""
+        script = Partition.generate_autocomplete_options()
+
+        # Should have handling for nodes+|nodes- in the case statement
+        assert "nodes|nodes+|nodes-)" in script
+
+    def test_generate_autocomplete_has_node_filter_context(self):
+        """Test autocomplete detects node filter context for state values."""
+        script = Partition.generate_autocomplete_options()
+
+        # Should check COMP_LINE for node filter context
+        assert "in_node_filter" in script
+        assert "COMP_LINE" in script
+
+    def test_generate_autocomplete_has_node_states(self):
+        """Test autocomplete includes node states for node filters."""
+        script = Partition.generate_autocomplete_options()
+
+        # Should have node states for node filter
+        assert "idle" in script
+        assert "alloc" in script
+        assert "drain" in script

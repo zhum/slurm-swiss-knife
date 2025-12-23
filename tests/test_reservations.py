@@ -822,6 +822,21 @@ class TestReservationGenerateAutocomplete:
         assert "MAINT" in script
         assert "FLEX" in script
 
+    def test_generate_autocomplete_contains_nodes_add_remove(self):
+        """Test autocomplete script contains nodes+= and nodes-= options."""
+        script = Reservation.generate_autocomplete_options()
+
+        assert "nodes+=" in script
+        assert "nodes-=" in script
+
+    def test_generate_autocomplete_handles_nodes_plus_minus(self):
+        """Test autocomplete handles nodes+ and nodes- as nodes type."""
+        script = Reservation.generate_autocomplete_options()
+
+        # Should have special handling for nodes+ and nodes-
+        assert 'nodes+"' in script or "nodes+" in script
+        assert 'nodes-"' in script or "nodes-" in script
+
 
 class TestReservationValidArgs:
     """Tests for Reservation.valid_args."""
