@@ -157,36 +157,45 @@ _slurm_node_filter_prefixes="ALL partition= state= user= reservation="
 
 # Complete nodes= value with either direct nodes or filter prefixes
 # Usage: _slurm_complete_nodes_value "$_val" "$cur"
+# The prefix for completions is derived from $cur to preserve case (e.g., Nodes= vs nodes=)
 _slurm_complete_nodes_value() {
     local val="$1"
     local cur="$2"
     local cached_nodes="$(_slurm_cache_nodes)"
+
+    # Derive prefix from cur by removing val from the end (preserves original case)
+    local prefix=""
+    if [[ "$cur" == *=* && -n "$val" ]]; then
+        prefix="${cur%"$val"}"
+    elif [[ "$cur" == *=* ]]; then
+        prefix="$cur"
+    fi
 
     # Check if value starts with a filter prefix
     if [[ "$val" == partition=* ]]; then
         local filter_val="${val#partition=}"
         local partitions="$(_slurm_cache_partitions)"
         COMPREPLY=($(compgen -W "$partitions" -- "$filter_val"))
-        [[ "$cur" == *=* && ${#COMPREPLY[@]} -gt 0 ]] && COMPREPLY=("${COMPREPLY[@]/#/nodes=partition=}")
+        [[ -n "$prefix" && ${#COMPREPLY[@]} -gt 0 ]] && COMPREPLY=("${COMPREPLY[@]/#/${prefix}partition=}")
     elif [[ "$val" == state=* ]]; then
         local filter_val="${val#state=}"
         local states="idle alloc drain down mixed comp"
         COMPREPLY=($(compgen -W "$states" -- "$filter_val"))
-        [[ "$cur" == *=* && ${#COMPREPLY[@]} -gt 0 ]] && COMPREPLY=("${COMPREPLY[@]/#/nodes=state=}")
+        [[ -n "$prefix" && ${#COMPREPLY[@]} -gt 0 ]] && COMPREPLY=("${COMPREPLY[@]/#/${prefix}state=}")
     elif [[ "$val" == user=* ]]; then
         local filter_val="${val#user=}"
         local users="$(_slurm_cache_users)"
         COMPREPLY=($(compgen -W "$users" -- "$filter_val"))
-        [[ "$cur" == *=* && ${#COMPREPLY[@]} -gt 0 ]] && COMPREPLY=("${COMPREPLY[@]/#/nodes=user=}")
+        [[ -n "$prefix" && ${#COMPREPLY[@]} -gt 0 ]] && COMPREPLY=("${COMPREPLY[@]/#/${prefix}user=}")
     elif [[ "$val" == reservation=* ]]; then
         local filter_val="${val#reservation=}"
         local reservations="$(_slurm_cache_reservations)"
         COMPREPLY=($(compgen -W "$reservations" -- "$filter_val"))
-        [[ "$cur" == *=* && ${#COMPREPLY[@]} -gt 0 ]] && COMPREPLY=("${COMPREPLY[@]/#/nodes=reservation=}")
+        [[ -n "$prefix" && ${#COMPREPLY[@]} -gt 0 ]] && COMPREPLY=("${COMPREPLY[@]/#/${prefix}reservation=}")
     else
         # Not a filter prefix, show filter prefixes and cached nodes
         COMPREPLY=($(compgen -W "$_slurm_node_filter_prefixes $cached_nodes" -- "$val"))
-        [[ ${#COMPREPLY[@]} -gt 0 && "$cur" == *=* ]] && COMPREPLY=("${COMPREPLY[@]/#/nodes=}")
+        [[ ${#COMPREPLY[@]} -gt 0 && -n "$prefix" ]] && COMPREPLY=("${COMPREPLY[@]/#/$prefix}")
     fi
 }
 """  # noqa: E501
