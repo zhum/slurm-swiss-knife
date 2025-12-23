@@ -764,9 +764,22 @@ _slurm_cli_partitions_autocomplete() {{
 
     # Handle key=value completion
     if _slurm_parse_keyval "$cur" "$prev"; then
+        # Check if we're in a node filter context (prev contains nodes=)
+        local in_node_filter=false
+        [[ "$prev" == nodes=* || "${{COMP_WORDS[*]}}" == *nodes=* ]] && in_node_filter=true
+
         case "$_key" in
             state)
-                _slurm_complete_value "{state_values}" "$_key" "$_val" "$cur" ;;
+                if $in_node_filter; then
+                    # Node filter: nodes=state=<state>
+                    local node_states="idle alloc drain down mixed comp"
+                    COMPREPLY=($(compgen -W "$node_states" -- "$_val"))
+                    [[ $cur == *=* && ${{#COMPREPLY[@]}} -gt 0 ]] && COMPREPLY=("${{COMPREPLY[@]/#/nodes=state=}}")
+                else
+                    # Partition state
+                    _slurm_complete_value "{state_values}" "$_key" "$_val" "$cur"
+                fi
+                ;;
             preemptmode)
                 _slurm_complete_value "{preempt_values}" "$_key" "$_val" "$cur" ;;
             cpubind)
@@ -781,12 +794,6 @@ _slurm_cli_partitions_autocomplete() {{
                 _slurm_complete_nodes_value "$_val" "$cur" ;;
             alternate|partitionname)
                 _slurm_complete_value "$cached_partitions" "$_key" "$_val" "$cur" ;;
-            state)
-                # Node filter: nodes=state=<state>
-                local states="idle alloc drain down mixed comp"
-                COMPREPLY=($(compgen -W "$states" -- "$_val"))
-                [[ $cur == *=* && ${{#COMPREPLY[@]}} -gt 0 ]] && COMPREPLY=("${{COMPREPLY[@]/#/nodes=state=}}")
-                ;;
             partition)
                 # Node filter: nodes=partition=<partition>
                 COMPREPLY=($(compgen -W "$cached_partitions" -- "$_val"))
