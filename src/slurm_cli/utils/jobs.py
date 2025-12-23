@@ -2,6 +2,7 @@
 
 import json
 import subprocess
+from datetime import datetime
 from typing import Any, Dict, List, Optional
 
 from rich.box import SIMPLE_HEAVY
@@ -10,6 +11,31 @@ from rich.table import Table
 from .base_resource import BaseSlurmResource
 from .profiles import format_with_template, get_profile_config
 from .utils import console
+
+
+def _format_timestamp(epoch: int) -> str:
+    """Format Unix timestamp as YYYY-MM-DDTHH:MM:SS."""
+    if not epoch or epoch <= 0:
+        return ""
+    try:
+        dt = datetime.fromtimestamp(epoch)
+        return dt.strftime("%Y-%m-%dT%H:%M:%S")
+    except (ValueError, OSError):
+        return ""
+
+
+def _format_duration(minutes: int) -> str:
+    """Format duration in minutes as DDD-HH:MM:SS (leading zeros ignored)."""
+    if not minutes or minutes <= 0:
+        return ""
+    hours, mins = divmod(minutes, 60)
+    days, hours = divmod(hours, 24)
+    if days:
+        return f"{days}-{hours:02d}:{mins:02d}:00"
+    elif hours:
+        return f"{hours}:{mins:02d}:00"
+    else:
+        return f"{mins}:00"
 
 
 class Job(BaseSlurmResource):
@@ -190,18 +216,12 @@ class Job(BaseSlurmResource):
             time_limit_val = time_limit.get("number", 0)
             if time_limit.get("infinite"):
                 time_limit_str = "UNLIMITED"
-            elif time_limit_val:
-                # Convert minutes to readable format
-                hours, mins = divmod(time_limit_val, 60)
-                days, hours = divmod(hours, 24)
-                if days:
-                    time_limit_str = f"{days}-{hours:02d}:{mins:02d}:00"
-                else:
-                    time_limit_str = f"{hours}:{mins:02d}:00"
             else:
-                time_limit_str = ""
+                time_limit_str = _format_duration(time_limit_val)
         else:
-            time_limit_str = str(time_limit) if time_limit else ""
+            time_limit_str = (
+                _format_duration(time_limit) if time_limit else ""
+            )
 
         # Get node count
         node_count = get_value(job, "node_count", 0)
@@ -224,15 +244,19 @@ class Job(BaseSlurmResource):
             end_time_set = end_time_data.get("set", False)
             end_time_num = end_time_data.get("number", 0)
             end_time_str = (
-                str(end_time_num)
+                _format_timestamp(end_time_num)
                 if end_time_set and end_time_num
                 else ""
             )
         else:
-            end_time_str = str(end_time_data) if end_time_data else ""
+            end_time_str = (
+                _format_timestamp(end_time_data)
+                if end_time_data
+                else ""
+            )
             end_time_set = bool(end_time_data)
 
-        # endlimit: end_time if known, otherwise time_limit
+        # endlimit: end_time (as timestamp) if known, otherwise time_limit
         if end_time_set and end_time_str:
             endlimit_str = end_time_str
         else:
@@ -249,16 +273,16 @@ class Job(BaseSlurmResource):
             "node_count": str(node_count),
             "nodes": get_value(job, "nodes", ""),
             "cpus": str(cpus),
-            "submit_time": str(
-                job.get("submit_time", {}).get("number", "")
-            )
-            if isinstance(job.get("submit_time"), dict)
-            else str(job.get("submit_time", "")),
-            "start_time": str(
-                job.get("start_time", {}).get("number", "")
-            )
-            if isinstance(job.get("start_time"), dict)
-            else str(job.get("start_time", "")),
+            "submit_time": _format_timestamp(
+                job.get("submit_time", {}).get("number", 0)
+                if isinstance(job.get("submit_time"), dict)
+                else job.get("submit_time", 0)
+            ),
+            "start_time": _format_timestamp(
+                job.get("start_time", {}).get("number", 0)
+                if isinstance(job.get("start_time"), dict)
+                else job.get("start_time", 0)
+            ),
             "end_time": end_time_str,
             "endlimit": endlimit_str,
             "priority": str(job.get("priority", {}).get("number", ""))

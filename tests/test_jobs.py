@@ -158,8 +158,9 @@ class TestJobNormalizeJob:
             },
         }
         normalized = Job._normalize_job(job_data)
-        assert normalized["endlimit"] == "1700001000"
-        assert normalized["end_time"] == "1700001000"
+        # end_time formatted as YYYY-MM-DDTHH:MM:SS
+        assert normalized["endlimit"] == "2023-11-14T14:30:00"
+        assert normalized["end_time"] == "2023-11-14T14:30:00"
 
     def test_normalize_endlimit_uses_time_limit_when_end_time_not_set(
         self,
