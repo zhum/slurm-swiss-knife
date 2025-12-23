@@ -163,18 +163,23 @@ def _get_nodes_by_state(state: str, verbose: bool = False) -> str:
 def _get_nodes_by_user(user: str, verbose: bool = False) -> str:
     """Get nodes running jobs by a specific user."""
     try:
+        # Use JSON output for reliable parsing
         result = subprocess.run(
-            ["squeue", "-u", user, "-h", "-o", "%N"],
+            ["squeue", "-u", user, "--json"],
             capture_output=True,
             text=True,
             check=True,
         )
+        data = json.loads(result.stdout)
         # Collect unique nodes from all jobs
         node_set = set()
-        for line in result.stdout.strip().split("\n"):
-            if line.strip():
-                # Handle node ranges like node[01-04]
-                node_set.add(line.strip())
+        for job in data.get("jobs", []):
+            nodes = job.get("nodes", "")
+            if isinstance(nodes, str) and nodes:
+                # Handle comma-separated nodes or ranges
+                for node in nodes.split(","):
+                    if node.strip():
+                        node_set.add(node.strip())
 
         nodes = ",".join(sorted(node_set))
         if verbose:
@@ -187,6 +192,33 @@ def _get_nodes_by_user(user: str, verbose: bool = False) -> str:
             console.print(
                 f"[red]Failed to get nodes by user: {e.stderr}[/red]"
             )
+        return ""
+    except json.JSONDecodeError:
+        # Fallback to text parsing
+        return _get_nodes_by_user_text(user, verbose)
+
+
+def _get_nodes_by_user_text(user: str, verbose: bool = False) -> str:
+    """Get nodes by user using text output (fallback)."""
+    try:
+        result = subprocess.run(
+            ["squeue", "-u", user, "-h", "-o", "%N"],
+            capture_output=True,
+            text=True,
+            check=True,
+        )
+        node_set = set()
+        for line in result.stdout.strip().split("\n"):
+            if line.strip():
+                node_set.add(line.strip())
+
+        nodes = ",".join(sorted(node_set))
+        if verbose:
+            console.print(
+                f"[dim]Nodes used by user '{user}': {nodes}[/dim]"
+            )
+        return nodes
+    except subprocess.CalledProcessError:
         return ""
 
 

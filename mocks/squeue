@@ -8,10 +8,36 @@
 # Get the directory where this script is located (same as mocks directory)
 MOCKS_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
+# Extract user filter if present
+USER_FILTER=""
+for arg in "$@"; do
+    if [[ "$arg" == -u* ]]; then
+        USER_FILTER="${arg#-u}"
+    fi
+done
+# Also handle -u as separate argument
+prev=""
+for arg in "$@"; do
+    if [[ "$prev" == "-u" ]]; then
+        USER_FILTER="$arg"
+    fi
+    prev="$arg"
+done
+
 # Check if --json is in arguments
 if [[ "$*" == *"--json"* ]]; then
     if [ -f "$MOCKS_DIR/data/squeue.json" ]; then
-        cat "$MOCKS_DIR/data/squeue.json"
+        if [ -n "$USER_FILTER" ]; then
+            # Filter jobs by user
+            python3 -c "
+import json
+data = json.load(open('$MOCKS_DIR/data/squeue.json'))
+filtered = [j for j in data.get('jobs', []) if j.get('user_name') == '$USER_FILTER']
+print(json.dumps({'jobs': filtered}))
+" 2>/dev/null || cat "$MOCKS_DIR/data/squeue.json"
+        else
+            cat "$MOCKS_DIR/data/squeue.json"
+        fi
     else
         echo "Error: squeue.json file not found in $MOCKS_DIR/data" >&2
         exit 1
