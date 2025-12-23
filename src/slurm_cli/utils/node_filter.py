@@ -28,10 +28,13 @@ NODE_FILTER_PREFIXES = [
 
 
 def is_node_filter(value: str) -> bool:
-    """Check if a value is a node filter expression."""
+    """Check if a value is a node filter expression or special keyword."""
     if not value:
         return False
     value_lower = value.lower()
+    # Check for ALL keyword
+    if value_lower == "all":
+        return True
     return any(value_lower.startswith(p) for p in NODE_FILTER_PREFIXES)
 
 
@@ -41,7 +44,8 @@ def resolve_node_filter(
     """Resolve a node filter expression to a comma-separated list of nodes.
 
     Args:
-        filter_expr: Filter expression like "partition=cpu" or "state=idle"
+        filter_expr: Filter expression like "partition=cpu", "state=idle",
+                     or "ALL" for all nodes
         verbose: Print debug information
 
     Returns:
@@ -51,6 +55,12 @@ def resolve_node_filter(
         return None
 
     filter_lower = filter_expr.lower()
+
+    # Handle ALL keyword - return "ALL" as-is (Slurm understands it)
+    if filter_lower == "all":
+        if verbose:
+            console.print("[dim]Using ALL nodes[/dim]")
+        return "ALL"
 
     # Parse filter type and value
     if filter_lower.startswith("partition="):

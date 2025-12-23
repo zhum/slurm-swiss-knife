@@ -152,8 +152,8 @@ _slurm_cache_reservations() {
 }
 
 # Node filter prefixes for nodes= parameter
-# Supports: partition=, state=, user=, reservation=
-_slurm_node_filter_prefixes="partition= state= user= reservation="
+# Supports: ALL, partition=, state=, user=, reservation=
+_slurm_node_filter_prefixes="ALL partition= state= user= reservation="
 
 # Complete nodes= value with either direct nodes or filter prefixes
 # Usage: _slurm_complete_nodes_value "$_val" "$cur"
