@@ -157,8 +157,14 @@ _slurm_cli_nodes_autocomplete() {{
                 _slurm_complete_value "{cpubind_values}" "$_key" "$_val" "$cur" ;;
             partition)
                 _slurm_complete_value "$cached_partitions" "$_key" "$_val" "$cur" ;;
-            name)
+            name|nodename)
                 _slurm_complete_value "$cached_nodes" "$_key" "$_val" "$cur" ;;
+            user)
+                # Node filter: show users for selecting nodes by user's jobs
+                _slurm_complete_value "$(_slurm_cache_users)" "$_key" "$_val" "$cur" ;;
+            reservation)
+                # Node filter: show reservations for selecting nodes
+                _slurm_complete_value "$(_slurm_cache_reservations)" "$_key" "$_val" "$cur" ;;
         esac
         [[ ${{#COMPREPLY[@]}} -gt 0 ]] && return
     fi
