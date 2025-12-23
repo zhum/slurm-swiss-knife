@@ -41,11 +41,12 @@ class Resource:
         "reservations": f"{CACHE_DIR}slurm_cli_reservations.list",
         "coordinators": f"{CACHE_DIR}slurm_cli_coordinators.list",
         "config": f"{CACHE_DIR}slurm_cli_config.list",
+        "jobs": f"{CACHE_DIR}slurm_cli_jobs.list",
     }
     CACHE_CMD = {
         "nodes": ["scontrol", "show", "nodes", "--json"],
         "partitions": ["scontrol", "show", "partitions", "--details"],
-        "jobs": ["sacctmgr", "show", "jobs", "--json"],
+        "jobs": ["scontrol", "show", "job", "--json"],
         "users": ["sacctmgr", "show", "users", "--json"],
         "qos": ["sacctmgr", "show", "qos", "--json"],
         "accounts": ["sacctmgr", "show", "accounts", "--json"],

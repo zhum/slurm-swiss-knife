@@ -38,6 +38,7 @@ declare -a COMMANDS=(
     # Note: events.json is handled separately due to JSON support issues in some Slurm versions
     "\\squeue --all --format='%.18i %.9P %.50j %.8u %.2t %.10M %.6D %R'|squeue_all|Queue - all jobs (text format)"
     "\\squeue --all --json|squeue.json|Queue - all jobs (JSON format)"
+    "\\scontrol show job --json|jobs.json|Jobs (JSON format)"
     "\\squeue --all --states=PENDING,RUNNING,SUSPENDED --format='%.18i %.9P %.50j %.8u %.2t %.10M %.6D %R'|squeue_active|Queue - active jobs"
     "\\squeue --all -O 'JobID:8,Partition:24 ,Name:15 ,UserName:24 ,Account:32 ,State,TimeLimit:16,NumNodes:7 ,NodeList: ,Reason'|squeue_extended|Queue - extended format"
     "\\sinfo|sinfo|Cluster info (sinfo)"

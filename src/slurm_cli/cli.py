@@ -37,6 +37,7 @@ from .utils.autocomplete_helpers import (
 from .utils.config import ROUTES, VERBS
 from .utils.coordinators import Coordinator
 from .utils.events import Event
+from .utils.jobs import Job
 from .utils.node_filter import is_node_filter, resolve_nodes_value
 from .utils.nodes import Node
 from .utils.partitions import Partition
@@ -460,6 +461,7 @@ RESOURCES_ALIASES = {
     "reservations": ["res", "reservation"],
     "coordinators": ["coord", "coordinator"],
     "events": ["event", "ev"],
+    "jobs": ["job", "j"],
 }
 
 
@@ -873,6 +875,9 @@ def ensure_resource_name(
             force_update,
         )
         return resource, field, data
+    elif resource[:3] == "job":
+        # Jobs are fetched directly, not cached
+        return resource, field, None
     elif resource[:4] == "conf":
         data = Resource.cached_resource(
             "config",
@@ -1509,6 +1514,16 @@ def show(
             profile=profile,
             profile_str=profile_str,
         )
+    elif canonical_resource[:3] == "job":
+        Job.show(
+            field=field,
+            style=style,
+            force_cache_update=force_update,
+            delimiter=delimiter,
+            zebra=zebra,
+            profile=profile,
+            profile_str=profile_str,
+        )
     else:
         console.print(f"[red]Resource '{resource}' not found.[/red]")
 
@@ -1718,6 +1733,8 @@ def update(
                 Coordinator.update(field, verbose, **update_options)
             elif canonical_resource[:4] == "conf":
                 Config.update(field, verbose, **update_options)
+            elif canonical_resource[:3] == "job":
+                Job.update(field, verbose, **update_options)
             else:
                 console.print(
                     f"[red]Resource '{canonical_resource}' not found.[/red]"
@@ -1814,6 +1831,14 @@ def update(
                 )
             else:
                 Reservation.update(field, verbose, **update_options)
+        elif canonical_resource[:3] == "job":
+            if dry_run:
+                console.print(
+                    f"[yellow]DRY RUN:[/yellow] Would update "
+                    f"job {field} set {update_options}"
+                )
+            else:
+                Job.update(field, verbose, **update_options)
         else:
             # If no additional arguments, show general update message
             if dry_run:
@@ -2212,6 +2237,8 @@ def delete(
                 Partition.delete(resource_name)
             elif canonical_resource[:4] == "node":
                 Node.delete(resource_name, verbose=verbose)
+            elif canonical_resource[:3] == "job":
+                Job.delete(resource_name, verbose=verbose)
             # Note: coordinators handled above with special logic
             else:
                 console.print(
@@ -2527,7 +2554,7 @@ _slurm_cli_initialize_autocomplete() {{
             # Base resources for all commands
             local all_resources="reservations nodes partitions accounts \\
                 qos users coordinators problems stats associations dumps \\
-                licenses bad runawayjobs tres archives transactions"
+                licenses bad runawayjobs tres archives transactions jobs"
             # Events are read-only, only available for show command
             if [[ "$cmd" == "show" ]]; then
                 all_resources="$all_resources events"
@@ -2609,6 +2636,7 @@ _slurm_cli_initialize_autocomplete() {{
     print(Association.generate_autocomplete_options())
     print(Coordinator.generate_autocomplete_options())
     print(Event.generate_autocomplete_options())
+    print(Job.generate_autocomplete_options())
     print(User.generate_autocomplete_options())
     print(Partition.generate_autocomplete_options())
     print(Node.generate_autocomplete_options())

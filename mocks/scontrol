@@ -91,6 +91,20 @@ elif [ "$1" = "show" ] && [ "$2" = "config" ]; then
         echo "Error: slurm_config file not found in $MOCKS_DIR/data" >&2
         exit 1
     fi
+elif [[ "$1" == "show" ]] && [[ "$2" =~ ^jobs?$ ]] && [[ "$3" == "--json" ]]; then
+    if [ -f "$MOCKS_DIR/data/jobs.json" ]; then
+        cat "$MOCKS_DIR/data/jobs.json"
+    else
+        echo "Error: jobs.json file not found in $MOCKS_DIR/data" >&2
+        exit 1
+    fi
+elif [[ "$1" == "show" ]] && [[ "$2" =~ ^jobs?$ ]]; then
+    if [ -f "$MOCKS_DIR/data/jobs.json" ]; then
+        cat "$MOCKS_DIR/data/jobs.json"
+    else
+        echo "Error: jobs.json file not found in $MOCKS_DIR/data" >&2
+        exit 1
+    fi
 elif [ "$1" = "create" ]; then
     # Mock create command - just print what was received
     echo "MOCK: scontrol $*"

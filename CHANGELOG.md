@@ -9,6 +9,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Jobs Resource**: New `jobs` resource for viewing and managing Slurm jobs
+  - `slurm-cli show jobs` - list jobs with filters (user=, state=, partition=, account=)
+  - `slurm-cli update jobs JOBID key=value` - update job properties
+  - `slurm-cli delete jobs JOBID` - cancel a job (uses scancel)
+  - Supports all output styles (pretty, json, csv) and profiles
+  - Aliases: `job`, `j`
 - **Node Filter Syntax**: Select nodes by filter instead of explicit names
   - `nodes=partition=NAME` - nodes from a partition
   - `nodes=state=STATE` - nodes by state (idle, alloc, drain, etc.)
