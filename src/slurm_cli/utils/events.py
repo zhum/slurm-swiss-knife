@@ -359,6 +359,7 @@ class Event(BaseSlurmResource):
                     check=True,
                     capture_output=True,
                     text=True,
+                    errors="replace",  # Handle invalid UTF-8 bytes
                 )
                 events = cls._parse_json_events(result.stdout)
                 if events or not result.stdout.strip():
@@ -386,6 +387,7 @@ class Event(BaseSlurmResource):
             check=True,
             capture_output=True,
             text=True,
+            errors="replace",  # Handle invalid UTF-8 bytes
         )
         return cls._parse_events(result.stdout)
 
