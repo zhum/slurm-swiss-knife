@@ -15,20 +15,32 @@ from .utils import console
 class Job(BaseSlurmResource):
     """Slurm job resource handler."""
 
-    # Job states for filtering
+    # Job states for filtering (in Slurm order)
     JOB_STATES = [
         "pending",
         "running",
-        "suspended",
-        "completed",
         "cancelled",
-        "failed",
-        "timeout",
-        "node_fail",
-        "preempted",
+        "completing",
+        "completed",
         "boot_fail",
+        "configuring",
         "deadline",
+        "failed",
+        "node_fail",
         "out_of_memory",
+        "preempted",
+        "resv_del_hold",
+        "requeue_fed",
+        "requeue_hold",
+        "requeued",
+        "resizing",
+        "revoked",
+        "signaling",
+        "special_exit",
+        "stage_out",
+        "stopped",
+        "suspended",
+        "timeout",
     ]
 
     # Default columns for table output
