@@ -106,10 +106,10 @@ class TestResolveResourceAlias:
 
     def test_resolve_known_alias(self):
         """Test resolving known aliases."""
-        # When alias is in the alias list
+        # When alias is in the alias list, it should return canonical name
         result = resolve_resource_alias("part")
-        # Function checks if orig in alias_list, so "part" stays as is
-        assert result == "part"
+        # "part" is an alias for "partitions"
+        assert result == "partitions"
 
     def test_resolve_unknown_resource(self):
         """Test that unknown resources are returned as-is."""

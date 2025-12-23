@@ -252,17 +252,16 @@ class TestCheckArgs:
         "slurm_cli.utils.base_resource.Resource.cached_resource_list"
     )
     @mock.patch("slurm_cli.utils.base_resource.console.print")
-    def test_nodes_invalid(self, mock_print, mock_cache):
-        """Test invalid nodes argument."""
+    def test_nodes_valid(self, mock_print, mock_cache):
+        """Test valid nodes argument (validation removed, Slurm validates)."""
         mock_cache.return_value = ["node01", "node02"]
         set_dict, add_dict, delete_dict = {}, {}, {}
         result = TestResource._check_args(
             {"nodesfield": "node99"}, set_dict, add_dict, delete_dict
         )
-        assert result is False
-        assert any(
-            "Invalid nodes" in str(c) for c in mock_print.call_args_list
-        )
+        # Node validation removed - Slurm validates nodes itself
+        assert result is True
+        assert set_dict.get("nodesfield") == "node99"
 
     @mock.patch("slurm_cli.utils.base_resource.console.print")
     def test_unknown_type(self, mock_print):

@@ -17,7 +17,6 @@ from typing import List, Optional
 
 from .utils import console
 
-
 # Filter prefixes that indicate a node filter expression
 NODE_FILTER_PREFIXES = [
     "partition=",

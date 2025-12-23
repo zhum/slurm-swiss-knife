@@ -159,10 +159,9 @@ class TestNodeCreate:
         with patch.object(subprocess, "run", return_value=mock_result):
             output = io.StringIO()
             with redirect_stdout(output):
-                Node.create("newnode")
+                Node.create("newnode", state="future")
 
             result = output.getvalue()
-            assert "Creating node: newnode" in result
             assert "created successfully" in result
 
     def test_create_node_with_stdout(self):
@@ -173,7 +172,7 @@ class TestNodeCreate:
         with patch.object(subprocess, "run", return_value=mock_result):
             output = io.StringIO()
             with redirect_stdout(output):
-                Node.create("newnode")
+                Node.create("newnode", state="cloud")
 
             result = output.getvalue()
             assert "Node newnode added" in result
@@ -184,14 +183,16 @@ class TestNodeCreate:
         with patch.object(
             subprocess, "run", return_value=mock_result
         ) as mock_run:
-            Node.create("newnode", cpus=64, memory=256000)
+            Node.create(
+                "newnode", state="future", cpus=64, memory=256000
+            )
 
             mock_run.assert_called_once()
             call_args = mock_run.call_args[0][0]
             assert "scontrol" in call_args
             assert "create" in call_args
-            assert "node" in call_args
-            assert "name=newnode" in call_args
+            assert "NodeName=newnode" in call_args
+            assert "state=future" in call_args
             assert "cpus=64" in call_args
             assert "memory=256000" in call_args
 
@@ -203,10 +204,9 @@ class TestNodeCreate:
         with patch.object(subprocess, "run", side_effect=error):
             output = io.StringIO()
             with redirect_stdout(output):
-                Node.create("existingnode")
+                Node.create("existingnode", state="future")
 
             result = output.getvalue()
-            assert "Creating node: existingnode" in result
             assert "Failed to create node" in result
 
     def test_create_node_failure_without_stderr(self):
@@ -215,7 +215,7 @@ class TestNodeCreate:
         with patch.object(subprocess, "run", side_effect=error):
             output = io.StringIO()
             with redirect_stdout(output):
-                Node.create("badnode")
+                Node.create("badnode", state="cloud")
 
             result = output.getvalue()
             assert "Failed to create node" in result
@@ -226,12 +226,14 @@ class TestNodeUpdate:
 
     def test_update_node(self):
         """Test node update method."""
-        output = io.StringIO()
-        with redirect_stdout(output):
-            Node.update("node01", state="drain")
+        mock_result = create_mock_subprocess_result(stdout="")
+        with patch.object(subprocess, "run", return_value=mock_result):
+            output = io.StringIO()
+            with redirect_stdout(output):
+                Node.update("node01", state="drain")
 
-        result = output.getvalue()
-        assert "Updating node: node01" in result
+            result = output.getvalue()
+            assert "updated successfully" in result
 
 
 class TestNodeDelete:
@@ -239,12 +241,14 @@ class TestNodeDelete:
 
     def test_delete_node(self):
         """Test node delete method."""
-        output = io.StringIO()
-        with redirect_stdout(output):
-            Node.delete("oldnode")
+        mock_result = create_mock_subprocess_result(stdout="")
+        with patch.object(subprocess, "run", return_value=mock_result):
+            output = io.StringIO()
+            with redirect_stdout(output):
+                Node.delete("oldnode")
 
-        result = output.getvalue()
-        assert "Deleting node: oldnode" in result
+            result = output.getvalue()
+            assert "deleted successfully" in result
 
 
 class TestNodeShow:

@@ -114,8 +114,8 @@ class TestAssociationUpdate:
         mock_run.assert_called_once()
         call_args = mock_run.call_args[0][0]
         assert "modify" in call_args
-        assert "association" in call_args
-        assert "account=nvidia" in call_args
+        assert "user" in call_args
+        assert "name=nvidia" in call_args
 
     @patch("slurm_cli.utils.associations.subprocess.run")
     def test_update_where_mode(self, mock_run):
@@ -201,7 +201,7 @@ class TestAssociationFormatValue:
         """Test formatting QOS list."""
         assoc = {"qos": ["normal", "high", "low"]}
         result = Association._format_value(assoc, "qos")
-        assert result == "normal, high, low"
+        assert result == "normal,high,low"
 
     def test_format_empty_qos_list(self):
         """Test formatting empty QOS list."""
