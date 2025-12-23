@@ -34,6 +34,8 @@ declare -a COMMANDS=(
     "\\sacctmgr show users --json|users.json|Users (JSON format)"
     "\\sacctmgr show associations format=account,user,cluster,partition,share,qos|associations|Associations (text format)"
     "\\sacctmgr show associations --json|associations.json|Associations (JSON format)"
+    "\\sacctmgr list event format=Cluster,ClusterNodes,Duration,Start,End,Event,EventRaw,NodeName,State,StateRaw,TRES,User,Reason -p|events|Events (text format)"
+    "\\sacctmgr list event --json|events.json|Events (JSON format)"
     "\\squeue --all --format='%.18i %.9P %.50j %.8u %.2t %.10M %.6D %R'|squeue_all|Queue - all jobs (text format)"
     "\\squeue --all --json|squeue.json|Queue - all jobs (JSON format)"
     "\\squeue --all --states=PENDING,RUNNING,SUSPENDED --format='%.18i %.9P %.50j %.8u %.2t %.10M %.6D %R'|squeue_active|Queue - active jobs"
