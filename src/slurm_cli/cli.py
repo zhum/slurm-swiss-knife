@@ -57,7 +57,7 @@ STYLE_OPTIONS = ["pretty", "json", "csv"]
 
 def resolve_node_filters_in_options(
     options: Dict[str, Any], verbose: bool = False
-) -> Dict[str, Any]:
+) -> Optional[Dict[str, Any]]:
     """Resolve node filter expressions in options dict.
 
     Looks for 'nodes' key and resolves any filter expressions like:
@@ -71,7 +71,8 @@ def resolve_node_filters_in_options(
         verbose: Print debug information
 
     Returns:
-        Options dict with resolved node filters
+        Options dict with resolved node filters, or None if filter matched
+        no nodes (command should abort)
     """
     if not options:
         return options
@@ -90,11 +91,12 @@ def resolve_node_filters_in_options(
             if resolved:
                 options[nodes_key] = resolved
             else:
-                # Empty result - warn but keep original
+                # Empty result - abort command
                 console.print(
-                    f"[yellow]Warning: Node filter '{value}' "
-                    f"matched no nodes[/yellow]"
+                    f"[red]Error: Node filter '{value}' "
+                    f"matched no nodes. Aborting.[/red]"
                 )
+                return None
 
     return options
 
@@ -1595,6 +1597,8 @@ def update(
     update_options = resolve_node_filters_in_options(
         update_options, verbose
     )
+    if update_options is None:
+        return  # Node filter matched nothing, abort
 
     # Special handling for accounts/associations/users/qos
     # with WHERE/SET syntax
@@ -1881,6 +1885,8 @@ def create(
     create_options = resolve_node_filters_in_options(
         create_options, verbose
     )
+    if create_options is None:
+        return  # Node filter matched nothing, abort
 
     if names:
         additional_args = " ".join(f"'{arg}'" for arg in names)
