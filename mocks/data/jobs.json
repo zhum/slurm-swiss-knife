@@ -3358,7 +3358,7 @@
       },
       "job_size_str": [],
       "job_state": [
-        "RUNNING"
+        "PENDING"
       ],
       "last_sched_evaluation": {
         "set": true,

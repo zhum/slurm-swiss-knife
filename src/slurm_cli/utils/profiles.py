@@ -114,6 +114,16 @@ DEFAULT_PROFILES: Dict[str, Dict[str, Any]] = {
                 "partition": "magenta",
             },
         },
+        "jobs": {
+            "columns": "*",
+            "styles": {
+                "job_id": "cyan bold",
+                "name": "white",
+                "user_name": "blue",
+                "partition": "green",
+                "job_state": "yellow",
+            },
+        },
     },
     "compact": {
         "accounts": {
@@ -154,6 +164,18 @@ DEFAULT_PROFILES: Dict[str, Dict[str, Any]] = {
             "columns": ["account", "user", "cluster", "partition"],
             "styles": {"account": "cyan"},
         },
+        "jobs": {
+            "columns": [
+                "job_id",
+                "name",
+                "user_name",
+                "partition",
+                "job_state",
+                "time_limit",
+                "nodes",
+            ],
+            "styles": {"job_id": "cyan bold", "job_state": "yellow"},
+        },
     },
     "minimal": {
         "accounts": {"columns": ["name"]},
@@ -164,6 +186,7 @@ DEFAULT_PROFILES: Dict[str, Dict[str, Any]] = {
         "coordinators": {"columns": ["account", "name"]},
         "users": {"columns": ["name"]},
         "associations": {"columns": ["account", "user"]},
+        "jobs": {"columns": ["job_id", "user_name", "job_state"]},
     },
     # Template-based profiles
     "oneline": {
@@ -202,6 +225,15 @@ DEFAULT_PROFILES: Dict[str, Dict[str, Any]] = {
         "users": {
             "template": "[cyan]{name}[/cyan] ({default_account})"
         },
+        "jobs": {
+            "template": (
+                "[cyan bold]{job_id}[/cyan bold] "
+                "[white]{name}[/white] "
+                "user=[blue]{user_name}[/blue] "
+                "state=[yellow]{job_state}[/yellow] "
+                "nodes={nodes}"
+            )
+        },
     },
     "detailed": {
         "accounts": {
@@ -219,6 +251,18 @@ DEFAULT_PROFILES: Dict[str, Dict[str, Any]] = {
                 "  Nodes: {node_list} ({node_count})\\n"
                 "  Users: [hot_pink]{users}[/hot_pink]\\n"
                 "  Accounts: [green]{accounts}[/green]"
+            )
+        },
+        "jobs": {
+            "template": (
+                "[bold cyan]{job_id}[/bold cyan] - {name}\\n"
+                "  User: [blue]{user_name}[/blue] "
+                "Account: [green]{account}[/green]\\n"
+                "  State: [yellow]{job_state}[/yellow] "
+                "Partition: [magenta]{partition}[/magenta]\\n"
+                "  Nodes: {nodes} "
+                "Time: {run_time} / {time_limit}\\n"
+                "  Start: {start_time} End: {end_time}"
             )
         },
     },

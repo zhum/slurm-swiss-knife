@@ -83,6 +83,13 @@
 # users.columns = *
 # users.styles.name = cyan
 
+# jobs.columns = *
+# jobs.styles.job_id = cyan bold
+# jobs.styles.name = white
+# jobs.styles.user_name = blue
+# jobs.styles.partition = green
+# jobs.styles.job_state = yellow
+
 # ============================================================================
 # Compact Profile - Essential columns only
 # ============================================================================
@@ -110,6 +117,10 @@
 # users.columns = name,default_account
 # users.styles.name = cyan
 
+# jobs.columns = job_id,name,user_name,partition,job_state,time_limit,nodes
+# jobs.styles.job_id = cyan bold
+# jobs.styles.job_state = yellow
+
 # ============================================================================
 # Minimal Profile - Just names
 # ============================================================================
@@ -122,6 +133,7 @@
 # reservations.columns = name
 # coordinators.columns = account,name
 # users.columns = name
+# jobs.columns = job_id,user_name,job_state
 
 # ============================================================================
 # Oneline Profile - Template-based, one line per item
@@ -135,6 +147,7 @@
 # reservations.template = [cyan bold]{name}[/cyan bold] {start_time} -> {end_time} users=[hot_pink]{users}[/hot_pink]
 # coordinators.template = [cyan]{account}[/cyan]: [green]{name}[/green]
 # users.template = [cyan]{name}[/cyan] ({default_account})
+# jobs.template = [cyan bold]{job_id}[/cyan bold] [white]{name}[/white] user=[blue]{user_name}[/blue] state=[yellow]{job_state}[/yellow] nodes={nodes}
 
 # ============================================================================
 # Detailed Profile - Template-based, multi-line per item
@@ -143,6 +156,7 @@
 # [profile:detailed]
 # accounts.template = [bold cyan]{name}[/bold cyan]\n  Description: {description}\n  Organization: [green]{organization}[/green]\n  Coordinators: [yellow]{coordinators}[/yellow]
 # reservations.template = [bold cyan]{name}[/bold cyan]\n  Time: {start_time} → {end_time}\n  Nodes: {node_list} ({node_count})\n  Users: [hot_pink]{users}[/hot_pink]\n  Accounts: [green]{accounts}[/green]
+# jobs.template = [bold cyan]{job_id}[/bold cyan] - {name}\n  User: [blue]{user_name}[/blue] Account: [green]{account}[/green]\n  State: [yellow]{job_state}[/yellow] Partition: [magenta]{partition}[/magenta]\n  Nodes: {nodes} Time: {run_time} / {time_limit}\n  Start: {start_time} End: {end_time}
 
 # ============================================================================
 # Custom Profile Example

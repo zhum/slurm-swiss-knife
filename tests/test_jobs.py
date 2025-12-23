@@ -24,14 +24,38 @@ def create_sample_job_data():
                 "account": "test_account",
                 "partition": "gpu",
                 "job_state": ["RUNNING"],
-                "time_limit": {"set": True, "infinite": False, "number": 1440},
-                "node_count": {"set": True, "infinite": False, "number": 1},
+                "time_limit": {
+                    "set": True,
+                    "infinite": False,
+                    "number": 1440,
+                },
+                "node_count": {
+                    "set": True,
+                    "infinite": False,
+                    "number": 1,
+                },
                 "nodes": "node001",
                 "cpus": {"set": True, "infinite": False, "number": 8},
-                "submit_time": {"set": True, "infinite": False, "number": 1700000000},
-                "start_time": {"set": True, "infinite": False, "number": 1700000100},
-                "end_time": {"set": True, "infinite": False, "number": 0},
-                "priority": {"set": True, "infinite": False, "number": 100},
+                "submit_time": {
+                    "set": True,
+                    "infinite": False,
+                    "number": 1700000000,
+                },
+                "start_time": {
+                    "set": True,
+                    "infinite": False,
+                    "number": 1700000100,
+                },
+                "end_time": {
+                    "set": True,
+                    "infinite": False,
+                    "number": 0,
+                },
+                "priority": {
+                    "set": True,
+                    "infinite": False,
+                    "number": 100,
+                },
                 "state_reason": "None",
                 "command": "/path/to/script.sh",
                 "current_working_directory": "/home/testuser",
@@ -45,14 +69,38 @@ def create_sample_job_data():
                 "account": "other_account",
                 "partition": "cpu",
                 "job_state": ["PENDING"],
-                "time_limit": {"set": True, "infinite": True, "number": 0},
-                "node_count": {"set": True, "infinite": False, "number": 2},
+                "time_limit": {
+                    "set": True,
+                    "infinite": True,
+                    "number": 0,
+                },
+                "node_count": {
+                    "set": True,
+                    "infinite": False,
+                    "number": 2,
+                },
                 "nodes": "",
                 "cpus": {"set": True, "infinite": False, "number": 16},
-                "submit_time": {"set": True, "infinite": False, "number": 1700000200},
-                "start_time": {"set": True, "infinite": False, "number": 0},
-                "end_time": {"set": True, "infinite": False, "number": 0},
-                "priority": {"set": True, "infinite": False, "number": 50},
+                "submit_time": {
+                    "set": True,
+                    "infinite": False,
+                    "number": 1700000200,
+                },
+                "start_time": {
+                    "set": True,
+                    "infinite": False,
+                    "number": 0,
+                },
+                "end_time": {
+                    "set": True,
+                    "infinite": False,
+                    "number": 0,
+                },
+                "priority": {
+                    "set": True,
+                    "infinite": False,
+                    "number": 50,
+                },
                 "state_reason": "Resources",
                 "command": "/path/to/other_script.sh",
                 "current_working_directory": "/home/otheruser",
@@ -101,8 +149,16 @@ class TestJobApplyFilters:
     def test_filter_by_user(self):
         """Test filtering jobs by user."""
         jobs = [
-            {"job_id": "1", "user_name": "testuser", "job_state": "RUNNING"},
-            {"job_id": "2", "user_name": "otheruser", "job_state": "PENDING"},
+            {
+                "job_id": "1",
+                "user_name": "testuser",
+                "job_state": "RUNNING",
+            },
+            {
+                "job_id": "2",
+                "user_name": "otheruser",
+                "job_state": "PENDING",
+            },
         ]
         result = Job._apply_filters(jobs, {"user": "testuser"})
         assert len(result) == 1
@@ -111,8 +167,16 @@ class TestJobApplyFilters:
     def test_filter_by_state(self):
         """Test filtering jobs by state."""
         jobs = [
-            {"job_id": "1", "user_name": "testuser", "job_state": "RUNNING"},
-            {"job_id": "2", "user_name": "otheruser", "job_state": "PENDING"},
+            {
+                "job_id": "1",
+                "user_name": "testuser",
+                "job_state": "RUNNING",
+            },
+            {
+                "job_id": "2",
+                "user_name": "otheruser",
+                "job_state": "PENDING",
+            },
         ]
         result = Job._apply_filters(jobs, {"state": "running"})
         assert len(result) == 1
@@ -283,4 +347,3 @@ class TestJobInheritance:
         assert hasattr(Job, "update")
         assert hasattr(Job, "delete")
         assert hasattr(Job, "show")
-
