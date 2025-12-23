@@ -164,6 +164,35 @@ slurm-cli delete users olduser --yes
 slurm-cli del qos oldqos -y
 ```
 
+## Node Filter Syntax
+
+When specifying nodes in commands (e.g., for partitions or reservations), you can use filter syntax instead of explicit node names:
+
+| Filter | Description |
+|--------|-------------|
+| `partition=NAME` | All nodes from the specified partition |
+| `state=STATE` | All nodes with the specified state (idle, alloc, drain, etc.) |
+| `user=USERNAME` | All nodes running jobs by the specified user |
+| `reservation=NAME` | All nodes in the specified reservation |
+
+### Examples
+
+```bash
+# Update reservation to use all nodes from partition 'cpu'
+slurm-cli update reservations maint nodes=partition=cpu
+
+# Update partition to include nodes from another partition
+slurm-cli update partitions backup nodes=partition=gpu
+
+# Create reservation with idle nodes
+slurm-cli create reservations idle_test nodes=state=idle starttime=now duration=1:00:00
+
+# Show nodes used by a specific user
+slurm-cli show nodes user=john
+```
+
+The node filter is resolved at command execution time, so it always uses the current state of the cluster.
+
 ## Global Options
 
 These options work with any command:

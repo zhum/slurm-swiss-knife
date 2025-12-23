@@ -63,6 +63,27 @@ slurm-cli show partitions state=UP
 slurm-cli show partitions --profile-str='*'
 ```
 
+## Node Filter Syntax
+
+When specifying nodes for partitions, you can use filter syntax:
+
+```bash
+# Update partition to include nodes from another partition
+slurm-cli update partitions backup nodes=partition=gpu
+
+# Set partition nodes to currently idle nodes
+slurm-cli update partitions test nodes=state=idle
+```
+
+Available filters:
+
+| Filter | Example | Description |
+|--------|---------|-------------|
+| `partition=` | `nodes=partition=gpu` | All nodes from partition |
+| `state=` | `nodes=state=idle` | Nodes with specific state |
+| `user=` | `nodes=user=john` | Nodes running user's jobs |
+| `reservation=` | `nodes=reservation=maint` | Nodes in a reservation |
+
 ## Related Commands
 
 - [Nodes](nodes.md) - View nodes in partitions

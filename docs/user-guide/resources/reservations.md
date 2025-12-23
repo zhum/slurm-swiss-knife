@@ -184,6 +184,34 @@ slurm-cli create reservations team_sprint \
 slurm-cli show reservations --profile-str='reservations.columns=name,state,starttime,endtime,nodes,users'
 ```
 
+## Node Filter Syntax
+
+Instead of specifying explicit node names, you can use filter syntax:
+
+```bash
+# Reserve all nodes from a partition
+slurm-cli create reservations maint \
+    nodes=partition=gpu \
+    starttime=now duration=2:00:00 users=admin
+
+# Update reservation to use nodes from another partition
+slurm-cli update reservations maint nodes=partition=cpu
+
+# Reserve currently idle nodes
+slurm-cli create reservations idle_test \
+    nodes=state=idle \
+    starttime=now duration=1:00:00 users=test
+```
+
+Available filters:
+
+| Filter | Example | Description |
+|--------|---------|-------------|
+| `partition=` | `nodes=partition=gpu` | All nodes from partition |
+| `state=` | `nodes=state=idle` | Nodes with specific state |
+| `user=` | `nodes=user=john` | Nodes running user's jobs |
+| `reservation=` | `nodes=reservation=other` | Nodes from another reservation |
+
 ## Related Commands
 
 - [Nodes](nodes.md) - View available nodes

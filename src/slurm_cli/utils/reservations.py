@@ -594,7 +594,7 @@ _slurm_cli_reservations_autocomplete() {{
                 local type=${{valid_types[$_key]}}
                 case "$type" in
                     nodes)
-                        _slurm_complete_value "$(_slurm_cache_nodes)" "$_key" "$_val" "$cur" ;;
+                        _slurm_complete_nodes_value "$_val" "$cur" ;;
                     partition)
                         _slurm_complete_value "$(_slurm_cache_partitions)" "$_key" "$_val" "$cur" ;;
                     account)

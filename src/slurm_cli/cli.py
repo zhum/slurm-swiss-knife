@@ -37,6 +37,7 @@ from .utils.autocomplete_helpers import (
 from .utils.config import ROUTES, VERBS
 from .utils.coordinators import Coordinator
 from .utils.events import Event
+from .utils.node_filter import is_node_filter, resolve_nodes_value
 from .utils.nodes import Node
 from .utils.partitions import Partition
 from .utils.profiles import is_profile_help, show_profile_help
@@ -52,6 +53,51 @@ CONTEXT_SETTINGS = dict(help_option_names=["-h", "--help"])
 # (for commands with custom help callback)
 CONTEXT_SETTINGS_NO_HELP = dict(help_option_names=[])
 STYLE_OPTIONS = ["pretty", "json", "csv"]
+
+
+def resolve_node_filters_in_options(
+    options: Dict[str, Any], verbose: bool = False
+) -> Dict[str, Any]:
+    """Resolve node filter expressions in options dict.
+
+    Looks for 'nodes' key and resolves any filter expressions like:
+    - partition=<name>
+    - state=<state>
+    - user=<username>
+    - reservation=<name>
+
+    Args:
+        options: Dictionary of options
+        verbose: Print debug information
+
+    Returns:
+        Options dict with resolved node filters
+    """
+    if not options:
+        return options
+
+    # Check for 'nodes' key (case-insensitive)
+    nodes_key = None
+    for key in options:
+        if key.lower() == "nodes":
+            nodes_key = key
+            break
+
+    if nodes_key and options[nodes_key]:
+        value = options[nodes_key]
+        if is_node_filter(value):
+            resolved = resolve_nodes_value(value, verbose)
+            if resolved:
+                options[nodes_key] = resolved
+            else:
+                # Empty result - warn but keep original
+                console.print(
+                    f"[yellow]Warning: Node filter '{value}' "
+                    f"matched no nodes[/yellow]"
+                )
+
+    return options
+
 
 # Resource-specific help texts for each action
 RESOURCE_HELP = {
@@ -1545,6 +1591,11 @@ def update(
                 # Treat as a simple value
                 update_options[arg] = None
 
+    # Resolve node filters in options (e.g., nodes=partition=cpu)
+    update_options = resolve_node_filters_in_options(
+        update_options, verbose
+    )
+
     # Special handling for accounts/associations/users/qos
     # with WHERE/SET syntax
     # Format: modify accounts key=value [...] set newkey=newvalue [...]
@@ -1717,44 +1768,26 @@ def update(
             if dry_run:
                 console.print(
                     f"[yellow]DRY RUN:[/yellow] Would update "
-                    f"node {field} set {value}"
+                    f"node {field} set {update_options}"
                 )
             else:
-                Node.update(
-                    field,
-                    verbose,
-                    **{value.split("=")[0]: value.split("=")[1]}
-                    if "=" in value
-                    else {},
-                )
+                Node.update(field, verbose, **update_options)
         elif canonical_resource[:4] == "part":
             if dry_run:
                 console.print(
                     f"[yellow]DRY RUN:[/yellow] Would update "
-                    f"partition {field} set {value}"
+                    f"partition {field} set {update_options}"
                 )
             else:
-                Partition.update(
-                    field,
-                    verbose,
-                    **{value.split("=")[0]: value.split("=")[1]}
-                    if "=" in value
-                    else {},
-                )
+                Partition.update(field, verbose, **update_options)
         elif canonical_resource[:3] == "res":
             if dry_run:
                 console.print(
                     f"[yellow]DRY RUN:[/yellow] Would update "
-                    f"reservation {field} set {value}"
+                    f"reservation {field} set {update_options}"
                 )
             else:
-                Reservation.update(
-                    field,
-                    verbose,
-                    **{value.split("=")[0]: value.split("=")[1]}
-                    if "=" in value
-                    else {},
-                )
+                Reservation.update(field, verbose, **update_options)
         else:
             # If no additional arguments, show general update message
             if dry_run:
@@ -1843,6 +1876,11 @@ def create(
             else:
                 # Treat as a simple value
                 create_options[arg] = None
+
+    # Resolve node filters in options (e.g., nodes=partition=cpu)
+    create_options = resolve_node_filters_in_options(
+        create_options, verbose
+    )
 
     if names:
         additional_args = " ".join(f"'{arg}'" for arg in names)

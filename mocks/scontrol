@@ -30,6 +30,23 @@ elif [ "$1" = "show" ] && [ "$2" = "partitions" ] && [ "$3" = "--json" ]; then
         echo "Error: partitions.json file not found in $MOCKS_DIR/data" >&2
         exit 1
     fi
+elif [ "$1" = "show" ] && [ "$2" = "partition" ] && [ -n "$3" ] && [ "$4" = "--json" ]; then
+    # Show specific partition - filter from partitions.json
+    PARTITION_NAME="$3"
+    if [ -f "$MOCKS_DIR/data/partitions.json" ]; then
+        python3 -c "
+import json
+data = json.load(open('$MOCKS_DIR/data/partitions.json'))
+for p in data.get('partitions', []):
+    if p.get('name') == '$PARTITION_NAME':
+        nodes = p.get('nodes', {}).get('configured', '')
+        print(json.dumps({'partitions': [{'name': '$PARTITION_NAME', 'nodes': {'nodes': nodes}}]}))
+        exit()
+print(json.dumps({'partitions': []}))
+" 2>/dev/null || echo '{"partitions": []}'
+    else
+        echo '{"partitions": []}'
+    fi
 elif [ "$1" = "show" ] && [ "$2" = "partitions" ]; then
     if [ -f "$MOCKS_DIR/data/partitions" ]; then
         cat "$MOCKS_DIR/data/partitions"
@@ -43,6 +60,22 @@ elif [ "$1" = "show" ] && [ "$2" = "reservations" ] && [ "$3" = "--json" ]; then
     else
         echo "Error: reservations.json file not found in $MOCKS_DIR/data" >&2
         exit 1
+    fi
+elif [ "$1" = "show" ] && [ "$2" = "reservation" ] && [ -n "$3" ] && [ "$4" = "--json" ]; then
+    # Show specific reservation - filter from reservations.json
+    RES_NAME="$3"
+    if [ -f "$MOCKS_DIR/data/reservations.json" ]; then
+        python3 -c "
+import json
+data = json.load(open('$MOCKS_DIR/data/reservations.json'))
+res = data.get('$RES_NAME', {})
+if res:
+    print(json.dumps({'reservations': [{'name': '$RES_NAME', 'node_list': res.get('Nodes', '')}]}))
+else:
+    print(json.dumps({'reservations': []}))
+" 2>/dev/null || echo '{"reservations": []}'
+    else
+        echo '{"reservations": []}'
     fi
 elif [ "$1" = "show" ] && [ "$2" = "reservations" ]; then
     if [ -f "$MOCKS_DIR/data/reservations" ]; then

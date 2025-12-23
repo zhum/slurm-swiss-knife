@@ -49,7 +49,7 @@ docs: ## Build documentation
 	poetry run mkdocs build
 
 docs-serve: ## Serve documentation locally
-	poetry run mkdocs serve
+	poetry run mkdocs serve -a 0.0.0.0:$(if $(DOCS_PORT),$(DOCS_PORT),8080)
 
 docs-deploy: ## Deploy documentation to GitHub Pages
 	poetry run mkdocs gh-deploy

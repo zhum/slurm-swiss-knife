@@ -150,4 +150,43 @@ _slurm_cache_users() {
 _slurm_cache_reservations() {
     _slurm_cache_get "/tmp/slurm_cli_reservations.json" 'keys[]'
 }
+
+# Node filter prefixes for nodes= parameter
+# Supports: partition=, state=, user=, reservation=
+_slurm_node_filter_prefixes="partition= state= user= reservation="
+
+# Complete nodes= value with either direct nodes or filter prefixes
+# Usage: _slurm_complete_nodes_value "$_val" "$cur"
+_slurm_complete_nodes_value() {
+    local val="$1"
+    local cur="$2"
+    local cached_nodes="$(_slurm_cache_nodes)"
+
+    # Check if value starts with a filter prefix
+    if [[ "$val" == partition=* ]]; then
+        local filter_val="${val#partition=}"
+        local partitions="$(_slurm_cache_partitions)"
+        COMPREPLY=($(compgen -W "$partitions" -- "$filter_val"))
+        [[ ${#COMPREPLY[@]} -gt 0 ]] && COMPREPLY=("${COMPREPLY[@]/#/nodes=partition=}")
+    elif [[ "$val" == state=* ]]; then
+        local filter_val="${val#state=}"
+        local states="idle alloc drain down mixed comp"
+        COMPREPLY=($(compgen -W "$states" -- "$filter_val"))
+        [[ ${#COMPREPLY[@]} -gt 0 ]] && COMPREPLY=("${COMPREPLY[@]/#/nodes=state=}")
+    elif [[ "$val" == user=* ]]; then
+        local filter_val="${val#user=}"
+        local users="$(_slurm_cache_users)"
+        COMPREPLY=($(compgen -W "$users" -- "$filter_val"))
+        [[ ${#COMPREPLY[@]} -gt 0 ]] && COMPREPLY=("${COMPREPLY[@]/#/nodes=user=}")
+    elif [[ "$val" == reservation=* ]]; then
+        local filter_val="${val#reservation=}"
+        local reservations="$(_slurm_cache_reservations)"
+        COMPREPLY=($(compgen -W "$reservations" -- "$filter_val"))
+        [[ ${#COMPREPLY[@]} -gt 0 ]] && COMPREPLY=("${COMPREPLY[@]/#/nodes=reservation=}")
+    else
+        # Not a filter prefix, show filter prefixes and cached nodes
+        COMPREPLY=($(compgen -W "$_slurm_node_filter_prefixes $cached_nodes" -- "$val"))
+        [[ ${#COMPREPLY[@]} -gt 0 && "$cur" == *=* ]] && COMPREPLY=("${COMPREPLY[@]/#/nodes=}")
+    fi
+}
 """  # noqa: E501

@@ -9,6 +9,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Node Filter Syntax**: Select nodes by filter instead of explicit names
+  - `nodes=partition=NAME` - nodes from a partition
+  - `nodes=state=STATE` - nodes by state (idle, alloc, drain, etc.)
+  - `nodes=user=USERNAME` - nodes running user's jobs
+  - `nodes=reservation=NAME` - nodes in a reservation
+  - Works anywhere `nodes=` is accepted (partitions, reservations, etc.)
 - **Association Create Command**: Create user associations with `slurm-cli create associations`
   - Supports positional username or `name=`/`user=` syntax
   - Accepts all association options (account, partition, qos, fairshare, limits)

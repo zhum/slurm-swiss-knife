@@ -13,7 +13,7 @@
   - [x] show
   - [x] add (?)
   - [x] delete
-  - [ ] update
+  - [x] update
 - [x] **QOS Management**: Add support for managing qos
   - [x] show
   - [x] create (with autocomplete for QOS_OPTIONS, QOS_FLAGS, PREEMPT_MODE_VALUES)

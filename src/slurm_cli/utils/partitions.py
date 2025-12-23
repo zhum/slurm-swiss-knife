@@ -778,7 +778,7 @@ _slurm_cli_partitions_autocomplete() {{
             allowqos|denyqos|qos)
                 _slurm_complete_value "$(_slurm_cache_qos)" "$_key" "$_val" "$cur" ;;
             nodes)
-                _slurm_complete_value "$(_slurm_cache_nodes)" "$_key" "$_val" "$cur" ;;
+                _slurm_complete_nodes_value "$_val" "$cur" ;;
             alternate|partitionname)
                 _slurm_complete_value "$cached_partitions" "$_key" "$_val" "$cur" ;;
         esac
