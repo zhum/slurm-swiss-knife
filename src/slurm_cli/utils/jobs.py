@@ -511,5 +511,5 @@ _slurm_cli_jobs_autocomplete() {{
         update) ;; # Job IDs - no completion
     esac
 }}
-"""
+"""  # noqa: E501
         return script

@@ -834,11 +834,8 @@ def ensure_resource_name(
     elif resource[:5] == "coord":  # !
         return "coordinators", field, []
     elif resource[:1] == "j":
-        data = Resource.cached_resource(
-            "jobs",
-            force_update,
-        )
-        return resource, field, data
+        # Jobs are fetched directly, not cached
+        return "jobs", field, None
     elif resource[:4] == "node":
         data = Resource.cached_resource(
             "nodes",
@@ -875,9 +872,6 @@ def ensure_resource_name(
             force_update,
         )
         return resource, field, data
-    elif resource[:3] == "job":
-        # Jobs are fetched directly, not cached
-        return resource, field, None
     elif resource[:4] == "conf":
         data = Resource.cached_resource(
             "config",
