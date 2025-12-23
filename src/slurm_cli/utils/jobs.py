@@ -97,6 +97,8 @@ class Job(BaseSlurmResource):
         "partition",
         "state",
         "name",
+        "nodes",
+        "reservation",
     ]
 
     def __init__(self, job_id: str = None, **kwargs: Any):
@@ -285,6 +287,18 @@ class Job(BaseSlurmResource):
                     j
                     for j in result
                     if value_lower in j.get("name", "").lower()
+                ]
+            elif key_lower == "nodes":
+                result = [
+                    j
+                    for j in result
+                    if value_lower in j.get("nodes", "").lower()
+                ]
+            elif key_lower == "reservation":
+                result = [
+                    j
+                    for j in result
+                    if value_lower in j.get("reservation", "").lower()
                 ]
 
         return result
@@ -500,6 +514,10 @@ _slurm_cli_jobs_autocomplete() {{
                 _slurm_complete_value "$(_slurm_cache_accounts)" "$_key" "$_val" "$cur" ;;
             partition)
                 _slurm_complete_value "$(_slurm_cache_partitions)" "$_key" "$_val" "$cur" ;;
+            nodes)
+                _slurm_complete_value "$(_slurm_cache_nodes)" "$_key" "$_val" "$cur" ;;
+            reservation)
+                _slurm_complete_value "$(_slurm_cache_reservations)" "$_key" "$_val" "$cur" ;;
         esac
         [[ ${{#COMPREPLY[@]}} -gt 0 ]] && return
     fi

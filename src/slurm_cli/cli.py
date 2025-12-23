@@ -2510,6 +2510,9 @@ _slurm_cli_initialize_autocomplete() {{
         ev*)
             guessed="events"
             ;;
+        j*)
+            guessed="jobs"
+            ;;
         b*)
             guessed="bad"
             # _slurm_cli_runawayjob_autocomplete "$cmd" "$cur" "$prev"
