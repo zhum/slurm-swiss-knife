@@ -46,13 +46,13 @@ class Job(BaseSlurmResource):
     # Default columns for table output
     DEFAULT_COLUMNS = [
         "job_id",
-        "name",
         "user_name",
         "partition",
         "job_state",
-        "time_limit",
+        "start_time",
+        "endlimit",
         "node_count",
-        "nodes",
+        "reason",
     ]
 
     # All available columns
@@ -64,6 +64,7 @@ class Job(BaseSlurmResource):
         "partition",
         "job_state",
         "time_limit",
+        "endlimit",
         "node_count",
         "nodes",
         "cpus",
@@ -87,6 +88,7 @@ class Job(BaseSlurmResource):
         "partition": "green",
         "job_state": "yellow",
         "time_limit": "dim",
+        "endlimit": "dim",
         "node_count": "cyan",
         "nodes": "dim",
         "cpus": "yellow",
@@ -128,6 +130,7 @@ class Job(BaseSlurmResource):
             "partition": "Partition",
             "job_state": "Job state",
             "time_limit": "Time limit",
+            "endlimit": "End time if known, otherwise time limit",
             "node_count": "Number of nodes",
             "nodes": "Node list",
             "cpus": "Number of CPUs",
@@ -215,6 +218,26 @@ class Job(BaseSlurmResource):
         if isinstance(job_state, list):
             job_state = ",".join(job_state)
 
+        # Compute end_time and endlimit
+        end_time_data = job.get("end_time", {})
+        if isinstance(end_time_data, dict):
+            end_time_set = end_time_data.get("set", False)
+            end_time_num = end_time_data.get("number", 0)
+            end_time_str = (
+                str(end_time_num)
+                if end_time_set and end_time_num
+                else ""
+            )
+        else:
+            end_time_str = str(end_time_data) if end_time_data else ""
+            end_time_set = bool(end_time_data)
+
+        # endlimit: end_time if known, otherwise time_limit
+        if end_time_set and end_time_str:
+            endlimit_str = end_time_str
+        else:
+            endlimit_str = time_limit_str
+
         return {
             "job_id": str(get_value(job, "job_id", "")),
             "name": get_value(job, "name", ""),
@@ -236,9 +259,8 @@ class Job(BaseSlurmResource):
             )
             if isinstance(job.get("start_time"), dict)
             else str(job.get("start_time", "")),
-            "end_time": str(job.get("end_time", {}).get("number", ""))
-            if isinstance(job.get("end_time"), dict)
-            else str(job.get("end_time", "")),
+            "end_time": end_time_str,
+            "endlimit": endlimit_str,
             "priority": str(job.get("priority", {}).get("number", ""))
             if isinstance(job.get("priority"), dict)
             else str(job.get("priority", "")),

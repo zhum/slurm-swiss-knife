@@ -142,6 +142,60 @@ class TestJobNormalizeJob:
         normalized = Job._normalize_job(job_data)
         assert normalized["job_state"] == "RUNNING,COMPLETING"
 
+    def test_normalize_endlimit_uses_end_time(self):
+        """Test endlimit uses end_time when set and valid."""
+        job_data = {
+            "job_id": 1,
+            "time_limit": {
+                "set": True,
+                "infinite": False,
+                "number": 60,
+            },
+            "end_time": {
+                "set": True,
+                "infinite": False,
+                "number": 1700001000,
+            },
+        }
+        normalized = Job._normalize_job(job_data)
+        assert normalized["endlimit"] == "1700001000"
+        assert normalized["end_time"] == "1700001000"
+
+    def test_normalize_endlimit_uses_time_limit_when_end_time_not_set(
+        self,
+    ):
+        """Test endlimit falls back to time_limit when end_time not set."""
+        job_data = {
+            "job_id": 1,
+            "time_limit": {
+                "set": True,
+                "infinite": False,
+                "number": 60,
+            },
+            "end_time": {"set": False, "infinite": False, "number": 0},
+        }
+        normalized = Job._normalize_job(job_data)
+        assert normalized["endlimit"] == "1:00:00"
+        assert normalized["end_time"] == ""
+
+    def test_normalize_endlimit_uses_time_limit_when_end_time_zero(
+        self,
+    ):
+        """Test endlimit falls back to time_limit when end_time is zero."""
+        job_data = {
+            "job_id": 1,
+            "time_limit": {
+                "set": True,
+                "infinite": False,
+                "number": 1440,
+            },
+            "end_time": {"set": True, "infinite": False, "number": 0},
+        }
+        normalized = Job._normalize_job(job_data)
+        # time_limit 1440 mins = 24 hours = 1 day
+        assert normalized["endlimit"] == "1-00:00:00"
+        assert normalized["end_time"] == ""
+
 
 class TestJobApplyFilters:
     """Tests for Job._apply_filters."""
@@ -330,6 +384,7 @@ class TestJobProfileFields:
         assert "user_name" in fields
         assert "partition" in fields
         assert "job_state" in fields
+        assert "endlimit" in fields
 
 
 class TestJobInheritance:

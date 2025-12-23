@@ -115,13 +115,24 @@ DEFAULT_PROFILES: Dict[str, Dict[str, Any]] = {
             },
         },
         "jobs": {
-            "columns": "*",
+            "columns": [
+                "job_id",
+                "user_name",
+                "partition",
+                "job_state",
+                "start_time",
+                "endlimit",
+                "node_count",
+                "reason",
+            ],
             "styles": {
                 "job_id": "cyan bold",
-                "name": "white",
                 "user_name": "blue",
                 "partition": "green",
                 "job_state": "yellow",
+                "start_time": "green",
+                "endlimit": "dim",
+                "node_count": "cyan",
             },
         },
     },
@@ -171,7 +182,7 @@ DEFAULT_PROFILES: Dict[str, Dict[str, Any]] = {
                 "user_name",
                 "partition",
                 "job_state",
-                "time_limit",
+                "endlimit",
                 "nodes",
             ],
             "styles": {"job_id": "cyan bold", "job_state": "yellow"},
@@ -231,7 +242,8 @@ DEFAULT_PROFILES: Dict[str, Dict[str, Any]] = {
                 "[white]{name}[/white] "
                 "user=[blue]{user_name}[/blue] "
                 "state=[yellow]{job_state}[/yellow] "
-                "nodes={nodes}"
+                "end=[dim]{endlimit}[/dim] "
+                "nodes={node_count}"
             )
         },
     },
@@ -260,9 +272,9 @@ DEFAULT_PROFILES: Dict[str, Dict[str, Any]] = {
                 "Account: [green]{account}[/green]\\n"
                 "  State: [yellow]{job_state}[/yellow] "
                 "Partition: [magenta]{partition}[/magenta]\\n"
-                "  Nodes: {nodes} "
-                "Time: {run_time} / {time_limit}\\n"
-                "  Start: {start_time} End: {end_time}"
+                "  Nodes: {node_count} ({nodes})\\n"
+                "  Start: {start_time} End/Limit: {endlimit}\\n"
+                "  Reason: {reason}"
             )
         },
     },
