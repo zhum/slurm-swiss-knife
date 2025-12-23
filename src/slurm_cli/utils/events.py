@@ -13,9 +13,12 @@ from .base_resource import BaseSlurmResource
 from .profiles import get_profile_config
 from .utils import console
 
-# Cache file path
+# Cache file paths
 CACHE_DIR = "/tmp/"
 EVENTS_CACHE_FILE = f"{CACHE_DIR}slurm_cli_events.txt"
+EVENTS_JSON_CACHE_FILE = f"{CACHE_DIR}slurm_cli_events.json"
+# Flag file to indicate JSON format is not supported
+EVENTS_NO_JSON_FLAG = f"{CACHE_DIR}.slurm_cli_events_no_json"
 
 # Event filter options
 EVENT_FILTER_OPTIONS: List[str] = [
@@ -283,17 +286,21 @@ class Event(BaseSlurmResource):
 
     @classmethod
     def _get_sacctmgr_command(
-        cls, filters: Dict[str, str] = None
+        cls, filters: Dict[str, str] = None, use_json: bool = False
     ) -> List[str]:
         """Build sacctmgr command with filters."""
-        cmd = [
-            "sacctmgr",
-            "list",
-            "event",
-            "format=Cluster,ClusterNodes,Duration,Start,End,"
-            "Event,EventRaw,NodeName,State,StateRaw,TRES,User,Reason",
-            "-p",
-        ]
+        cmd = ["sacctmgr", "list", "event"]
+
+        if use_json:
+            cmd.append("--json")
+        else:
+            cmd.extend(
+                [
+                    "format=Cluster,ClusterNodes,Duration,Start,End,"
+                    "Event,EventRaw,NodeName,State,StateRaw,TRES,User,Reason",
+                    "-p",
+                ]
+            )
 
         if filters:
             for key, value in filters.items():
@@ -312,6 +319,75 @@ class Event(BaseSlurmResource):
                     cmd.append(f"{key}={value}")
 
         return cmd
+
+    @classmethod
+    def _parse_json_events(cls, data: str) -> List[Dict[str, Any]]:
+        """Parse JSON event data into list of dicts."""
+        try:
+            parsed = json.loads(data)
+            events = parsed.get("events", [])
+            # Normalize field names to match our internal format
+            normalized = []
+            for event in events:
+                norm_event = {}
+                for key, value in event.items():
+                    # Map JSON keys to our field names
+                    mapped_key = COLUMN_MAPPING.get(key, key.lower())
+                    norm_event[mapped_key] = value
+                normalized.append(norm_event)
+            return normalized
+        except json.JSONDecodeError:
+            return []
+
+    @classmethod
+    def _fetch_events(
+        cls, filters: Dict[str, str] = None
+    ) -> List[Dict[str, Any]]:
+        """Fetch events with JSON fallback to text format.
+
+        Tries JSON format first. If it fails or returns invalid JSON,
+        sets a flag file and uses text format instead.
+        """
+        # Check if we already know JSON doesn't work
+        use_json = not os.path.exists(EVENTS_NO_JSON_FLAG)
+
+        if use_json:
+            try:
+                cmd = cls._get_sacctmgr_command(filters, use_json=True)
+                result = subprocess.run(
+                    cmd,
+                    check=True,
+                    capture_output=True,
+                    text=True,
+                )
+                events = cls._parse_json_events(result.stdout)
+                if events or not result.stdout.strip():
+                    # JSON worked (either got events or empty result)
+                    return events
+                # Got output but couldn't parse as JSON - set flag
+                with open(EVENTS_NO_JSON_FLAG, "w") as f:
+                    f.write(
+                        "JSON format not supported by this Slurm version"
+                    )
+            except (
+                subprocess.CalledProcessError,
+                json.JSONDecodeError,
+            ):
+                # JSON failed - set flag and fall through to text format
+                with open(EVENTS_NO_JSON_FLAG, "w") as f:
+                    f.write(
+                        "JSON format not supported by this Slurm version"
+                    )
+
+        # Use text format
+        cmd = cls._get_sacctmgr_command(filters, use_json=False)
+        result = subprocess.run(
+            cmd,
+            check=True,
+            capture_output=True,
+            text=True,
+        )
+        return cls._parse_events(result.stdout)
 
     @classmethod
     def show(
@@ -367,16 +443,20 @@ class Event(BaseSlurmResource):
             use_cache = False
 
         try:
-            data = ""
+            events = []
 
             # Try to use cache if allowed
             if use_cache and not force_cache_update:
-                if os.path.exists(EVENTS_CACHE_FILE):
+                # Try JSON cache first, then text cache
+                if os.path.exists(EVENTS_JSON_CACHE_FILE):
+                    with open(EVENTS_JSON_CACHE_FILE, "r") as f:
+                        events = cls._parse_json_events(f.read())
+                elif os.path.exists(EVENTS_CACHE_FILE):
                     with open(EVENTS_CACHE_FILE, "r") as f:
-                        data = f.read()
+                        events = cls._parse_events(f.read())
 
             # If no cache or forced update, run command
-            if not data or force_cache_update or not use_cache:
+            if not events or force_cache_update or not use_cache:
                 # Build command with sacctmgr-level filters
                 sacctmgr_filters = {
                     k: v
@@ -394,27 +474,15 @@ class Event(BaseSlurmResource):
                         "user",
                     ]
                 }
-                cmd = cls._get_sacctmgr_command(sacctmgr_filters)
 
-                result = subprocess.run(
-                    cmd,
-                    check=True,
-                    capture_output=True,
-                    text=True,
-                )
-                data = result.stdout
+                # Fetch events with JSON fallback
+                events = cls._fetch_events(sacctmgr_filters)
 
                 # Save to cache only if not using CondFlags=Open
-                if use_cache and data:
-                    with open(EVENTS_CACHE_FILE, "w") as f:
-                        f.write(data)
-
-            if not data:
-                console.print("[yellow]No events found.[/yellow]")
-                return
-
-            # Parse events
-            events = cls._parse_events(data)
+                if use_cache and events:
+                    # Save as JSON for faster loading next time
+                    with open(EVENTS_JSON_CACHE_FILE, "w") as f:
+                        json.dump({"events": events}, f)
 
             if not events:
                 console.print("[yellow]No events found.[/yellow]")
