@@ -157,7 +157,7 @@ _slurm_node_filter_prefixes="ALL partition= state= user= reservation="
 
 # Complete nodes= value with either direct nodes or filter prefixes
 # Usage: _slurm_complete_nodes_value "$_val" "$cur" ["$_key"]
-# The prefix for completions is derived from $cur or $_key to preserve case
+# The prefix for completions is derived from $cur to preserve case
 _slurm_complete_nodes_value() {
     local val="$1"
     local cur="$2"
@@ -165,14 +165,13 @@ _slurm_complete_nodes_value() {
     local cached_nodes="$(_slurm_cache_nodes)"
 
     # Derive prefix from cur by removing val from the end (preserves original case)
+    # Note: When bash splits on '=', cur is empty and we should NOT add prefix
+    # because bash already has the key= part typed
     local prefix=""
     if [[ "$cur" == *=* && -n "$val" ]]; then
         prefix="${cur%"$val"}"
     elif [[ "$cur" == *=* ]]; then
         prefix="$cur"
-    elif [[ -n "$key" ]]; then
-        # Use key as prefix when cur doesn't have =
-        prefix="${key}="
     fi
 
     # Check if value starts with a filter prefix
