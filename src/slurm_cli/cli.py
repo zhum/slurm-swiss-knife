@@ -2758,7 +2758,7 @@ _slurm_cli_initialize_autocomplete() {{
             case "$guessed" in
                 jobs) fields="job_id name user_name account partition job_state time_limit endlimit node_count nodes cpus gres submit_time start_time end_time priority reason command working_directory" ;;
                 nodes) fields="name state cpus real_memory gres partitions features reason alloc_cpus alloc_memory" ;;
-                partitions) fields="name state nodes total_nodes total_cpus max_time default allow_groups allow_accounts allow_qos" ;;
+                partitions) fields="PartitionName State Nodes TotalNodes TotalCPUs MaxTime Default DefaultTime AllowGroups AllowAccounts AllowQos MaxNodes MinNodes PriorityTier" ;;
                 accounts) fields="name description organization coordinators flags" ;;
                 users) fields="name default_account admin_level coordinators" ;;
                 qos) fields="name id priority max_wall max_jobs max_submit flags preempt preempt_mode grace_time" ;;
