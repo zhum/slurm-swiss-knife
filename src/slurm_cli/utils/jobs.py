@@ -179,21 +179,16 @@ class Job(BaseSlurmResource):
     def _fetch_jobs(
         cls, force_update: bool = False
     ) -> List[Dict[str, Any]]:
-        """Fetch jobs from scontrol."""
+        """Fetch jobs from scontrol (with caching for autocomplete)."""
+        from .resources import Resource
+
         try:
-            result = subprocess.run(
-                ["scontrol", "show", "job", "--json"],
-                capture_output=True,
-                text=True,
-                check=True,
-                errors="replace",
-            )
-            data = json.loads(result.stdout)
-            return data.get("jobs", [])
-        except (
-            subprocess.CalledProcessError,
-            json.JSONDecodeError,
-        ) as e:
+            # Use cached_resource to enable autocomplete caching
+            data = Resource.cached_resource("jobs", force_update)
+            if data:
+                return data.get("jobs", [])
+            return []
+        except Exception as e:
             console.print(f"[red]Failed to fetch jobs: {e}[/red]")
             return []
 
