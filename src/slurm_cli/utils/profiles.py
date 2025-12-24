@@ -1171,7 +1171,8 @@ def _sort_with_depth(
     roots: List[Dict[str, Any]] = []
 
     for item in data:
-        parent = item.get(parent_key, "")
+        # Use _parent_id if available (for user associations), else parent_key
+        parent = item.get("_parent_id") or item.get(parent_key, "")
         depth = item.get(depth_key, 0)
         if depth == 0 or not parent:
             roots.append(item)
@@ -1179,13 +1180,16 @@ def _sort_with_depth(
             parent_children[parent].append(item)
 
     def sort_key(item: Dict[str, Any]) -> Any:
+        # Account associations (with _is_account=True or empty user) come first
+        is_account = item.get("_is_account", not item.get("user"))
         value = item.get(sort_field)
         if value is None or value == "-" or value == "":
-            return (1, "")
+            # Empty values: accounts first (0), then sorted to end (1)
+            return (0 if is_account else 1, 1, "")
         try:
-            return (0, float(value))
+            return (0 if is_account else 1, 0, float(value))
         except (ValueError, TypeError):
-            return (0, str(value).lower())
+            return (0 if is_account else 1, 0, str(value).lower())
 
     def add_sorted_subtree(
         items: List[Dict[str, Any]]
@@ -1196,11 +1200,14 @@ def _sort_with_depth(
         )
         for item in sorted_items:
             result.append(item)
-            item_id = item.get(id_key, "")
-            if item_id in parent_children:
-                result.extend(
-                    add_sorted_subtree(parent_children[item_id])
-                )
+            # Only account items can have children (not user items)
+            is_account = item.get("_is_account", not item.get("user"))
+            if is_account:
+                item_id = item.get(id_key, "")
+                if item_id in parent_children:
+                    result.extend(
+                        add_sorted_subtree(parent_children[item_id])
+                    )
         return result
 
     return add_sorted_subtree(roots)

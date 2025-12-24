@@ -384,6 +384,7 @@ _slurm_cli_associations_autocomplete() {{
                 assoc = info["account_assoc"].copy()
                 assoc["_depth"] = depth
                 assoc["_indent"] = indent * depth
+                assoc["_is_account"] = True  # Flag for sorting
                 result.append(assoc)
 
             # Add users (sorted)
@@ -394,6 +395,10 @@ _slurm_cli_associations_autocomplete() {{
                 assoc = user_assoc.copy()
                 assoc["_depth"] = depth + 1
                 assoc["_indent"] = indent * (depth + 1)
+                assoc[
+                    "_parent_id"
+                ] = account_name  # For hierarchical sorting
+                assoc["_is_account"] = False
                 result.append(assoc)
 
             # Add child accounts (sorted)

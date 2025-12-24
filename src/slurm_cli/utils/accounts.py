@@ -12,6 +12,7 @@ from .profiles import (
     format_with_template,
     get_profile_config,
     sort_data,
+    sort_hierarchical_data,
 )
 from .utils import console
 
@@ -304,17 +305,25 @@ _slurm_cli_accounts_autocomplete() {{
         return accounts
 
     @classmethod
-    def _show_tree(cls, accounts: List[Dict[str, Any]]) -> None:
-        """Display accounts in a hierarchical tree format.
+    def _sort_hierarchically(
+        cls,
+        accounts: List[Dict[str, Any]],
+        indent: str = "  ",
+    ) -> List[Dict[str, Any]]:
+        """Sort accounts hierarchically and add depth/indent info.
 
         Args:
             accounts: List of account dictionaries
-        """
-        from rich.tree import Tree
+            indent: Indentation string per level (default: two spaces)
 
+        Returns:
+            Sorted list with '_depth' and '_indent' keys added
+        """
         # Build parent-child relationships
         account_map = {}  # name -> account_data
-        children_map = {}  # parent_name -> [child_names]
+        children_map: Dict[
+            str, List[str]
+        ] = {}  # parent_name -> [child_names]
 
         for acc in accounts:
             name = acc.get("name", "")
@@ -327,7 +336,7 @@ _slurm_cli_accounts_autocomplete() {{
                 children_map[parent] = []
             children_map[parent].append(name)
 
-        # Find root accounts (no parent or parent is "root" or empty)
+        # Find root accounts (no parent or parent not in map)
         root_accounts = []
         for name, acc in account_map.items():
             parent = acc.get("parent", "") or acc.get(
@@ -338,44 +347,26 @@ _slurm_cli_accounts_autocomplete() {{
 
         root_accounts.sort()
 
-        def format_account(acc: Dict[str, Any]) -> str:
-            """Format account display string."""
-            name = acc.get("name", "")
-            desc = acc.get("description", "")
-            org = acc.get("organization", "")
-            coords = acc.get("coordinators", [])
-            if isinstance(coords, list):
-                coords = ", ".join(
-                    c.get("name", str(c))
-                    if isinstance(c, dict)
-                    else str(c)
-                    for c in coords
-                )
+        # Build sorted list with depth
+        result: List[Dict[str, Any]] = []
 
-            parts = [f"[bold cyan]{name}[/bold cyan]"]
-            if desc and desc != name:
-                parts.append(f"[dim]{desc}[/dim]")
-            if org:
-                parts.append(f"[green]{org}[/green]")
-            if coords:
-                parts.append(f"[yellow]👤 {coords}[/yellow]")
-            return " ".join(parts)
+        def add_account(account_name: str, depth: int):
+            acc = account_map.get(account_name, {})
+            acc_copy = acc.copy()
+            acc_copy["_depth"] = depth
+            acc_copy["_indent"] = indent * depth
+            acc_copy["_is_account"] = True
+            result.append(acc_copy)
 
-        def add_children(parent_node, account_name: str):
-            """Recursively add child accounts."""
-            children = children_map.get(account_name, [])
-            children.sort()
-            for child_name in children:
-                child_acc = account_map.get(child_name, {})
-                child_node = parent_node.add(format_account(child_acc))
-                add_children(child_node, child_name)
+            # Add children (sorted)
+            children = sorted(children_map.get(account_name, []))
+            for child in children:
+                add_account(child, depth + 1)
 
-        # Build and print tree
-        for root_name in root_accounts:
-            root_acc = account_map.get(root_name, {})
-            tree = Tree(format_account(root_acc))
-            add_children(tree, root_name)
-            console.print(tree)
+        for root in root_accounts:
+            add_account(root, 0)
+
+        return result
 
     @classmethod
     def show(
@@ -455,14 +446,23 @@ _slurm_cli_accounts_autocomplete() {{
                 sort_asc,
             ) = cls._get_column_config(profile, profile_str)
 
-            # Apply sorting
-            if sort_field:
-                accounts = sort_data(accounts, sort_field, sort_asc)
-
-            # Tree mode
+            # Tree mode or flat sorting
             if tree and style == "pretty":
-                cls._show_tree(accounts)
-                return
+                # Hierarchical mode - add depth/indent info
+                accounts = cls._sort_hierarchically(accounts)
+                # Apply hierarchical sorting if specified
+                if sort_field:
+                    accounts = sort_hierarchical_data(
+                        accounts,
+                        sort_field,
+                        sort_asc,
+                        depth_key="_depth",
+                        parent_key="parent",
+                        id_key="name",
+                    )
+            elif sort_field:
+                # Flat mode sorting
+                accounts = sort_data(accounts, sort_field, sort_asc)
 
             if style == "json":
                 # Print filtered JSON
@@ -513,10 +513,14 @@ _slurm_cli_accounts_autocomplete() {{
 
                     # Add rows
                     for account in accounts:
-                        row = [
-                            cls._format_value(account, col)
-                            for col in columns
-                        ]
+                        row = []
+                        indent = account.get("_indent", "")
+                        for col in columns:
+                            value = cls._format_value(account, col)
+                            # Prepend indent to name column in tree mode
+                            if col == "name" and indent:
+                                value = indent + value
+                            row.append(value)
                         table.add_row(*row)
 
                     console.print(table)
