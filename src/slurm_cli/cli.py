@@ -2768,7 +2768,28 @@ _slurm_cli_initialize_autocomplete() {{
                 events) fields="time cluster node state reason user" ;;
             esac
             if [[ -n "$fields" ]]; then
-                COMPREPLY=($(compgen -W "$fields" -- "$cur"))
+                # Handle comma-separated fields: filter out already selected ones
+                local prefix="" partial=""
+                if [[ "$cur" == *,* ]]; then
+                    prefix="${{cur%,*}},"
+                    partial="${{cur##*,}}"
+                    # Filter out already selected fields
+                    local selected="${{cur%,*}}"
+                    local remaining=""
+                    for f in $fields; do
+                        if [[ ",$selected," != *",$f,"* ]]; then
+                            remaining="$remaining $f"
+                        fi
+                    done
+                    fields="$remaining"
+                else
+                    partial="$cur"
+                fi
+                COMPREPLY=($(compgen -W "$fields" -- "$partial"))
+                # Add prefix to each completion
+                if [[ -n "$prefix" ]]; then
+                    COMPREPLY=("${{COMPREPLY[@]/#/$prefix}}")
+                fi
             fi
             return
             ;;
