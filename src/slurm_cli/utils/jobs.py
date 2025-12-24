@@ -628,8 +628,8 @@ _slurm_cli_jobs_autocomplete() {{
 
     # Default: show filter options
     case "$cmd" in
-        show) _slurm_complete "$filter_options" "$cur" ;;
-        delete|cancel) ;; # Job IDs - no completion
+        show|delete|del|cancel)
+            _slurm_complete "$filter_options" "$cur" ;;
         update) ;; # Job IDs - no completion
     esac
 }}

@@ -7,7 +7,7 @@ MOCKS_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 # Parse arguments
 JOB_IDS=()
-VERBOSE=true
+VERBOSE=true  # Is set to true by default to check slurm-cli delete jobs
 SIGNAL=""
 USER=""
 
