@@ -9,6 +9,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Account Tree View**: Added tree mode for accounts with `-T`/`--tree`
+  - `slurm-cli show accounts -T` - display accounts in hierarchical tree format
+  - Shows account names, descriptions, organizations, and coordinators
 - **Profile Field Listing**: New `--list-fields` option to show available profile fields
   - `slurm-cli --list-fields` - list fields for all resources
   - `slurm-cli --list-fields=users` - list fields for a specific resource

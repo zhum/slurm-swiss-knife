@@ -47,6 +47,12 @@ from .utils.profiles import (
     show_all_profile_fields,
     show_profile_help,
 )
+from .utils.qos import Qos
+from .utils.reservations import Reservation
+from .utils.resources import Resource
+from .utils.slurm_config import Config
+from .utils.users import User
+from .utils.utils import console
 
 
 def list_fields_callback(ctx, param, value):
@@ -58,14 +64,6 @@ def list_fields_callback(ctx, param, value):
     else:
         show_profile_help(value)
     ctx.exit(0)
-
-
-from .utils.qos import Qos
-from .utils.reservations import Reservation
-from .utils.resources import Resource
-from .utils.slurm_config import Config
-from .utils.users import User
-from .utils.utils import console
 
 
 def confirm_single_key(message: str, default: bool = False) -> bool:
@@ -736,7 +734,7 @@ ACTION_OPTIONS = {
         ("-z, --zebra", "Use zebra-striped rows"),
         ("-P, --profile NAME", "Use output profile"),
         ("--profile-str STR", "Inline profile string"),
-        ("-T, --tree", "Tree view (associations only)"),
+        ("-T, --tree", "Tree view (accounts, associations)"),
     ],
 }
 
@@ -1501,6 +1499,7 @@ def show(
                 zebra=zebra,
                 profile=profile,
                 profile_str=profile_str,
+                tree=tree,
             )
         else:
             Account.show(
@@ -1509,6 +1508,7 @@ def show(
                 zebra=zebra,
                 profile=profile,
                 profile_str=profile_str,
+                tree=tree,
             )
     elif canonical_resource[:5] == "assoc":
         if field:

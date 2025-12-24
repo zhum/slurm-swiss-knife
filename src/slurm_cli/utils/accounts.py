@@ -304,6 +304,80 @@ _slurm_cli_accounts_autocomplete() {{
         return accounts
 
     @classmethod
+    def _show_tree(cls, accounts: List[Dict[str, Any]]) -> None:
+        """Display accounts in a hierarchical tree format.
+
+        Args:
+            accounts: List of account dictionaries
+        """
+        from rich.tree import Tree
+
+        # Build parent-child relationships
+        account_map = {}  # name -> account_data
+        children_map = {}  # parent_name -> [child_names]
+
+        for acc in accounts:
+            name = acc.get("name", "")
+            parent = acc.get("parent", "") or acc.get(
+                "parent_account", ""
+            )
+            account_map[name] = acc
+
+            if parent not in children_map:
+                children_map[parent] = []
+            children_map[parent].append(name)
+
+        # Find root accounts (no parent or parent is "root" or empty)
+        root_accounts = []
+        for name, acc in account_map.items():
+            parent = acc.get("parent", "") or acc.get(
+                "parent_account", ""
+            )
+            if not parent or parent not in account_map:
+                root_accounts.append(name)
+
+        root_accounts.sort()
+
+        def format_account(acc: Dict[str, Any]) -> str:
+            """Format account display string."""
+            name = acc.get("name", "")
+            desc = acc.get("description", "")
+            org = acc.get("organization", "")
+            coords = acc.get("coordinators", [])
+            if isinstance(coords, list):
+                coords = ", ".join(
+                    c.get("name", str(c))
+                    if isinstance(c, dict)
+                    else str(c)
+                    for c in coords
+                )
+
+            parts = [f"[bold cyan]{name}[/bold cyan]"]
+            if desc and desc != name:
+                parts.append(f"[dim]{desc}[/dim]")
+            if org:
+                parts.append(f"[green]{org}[/green]")
+            if coords:
+                parts.append(f"[yellow]👤 {coords}[/yellow]")
+            return " ".join(parts)
+
+        def add_children(parent_node, account_name: str):
+            """Recursively add child accounts."""
+            children = children_map.get(account_name, [])
+            children.sort()
+            for child_name in children:
+                child_acc = account_map.get(child_name, {})
+                child_node = parent_node.add(format_account(child_acc))
+                add_children(child_node, child_name)
+
+        # Build and print tree
+        for root_name in root_accounts:
+            root_acc = account_map.get(root_name, {})
+            tree = Tree(format_account(root_acc))
+            add_children(tree, root_name)
+            console.print(tree)
+
+    @classmethod
     def show(
         cls,
         field: str = None,
@@ -313,6 +387,7 @@ _slurm_cli_accounts_autocomplete() {{
         zebra: bool = False,
         profile: str = "default",
         profile_str: Optional[str] = None,
+        tree: bool = False,
     ) -> None:
         """Show account information.
 
@@ -324,6 +399,7 @@ _slurm_cli_accounts_autocomplete() {{
             zebra: Use zebra striping for table rows (default: False)
             profile: Profile name to use for output formatting
             profile_str: Inline profile string (overrides profile)
+            tree: Show accounts in hierarchical tree format
         """
         try:
             # Always get JSON output from sacctmgr
@@ -382,6 +458,11 @@ _slurm_cli_accounts_autocomplete() {{
             # Apply sorting
             if sort_field:
                 accounts = sort_data(accounts, sort_field, sort_asc)
+
+            # Tree mode
+            if tree and style == "pretty":
+                cls._show_tree(accounts)
+                return
 
             if style == "json":
                 # Print filtered JSON
