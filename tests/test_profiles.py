@@ -26,6 +26,7 @@ from slurm_cli.utils.profiles import (  # noqa: E402
     get_template_for_resource,
     is_field_empty,
     parse_columns_with_sort,
+    show_all_profile_fields,
     show_profile_help,
     sort_data,
     sort_hierarchical_data,
@@ -967,6 +968,33 @@ class TestShowProfileHelp:
         assert result is True
         captured = capsys.readouterr()
         assert "accounts" in captured.out.lower()
+
+
+class TestShowAllProfileFields:
+    """Tests for show_all_profile_fields."""
+
+    def test_shows_all_resources(self, capsys):
+        """Test that all resources are shown."""
+        show_all_profile_fields()
+        captured = capsys.readouterr()
+        # Check for major resource types
+        assert "[accounts]" in captured.out
+        assert "[users]" in captured.out
+        assert "[nodes]" in captured.out
+        assert "[partitions]" in captured.out
+        assert "[qos]" in captured.out
+        assert "[reservations]" in captured.out
+
+    def test_shows_syntax_help(self, capsys):
+        """Test that syntax help is included."""
+        show_all_profile_fields()
+        captured = capsys.readouterr()
+        # Check for sorting syntax
+        assert "field+" in captured.out
+        assert "field-" in captured.out
+        # Check for template syntax
+        assert "{field}" in captured.out
+        assert "[color]" in captured.out
 
 
 class TestResourceFields:

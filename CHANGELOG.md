@@ -9,6 +9,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Profile Field Listing**: New `--list-fields` option to show available profile fields
+  - `slurm-cli --list-fields` - list fields for all resources
+  - `slurm-cli --list-fields=users` - list fields for a specific resource
+  - Shows field names, descriptions, and syntax help
 - **Profile Sorting**: Sort output by any column with `+` or `-` suffix
   - `name+` - sort ascending by name
   - `priority-` - sort descending by priority

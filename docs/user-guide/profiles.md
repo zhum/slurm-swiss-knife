@@ -260,7 +260,16 @@ users.columns=name,adminlevel,default.account,associations
 View available fields for any resource:
 
 ```bash
-slurm-cli show partitions --profile=help
-slurm-cli show users --profile=help
+# List fields for a specific resource
+slurm-cli --list-fields=users
+slurm-cli --list-fields=jobs
+slurm-cli --list-fields=partitions
+
+# List fields for all resources
+slurm-cli --list-fields
+
+# Alternative: use --profile-str=help with show command
+slurm-cli show partitions --profile-str=help
+slurm-cli show users --profile-str=help
 ```
 

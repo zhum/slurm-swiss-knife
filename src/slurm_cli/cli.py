@@ -42,7 +42,24 @@ from .utils.jobs import Job
 from .utils.node_filter import is_node_filter, resolve_nodes_value
 from .utils.nodes import Node
 from .utils.partitions import Partition
-from .utils.profiles import is_profile_help, show_profile_help
+from .utils.profiles import (
+    is_profile_help,
+    show_all_profile_fields,
+    show_profile_help,
+)
+
+
+def list_fields_callback(ctx, param, value):
+    """Callback for --list-fields option."""
+    if not value:
+        return
+    if value == "all":
+        show_all_profile_fields()
+    else:
+        show_profile_help(value)
+    ctx.exit(0)
+
+
 from .utils.qos import Qos
 from .utils.reservations import Reservation
 from .utils.resources import Resource
@@ -1140,6 +1157,17 @@ def show_command_help_with_resources(
     default=None,
     help="Inline profile string (overrides --profile). "
     "Format: resource.columns=col1,col2;resource.styles.field=style",
+)
+@click.option(
+    "--list-fields",
+    default=None,
+    is_flag=False,
+    flag_value="all",
+    is_eager=True,
+    expose_value=False,
+    callback=list_fields_callback,
+    help="List available profile fields. "
+    "Optionally specify resource type (e.g., --list-fields=jobs)",
 )
 @click.pass_context
 def main(

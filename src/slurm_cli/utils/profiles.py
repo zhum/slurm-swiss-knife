@@ -943,6 +943,8 @@ def _get_resource_fields() -> Dict[str, Dict[str, str]]:
     from .accounts import Account
     from .associations import Association
     from .coordinators import Coordinator
+    from .events import Event
+    from .jobs import Job
     from .nodes import Node
     from .partitions import Partition
     from .qos import Qos
@@ -952,12 +954,14 @@ def _get_resource_fields() -> Dict[str, Dict[str, str]]:
     return {
         "accounts": Account.get_profile_fields(),
         "associations": Association.get_profile_fields(),
+        "coordinators": Coordinator.get_profile_fields(),
+        "events": Event.get_profile_fields(),
+        "jobs": Job.get_profile_fields(),
+        "nodes": Node.get_profile_fields(),
+        "partitions": Partition.get_profile_fields(),
         "qos": Qos.get_profile_fields(),
         "reservations": Reservation.get_profile_fields(),
-        "partitions": Partition.get_profile_fields(),
-        "nodes": Node.get_profile_fields(),
         "users": User.get_profile_fields(),
-        "coordinators": Coordinator.get_profile_fields(),
     }
 
 
@@ -993,6 +997,8 @@ def show_profile_help(resource: str) -> bool:
         "user": "users",
         "coord": "coordinators",
         "conf": "config",
+        "job": "jobs",
+        "event": "events",
     }
 
     # Try to match by prefix
@@ -1032,6 +1038,37 @@ def show_profile_help(resource: str) -> bool:
 def is_profile_help(profile_str: Optional[str]) -> bool:
     """Check if profile_str is a help request."""
     return profile_str is not None and profile_str.lower() == "help"
+
+
+def show_all_profile_fields() -> None:
+    """Show available fields for all resources."""
+    resource_fields = get_resource_fields()
+
+    print("\nAvailable profile fields by resource:\n")
+    print("=" * 70)
+
+    for resource in sorted(resource_fields.keys()):
+        fields = resource_fields[resource]
+        print(f"\n[{resource}]")
+        print("-" * 40)
+        for field, desc in sorted(fields.items()):
+            print(f"  {field:<24}  {desc}")
+
+    print("\n" + "=" * 70)
+    print("\nSorting:")
+    print("  field+              - Sort ascending by field")
+    print("  field-              - Sort descending by field")
+    print("\nTemplate syntax:")
+    print("  {field}             - Show field value")
+    print(
+        "  {?field TEXT}       - Show TEXT only if field is not empty"
+    )
+    print("  [color]...[/]       - Rich markup for colors")
+    print("  \\n                  - Newline")
+    print("\nExample:")
+    print('  --profile-str "name+,description"')
+    print('  --profile-str "[cyan]{name}[/] - {description}"')
+    print()
 
 
 def sort_data(
