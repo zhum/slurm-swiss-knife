@@ -123,6 +123,7 @@ DEFAULT_PROFILES: Dict[str, Dict[str, Any]] = {
                 "start_time",
                 "endlimit",
                 "node_count",
+                "gres",
                 "reason",
             ],
             "styles": {
@@ -133,6 +134,7 @@ DEFAULT_PROFILES: Dict[str, Dict[str, Any]] = {
                 "start_time": "green",
                 "endlimit": "dim",
                 "node_count": "cyan",
+                "gres": "magenta",
             },
         },
     },
@@ -272,7 +274,8 @@ DEFAULT_PROFILES: Dict[str, Dict[str, Any]] = {
                 "Account: [green]{account}[/green]\\n"
                 "  State: [yellow]{job_state}[/yellow] "
                 "Partition: [magenta]{partition}[/magenta]\\n"
-                "  Nodes: {node_count} ({nodes})\\n"
+                "  Nodes: {node_count} ({nodes}) "
+                "GRES: [magenta]{gres}[/magenta]\\n"
                 "  Start: {start_time} End/Limit: {endlimit}\\n"
                 "  Reason: {reason}"
             )

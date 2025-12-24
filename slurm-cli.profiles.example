@@ -83,7 +83,7 @@
 # users.columns = *
 # users.styles.name = cyan
 
-# jobs.columns = job_id,user_name,partition,job_state,start_time,endlimit,node_count,reason
+# jobs.columns = job_id,user_name,partition,job_state,start_time,endlimit,node_count,gres,reason
 # jobs.styles.job_id = cyan bold
 # jobs.styles.user_name = blue
 # jobs.styles.partition = green
@@ -91,6 +91,7 @@
 # jobs.styles.start_time = green
 # jobs.styles.endlimit = dim
 # jobs.styles.node_count = cyan
+# jobs.styles.gres = magenta
 
 # ============================================================================
 # Compact Profile - Essential columns only
@@ -158,7 +159,7 @@
 # [profile:detailed]
 # accounts.template = [bold cyan]{name}[/bold cyan]\n  Description: {description}\n  Organization: [green]{organization}[/green]\n  Coordinators: [yellow]{coordinators}[/yellow]
 # reservations.template = [bold cyan]{name}[/bold cyan]\n  Time: {start_time} → {end_time}\n  Nodes: {node_list} ({node_count})\n  Users: [hot_pink]{users}[/hot_pink]\n  Accounts: [green]{accounts}[/green]
-# jobs.template = [bold cyan]{job_id}[/bold cyan] - {name}\n  User: [blue]{user_name}[/blue] Account: [green]{account}[/green]\n  State: [yellow]{job_state}[/yellow] Partition: [magenta]{partition}[/magenta]\n  Nodes: {node_count} ({nodes})\n  Start: {start_time} End/Limit: {endlimit}\n  Reason: {reason}
+# jobs.template = [bold cyan]{job_id}[/bold cyan] - {name}\n  User: [blue]{user_name}[/blue] Account: [green]{account}[/green]\n  State: [yellow]{job_state}[/yellow] Partition: [magenta]{partition}[/magenta]\n  Nodes: {node_count} ({nodes}) GRES: [magenta]{gres}[/magenta]\n  Start: {start_time} End/Limit: {endlimit}\n  Reason: {reason}
 
 # ============================================================================
 # Custom Profile Example

@@ -78,6 +78,7 @@ class Job(BaseSlurmResource):
         "start_time",
         "endlimit",
         "node_count",
+        "gres",
         "reason",
     ]
 
@@ -94,6 +95,7 @@ class Job(BaseSlurmResource):
         "node_count",
         "nodes",
         "cpus",
+        "gres",
         "submit_time",
         "start_time",
         "end_time",
@@ -118,6 +120,7 @@ class Job(BaseSlurmResource):
         "node_count": "cyan",
         "nodes": "dim",
         "cpus": "yellow",
+        "gres": "magenta",
         "submit_time": "dim",
         "start_time": "green",
         "end_time": "red",
@@ -160,6 +163,7 @@ class Job(BaseSlurmResource):
             "node_count": "Number of nodes",
             "nodes": "Node list",
             "cpus": "Number of CPUs",
+            "gres": "Generic resources (GPUs, etc.)",
             "submit_time": "Submit time",
             "start_time": "Start time",
             "end_time": "End time",
@@ -268,6 +272,7 @@ class Job(BaseSlurmResource):
             "node_count": str(node_count),
             "nodes": get_value(job, "nodes", ""),
             "cpus": str(cpus),
+            "gres": get_value(job, "tres_per_node", ""),
             "submit_time": _format_timestamp(
                 job.get("submit_time", {}).get("number", 0)
                 if isinstance(job.get("submit_time"), dict)
