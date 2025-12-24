@@ -24,6 +24,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - `nodes-=` - remove nodes from partition/reservation
   - Example: `slurm-cli update partitions gpu nodes+=node001,node002`
   - Supports node filters: `slurm-cli update partitions gpu nodes+=state=idle`
+- **Job Filter Syntax**: Select jobs by filter for delete and update operations
+  - `user=<name>` - jobs by a specific user
+  - `account=<name>` - jobs charged to a specific account
+  - `partition=<name>` - jobs in a specific partition
+  - `state=<state>` - jobs with a specific state (pending, running, etc.)
+  - `name=<pattern>` - jobs matching a name pattern
+  - `nodes=<nodelist>` - jobs running on specific nodes
+  - `reservation=<name>` - jobs using a specific reservation
+  - Example: `slurm-cli delete jobs user=john state=pending`
+  - Example: `slurm-cli update jobs partition=gpu priority=100`
 - **Autocomplete Cache Auto-Update**: Cache is automatically refreshed when missing or outdated
   - Set `SLURM_CLI_NO_CACHE_UPDATE=1` to disable automatic updates
   - Cache timeout: 60 seconds

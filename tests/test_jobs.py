@@ -461,40 +461,40 @@ class TestJobAutocomplete:
         script = Job.generate_autocomplete_options()
 
         # Time options
-        assert "TimeLimit=" in script
-        assert "StartTime=" in script
-        assert "EndTime=" in script
-        assert "Deadline=" in script
+        assert "timelimit=" in script
+        assert "starttime=" in script
+        assert "endtime=" in script
+        assert "deadline=" in script
 
         # Resource options
-        assert "NumNodes=" in script
-        assert "NumCPUs=" in script
-        assert "Priority=" in script
-        assert "Gres=" in script
+        assert "numnodes=" in script
+        assert "numcpus=" in script
+        assert "priority=" in script
+        assert "gres=" in script
 
         # Node options
-        assert "NodeList=" in script
-        assert "ExcNodeList=" in script
-        assert "Partition=" in script
+        assert "nodelist=" in script
+        assert "excnodelist=" in script
+        assert "partition=" in script
 
         # Job configuration
-        assert "Account=" in script
-        assert "QOS=" in script
-        assert "JobName=" in script
-        assert "Comment=" in script
-        assert "Dependency=" in script
+        assert "account=" in script
+        assert "qos=" in script
+        assert "jobname=" in script
+        assert "comment=" in script
+        assert "dependency=" in script
 
         # I/O options
-        assert "StdOut=" in script
-        assert "StdErr=" in script
-        assert "WorkDir=" in script
+        assert "stdout=" in script
+        assert "stderr=" in script
+        assert "workdir=" in script
 
         # Boolean options
-        assert "Contiguous=" in script
-        assert "Requeue=" in script
+        assert "contiguous=" in script
+        assert "requeue=" in script
 
         # Flags (no =)
-        assert "ResetAccrueTime" in script
+        assert "resetaccruetime" in script
 
     def test_generate_autocomplete_yesno_options(self):
         """Test autocomplete handles yes/no options."""
@@ -547,57 +547,57 @@ class TestJobUpdateOptions:
     def test_update_options_has_yesno_type(self):
         """Test update options has yes/no type."""
         assert "yesno" in Job.JOB_UPDATE_OPTIONS
-        assert "Contiguous" in Job.JOB_UPDATE_OPTIONS["yesno"]
-        assert "Reboot" in Job.JOB_UPDATE_OPTIONS["yesno"]
+        assert "contiguous" in Job.JOB_UPDATE_OPTIONS["yesno"]
+        assert "reboot" in Job.JOB_UPDATE_OPTIONS["yesno"]
 
     def test_update_options_has_binary_type(self):
         """Test update options has 0/1 type."""
         assert "binary" in Job.JOB_UPDATE_OPTIONS
-        assert "Requeue" in Job.JOB_UPDATE_OPTIONS["binary"]
+        assert "requeue" in Job.JOB_UPDATE_OPTIONS["binary"]
 
     def test_update_options_has_count_type(self):
         """Test update options has count type."""
         assert "count" in Job.JOB_UPDATE_OPTIONS
-        assert "Priority" in Job.JOB_UPDATE_OPTIONS["count"]
-        assert "NumCPUs" in Job.JOB_UPDATE_OPTIONS["count"]
-        assert "NumNodes" in Job.JOB_UPDATE_OPTIONS["count"]
+        assert "priority" in Job.JOB_UPDATE_OPTIONS["count"]
+        assert "numcpus" in Job.JOB_UPDATE_OPTIONS["count"]
+        assert "numnodes" in Job.JOB_UPDATE_OPTIONS["count"]
 
     def test_update_options_has_time_type(self):
         """Test update options has time type."""
         assert "time" in Job.JOB_UPDATE_OPTIONS
-        assert "TimeLimit" in Job.JOB_UPDATE_OPTIONS["time"]
-        assert "StartTime" in Job.JOB_UPDATE_OPTIONS["time"]
-        assert "EndTime" in Job.JOB_UPDATE_OPTIONS["time"]
-        assert "Deadline" in Job.JOB_UPDATE_OPTIONS["time"]
+        assert "timelimit" in Job.JOB_UPDATE_OPTIONS["time"]
+        assert "starttime" in Job.JOB_UPDATE_OPTIONS["time"]
+        assert "endtime" in Job.JOB_UPDATE_OPTIONS["time"]
+        assert "deadline" in Job.JOB_UPDATE_OPTIONS["time"]
 
     def test_update_options_has_nodes_type(self):
         """Test update options has nodes type."""
         assert "nodes" in Job.JOB_UPDATE_OPTIONS
-        assert "NodeList" in Job.JOB_UPDATE_OPTIONS["nodes"]
-        assert "ExcNodeList" in Job.JOB_UPDATE_OPTIONS["nodes"]
+        assert "nodelist" in Job.JOB_UPDATE_OPTIONS["nodes"]
+        assert "excnodelist" in Job.JOB_UPDATE_OPTIONS["nodes"]
 
     def test_update_options_has_partition_type(self):
         """Test update options has partition type."""
         assert "partition" in Job.JOB_UPDATE_OPTIONS
-        assert "Partition" in Job.JOB_UPDATE_OPTIONS["partition"]
+        assert "partition" in Job.JOB_UPDATE_OPTIONS["partition"]
 
     def test_update_options_has_qos_type(self):
         """Test update options has QOS type."""
         assert "qos" in Job.JOB_UPDATE_OPTIONS
-        assert "QOS" in Job.JOB_UPDATE_OPTIONS["qos"]
+        assert "qos" in Job.JOB_UPDATE_OPTIONS["qos"]
 
     def test_update_options_has_string_type(self):
         """Test update options has string type."""
         assert "string" in Job.JOB_UPDATE_OPTIONS
-        assert "JobName" in Job.JOB_UPDATE_OPTIONS["string"]
-        assert "Comment" in Job.JOB_UPDATE_OPTIONS["string"]
-        assert "Dependency" in Job.JOB_UPDATE_OPTIONS["string"]
-        assert "Gres" in Job.JOB_UPDATE_OPTIONS["string"]
+        assert "jobname" in Job.JOB_UPDATE_OPTIONS["string"]
+        assert "comment" in Job.JOB_UPDATE_OPTIONS["string"]
+        assert "dependency" in Job.JOB_UPDATE_OPTIONS["string"]
+        assert "gres" in Job.JOB_UPDATE_OPTIONS["string"]
 
     def test_update_options_has_flag_type(self):
         """Test update options has flag type (no value)."""
         assert "flag" in Job.JOB_UPDATE_OPTIONS
-        assert "ResetAccrueTime" in Job.JOB_UPDATE_OPTIONS["flag"]
+        assert "resetaccruetime" in Job.JOB_UPDATE_OPTIONS["flag"]
 
     def test_mail_types_defined(self):
         """Test MAIL_TYPES constant is defined."""

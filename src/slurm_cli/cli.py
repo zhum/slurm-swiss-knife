@@ -37,6 +37,7 @@ from .utils.autocomplete_helpers import (
 from .utils.config import ROUTES, VERBS
 from .utils.coordinators import Coordinator
 from .utils.events import Event
+from .utils.job_filter import is_job_filter, resolve_job_ids
 from .utils.jobs import Job
 from .utils.node_filter import is_node_filter, resolve_nodes_value
 from .utils.nodes import Node
@@ -1751,7 +1752,19 @@ def update(
             elif canonical_resource[:4] == "conf":
                 Config.update(field, verbose, **update_options)
             elif canonical_resource[:3] == "job":
-                Job.update(field, verbose, **update_options)
+                # Resolve job filter if field is a filter expression
+                if is_job_filter(field):
+                    job_ids, _ = resolve_job_ids([field], verbose)
+                    if not job_ids:
+                        console.print(
+                            f"[red]Error: Job filter '{field}' "
+                            f"matched no jobs. Aborting.[/red]"
+                        )
+                        return
+                    for job_id in job_ids:
+                        Job.update(job_id, verbose, **update_options)
+                else:
+                    Job.update(field, verbose, **update_options)
             else:
                 console.print(
                     f"[red]Resource '{canonical_resource}' not found.[/red]"
@@ -1849,13 +1862,31 @@ def update(
             else:
                 Reservation.update(field, verbose, **update_options)
         elif canonical_resource[:3] == "job":
-            if dry_run:
-                console.print(
-                    f"[yellow]DRY RUN:[/yellow] Would update "
-                    f"job {field} set {update_options}"
-                )
+            # Resolve job filter if field is a filter expression
+            if is_job_filter(field):
+                job_ids, _ = resolve_job_ids([field], verbose)
+                if not job_ids:
+                    console.print(
+                        f"[red]Error: Job filter '{field}' "
+                        f"matched no jobs. Aborting.[/red]"
+                    )
+                    return
+                if dry_run:
+                    console.print(
+                        f"[yellow]DRY RUN:[/yellow] Would update "
+                        f"{len(job_ids)} job(s) set {update_options}"
+                    )
+                else:
+                    for job_id in job_ids:
+                        Job.update(job_id, verbose, **update_options)
             else:
-                Job.update(field, verbose, **update_options)
+                if dry_run:
+                    console.print(
+                        f"[yellow]DRY RUN:[/yellow] Would update "
+                        f"job {field} set {update_options}"
+                    )
+                else:
+                    Job.update(field, verbose, **update_options)
         else:
             # If no additional arguments, show general update message
             if dry_run:
@@ -2222,36 +2253,14 @@ def delete(
         if not resource_names:
             resource_names = [None]
 
-        # Separate job IDs, user filters (use scancel -u), and other filters
-        explicit_job_ids = [
-            n for n in resource_names if n and n.isdigit()
-        ]
-        user_filters = []
-        other_filters = []
-        for n in resource_names:
-            if n and not n.isdigit():
-                if n.startswith("user="):
-                    user_filters.append(n.split("=", 1)[1])
-                else:
-                    other_filters.append(n)
-
-        # Resolve other filters to job IDs
-        all_job_ids = set(explicit_job_ids)
-        for f in other_filters:
-            if "=" in f:
-                key, value = f.split("=", 1)
-                filter_dict = {key: value}
-            else:
-                filter_dict = {"job_id": f}
-            raw_jobs = Job._fetch_jobs()
-            if raw_jobs:
-                jobs = [Job._normalize_job(j) for j in raw_jobs]
-                matched = Job._apply_filters(jobs, filter_dict)
-                for job in matched:
-                    all_job_ids.add(job["job_id"])
+        # Use job_filter to resolve all arguments to job IDs
+        args = [n for n in resource_names if n]
+        job_ids, user_filters = resolve_job_ids(args, verbose)
 
         # Sort job IDs for consistent display
-        sorted_job_ids = sorted(all_job_ids, key=lambda x: int(x))
+        sorted_job_ids = sorted(
+            job_ids, key=lambda x: int(x.split("_")[0])
+        )
 
         if dry_run:
             for user in user_filters:

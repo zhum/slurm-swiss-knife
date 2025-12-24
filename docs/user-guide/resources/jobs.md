@@ -20,6 +20,8 @@ slurm-cli show jobs --csv
 
 ## Filter Jobs
 
+Filters can be used with `show`, `update`, and `delete` commands:
+
 ```bash
 # Filter by user
 slurm-cli show jobs user=john
@@ -36,9 +38,27 @@ slurm-cli show jobs account=research
 # Filter by reservation
 slurm-cli show jobs reservation=maint
 
+# Filter by job name
+slurm-cli show jobs name=myjob
+
+# Filter by nodes
+slurm-cli show jobs nodes=node001
+
 # Combine filters
 slurm-cli show jobs user=john state=pending partition=gpu
 ```
+
+### Filter Reference
+
+| Filter | Example | Description |
+|--------|---------|-------------|
+| `user=` | `user=john` | Jobs by username |
+| `account=` | `account=research` | Jobs charged to account |
+| `partition=` | `partition=gpu` | Jobs in partition |
+| `state=` | `state=pending` | Jobs with state |
+| `name=` | `name=myjob` | Jobs matching name |
+| `nodes=` | `nodes=node001` | Jobs on specific nodes |
+| `reservation=` | `reservation=maint` | Jobs using reservation |
 
 ## Update Jobs
 
