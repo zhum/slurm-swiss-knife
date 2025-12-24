@@ -2276,7 +2276,8 @@ def delete(
                 )
             if sorted_job_ids:
                 confirm_parts.append(
-                    f"{len(sorted_job_ids)} job(s): {', '.join(sorted_job_ids)}"
+                    f"{len(sorted_job_ids)} job(s): "
+                    f"{', '.join(sorted_job_ids)}"
                 )
             if confirm_parts:
                 if not confirm_single_key(

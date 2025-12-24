@@ -47,7 +47,7 @@
 - [ ] **Jobs**
   - [x] show
   - [-] create
-  - [ ] delete
+  - [x] delete
   - [ ] update
 
 ### User Interface Improvements

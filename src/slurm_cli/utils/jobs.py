@@ -655,10 +655,8 @@ _slurm_cli_jobs_autocomplete() {{
     case "$cmd" in
         show)
             _slurm_complete "$filter_options" "$cur" ;;
-        delete|del|cancel)
+        delete|del|cancel|update)
             _slurm_complete "$filter_options $cached_jobs" "$cur" ;;
-        update)
-            _slurm_complete "$cached_jobs" "$cur" ;;
     esac
 }}
 """  # noqa: E501
