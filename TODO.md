@@ -44,20 +44,18 @@
   - [x] create
   - [x] delete
   - [-] update
-- [ ] **Jobs**
+- [x] **Jobs**
   - [x] show
   - [-] create
   - [x] delete
-  - [ ] update
+  - [x] update
 
 ### User Interface Improvements
 
 - [x] **Tree-like Associations Display**: Optionally show associations in hierarchical tree format
-- [ ] **Enhanced Output Formats**: Add more output format options (CSV, YAML, XML)
 - [ ] **Interactive Mode**: Add interactive shell mode for better user experience
-- [ ] **Progress Indicators**: Add progress bars for long-running operations
-- [ ] **Filter nodes**: Add filter options for nodes by reservation, state, partition, user
-- [ ] **Filter jobs**: Add jobs options for jobs by reservation, state, partition, user
+- [x] **Filter nodes**: Add filter options for nodes by reservation, state, partition, user
+- [x] **Filter jobs**: Add jobs options for jobs by reservation, state, partition, user
 - [ ] **Selection objects**: Add -L option, which forces to return just list of objects via comma (or -s'separator'),
                              for nodes add -F sub-option for folding in slurm-style.
 

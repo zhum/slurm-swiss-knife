@@ -586,6 +586,9 @@ def common_options(func):
     """
     func = click.option(
         "--profile-str",
+        "--format",
+        "-o",
+        "profile_str",
         default=None,
         help="Inline profile string (overrides --profile)",
     )(func)
@@ -733,7 +736,7 @@ ACTION_OPTIONS = {
         ("-p, --pretty", "Output in pretty format (default)"),
         ("-z, --zebra", "Use zebra-striped rows"),
         ("-P, --profile NAME", "Use output profile"),
-        ("--profile-str STR", "Inline profile string"),
+        ("-o, --format, --profile-str STR", "Inline profile string"),
         ("-T, --tree", "Tree view (accounts, associations)"),
     ],
 }
@@ -1152,6 +1155,9 @@ def show_command_help_with_resources(
 )
 @click.option(
     "--profile-str",
+    "--format",
+    "-o",
+    "profile_str",
     default=None,
     help="Inline profile string (overrides --profile). "
     "Format: resource.columns=col1,col2;resource.styles.field=style",
@@ -2742,7 +2748,7 @@ _slurm_cli_initialize_autocomplete() {{
                 fi
             fi
             ;;
-        --delimiter|-d|--cache-timeout|-t|--profile-str)
+        --delimiter|-d|--cache-timeout|-t|--profile-str|--format|-o)
             # These options need a value, no completion
             return
             ;;
