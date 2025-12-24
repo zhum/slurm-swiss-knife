@@ -447,18 +447,47 @@ class TestAccountGetColumnConfig:
 
     def test_default_columns(self):
         """Test that default columns are returned when profile is '*'."""
-        columns, styles, template = Account._get_column_config()
+        (
+            columns,
+            styles,
+            template,
+            sort_field,
+            sort_asc,
+        ) = Account._get_column_config()
         assert columns == Account.DEFAULT_COLUMNS
         assert "name" in styles
         assert template is None
+        assert sort_field is None
+        assert sort_asc is True
 
     def test_custom_profile(self):
         """Test with custom profile string."""
-        columns, styles, template = Account._get_column_config(
+        (
+            columns,
+            styles,
+            template,
+            sort_field,
+            sort_asc,
+        ) = Account._get_column_config(
             profile_str="accounts.columns=name,description"
         )
         assert "name" in columns
         assert "description" in columns
+
+    def test_with_sort_marker(self):
+        """Test with sort marker in profile string."""
+        (
+            columns,
+            styles,
+            template,
+            sort_field,
+            sort_asc,
+        ) = Account._get_column_config(
+            profile_str="accounts.columns=name+,description"
+        )
+        assert columns == ["name", "description"]
+        assert sort_field == "name"
+        assert sort_asc is True
 
 
 class TestAccountFormatValue:

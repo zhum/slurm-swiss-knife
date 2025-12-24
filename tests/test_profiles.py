@@ -25,7 +25,10 @@ from slurm_cli.utils.profiles import (  # noqa: E402
     get_styles_for_resource,
     get_template_for_resource,
     is_field_empty,
+    parse_columns_with_sort,
     show_profile_help,
+    sort_data,
+    sort_hierarchical_data,
 )
 
 
@@ -365,16 +368,28 @@ class TestGetProfileConfig:
 
     def test_get_default_config(self):
         """Test getting default profile config."""
-        columns, styles, template = get_profile_config(
-            "default", "accounts"
-        )
+        (
+            columns,
+            styles,
+            template,
+            sort_field,
+            sort_asc,
+        ) = get_profile_config("default", "accounts")
         assert columns == "*"
         assert "name" in styles
         assert template is None  # default uses columns, not template
+        assert sort_field is None
+        assert sort_asc is True
 
     def test_inline_profile_precedence(self):
         """Test that inline profile string takes precedence."""
-        columns, styles, template = get_profile_config(
+        (
+            columns,
+            styles,
+            template,
+            sort_field,
+            sort_asc,
+        ) = get_profile_config(
             "default",
             "accounts",
             profile_str="accounts.template=[cyan]{name}[/]",
@@ -383,12 +398,69 @@ class TestGetProfileConfig:
 
     def test_simplified_profile_str(self):
         """Test simplified profile string without resource prefix."""
-        columns, styles, template = get_profile_config(
+        (
+            columns,
+            styles,
+            template,
+            sort_field,
+            sort_asc,
+        ) = get_profile_config(
             "default",
             "accounts",
             profile_str="[cyan]{name}[/] - {description}",
         )
         assert template == "[cyan]{name}[/] - {description}"
+
+    def test_columns_with_ascending_sort(self):
+        """Test parsing columns with + suffix for ascending sort."""
+        (
+            columns,
+            styles,
+            template,
+            sort_field,
+            sort_asc,
+        ) = get_profile_config(
+            "default",
+            "accounts",
+            profile_str="accounts.columns=name+,description,organization",
+        )
+        assert columns == ["name", "description", "organization"]
+        assert sort_field == "name"
+        assert sort_asc is True
+
+    def test_columns_with_descending_sort(self):
+        """Test parsing columns with - suffix for descending sort."""
+        (
+            columns,
+            styles,
+            template,
+            sort_field,
+            sort_asc,
+        ) = get_profile_config(
+            "default",
+            "accounts",
+            profile_str="accounts.columns=name,priority-,description",
+        )
+        assert columns == ["name", "priority", "description"]
+        assert sort_field == "priority"
+        assert sort_asc is False
+
+    def test_columns_with_multiple_sort_markers(self):
+        """Test that only first sort marker is used."""
+        (
+            columns,
+            styles,
+            template,
+            sort_field,
+            sort_asc,
+        ) = get_profile_config(
+            "default",
+            "accounts",
+            profile_str="accounts.columns=name+,priority-,description+",
+        )
+        assert columns == ["name", "priority", "description"]
+        assert sort_field == "name"  # First marker wins
+        assert sort_asc is True
 
 
 class TestIsFieldEmpty:
@@ -914,3 +986,189 @@ class TestResourceFields:
         ]
         for resource in expected:
             assert resource in resource_fields
+
+
+class TestParseColumnsWithSort:
+    """Tests for parse_columns_with_sort function."""
+
+    def test_no_sort_markers(self):
+        """Test columns without sort markers."""
+        columns, sort_field, sort_asc = parse_columns_with_sort(
+            ["name", "description", "organization"]
+        )
+        assert columns == ["name", "description", "organization"]
+        assert sort_field is None
+        assert sort_asc is True
+
+    def test_ascending_sort(self):
+        """Test + suffix for ascending sort."""
+        columns, sort_field, sort_asc = parse_columns_with_sort(
+            ["name+", "description"]
+        )
+        assert columns == ["name", "description"]
+        assert sort_field == "name"
+        assert sort_asc is True
+
+    def test_descending_sort(self):
+        """Test - suffix for descending sort."""
+        columns, sort_field, sort_asc = parse_columns_with_sort(
+            ["name", "priority-"]
+        )
+        assert columns == ["name", "priority"]
+        assert sort_field == "priority"
+        assert sort_asc is False
+
+    def test_first_marker_wins(self):
+        """Test that only first sort marker is used."""
+        columns, sort_field, sort_asc = parse_columns_with_sort(
+            ["name+", "priority-", "description+"]
+        )
+        assert columns == ["name", "priority", "description"]
+        assert sort_field == "name"
+        assert sort_asc is True
+
+    def test_none_columns(self):
+        """Test with None columns."""
+        columns, sort_field, sort_asc = parse_columns_with_sort(None)
+        assert columns is None
+        assert sort_field is None
+        assert sort_asc is True
+
+    def test_star_columns(self):
+        """Test with '*' columns."""
+        columns, sort_field, sort_asc = parse_columns_with_sort("*")
+        assert columns == "*"
+        assert sort_field is None
+        assert sort_asc is True
+
+    def test_string_columns_with_sort(self):
+        """Test parsing comma-separated string columns."""
+        columns, sort_field, sort_asc = parse_columns_with_sort(
+            "name+, description, priority-"
+        )
+        assert columns == ["name", "description", "priority"]
+        assert sort_field == "name"
+        assert sort_asc is True
+
+
+class TestSortData:
+    """Tests for sort_data function."""
+
+    def test_ascending_sort(self):
+        """Test ascending sort."""
+        data = [
+            {"name": "charlie"},
+            {"name": "alice"},
+            {"name": "bob"},
+        ]
+        result = sort_data(data, "name", ascending=True)
+        assert [d["name"] for d in result] == [
+            "alice",
+            "bob",
+            "charlie",
+        ]
+
+    def test_descending_sort(self):
+        """Test descending sort."""
+        data = [
+            {"name": "charlie"},
+            {"name": "alice"},
+            {"name": "bob"},
+        ]
+        result = sort_data(data, "name", ascending=False)
+        assert [d["name"] for d in result] == [
+            "charlie",
+            "bob",
+            "alice",
+        ]
+
+    def test_numeric_sort(self):
+        """Test numeric sorting."""
+        data = [
+            {"priority": "100"},
+            {"priority": "20"},
+            {"priority": "3"},
+        ]
+        result = sort_data(data, "priority", ascending=True)
+        assert [d["priority"] for d in result] == ["3", "20", "100"]
+
+    def test_none_values_last(self):
+        """Test that None values sort last."""
+        data = [
+            {"name": None},
+            {"name": "alice"},
+            {"name": "bob"},
+        ]
+        result = sort_data(data, "name", ascending=True)
+        assert [d["name"] for d in result] == ["alice", "bob", None]
+
+    def test_empty_values_last(self):
+        """Test that empty/'-' values sort last."""
+        data = [
+            {"name": "-"},
+            {"name": "alice"},
+            {"name": ""},
+        ]
+        result = sort_data(data, "name", ascending=True)
+        names = [d["name"] for d in result]
+        assert names[0] == "alice"
+        assert names[1] in ("-", "")
+        assert names[2] in ("-", "")
+
+    def test_no_sort_field(self):
+        """Test that None sort_field returns data unchanged."""
+        data = [{"name": "charlie"}, {"name": "alice"}]
+        result = sort_data(data, None, ascending=True)
+        assert result == data
+
+    def test_empty_data(self):
+        """Test with empty data list."""
+        result = sort_data([], "name", ascending=True)
+        assert result == []
+
+
+class TestSortHierarchicalData:
+    """Tests for sort_hierarchical_data function."""
+
+    def test_flat_data_without_depth(self):
+        """Test data without depth key falls back to flat sort."""
+        data = [
+            {"name": "charlie"},
+            {"name": "alice"},
+        ]
+        result = sort_hierarchical_data(data, "name", ascending=True)
+        assert [d["name"] for d in result] == ["alice", "charlie"]
+
+    def test_hierarchical_sort(self):
+        """Test hierarchical sorting preserves structure."""
+        data = [
+            {"account": "root", "_depth": 0, "parent_account": ""},
+            {
+                "account": "child2",
+                "_depth": 1,
+                "parent_account": "root",
+            },
+            {
+                "account": "child1",
+                "_depth": 1,
+                "parent_account": "root",
+            },
+        ]
+        result = sort_hierarchical_data(
+            data,
+            "account",
+            ascending=True,
+            depth_key="_depth",
+            parent_key="parent_account",
+            id_key="account",
+        )
+        # Root first, then children sorted
+        assert result[0]["account"] == "root"
+        assert result[1]["account"] == "child1"
+        assert result[2]["account"] == "child2"
+
+    def test_no_sort_field(self):
+        """Test that None sort_field returns data unchanged."""
+        data = [{"account": "root", "_depth": 0}]
+        result = sort_hierarchical_data(data, None, ascending=True)
+        assert result == data

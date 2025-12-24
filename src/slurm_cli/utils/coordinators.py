@@ -8,7 +8,7 @@ from rich.box import SIMPLE_HEAVY
 from rich.table import Table
 
 from .base_resource import BaseSlurmResource
-from .profiles import get_profile_config
+from .profiles import get_profile_config, sort_data
 from .utils import console
 
 
@@ -305,9 +305,13 @@ _slurm_cli_coordinators_autocomplete() {
             profile_str: Inline profile string (overrides profile)
         """
         # Get profile configuration
-        columns, styles, template = get_profile_config(
-            profile, "coordinators", profile_str
-        )
+        (
+            columns,
+            styles,
+            template,
+            sort_field,
+            sort_asc,
+        ) = get_profile_config(profile, "coordinators", profile_str)
 
         # Use default columns if not specified
         if columns == "*" or columns is None:
@@ -372,6 +376,12 @@ _slurm_cli_coordinators_autocomplete() {
                         f"'{field}' found.[/yellow]"
                     )
                     return
+
+            # Apply sorting
+            if sort_field:
+                coordinators = sort_data(
+                    coordinators, sort_field, sort_asc
+                )
 
             # Output based on style
             if style == "json":

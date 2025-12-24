@@ -99,6 +99,34 @@ Apply Rich styles to columns:
 --profile-str='users.styles.name=cyan bold,users.styles.adminlevel=yellow'
 ```
 
+### Sorting
+
+Add `+` or `-` suffix to a column name to sort by that column:
+
+```bash
+# Sort by name ascending
+slurm-cli show accounts --profile-str='name+,description'
+
+# Sort by priority descending
+slurm-cli show qos --profile-str='priority-,name'
+
+# Sort jobs by job_id descending
+slurm-cli show jobs --profile-str='job_id-,user_name,job_state'
+```
+
+Only the first column with a sort marker is used for sorting.
+
+In configuration files:
+
+```ini
+[sorted]
+accounts.columns=name+,description,organization
+qos.columns=priority-,name,flags
+jobs.columns=job_id-,user_name,partition,job_state
+```
+
+**Note:** For hierarchical resources (like associations in tree mode), sorting is applied within each hierarchy level independently.
+
 ## Available Fields by Resource
 
 ### Users

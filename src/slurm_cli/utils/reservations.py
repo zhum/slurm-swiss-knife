@@ -8,7 +8,11 @@ from typing import Any, Optional
 from rich.markup import escape
 
 from .base_resource import BaseSlurmResource
-from .profiles import format_with_template, get_profile_config
+from .profiles import (
+    format_with_template,
+    get_profile_config,
+    sort_data,
+)
 
 # from .resources import Resource
 from .utils import console
@@ -284,7 +288,7 @@ class Reservation(BaseSlurmResource):
     ) -> None:
         """Show reservation information."""
         # Get profile configuration
-        _, _, template = get_profile_config(
+        _, _, template, sort_field, sort_asc = get_profile_config(
             profile, "reservations", profile_str
         )
         if not data:
@@ -293,6 +297,13 @@ class Reservation(BaseSlurmResource):
         if name and name not in data:
             console.print(f"[red]Reservation '{name}' not found.[/red]")
             return
+
+        # Convert dict to sorted list if sorting is needed
+        if sort_field and data and not name:
+            items = [{"name": k, **v} for k, v in data.items()]
+            items = sort_data(items, sort_field, sort_asc)
+            data = {item["name"]: item for item in items}
+
         try:
             if style == "json":
                 if name:

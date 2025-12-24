@@ -18,6 +18,15 @@
 #   \n                   - newline in output
 #   \  (at end of line)  - line continuation (for multi-line templates)
 #
+# Sorting:
+#   field+               - sort ascending by this field
+#   field-               - sort descending by this field
+#   Only the first field with +/- is used for sorting.
+#   Examples:
+#     accounts.columns = name+,description    # sort by name ascending
+#     jobs.columns = job_id-,user,state       # sort by job_id descending
+#     qos.columns = priority-,name            # sort by priority descending
+#
 # Conditional examples:
 #   {?users Users: {users}}           - shows "Users: root" only if users is set
 #   {?accounts | Accts: {accounts}}   - shows "| Accts: ..." only if accounts is set
@@ -32,6 +41,10 @@
 # Simplified --profile-str (template auto-applied to current resource):
 #   slurm-cli --profile-str "[cyan]{name}[/] - {description}" show acc
 #   slurm-cli --profile-str "{name} | {start_time}{?users  👥{users}}" show res
+#
+# Sorting from command line:
+#   slurm-cli --profile-str "name+,description" show accounts  # sort by name asc
+#   slurm-cli --profile-str "priority-,name" show qos          # sort by priority desc
 
 # ============================================================================
 # Default Profile - Shows all columns with standard styling

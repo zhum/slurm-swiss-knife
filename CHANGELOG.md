@@ -9,6 +9,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Profile Sorting**: Sort output by any column with `+` or `-` suffix
+  - `name+` - sort ascending by name
+  - `priority-` - sort descending by priority
+  - Example: `slurm-cli show accounts --profile-str='name+,description'`
+  - Example: `slurm-cli show jobs --profile-str='job_id-,user_name,job_state'`
+  - First sort marker wins if multiple are specified
+  - Hierarchical resources (associations with `--tree`) sort within each level
 - **Jobs Resource**: New `jobs` resource for viewing and managing Slurm jobs
   - `slurm-cli show jobs` - list jobs with filters (user=, state=, partition=, account=, nodes=, reservation=)
   - `slurm-cli update jobs JOBID key=value` - update job properties

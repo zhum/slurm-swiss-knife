@@ -45,7 +45,9 @@ class Config(BaseSlurmResource):
     ) -> None:
         """Show a config."""
         # Get profile configuration (for future enhancement)
-        _, _, _ = get_profile_config(profile, "config", profile_str)
+        _, _, _, _, _ = get_profile_config(
+            profile, "config", profile_str
+        )
         try:
             if style == "json":
                 result = subprocess.run(

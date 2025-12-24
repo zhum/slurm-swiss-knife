@@ -11,7 +11,7 @@ from rich.table import Table
 
 from .base_resource import BaseSlurmResource
 from .node_filter import is_node_filter, resolve_node_filter
-from .profiles import get_profile_config
+from .profiles import get_profile_config, sort_data
 from .utils import console
 
 
@@ -470,9 +470,13 @@ class Event(BaseSlurmResource):
             profile_str: Inline profile string (overrides profile)
         """
         # Get profile configuration
-        columns, styles, template = get_profile_config(
-            profile, "events", profile_str
-        )
+        (
+            columns,
+            styles,
+            template,
+            sort_field,
+            sort_asc,
+        ) = get_profile_config(profile, "events", profile_str)
 
         # Use default columns if not specified, or all columns if "*"
         if columns == "*":
@@ -573,6 +577,10 @@ class Event(BaseSlurmResource):
                     f"[yellow]No events matching filters found.[/yellow]"
                 )
                 return
+
+            # Apply sorting
+            if sort_field:
+                events = sort_data(events, sort_field, sort_asc)
 
             # Output based on style
             if style == "json":

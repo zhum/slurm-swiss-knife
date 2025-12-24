@@ -180,12 +180,13 @@ from slurm_cli.utils.profiles import (
     show_profile_help,      # Display profile help
 )
 
-# Get profile configuration
-columns, styles, template = get_profile_config(
+# Get profile configuration (returns columns, styles, template, sort_field, sort_ascending)
+columns, styles, template, sort_field, sort_asc = get_profile_config(
     profile="default",
     resource_type="users",
-    profile_str="users.columns=name,adminlevel",
+    profile_str="users.columns=name+,adminlevel",  # + suffix for ascending sort
 )
+# sort_field = "name", sort_asc = True
 
 # Get all resource fields
 fields = get_resource_fields()

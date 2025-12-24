@@ -8,7 +8,11 @@ from rich.box import SIMPLE_HEAVY
 from rich.table import Table
 
 from .base_resource import BaseSlurmResource
-from .profiles import format_with_template, get_profile_config
+from .profiles import (
+    format_with_template,
+    get_profile_config,
+    sort_data,
+)
 from .utils import console
 
 # Account configuration options (sacctmgr field names)
@@ -232,11 +236,15 @@ _slurm_cli_accounts_autocomplete() {{
         """Get column configuration from profile.
 
         Returns:
-            Tuple of (columns, styles, template)
+            Tuple of (columns, styles, template, sort_field, sort_asc)
         """
-        columns, styles, template = get_profile_config(
-            profile, "accounts", profile_str
-        )
+        (
+            columns,
+            styles,
+            template,
+            sort_field,
+            sort_asc,
+        ) = get_profile_config(profile, "accounts", profile_str)
 
         # Use default columns if profile specifies "*" or no columns
         if columns == "*" or columns is None:
@@ -246,7 +254,7 @@ _slurm_cli_accounts_autocomplete() {{
         merged_styles = dict(cls.DEFAULT_STYLES)
         merged_styles.update(styles)
 
-        return columns, merged_styles, template
+        return columns, merged_styles, template, sort_field, sort_asc
 
     @classmethod
     def _format_value(cls, account: Dict[str, Any], column: str) -> str:
@@ -362,16 +370,24 @@ _slurm_cli_accounts_autocomplete() {{
                         )
                         return
 
+            # Get column configuration from profile (once)
+            (
+                columns,
+                styles,
+                template,
+                sort_field,
+                sort_asc,
+            ) = cls._get_column_config(profile, profile_str)
+
+            # Apply sorting
+            if sort_field:
+                accounts = sort_data(accounts, sort_field, sort_asc)
+
             if style == "json":
                 # Print filtered JSON
                 filtered_data = {"accounts": accounts}
                 console.print_json(json.dumps(filtered_data, indent=2))
             elif style == "csv":
-                # Get column configuration from profile
-                columns, _, _ = cls._get_column_config(
-                    profile, profile_str
-                )
-
                 # Header
                 headers = [col.title() for col in columns]
                 print(delimiter.join(headers))
@@ -386,11 +402,6 @@ _slurm_cli_accounts_autocomplete() {{
                     row = ["" if v == "-" else v for v in row]
                     print(delimiter.join(row))
             else:  # pretty style
-                # Get column configuration from profile
-                columns, styles, template = cls._get_column_config(
-                    profile, profile_str
-                )
-
                 # If template is specified, use template-based output
                 if template:
                     for account in accounts:

@@ -9,7 +9,11 @@ from rich.box import SIMPLE_HEAVY
 from rich.table import Table
 
 from .base_resource import BaseSlurmResource
-from .profiles import format_with_template, get_profile_config
+from .profiles import (
+    format_with_template,
+    get_profile_config,
+    sort_data,
+)
 from .utils import console
 
 
@@ -507,9 +511,13 @@ class Job(BaseSlurmResource):
             profile_str: Inline profile string (overrides profile)
         """
         # Get profile configuration
-        columns, styles, template = get_profile_config(
-            profile, "jobs", profile_str
-        )
+        (
+            columns,
+            styles,
+            template,
+            sort_field,
+            sort_asc,
+        ) = get_profile_config(profile, "jobs", profile_str)
 
         # Use default columns if not specified, or all columns if "*"
         if columns == "*":
@@ -554,6 +562,10 @@ class Job(BaseSlurmResource):
                     "[yellow]No jobs matching filters found.[/yellow]"
                 )
                 return
+
+            # Apply sorting
+            if sort_field:
+                jobs = sort_data(jobs, sort_field, sort_asc)
 
             # Output based on style
             if style == "json":

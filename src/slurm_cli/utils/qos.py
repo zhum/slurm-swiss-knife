@@ -8,7 +8,11 @@ from rich.box import SIMPLE_HEAVY
 from rich.table import Table
 
 from .base_resource import BaseSlurmResource
-from .profiles import format_with_template, get_profile_config
+from .profiles import (
+    format_with_template,
+    get_profile_config,
+    sort_data,
+)
 from .utils import console
 
 # QoS configuration options (sacctmgr field names)
@@ -329,9 +333,13 @@ class Qos(BaseSlurmResource):
             profile_str: Inline profile string (overrides profile)
         """
         # Get profile configuration (for future enhancement)
-        columns_cfg, styles_cfg, template_cfg = get_profile_config(
-            profile, "qos", profile_str
-        )
+        (
+            columns_cfg,
+            styles_cfg,
+            template_cfg,
+            sort_field,
+            sort_asc,
+        ) = get_profile_config(profile, "qos", profile_str)
         try:
             # Always get JSON output from sacctmgr
             result = subprocess.run(
@@ -359,6 +367,10 @@ class Qos(BaseSlurmResource):
                         f"[yellow]QoS '{field}' not found.[/yellow]"
                     )
                     return
+
+            # Apply sorting
+            if sort_field:
+                qos_list = sort_data(qos_list, sort_field, sort_asc)
 
             # Helper functions (used by both CSV and pretty styles)
             def get_set_value(obj, default="-"):

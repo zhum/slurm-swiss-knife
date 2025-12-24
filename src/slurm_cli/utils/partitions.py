@@ -9,7 +9,11 @@ from rich.markup import escape
 from rich.table import Table
 
 from .base_resource import BaseSlurmResource
-from .profiles import format_with_template, get_profile_config
+from .profiles import (
+    format_with_template,
+    get_profile_config,
+    sort_data,
+)
 
 # from .resources import Resource, ResourceType
 from .utils import console
@@ -413,9 +417,19 @@ class Partition(BaseSlurmResource):
     ) -> None:
         """Show partition information."""
         # Get profile configuration
-        columns_cfg, styles_cfg, template_cfg = get_profile_config(
-            profile, "partitions", profile_str
-        )
+        (
+            columns_cfg,
+            styles_cfg,
+            template_cfg,
+            sort_field,
+            sort_asc,
+        ) = get_profile_config(profile, "partitions", profile_str)
+
+        # Convert dict to sorted list if sorting is needed
+        if sort_field and data and not name:
+            items = [{"name": k, **v} for k, v in data.items()]
+            items = sort_data(items, sort_field, sort_asc)
+            data = {item["name"]: item for item in items}
 
         if style == "json":
             if name:

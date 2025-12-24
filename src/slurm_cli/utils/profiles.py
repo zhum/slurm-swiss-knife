@@ -512,6 +512,55 @@ def get_profile_manager() -> ProfileManager:
     return _profile_manager
 
 
+def parse_columns_with_sort(
+    columns: Union[List[str], str, None]
+) -> Tuple[Optional[Union[List[str], str]], Optional[str], bool]:
+    """Parse column list and extract sort field if present.
+
+    Columns can have + or - suffix to indicate sort order:
+      - field+ means sort ascending by field
+      - field- means sort descending by field
+    Only the first field with a sort marker is used for sorting.
+
+    Args:
+        columns: Column list, "*", or None
+
+    Returns:
+        Tuple of (clean_columns, sort_field, sort_ascending)
+        - clean_columns: columns with sort markers removed
+        - sort_field: first field marked for sorting (or None)
+        - sort_ascending: True for +, False for -
+    """
+    if columns is None or columns == "*":
+        return columns, None, True
+
+    if isinstance(columns, str):
+        columns = [c.strip() for c in columns.split(",")]
+
+    clean_columns = []
+    sort_field = None
+    sort_ascending = True
+
+    for col in columns:
+        col = col.strip()
+        if col.endswith("+"):
+            clean_col = col[:-1]
+            if sort_field is None:
+                sort_field = clean_col
+                sort_ascending = True
+            clean_columns.append(clean_col)
+        elif col.endswith("-"):
+            clean_col = col[:-1]
+            if sort_field is None:
+                sort_field = clean_col
+                sort_ascending = False
+            clean_columns.append(clean_col)
+        else:
+            clean_columns.append(col)
+
+    return clean_columns, sort_field, sort_ascending
+
+
 def get_columns_for_resource(
     profile_name: str,
     resource: str,
@@ -673,7 +722,11 @@ def get_profile_config(
     resource: str,
     profile_str: Optional[str] = None,
 ) -> Tuple[
-    Optional[Union[List[str], str]], Dict[str, str], Optional[str]
+    Optional[Union[List[str], str]],
+    Dict[str, str],
+    Optional[str],
+    Optional[str],
+    bool,
 ]:
     """Get full configuration for a resource.
 
@@ -685,10 +738,12 @@ def get_profile_config(
                      current resource.
 
     Returns:
-        Tuple of (columns, styles, template)
-        - columns may be a list, "*", or None
+        Tuple of (columns, styles, template, sort_field, sort_ascending)
+        - columns may be a list, "*", or None (with sort markers removed)
         - styles is a dict mapping field names to style strings
         - template is a string template or None
+        - sort_field is the field to sort by (or None)
+        - sort_ascending is True for ascending, False for descending
     """
     # Normalize profile_str - add resource prefix if missing
     normalized_str = _normalize_profile_str(profile_str, resource)
@@ -696,13 +751,19 @@ def get_profile_config(
     columns = get_columns_for_resource(
         profile_name, resource, normalized_str
     )
+
+    # Parse columns for sort info
+    columns, sort_field, sort_ascending = parse_columns_with_sort(
+        columns
+    )
+
     styles = get_styles_for_resource(
         profile_name, resource, normalized_str
     )
     template = get_template_for_resource(
         profile_name, resource, normalized_str
     )
-    return columns, styles, template
+    return columns, styles, template, sort_field, sort_ascending
 
 
 # Default values for fields (field is "empty" if it equals default)
@@ -971,3 +1032,138 @@ def show_profile_help(resource: str) -> bool:
 def is_profile_help(profile_str: Optional[str]) -> bool:
     """Check if profile_str is a help request."""
     return profile_str is not None and profile_str.lower() == "help"
+
+
+def sort_data(
+    data: List[Dict[str, Any]],
+    sort_field: Optional[str],
+    ascending: bool = True,
+) -> List[Dict[str, Any]]:
+    """Sort a list of dictionaries by a field.
+
+    Handles mixed types (strings, numbers, None) gracefully.
+
+    Args:
+        data: List of dictionaries to sort
+        sort_field: Field name to sort by (None for no sorting)
+        ascending: True for ascending, False for descending
+
+    Returns:
+        Sorted list (or original if sort_field is None)
+    """
+    if not sort_field or not data:
+        return data
+
+    def sort_key(item: Dict[str, Any]) -> Any:
+        value = item.get(sort_field)
+        # Handle None values - sort them last
+        if value is None or value == "-" or value == "":
+            return (1, "")
+        # Try to convert to number for proper numeric sorting
+        try:
+            return (0, float(value))
+        except (ValueError, TypeError):
+            # Fall back to string comparison
+            return (0, str(value).lower())
+
+    return sorted(data, key=sort_key, reverse=not ascending)
+
+
+def sort_hierarchical_data(
+    data: List[Dict[str, Any]],
+    sort_field: Optional[str],
+    ascending: bool = True,
+    depth_key: str = "_depth",
+    parent_key: str = "parent_account",
+    id_key: str = "account",
+) -> List[Dict[str, Any]]:
+    """Sort hierarchical data, preserving parent-child relationships.
+
+    Within each hierarchy level, items are sorted independently.
+
+    Args:
+        data: List of dictionaries with hierarchy info
+        sort_field: Field name to sort by (None for no sorting)
+        ascending: True for ascending, False for descending
+        depth_key: Key that stores the depth level
+        parent_key: Key that stores the parent reference
+        id_key: Key that stores the item's identifier
+
+    Returns:
+        Hierarchically sorted list
+    """
+    if not sort_field or not data:
+        return data
+
+    # Check if data has depth info (already structured hierarchically)
+    if depth_key in data[0]:
+        # Data is already structured with depth - need to sort within groups
+        return _sort_with_depth(
+            data, sort_field, ascending, depth_key, parent_key, id_key
+        )
+
+    # Simple flat sort
+    return sort_data(data, sort_field, ascending)
+
+
+def _sort_with_depth(
+    data: List[Dict[str, Any]],
+    sort_field: str,
+    ascending: bool,
+    depth_key: str,
+    parent_key: str,
+    id_key: str,
+) -> List[Dict[str, Any]]:
+    """Sort data that already has depth information.
+
+    Args:
+        data: List of dicts with depth info
+        sort_field: Field to sort by
+        ascending: Sort direction
+        depth_key: Key for depth level
+        parent_key: Key for parent reference
+        id_key: Key for item identifier
+
+    Returns:
+        Sorted list preserving hierarchy
+    """
+    # Build a map of parent -> children
+    from collections import defaultdict
+
+    parent_children: Dict[str, List[Dict[str, Any]]] = defaultdict(list)
+    roots: List[Dict[str, Any]] = []
+
+    for item in data:
+        parent = item.get(parent_key, "")
+        depth = item.get(depth_key, 0)
+        if depth == 0 or not parent:
+            roots.append(item)
+        else:
+            parent_children[parent].append(item)
+
+    def sort_key(item: Dict[str, Any]) -> Any:
+        value = item.get(sort_field)
+        if value is None or value == "-" or value == "":
+            return (1, "")
+        try:
+            return (0, float(value))
+        except (ValueError, TypeError):
+            return (0, str(value).lower())
+
+    def add_sorted_subtree(
+        items: List[Dict[str, Any]]
+    ) -> List[Dict[str, Any]]:
+        result = []
+        sorted_items = sorted(
+            items, key=sort_key, reverse=not ascending
+        )
+        for item in sorted_items:
+            result.append(item)
+            item_id = item.get(id_key, "")
+            if item_id in parent_children:
+                result.extend(
+                    add_sorted_subtree(parent_children[item_id])
+                )
+        return result
+
+    return add_sorted_subtree(roots)

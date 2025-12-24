@@ -8,7 +8,7 @@ from rich.box import SIMPLE_HEAVY
 from rich.table import Table
 
 from .base_resource import BaseSlurmResource
-from .profiles import get_profile_config
+from .profiles import get_profile_config, sort_data
 from .utils import console
 
 # User configuration options (sacctmgr field names)
@@ -103,11 +103,15 @@ class User(BaseSlurmResource):
         """Get column configuration from profile.
 
         Returns:
-            Tuple of (columns, styles, template)
+            Tuple of (columns, styles, template, sort_field, sort_asc)
         """
-        columns, styles, template = get_profile_config(
-            profile, "users", profile_str
-        )
+        (
+            columns,
+            styles,
+            template,
+            sort_field,
+            sort_asc,
+        ) = get_profile_config(profile, "users", profile_str)
 
         # Use all columns if profile specifies "*"
         if columns == "*":
@@ -120,7 +124,7 @@ class User(BaseSlurmResource):
         merged_styles = dict(cls.DEFAULT_STYLES)
         merged_styles.update(styles)
 
-        return columns, merged_styles, template
+        return columns, merged_styles, template, sort_field, sort_asc
 
     # Filter field aliases (user-friendly names -> actual JSON field names)
     FILTER_ALIASES: Dict[str, tuple] = {
@@ -577,16 +581,24 @@ _slurm_cli_users_autocomplete() {{
                         )
                         return
 
+            # Get column configuration from profile (once)
+            (
+                columns,
+                styles,
+                template,
+                sort_field,
+                sort_asc,
+            ) = cls._get_column_config(profile, profile_str)
+
+            # Apply sorting
+            if sort_field:
+                users = sort_data(users, sort_field, sort_asc)
+
             if style == "json":
                 # Print filtered JSON
                 filtered_data = {"users": users}
                 console.print_json(json.dumps(filtered_data, indent=2))
             elif style == "csv":
-                # Get column configuration from profile
-                columns, _, _ = cls._get_column_config(
-                    profile, profile_str
-                )
-
                 # Header
                 headers = [
                     col.title().replace("_", " ") for col in columns
@@ -600,11 +612,6 @@ _slurm_cli_users_autocomplete() {{
                     ]
                     print(delimiter.join(row))
             else:  # pretty style
-                # Get column configuration from profile
-                columns, styles, _ = cls._get_column_config(
-                    profile, profile_str
-                )
-
                 # Create table
                 table = Table(box=SIMPLE_HEAVY, show_header=True)
 
