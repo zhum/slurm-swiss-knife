@@ -2748,8 +2748,28 @@ _slurm_cli_initialize_autocomplete() {{
                 fi
             fi
             ;;
-        --delimiter|-d|--cache-timeout|-t|--profile-str|--format|-o)
+        --delimiter|-d|--cache-timeout|-t)
             # These options need a value, no completion
+            return
+            ;;
+        --profile-str|--format|-o)
+            # Complete with available fields for the resource
+            local fields=""
+            case "$guessed" in
+                jobs) fields="job_id name user_name account partition job_state time_limit endlimit node_count nodes cpus gres submit_time start_time end_time priority reason command working_directory" ;;
+                nodes) fields="name state cpus real_memory gres partitions features reason alloc_cpus alloc_memory" ;;
+                partitions) fields="name state nodes total_nodes total_cpus max_time default allow_groups allow_accounts allow_qos" ;;
+                accounts) fields="name description organization coordinators flags" ;;
+                users) fields="name default_account admin_level coordinators" ;;
+                qos) fields="name id priority max_wall max_jobs max_submit flags preempt preempt_mode grace_time" ;;
+                reservations) fields="name start_time end_time nodes users accounts partition state flags" ;;
+                associations) fields="account user cluster partition parent_account qos default_qos shares grp_jobs grp_submit" ;;
+                coordinators) fields="account name" ;;
+                events) fields="time cluster node state reason user" ;;
+            esac
+            if [[ -n "$fields" ]]; then
+                COMPREPLY=($(compgen -W "$fields" -- "$cur"))
+            fi
             return
             ;;
     esac

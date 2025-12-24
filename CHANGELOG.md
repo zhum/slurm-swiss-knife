@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - **Format Option Alias**: Added `-o`/`--format` as alias for `--profile-str`
+  - Autocomplete now shows available fields for each resource type
 - **Account Tree View**: Added tree mode for accounts with `-T`/`--tree`
   - `slurm-cli show accounts -T` - display accounts in hierarchical tree format
   - Shows account names, descriptions, organizations, and coordinators
