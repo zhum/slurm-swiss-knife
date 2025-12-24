@@ -151,6 +151,10 @@ _slurm_cache_reservations() {
     _slurm_cache_get "/tmp/slurm_cli_reservations.json" 'keys[]'
 }
 
+_slurm_cache_jobs() {
+    _slurm_cache_get "/tmp/slurm_cli_jobs.json" '.jobs[].job_id'
+}
+
 # Node filter prefixes for nodes= parameter
 # Supports: ALL, partition=, state=, user=, reservation=
 _slurm_node_filter_prefixes="ALL partition= state= user= reservation="

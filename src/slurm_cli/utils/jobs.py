@@ -626,11 +626,16 @@ _slurm_cli_jobs_autocomplete() {{
         [[ ${{#COMPREPLY[@]}} -gt 0 ]] && return
     fi
 
-    # Default: show filter options
+    local cached_jobs="$(_slurm_cache_jobs)"
+
+    # Default: show filter options and job IDs
     case "$cmd" in
-        show|delete|del|cancel)
+        show)
             _slurm_complete "$filter_options" "$cur" ;;
-        update) ;; # Job IDs - no completion
+        delete|del|cancel)
+            _slurm_complete "$filter_options $cached_jobs" "$cur" ;;
+        update)
+            _slurm_complete "$cached_jobs" "$cur" ;;
     esac
 }}
 """  # noqa: E501
