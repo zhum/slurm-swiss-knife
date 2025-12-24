@@ -45,7 +45,7 @@
   - [x] delete
   - [-] update
 - [ ] **Jobs**
-  - [ ] show
+  - [x] show
   - [-] create
   - [ ] delete
   - [ ] update
