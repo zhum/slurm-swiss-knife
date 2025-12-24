@@ -590,6 +590,29 @@ class Job(BaseSlurmResource):
             )
 
     @classmethod
+    def _cancel_by_user(cls, user: str, verbose: bool = False) -> None:
+        """Cancel all jobs for a user (scancel -u USER)."""
+        try:
+            result = subprocess.run(
+                ["scancel", "-u", user],
+                check=True,
+                capture_output=True,
+                text=True,
+                errors="replace",
+            )
+            if result.stdout:
+                console.print(result.stdout)
+            if verbose:
+                console.print(
+                    f"[green]All jobs for user '{user}' cancelled.[/green]"
+                )
+        except subprocess.CalledProcessError as e:
+            console.print(
+                f"[red]Failed to cancel jobs for user '{user}':[/red] "
+                f"{e.stderr or e}"
+            )
+
+    @classmethod
     def generate_autocomplete_options(cls) -> str:
         """Generate bash autocomplete script for job options."""
         filter_opts = " ".join(

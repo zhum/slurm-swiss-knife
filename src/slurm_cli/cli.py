@@ -2192,50 +2192,84 @@ def delete(
         )
         return
 
-    # Special handling for jobs - pass all job IDs at once
+    # Special handling for jobs - collect all job IDs first
     if canonical_resource[:3] == "job":
         if not resource_names:
             resource_names = [None]
-        # Separate job IDs from filter expressions
-        job_ids = [n for n in resource_names if n and n.isdigit()]
-        filters = [n for n in resource_names if n and not n.isdigit()]
+
+        # Separate job IDs, user filters (use scancel -u), and other filters
+        explicit_job_ids = [
+            n for n in resource_names if n and n.isdigit()
+        ]
+        user_filters = []
+        other_filters = []
+        for n in resource_names:
+            if n and not n.isdigit():
+                if n.startswith("user="):
+                    user_filters.append(n.split("=", 1)[1])
+                else:
+                    other_filters.append(n)
+
+        # Resolve other filters to job IDs
+        all_job_ids = set(explicit_job_ids)
+        for f in other_filters:
+            if "=" in f:
+                key, value = f.split("=", 1)
+                filter_dict = {key: value}
+            else:
+                filter_dict = {"job_id": f}
+            raw_jobs = Job._fetch_jobs()
+            if raw_jobs:
+                jobs = [Job._normalize_job(j) for j in raw_jobs]
+                matched = Job._apply_filters(jobs, filter_dict)
+                for job in matched:
+                    all_job_ids.add(job["job_id"])
+
+        # Sort job IDs for consistent display
+        sorted_job_ids = sorted(all_job_ids, key=lambda x: int(x))
 
         if dry_run:
-            if job_ids:
+            for user in user_filters:
                 console.print(
                     f"[yellow]DRY RUN:[/yellow] "
-                    f"Would cancel {len(job_ids)} job(s): {', '.join(job_ids)}"
+                    f"Would cancel ALL jobs for user: {user}"
                 )
-            for f in filters:
+            if sorted_job_ids:
                 console.print(
                     f"[yellow]DRY RUN:[/yellow] "
-                    f"Would cancel jobs matching filter: {f}"
+                    f"Would cancel {len(sorted_job_ids)} job(s): "
+                    f"{', '.join(sorted_job_ids)}"
                 )
             return
 
-        # Build confirmation message
-        confirm_parts = []
-        if job_ids:
-            confirm_parts.append(
-                f"{len(job_ids)} job(s): {', '.join(job_ids)}"
+        # Confirmation
+        if not skip_confirm:
+            confirm_parts = []
+            if user_filters:
+                confirm_parts.append(
+                    f"ALL jobs for user(s): {', '.join(user_filters)}"
+                )
+            if sorted_job_ids:
+                confirm_parts.append(
+                    f"{len(sorted_job_ids)} job(s): {', '.join(sorted_job_ids)}"
+                )
+            if confirm_parts:
+                if not click.confirm(
+                    f"Cancel {' and '.join(confirm_parts)}?"
+                ):
+                    console.print("[red]Operation cancelled.[/red]")
+                    raise click.Abort()
+
+        # Cancel by user (scancel -u USER)
+        for user in user_filters:
+            console.print(
+                f"[yellow]Cancelling ALL jobs for user: {user}[/yellow]"
             )
-        if filters:
-            confirm_parts.append(f"jobs matching: {', '.join(filters)}")
+            Job._cancel_by_user(user, verbose=verbose)
 
-        if confirm_parts and not skip_confirm:
-            if not click.confirm(
-                f"Cancel {' and '.join(confirm_parts)}?"
-            ):
-                console.print("[red]Operation cancelled.[/red]")
-                raise click.Abort()
-
-        # Cancel job IDs
-        if job_ids:
-            Job._cancel_jobs(job_ids, verbose=verbose)
-
-        # Handle filters
-        for f in filters:
-            Job.delete(f, verbose=verbose)
+        # Cancel specific job IDs
+        if sorted_job_ids:
+            Job._cancel_jobs(sorted_job_ids, verbose=verbose)
         return
 
     # Standard handling for other resources
