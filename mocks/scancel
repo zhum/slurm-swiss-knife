@@ -6,11 +6,12 @@
 MOCKS_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 # Parse arguments
-JOB_ID=""
+JOB_IDS=()
 VERBOSE=true
 SIGNAL=""
 USER=""
 
+prev=""
 for arg in "$@"; do
     case "$arg" in
         -v|--verbose)
@@ -22,15 +23,14 @@ for arg in "$@"; do
         -u=*|--user=*)
             USER="${arg#*=}"
             ;;
+        -s|--signal|-u|--user)
+            # These will be handled with next arg
+            ;;
         [0-9]*)
-            JOB_ID="$arg"
+            JOB_IDS+=("$arg")
             ;;
     esac
-done
-
-# Handle -s and -u as separate arguments
-prev=""
-for arg in "$@"; do
+    # Handle -s and -u as separate arguments
     case "$prev" in
         -s|--signal)
             SIGNAL="$arg"
@@ -44,8 +44,8 @@ done
 
 # If verbose, print what we're doing
 if [ "$VERBOSE" = true ]; then
-    if [ -n "$JOB_ID" ]; then
-        echo "scancel: Cancelling job $JOB_ID"
+    if [ ${#JOB_IDS[@]} -gt 0 ]; then
+        echo "scancel: Cancelling ${#JOB_IDS[@]} job(s): ${JOB_IDS[*]}"
     elif [ -n "$USER" ]; then
         echo "scancel: Cancelling all jobs for user $USER"
     fi
@@ -53,4 +53,3 @@ fi
 
 # Mock always succeeds
 exit 0
-

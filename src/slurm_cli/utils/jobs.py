@@ -551,25 +551,28 @@ class Job(BaseSlurmResource):
                 )
                 return
 
-            # Cancel each matching job
+            # Cancel all matching jobs in one call
             job_ids = [j["job_id"] for j in jobs]
             console.print(
                 f"[yellow]Cancelling {len(job_ids)} job(s)...[/yellow]"
             )
-            for jid in job_ids:
-                cls._cancel_job(jid, verbose=verbose)
+            cls._cancel_jobs(job_ids, verbose=verbose)
         elif job_id:
             # Cancel single job by ID
-            cls._cancel_job(job_id, verbose=verbose)
+            cls._cancel_jobs([job_id], verbose=verbose)
         else:
             console.print("[red]Job ID or filter is required.[/red]")
 
     @classmethod
-    def _cancel_job(cls, job_id: str, verbose: bool = False) -> None:
-        """Cancel a single job by ID."""
+    def _cancel_jobs(
+        cls, job_ids: List[str], verbose: bool = False
+    ) -> None:
+        """Cancel jobs by IDs (pass all to scancel in one call)."""
+        if not job_ids:
+            return
         try:
             result = subprocess.run(
-                ["scancel", job_id],
+                ["scancel"] + job_ids,
                 check=True,
                 capture_output=True,
                 text=True,
@@ -579,11 +582,11 @@ class Job(BaseSlurmResource):
                 console.print(result.stdout)
             if verbose:
                 console.print(
-                    f"[green]Job '{job_id}' cancelled.[/green]"
+                    f"[green]{len(job_ids)} job(s) cancelled.[/green]"
                 )
         except subprocess.CalledProcessError as e:
             console.print(
-                f"[red]Failed to cancel job '{job_id}':[/red] {e.stderr or e}"
+                f"[red]Failed to cancel jobs:[/red] {e.stderr or e}"
             )
 
     @classmethod
