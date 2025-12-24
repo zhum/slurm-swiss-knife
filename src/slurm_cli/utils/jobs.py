@@ -770,6 +770,8 @@ _slurm_cli_jobs_autocomplete() {{
     if _slurm_parse_keyval "$cur" "$prev"; then
         case "$_key" in
             # Filter options
+            job_id|jobid)
+                _slurm_complete_value "$(_slurm_cache_jobs)" "$_key" "$_val" "$cur" ;;
             state)
                 _slurm_complete_value "{states}" "$_key" "$_val" "$cur" ;;
             user|mailuser|userid)
@@ -784,6 +786,9 @@ _slurm_cli_jobs_autocomplete() {{
                 _slurm_complete_value "$(_slurm_cache_reservations)" "$_key" "$_val" "$cur" ;;
             qos)
                 _slurm_complete_value "$(_slurm_cache_qos)" "$_key" "$_val" "$cur" ;;
+            name|jobname)
+                # No completion for free-form text
+                return ;;
             # Yes/No options
             contiguous|oversubscribe|reboot|shared)
                 _slurm_complete_value "yes no" "$_key" "$_val" "$cur" ;;
