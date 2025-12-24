@@ -49,6 +49,29 @@ from .utils.slurm_config import Config
 from .utils.users import User
 from .utils.utils import console
 
+
+def confirm_single_key(message: str, default: bool = False) -> bool:
+    """Single-key confirmation (y/n) without requiring Enter.
+
+    Args:
+        message: The confirmation message to display
+        default: Default value if Enter is pressed (False = No)
+
+    Returns:
+        True if user confirmed, False otherwise
+    """
+    suffix = " [y/N]: " if not default else " [Y/n]: "
+    click.echo(message + suffix, nl=False)
+    char = click.getchar()
+    click.echo()  # New line after keypress
+    if char in ("y", "Y"):
+        return True
+    if char in ("n", "N"):
+        return False
+    # Enter or other key = default
+    return default
+
+
 CONTEXT_SETTINGS = dict(help_option_names=["-h", "--help"])
 # Context settings without automatic help
 # (for commands with custom help callback)
@@ -1986,7 +2009,9 @@ def create(
                     "an account association.[/yellow]"
                 )
                 if not skip_confirm:
-                    if not click.confirm("Do you want to continue?"):
+                    if not confirm_single_key(
+                        "Do you want to continue?"
+                    ):
                         console.print("Aborted.")
                         return
 
@@ -2142,7 +2167,7 @@ def delete(
             )
             return
 
-        if not skip_confirm and not click.confirm(
+        if not skip_confirm and not confirm_single_key(
             f"Are you sure you want to delete associations "
             f"where {conditions_str}?"
         ):
@@ -2179,7 +2204,7 @@ def delete(
             )
             return
 
-        if not skip_confirm and not click.confirm(
+        if not skip_confirm and not confirm_single_key(
             f"Delete coordinator '{user}' from account '{account}'?"
         ):
             console.print("[red]Operation cancelled.[/red]")
@@ -2254,7 +2279,7 @@ def delete(
                     f"{len(sorted_job_ids)} job(s): {', '.join(sorted_job_ids)}"
                 )
             if confirm_parts:
-                if not click.confirm(
+                if not confirm_single_key(
                     f"Cancel {' and '.join(confirm_parts)}?"
                 ):
                     console.print("[red]Operation cancelled.[/red]")
@@ -2289,7 +2314,7 @@ def delete(
                     f"Would delete {canonical_resource}"
                 )
     else:
-        if not skip_confirm and not click.confirm(
+        if not skip_confirm and not confirm_single_key(
             f"Are you sure you want to delete {canonical_resource}"
             + (f" '{resource_name}'" if resource_name else "")
             + "?"
