@@ -518,12 +518,55 @@ class Job(BaseSlurmResource):
             )
 
     @classmethod
-    def delete(cls, job_id: str, verbose: bool = False) -> None:
-        """Cancel a job using scancel."""
-        if not job_id:
-            console.print("[red]Job ID is required.[/red]")
-            return
+    def delete(
+        cls, job_id: str, verbose: bool = False, **kwargs: Any
+    ) -> None:
+        """Cancel job(s) using scancel.
 
+        Args:
+            job_id: Job ID or filter expression (e.g., user=john)
+            verbose: Print verbose output
+            **kwargs: Additional filter options
+        """
+        # Check if job_id is a filter expression
+        if job_id and "=" in job_id:
+            # Parse as filter
+            key, value = job_id.split("=", 1)
+            kwargs[key] = value
+            job_id = None
+
+        # If we have filters, fetch and filter jobs first
+        if kwargs:
+            raw_jobs = cls._fetch_jobs()
+            if not raw_jobs:
+                console.print("[yellow]No jobs found.[/yellow]")
+                return
+
+            jobs = [cls._normalize_job(j) for j in raw_jobs]
+            jobs = cls._apply_filters(jobs, kwargs)
+
+            if not jobs:
+                console.print(
+                    "[yellow]No jobs matching filters found.[/yellow]"
+                )
+                return
+
+            # Cancel each matching job
+            job_ids = [j["job_id"] for j in jobs]
+            console.print(
+                f"[yellow]Cancelling {len(job_ids)} job(s)...[/yellow]"
+            )
+            for jid in job_ids:
+                cls._cancel_job(jid, verbose=verbose)
+        elif job_id:
+            # Cancel single job by ID
+            cls._cancel_job(job_id, verbose=verbose)
+        else:
+            console.print("[red]Job ID or filter is required.[/red]")
+
+    @classmethod
+    def _cancel_job(cls, job_id: str, verbose: bool = False) -> None:
+        """Cancel a single job by ID."""
         try:
             result = subprocess.run(
                 ["scancel", job_id],
@@ -536,7 +579,7 @@ class Job(BaseSlurmResource):
                 console.print(result.stdout)
             if verbose:
                 console.print(
-                    f"[green]Job '{job_id}' cancelled successfully.[/green]"
+                    f"[green]Job '{job_id}' cancelled.[/green]"
                 )
         except subprocess.CalledProcessError as e:
             console.print(

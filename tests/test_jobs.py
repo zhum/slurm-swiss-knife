@@ -340,10 +340,10 @@ class TestJobDelete:
         assert "12345" in call_args
 
     def test_delete_no_job_id(self, capsys):
-        """Test delete without job ID."""
+        """Test delete without job ID or filter."""
         Job.delete("")
         captured = capsys.readouterr()
-        assert "Job ID is required" in captured.out
+        assert "Job ID or filter is required" in captured.out
 
 
 class TestJobAutocomplete:
