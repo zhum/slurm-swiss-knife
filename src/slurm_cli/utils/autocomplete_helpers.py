@@ -16,6 +16,46 @@ def get_common_autocomplete_functions() -> str:
 # Common autocomplete helper functions
 # ==============================================================================
 
+# Cache timeout in seconds (must match Python CACHE_TIMEOUT)
+_SLURM_CACHE_TIMEOUT=60
+
+# Check if cache update is disabled via environment variable
+# Returns 0 if updates are disabled, 1 otherwise
+_slurm_cache_updates_disabled() {
+    local val="${SLURM_CLI_NO_CACHE_UPDATE:-}"
+    val="${val,,}"  # lowercase
+    [[ "$val" == "1" || "$val" == "y" || "$val" == "yes" || "$val" == "true" ]]
+}
+
+# Ensure cache file exists and is fresh, update if needed
+# Usage: _slurm_ensure_cache "/tmp/slurm_cli_nodes.json" "nodes"
+_slurm_ensure_cache() {
+    local file="$1"
+    local resource="$2"
+    
+    # Skip if updates are disabled
+    _slurm_cache_updates_disabled && return
+    
+    local needs_update=0
+    
+    if [[ ! -f "$file" ]]; then
+        needs_update=1
+    else
+        # Check if file is older than timeout
+        local now=$(date +%s)
+        local mtime=$(stat -c %Y "$file" 2>/dev/null || echo 0)
+        local age=$((now - mtime))
+        if [[ $age -gt $_SLURM_CACHE_TIMEOUT ]]; then
+            needs_update=1
+        fi
+    fi
+    
+    if [[ $needs_update -eq 1 ]]; then
+        # Update cache silently in foreground (need results immediately)
+        slurm-cli show "$resource" --style=json >/dev/null 2>&1
+    fi
+}
+
 # Complete with compgen, handling empty current word
 # Usage: _slurm_complete "word1 word2 word3" "$cur"
 _slurm_complete() {
@@ -127,31 +167,39 @@ _slurm_complete_value() {
 }
 
 # Cache accessor functions for common resources
+# Each function ensures cache is fresh before reading
 _slurm_cache_accounts() {
+    _slurm_ensure_cache "/tmp/slurm_cli_accounts.json" "accounts"
     _slurm_cache_get "/tmp/slurm_cli_accounts.json" '.accounts[].name'
 }
 
 _slurm_cache_qos() {
+    _slurm_ensure_cache "/tmp/slurm_cli_qos.json" "qos"
     _slurm_cache_get "/tmp/slurm_cli_qos.json" '.qos[].name'
 }
 
 _slurm_cache_partitions() {
+    _slurm_ensure_cache "/tmp/slurm_cli_partitions.json" "partitions"
     _slurm_cache_get "/tmp/slurm_cli_partitions.json" 'keys[]'
 }
 
 _slurm_cache_nodes() {
+    _slurm_ensure_cache "/tmp/slurm_cli_nodes.json" "nodes"
     _slurm_cache_get "/tmp/slurm_cli_nodes.json" 'keys[]'
 }
 
 _slurm_cache_users() {
+    _slurm_ensure_cache "/tmp/slurm_cli_users.json" "users"
     _slurm_cache_get "/tmp/slurm_cli_users.json" '.users[].name'
 }
 
 _slurm_cache_reservations() {
+    _slurm_ensure_cache "/tmp/slurm_cli_reservations.json" "reservations"
     _slurm_cache_get "/tmp/slurm_cli_reservations.json" 'keys[]'
 }
 
 _slurm_cache_jobs() {
+    _slurm_ensure_cache "/tmp/slurm_cli_jobs.json" "jobs"
     _slurm_cache_get "/tmp/slurm_cli_jobs.json" '.jobs[].job_id'
 }
 
