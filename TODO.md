@@ -216,3 +216,76 @@
 - Consider breaking down large items into smaller, manageable tasks
 - Regular review and updates of this TODO list are recommended
 
+
+
+
+
+       Account=<account>
+       AdminComment=<spec>
+       ArrayTaskThrottle=<count>
+       BurstBuffer=<spec>
+       Clusters=<spec>
+       ClusterFeatures=<spec>
+       Comment=<spec>
+       Contiguous={yes|no}
+       CoreSpec=<count>
+       CPUsPerTask=<count>
+       Deadline=<time_spec>
+       DelayBoot=<time_spec>
+       Dependency=<dependency_list>
+              after:job_id[:jobid...]
+              afterany:job_id[:jobid...]
+              afternotok:job_id[:jobid...]
+              afterok:job_id[:jobid...]
+              singleton
+       EligibleTime=<time_spec>
+       EndTime
+       ExcNodeList=<nodes>
+       Extra=<spec>
+       Features=<features>
+       Gres=<list>
+       JobId=<job_list>
+       Licenses=<name>
+       MailType=<types>
+       MailUser=<name>
+       MinCPUsNode=<count>
+       MinMemoryCPU=<megabytes>
+       MinMemoryNode=<megabytes>
+       MinTmpDiskNode=<megabytes>
+       TimeMin=<timespec>
+       JobName=<name>
+       Name[=<name>]
+       Nice[=<adjustment>]
+       NodeList=<nodes>
+       NumCPUs=<min_count>[-<max_count>]
+       NumNodes=<min_count>[-<max_count>]
+       NumTasks=<count>
+       OverSubscribe={yes|no}
+       Partition=<name>
+       Prefer=<features>
+       Priority=<number>
+       QOS=<name>
+       Reboot={yes|no}
+       ReqCores=<count>
+       ReqNodeList=<nodes>
+       ReqNodes=<min_count>[-<max_count>]
+       ReqProcs=<count>
+       ReqSockets=<count>
+       ReqThreads=<count>
+       Requeue={0|1}
+       ReservationName=<name>
+       ResetAccrueTime
+       SiteFactor=<account>
+       StdErr=<filepath>
+       StdIn=<filepath>
+       StdOut=<filepath>
+       Shared={yes|no}
+       StartTime=<time_spec>
+       Switches=<count>[@<max-time-to-wait>]
+       wait-for-switch=<seconds>
+       TasksPerNode=<count>
+       ThreadSpec=<count>
+       TimeLimit=<time>
+       UserID=<UID or name>
+       WCKey=<key>
+       WorkDir=<directory_name>

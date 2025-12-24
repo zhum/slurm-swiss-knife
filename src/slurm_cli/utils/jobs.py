@@ -144,6 +144,134 @@ class Job(BaseSlurmResource):
         "reservation",
     ]
 
+    # Update options by type (from scontrol update job)
+    JOB_UPDATE_OPTIONS = {
+        # Yes/No options
+        "yesno": [
+            "Contiguous",
+            "OverSubscribe",
+            "Reboot",
+            "Shared",
+        ],
+        # 0/1 options
+        "binary": [
+            "Requeue",
+        ],
+        # Count/number options
+        "count": [
+            "ArrayTaskThrottle",
+            "CoreSpec",
+            "CPUsPerTask",
+            "MinCPUsNode",
+            "MinMemoryCPU",
+            "MinMemoryNode",
+            "MinTmpDiskNode",
+            "Nice",
+            "NumCPUs",
+            "NumNodes",
+            "NumTasks",
+            "Priority",
+            "ReqCores",
+            "ReqNodes",
+            "ReqProcs",
+            "ReqSockets",
+            "ReqThreads",
+            "SiteFactor",
+            "Switches",
+            "TasksPerNode",
+            "ThreadSpec",
+        ],
+        # Time spec options
+        "time": [
+            "Deadline",
+            "DelayBoot",
+            "EligibleTime",
+            "EndTime",
+            "StartTime",
+            "TimeLimit",
+            "TimeMin",
+        ],
+        # Node list options
+        "nodes": [
+            "ExcNodeList",
+            "NodeList",
+            "ReqNodeList",
+        ],
+        # Partition (special - use cache)
+        "partition": [
+            "Partition",
+        ],
+        # QOS (special - use cache)
+        "qos": [
+            "QOS",
+        ],
+        # Account (special - use cache)
+        "account": [
+            "Account",
+        ],
+        # Reservation (special - use cache)
+        "reservation": [
+            "ReservationName",
+        ],
+        # User (special - use cache)
+        "user": [
+            "MailUser",
+            "UserID",
+        ],
+        # String/text options
+        "string": [
+            "AdminComment",
+            "BurstBuffer",
+            "Clusters",
+            "ClusterFeatures",
+            "Comment",
+            "Dependency",
+            "Extra",
+            "Features",
+            "Gres",
+            "JobName",
+            "Licenses",
+            "MailType",
+            "Name",
+            "Prefer",
+            "StdErr",
+            "StdIn",
+            "StdOut",
+            "WCKey",
+            "WorkDir",
+        ],
+        # No-value options (flags)
+        "flag": [
+            "ResetAccrueTime",
+        ],
+    }
+
+    # Mail types for MailType option
+    MAIL_TYPES = [
+        "NONE",
+        "BEGIN",
+        "END",
+        "FAIL",
+        "REQUEUE",
+        "ALL",
+        "INVALID_DEPEND",
+        "STAGE_OUT",
+        "TIME_LIMIT",
+        "TIME_LIMIT_90",
+        "TIME_LIMIT_80",
+        "TIME_LIMIT_50",
+        "ARRAY_TASKS",
+    ]
+
+    # Dependency types for Dependency option
+    DEPENDENCY_TYPES = [
+        "after:",
+        "afterany:",
+        "afternotok:",
+        "afterok:",
+        "singleton",
+    ]
+
     def __init__(self, job_id: str = None, **kwargs: Any):
         self.job_id = job_id
         self.kwargs = kwargs
@@ -615,6 +743,18 @@ class Job(BaseSlurmResource):
         )
         states = " ".join(cls.JOB_STATES)
 
+        # Build update options list
+        update_opts = []
+        for opt_type, opts in cls.JOB_UPDATE_OPTIONS.items():
+            if opt_type == "flag":
+                update_opts.extend(opts)  # No = suffix for flags
+            else:
+                update_opts.extend(f"{o}=" for o in opts)
+        update_opts_str = " ".join(update_opts)
+
+        mail_types = " ".join(cls.MAIL_TYPES)
+        dep_types = " ".join(cls.DEPENDENCY_TYPES)
+
         script = f"""
 _slurm_cli_jobs_autocomplete() {{
     local cmd="$1"
@@ -624,34 +764,52 @@ _slurm_cli_jobs_autocomplete() {{
     local prev="${{COMP_WORDS[COMP_CWORD-1]}}"
 
     local filter_options="{filter_opts}"
+    local update_options="{update_opts_str}"
 
     # Handle key=value completion
     if _slurm_parse_keyval "$cur" "$prev"; then
         case "$_key" in
+            # Filter options
             state)
                 _slurm_complete_value "{states}" "$_key" "$_val" "$cur" ;;
-            user)
+            user|mailuser|userid)
                 _slurm_complete_value "$(_slurm_cache_users)" "$_key" "$_val" "$cur" ;;
             account)
                 _slurm_complete_value "$(_slurm_cache_accounts)" "$_key" "$_val" "$cur" ;;
             partition)
                 _slurm_complete_value "$(_slurm_cache_partitions)" "$_key" "$_val" "$cur" ;;
-            nodes)
-                _slurm_complete_value "$(_slurm_cache_nodes)" "$_key" "$_val" "$cur" ;;
-            reservation)
+            nodes|nodelist|excnodelist|reqnodelist)
+                _slurm_complete_nodes_value "$_val" "$cur" "$_key" ;;
+            reservation|reservationname)
                 _slurm_complete_value "$(_slurm_cache_reservations)" "$_key" "$_val" "$cur" ;;
+            qos)
+                _slurm_complete_value "$(_slurm_cache_qos)" "$_key" "$_val" "$cur" ;;
+            # Yes/No options
+            contiguous|oversubscribe|reboot|shared)
+                _slurm_complete_value "yes no" "$_key" "$_val" "$cur" ;;
+            # 0/1 options
+            requeue)
+                _slurm_complete_value "0 1" "$_key" "$_val" "$cur" ;;
+            # Mail type
+            mailtype)
+                _slurm_complete_value "{mail_types}" "$_key" "$_val" "$cur" ;;
+            # Dependency
+            dependency)
+                _slurm_complete_value "{dep_types}" "$_key" "$_val" "$cur" ;;
         esac
         [[ ${{#COMPREPLY[@]}} -gt 0 ]] && return
     fi
 
     local cached_jobs="$(_slurm_cache_jobs)"
 
-    # Default: show filter options and job IDs
+    # Default: show options and job IDs based on command
     case "$cmd" in
         show)
             _slurm_complete "$filter_options" "$cur" ;;
-        delete|del|cancel|update)
+        delete|del|cancel)
             _slurm_complete "$filter_options $cached_jobs" "$cur" ;;
+        update|modify|set)
+            _slurm_complete "$update_options $filter_options $cached_jobs" "$cur" ;;
     esac
 }}
 """  # noqa: E501
