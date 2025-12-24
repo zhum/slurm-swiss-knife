@@ -22,10 +22,22 @@ slurm-cli show partitions --csv
 
 ```bash
 # Update partition state
-slurm-cli modify partitions gpu set state=UP
+slurm-cli modify partitions gpu state=UP
 
 # Update time limit
-slurm-cli modify partitions batch set defaulttime=4:00:00
+slurm-cli modify partitions batch defaulttime=4:00:00
+
+# Set nodes for a partition
+slurm-cli update partitions gpu nodes=node001,node002
+
+# Add nodes to a partition
+slurm-cli update partitions gpu nodes+=node003,node004
+
+# Remove nodes from a partition
+slurm-cli update partitions gpu nodes-=node001
+
+# Add nodes using filter
+slurm-cli update partitions gpu nodes+=state=idle
 ```
 
 ## Available Fields

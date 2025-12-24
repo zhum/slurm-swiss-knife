@@ -346,6 +346,69 @@ class TestJobDelete:
         assert "Job ID or filter is required" in captured.out
 
 
+class TestJobCancelMethods:
+    """Tests for Job._cancel_jobs and _cancel_by_user."""
+
+    @mock.patch("slurm_cli.utils.jobs.subprocess.run")
+    def test_cancel_jobs_single(self, mock_run):
+        """Test cancelling a single job."""
+        mock_run.return_value = mock.Mock(stdout="", returncode=0)
+
+        Job._cancel_jobs(["12345"])
+
+        mock_run.assert_called_once()
+        call_args = mock_run.call_args[0][0]
+        assert "scancel" in call_args
+        assert "12345" in call_args
+
+    @mock.patch("slurm_cli.utils.jobs.subprocess.run")
+    def test_cancel_jobs_multiple(self, mock_run):
+        """Test cancelling multiple jobs."""
+        mock_run.return_value = mock.Mock(stdout="", returncode=0)
+
+        Job._cancel_jobs(["12345", "12346", "12347"])
+
+        mock_run.assert_called_once()
+        call_args = mock_run.call_args[0][0]
+        assert "scancel" in call_args
+        assert "12345" in call_args
+        assert "12346" in call_args
+        assert "12347" in call_args
+
+    @mock.patch("slurm_cli.utils.jobs.subprocess.run")
+    def test_cancel_jobs_verbose(self, mock_run, capsys):
+        """Test cancelling jobs with verbose output."""
+        mock_run.return_value = mock.Mock(stdout="", returncode=0)
+
+        Job._cancel_jobs(["12345"], verbose=True)
+
+        captured = capsys.readouterr()
+        assert "1 job(s) cancelled" in captured.out
+
+    @mock.patch("slurm_cli.utils.jobs.subprocess.run")
+    def test_cancel_by_user(self, mock_run):
+        """Test cancelling all jobs for a user."""
+        mock_run.return_value = mock.Mock(stdout="", returncode=0)
+
+        Job._cancel_by_user("testuser")
+
+        mock_run.assert_called_once()
+        call_args = mock_run.call_args[0][0]
+        assert "scancel" in call_args
+        assert "-u" in call_args
+        assert "testuser" in call_args
+
+    @mock.patch("slurm_cli.utils.jobs.subprocess.run")
+    def test_cancel_by_user_verbose(self, mock_run, capsys):
+        """Test cancelling user jobs with verbose."""
+        mock_run.return_value = mock.Mock(stdout="", returncode=0)
+
+        Job._cancel_by_user("testuser", verbose=True)
+
+        captured = capsys.readouterr()
+        assert "All jobs for user 'testuser' cancelled" in captured.out
+
+
 class TestJobAutocomplete:
     """Tests for Job.generate_autocomplete_options."""
 
@@ -371,6 +434,28 @@ class TestJobAutocomplete:
         assert "user=" in script
         assert "partition=" in script
         assert "state=" in script
+
+    def test_generate_autocomplete_show_command(self):
+        """Test autocomplete script has show command handling."""
+        script = Job.generate_autocomplete_options()
+
+        assert "show)" in script
+        assert "filter_options" in script
+
+    def test_generate_autocomplete_delete_command(self):
+        """Test autocomplete script has delete command handling."""
+        script = Job.generate_autocomplete_options()
+
+        assert "delete|del|cancel|update)" in script
+        assert "cached_jobs" in script
+
+    def test_generate_autocomplete_uses_cache_functions(self):
+        """Test autocomplete script uses cache functions."""
+        script = Job.generate_autocomplete_options()
+
+        assert "_slurm_cache_users" in script
+        assert "_slurm_cache_partitions" in script
+        assert "_slurm_cache_jobs" in script
 
 
 class TestJobProfileFields:

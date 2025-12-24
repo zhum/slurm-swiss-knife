@@ -10,12 +10,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - **Jobs Resource**: New `jobs` resource for viewing and managing Slurm jobs
-  - `slurm-cli show jobs` - list jobs with filters (user=, state=, partition=, account=)
+  - `slurm-cli show jobs` - list jobs with filters (user=, state=, partition=, account=, nodes=, reservation=)
   - `slurm-cli update jobs JOBID key=value` - update job properties
-  - `slurm-cli delete jobs JOBID` - cancel a job (uses scancel)
+  - `slurm-cli delete jobs JOBID [JOBID...]` - cancel jobs (supports multiple IDs)
+  - `slurm-cli delete jobs user=NAME` - cancel all jobs for a user (uses `scancel -u`)
+  - Mixed deletion: `slurm-cli delete jobs 12345 user=john state=pending` - combines IDs and filters
   - Supports all output styles (pretty, json, csv) and profiles
-  - Profile configs: default (all columns), compact (key info), minimal, oneline, detailed
+  - Profile fields: job_id, user_name, partition, job_state, start_time, endlimit, node_count, gres, reason
+  - `endlimit` shows end_time if known, otherwise time_limit
   - Aliases: `job`, `j`
+- **Partition/Reservation Node Modification**: Add or remove nodes incrementally
+  - `nodes+=` - add nodes to partition/reservation
+  - `nodes-=` - remove nodes from partition/reservation
+  - Example: `slurm-cli update partitions gpu nodes+=node001,node002`
+  - Supports node filters: `slurm-cli update partitions gpu nodes+=state=idle`
+- **Autocomplete Cache Auto-Update**: Cache is automatically refreshed when missing or outdated
+  - Set `SLURM_CLI_NO_CACHE_UPDATE=1` to disable automatic updates
+  - Cache timeout: 60 seconds
+- **Single-Key Confirmations**: All confirmation prompts (y/N) respond immediately without requiring Enter
 - **Node Filter Syntax**: Select nodes by filter instead of explicit names
   - `nodes=partition=NAME` - nodes from a partition
   - `nodes=state=STATE` - nodes by state (idle, alloc, drain, etc.)

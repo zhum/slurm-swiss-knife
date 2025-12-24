@@ -401,6 +401,40 @@ class TestUpdateCache:
                 Resource.CACHE_LIST_FILES = original_list
 
     @mock.patch.object(Resource, "run_cmd_json")
+    def test_update_cache_jobs(self, mock_run):
+        """Test updating cache for jobs stores job IDs in list file."""
+        mock_run.return_value = {
+            "jobs": [
+                {"job_id": 12345, "name": "test1"},
+                {"job_id": 12346, "name": "test2"},
+                {"job_id": 12347, "name": "test3"},
+            ]
+        }
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            original_files = dict(Resource.CACHE_FILES)
+            original_list = dict(Resource.CACHE_LIST_FILES)
+            try:
+                Resource.CACHE_FILES["jobs"] = f"{tmpdir}/jobs.json"
+                Resource.CACHE_LIST_FILES[
+                    "jobs"
+                ] = f"{tmpdir}/jobs.list"
+
+                result = Resource.update_cache("jobs")
+
+                # Check JSON file has correct structure
+                assert "jobs" in result
+                assert len(result["jobs"]) == 3
+
+                # Check list file has job IDs
+                with open(f"{tmpdir}/jobs.list") as f:
+                    list_data = json.load(f)
+                assert list_data == ["12345", "12346", "12347"]
+            finally:
+                Resource.CACHE_FILES = original_files
+                Resource.CACHE_LIST_FILES = original_list
+
+    @mock.patch.object(Resource, "run_cmd_json")
     def test_update_cache_no_data(self, mock_run):
         """Test updating cache when no data returned."""
         mock_run.return_value = None

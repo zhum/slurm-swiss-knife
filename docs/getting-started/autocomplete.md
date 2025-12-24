@@ -100,8 +100,32 @@ Completion data is cached in `/tmp/`:
 | `/tmp/slurm_cli_accounts.json` | Account data |
 | `/tmp/slurm_cli_partitions.json` | Partition data |
 | `/tmp/slurm_cli_qos.json` | QoS data |
+| `/tmp/slurm_cli_jobs.json` | Job data |
+| `/tmp/slurm_cli_nodes.json` | Node data |
+| `/tmp/slurm_cli_reservations.json` | Reservation data |
 
-Force cache refresh:
+## Automatic Cache Updates
+
+The autocomplete system automatically updates cache when:
+
+1. Cache file is missing
+1. Cache file is older than 60 seconds
+
+This ensures completions always show current data without manual refresh.
+
+### Disable Automatic Updates
+
+To disable automatic cache updates during completion (useful for slow networks or when Slurm is unavailable):
+
+```bash
+export SLURM_CLI_NO_CACHE_UPDATE=1
+```
+
+Accepted values: `1`, `y`, `yes`, `true`
+
+### Force Cache Refresh
+
+To manually refresh cache:
 
 ```bash
 slurm-cli show users --force-cache-update

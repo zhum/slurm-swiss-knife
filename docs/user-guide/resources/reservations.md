@@ -44,13 +44,25 @@ slurm-cli create reservations teamres \
 
 ```bash
 # Extend duration
-slurm-cli modify reservations myres set duration=2-00:00:00
+slurm-cli update reservations myres duration=2-00:00:00
 
 # Add users
-slurm-cli modify reservations myres set users+=newuser
+slurm-cli update reservations myres users+=newuser
 
 # Change end time
-slurm-cli modify reservations myres set endtime=2024-01-20T18:00:00
+slurm-cli update reservations myres endtime=2024-01-20T18:00:00
+
+# Add nodes to reservation
+slurm-cli update reservations myres nodes+=node005,node006
+
+# Remove nodes from reservation
+slurm-cli update reservations myres nodes-=node001
+
+# Add nodes using filter
+slurm-cli update reservations myres nodes+=state=idle
+
+# Add nodes from a partition
+slurm-cli update reservations myres nodes+=partition=gpu
 ```
 
 ## Delete Reservations
