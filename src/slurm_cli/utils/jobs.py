@@ -13,15 +13,15 @@ from .profiles import format_with_template, get_profile_config
 from .utils import console
 
 
-def _format_timestamp(epoch: int) -> str:
+def _format_timestamp(epoch: int, default: str = "-") -> str:
     """Format Unix timestamp as YYYY-MM-DDTHH:MM:SS."""
     if not epoch or epoch <= 0:
-        return ""
+        return default
     try:
         dt = datetime.fromtimestamp(epoch)
         return dt.strftime("%Y-%m-%dT%H:%M:%S")
     except (ValueError, OSError):
-        return ""
+        return default
 
 
 def _format_duration(minutes: int) -> str:
@@ -243,24 +243,19 @@ class Job(BaseSlurmResource):
         if isinstance(end_time_data, dict):
             end_time_set = end_time_data.get("set", False)
             end_time_num = end_time_data.get("number", 0)
-            end_time_str = (
-                _format_timestamp(end_time_num)
-                if end_time_set and end_time_num
-                else ""
-            )
+            if end_time_set and end_time_num:
+                end_time_str = _format_timestamp(end_time_num)
+            else:
+                end_time_str = "-"
         else:
-            end_time_str = (
-                _format_timestamp(end_time_data)
-                if end_time_data
-                else ""
-            )
-            end_time_set = bool(end_time_data)
+            end_time_str = _format_timestamp(end_time_data)
+            end_time_set = bool(end_time_data) and end_time_str != "-"
 
         # endlimit: end_time (as timestamp) if known, otherwise time_limit
-        if end_time_set and end_time_str:
+        if end_time_str and end_time_str != "-":
             endlimit_str = end_time_str
         else:
-            endlimit_str = time_limit_str
+            endlimit_str = time_limit_str if time_limit_str else "-"
 
         return {
             "job_id": str(get_value(job, "job_id", "")),

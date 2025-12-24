@@ -177,7 +177,7 @@ class TestJobNormalizeJob:
         }
         normalized = Job._normalize_job(job_data)
         assert normalized["endlimit"] == "1:00:00"
-        assert normalized["end_time"] == ""
+        assert normalized["end_time"] == "-"
 
     def test_normalize_endlimit_uses_time_limit_when_end_time_zero(
         self,
@@ -195,7 +195,7 @@ class TestJobNormalizeJob:
         normalized = Job._normalize_job(job_data)
         # time_limit 1440 mins = 24 hours = 1 day
         assert normalized["endlimit"] == "1-00:00:00"
-        assert normalized["end_time"] == ""
+        assert normalized["end_time"] == "-"
 
 
 class TestJobApplyFilters:
