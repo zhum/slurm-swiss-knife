@@ -213,3 +213,46 @@
 - Items marked with [ ] are not started, [x] are completed
 - Consider breaking down large items into smaller, manageable tasks
 - Regular review and updates of this TODO list are recommended
+
+
+
+
+       AllocNodes=<nodelist>
+       AllowAccounts=<accountlist>
+       AllowGroups=<list>
+       AllowQOS=<qoslist>
+       Alternate=<partition>
+       CpuBind={none|socket|ldom|core|thread|off}
+       Default={yes|no}
+       DefaultTime=<time>
+       DefMemPerCPU=<MB>
+       DefMemPerNode=<MB>
+       DenyAccounts=<accountlist>
+       DenyQOS=<qoslist>
+       DisableRootJobs={yes|no}
+       ExclusiveUser={yes|no}
+       GraceTime=<interval>
+       Hidden={yes|no}
+       JobDefaults=<specs>
+       MaxCPUsPerNode=<count>
+       LLN={yes|no}
+       MaxMemPerCPU=<MB>
+       MaxMemPerNode=<MB>
+       MaxNodes=<count|INFINITE|UNLIMITED>
+       MaxTime=<time>
+       MinNodes=<count>
+       MaxCPUsPerSocket=<count>
+       Nodes=<node-list>
+       OverSubscribe={yes|no|exclusive|force}[:<job_count>]
+       OverTimeLimit=<count>
+       PartitionName=<name>
+       PowerDownOnIdle={ytes|no}
+       PreemptMode={OFF|CANCEL|REQUEUE|SUSPEND}
+       PriorityJobFactor=<count>
+       PriorityTier=<count>
+       QOS=<QOSname|blank to remove>
+       ReqResv={yes|no}
+       RootOnly={yes|no}
+       Shared={yes|no|exclusive|force}[:<job_count>]
+       State={up|down|drain|inactive}
+       TRESBillingWeights=<TRES Billing Weights>

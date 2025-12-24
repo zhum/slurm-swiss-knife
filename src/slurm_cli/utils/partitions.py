@@ -44,8 +44,12 @@ class Partition(BaseSlurmResource):
         }
 
     valid_args = {
+        "allocnodes": {
+            "type": "nodes",
+            "help": "Node list that can be allocated to jobs",
+        },
         "allowaccounts": {
-            "type": "list",
+            "type": "accounts",
             "help": "Comma-separated list of accounts"
             "that are allowed to use this partition",
         },
@@ -55,7 +59,7 @@ class Partition(BaseSlurmResource):
             "that are allowed to use this partition",
         },
         "allowqos": {
-            "type": "list",
+            "type": "qos_list",
             "help": "Comma-separated list of QOSs"
             "that are allowed to use this partition",
         },
@@ -89,12 +93,12 @@ class Partition(BaseSlurmResource):
             "for jobs in this partition",
         },
         "denyaccounts": {
-            "type": "list",
+            "type": "accounts",
             "help": "Identify the Accounts which should be denied access"
             "to this partition",
         },
         "denyqos": {
-            "type": "list",
+            "type": "qos_list",
             "help": "Identify the QOSs which should be denied access"
             "to this partition",
         },
@@ -125,6 +129,11 @@ class Partition(BaseSlurmResource):
             "type": "[yes, no, y, n, 1, 0]",
             "help": "Schedule jobs on the least loaded nodes "
             "(based on the number of idle CPUs)",
+        },
+        "maxcpuspernode": {
+            "type": "int",
+            "help": "Set the maximum number of CPUs that can be allocated per"
+            " node to all jobs in this partition",
         },
         "maxcpuspersocket": {
             "type": "int",
@@ -215,6 +224,14 @@ class Partition(BaseSlurmResource):
         "tresbillingweights": {
             "type": "list",
             "help": "TRES Billing Weights",
+        },
+        "partitionname": {
+            "type": "str",
+            "help": "Partition name",
+        },
+        "shared": {
+            "type": "[yes, no, exclusive, force]",
+            "help": "Allow shared resources (deprecated, use oversubscribe)",
         },
         "state": {
             "type": "[up, down, drain, inactive]",
@@ -755,7 +772,7 @@ class Partition(BaseSlurmResource):
         cpubind_values = "none socket ldom core thread off"
         yesno_keys = (
             "default|disablerootjobs|exclusiveuser|hidden|lln|"
-            "oversubscribe|powerdownonidle|reqresv|rootonly"
+            "oversubscribe|powerdownonidle|reqresv|rootonly|shared"
         )
 
         script = f"""
