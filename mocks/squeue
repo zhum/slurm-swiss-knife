@@ -8,39 +8,107 @@
 # Get the directory where this script is located (same as mocks directory)
 MOCKS_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
-# Extract user filter if present
+# Extract filters if present
 USER_FILTER=""
-for arg in "$@"; do
-    if [[ "$arg" == -u* ]]; then
-        USER_FILTER="${arg#-u}"
-    fi
-done
-# Also handle -u as separate argument
+PARTITION_FILTER=""
+ACCOUNT_FILTER=""
+STATE_FILTER=""
+NAME_FILTER=""
+NODES_FILTER=""
+RESERVATION_FILTER=""
+OUTPUT_FORMAT=""
+
 prev=""
 for arg in "$@"; do
-    if [[ "$prev" == "-u" ]]; then
-        USER_FILTER="$arg"
-    fi
+    case "$prev" in
+        -u) USER_FILTER="$arg" ;;
+        -p) PARTITION_FILTER="$arg" ;;
+        -A) ACCOUNT_FILTER="$arg" ;;
+        -t) STATE_FILTER="$arg" ;;
+        -n) NAME_FILTER="$arg" ;;
+        -w) NODES_FILTER="$arg" ;;
+        -R) RESERVATION_FILTER="$arg" ;;
+        -o) OUTPUT_FORMAT="$arg" ;;
+        -h) ;; # Skip -h (no header)
+    esac
+    # Handle combined short options like -u<user>
+    case "$arg" in
+        -u*) [[ ${#arg} -gt 2 ]] && USER_FILTER="${arg#-u}" ;;
+        -p*) [[ ${#arg} -gt 2 ]] && PARTITION_FILTER="${arg#-p}" ;;
+        -A*) [[ ${#arg} -gt 2 ]] && ACCOUNT_FILTER="${arg#-A}" ;;
+        -t*) [[ ${#arg} -gt 2 ]] && STATE_FILTER="${arg#-t}" ;;
+    esac
     prev="$arg"
 done
 
+# Build filter for Python
+build_filter_script() {
+    local script="
+import json
+import sys
+
+data = json.load(open('$MOCKS_DIR/data/jobs.json'))
+jobs = data.get('jobs', [])
+
+# Apply filters
+"
+    if [ -n "$USER_FILTER" ]; then
+        script+="jobs = [j for j in jobs if j.get('user_name', '').lower() == '${USER_FILTER,,}']
+"
+    fi
+    if [ -n "$PARTITION_FILTER" ]; then
+        script+="jobs = [j for j in jobs if j.get('partition', '').lower() == '${PARTITION_FILTER,,}']
+"
+    fi
+    if [ -n "$ACCOUNT_FILTER" ]; then
+        script+="jobs = [j for j in jobs if j.get('account', '').lower() == '${ACCOUNT_FILTER,,}']
+"
+    fi
+    if [ -n "$STATE_FILTER" ]; then
+        script+="
+state_filter = '${STATE_FILTER,,}'
+def match_state(job):
+    state = job.get('job_state', [])
+    if isinstance(state, list):
+        return any(state_filter in s.lower() for s in state)
+    return state_filter in str(state).lower()
+jobs = [j for j in jobs if match_state(j)]
+"
+    fi
+    if [ -n "$NAME_FILTER" ]; then
+        script+="jobs = [j for j in jobs if '${NAME_FILTER,,}' in j.get('name', '').lower()]
+"
+    fi
+    if [ -n "$RESERVATION_FILTER" ]; then
+        script+="jobs = [j for j in jobs if j.get('reservation', '').lower() == '${RESERVATION_FILTER,,}']
+"
+    fi
+    echo "$script"
+}
+
 # Check if --json is in arguments
 if [[ "$*" == *"--json"* ]]; then
-    if [ -f "$MOCKS_DIR/data/squeue.json" ]; then
-        if [ -n "$USER_FILTER" ]; then
-            # Filter jobs by user
-            python3 -c "
-import json
-data = json.load(open('$MOCKS_DIR/data/squeue.json'))
-filtered = [j for j in data.get('jobs', []) if j.get('user_name') == '$USER_FILTER']
-print(json.dumps({'jobs': filtered}))
-" 2>/dev/null || cat "$MOCKS_DIR/data/squeue.json"
-        else
-            cat "$MOCKS_DIR/data/squeue.json"
-        fi
+    if [ -f "$MOCKS_DIR/data/jobs.json" ]; then
+        script=$(build_filter_script)
+        script+="print(json.dumps({'jobs': jobs}))"
+        python3 -c "$script" 2>/dev/null || cat "$MOCKS_DIR/data/jobs.json"
+    elif [ -f "$MOCKS_DIR/data/squeue.json" ]; then
+        cat "$MOCKS_DIR/data/squeue.json"
     else
-        echo "Error: squeue.json file not found in $MOCKS_DIR/data" >&2
-        exit 1
+        echo '{"jobs": []}' 
+    fi
+# Check if custom output format is requested (-o %i for job IDs only)
+elif [[ "$OUTPUT_FORMAT" == "%i" ]]; then
+    if [ -f "$MOCKS_DIR/data/jobs.json" ]; then
+        script=$(build_filter_script)
+        script+="
+for j in jobs:
+    print(j.get('job_id', ''))
+"
+        python3 -c "$script" 2>/dev/null
+    else
+        # Return empty if no data file
+        echo ""
     fi
 # Check if extended format is requested (-O or --Format)
 elif [[ "$*" =~ -O|--Format ]]; then
