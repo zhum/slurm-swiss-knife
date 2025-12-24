@@ -2213,13 +2213,24 @@ def delete(
                 )
             return
 
-        # Handle job IDs - pass all at once
+        # Build confirmation message
+        confirm_parts = []
         if job_ids:
-            if not skip_confirm and not click.confirm(
-                f"Cancel {len(job_ids)} job(s): {', '.join(job_ids)}?"
+            confirm_parts.append(
+                f"{len(job_ids)} job(s): {', '.join(job_ids)}"
+            )
+        if filters:
+            confirm_parts.append(f"jobs matching: {', '.join(filters)}")
+
+        if confirm_parts and not skip_confirm:
+            if not click.confirm(
+                f"Cancel {' and '.join(confirm_parts)}?"
             ):
                 console.print("[red]Operation cancelled.[/red]")
                 raise click.Abort()
+
+        # Cancel job IDs
+        if job_ids:
             Job._cancel_jobs(job_ids, verbose=verbose)
 
         # Handle filters
