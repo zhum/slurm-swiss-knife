@@ -439,7 +439,7 @@ class Job(BaseSlurmResource):
             elif template:
                 # Template-based output
                 for job in jobs:
-                    print(format_with_template(template, job))
+                    console.print(format_with_template(template, job))
             else:
                 # Pretty table output
                 table = Table(
