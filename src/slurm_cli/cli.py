@@ -2192,6 +2192,41 @@ def delete(
         )
         return
 
+    # Special handling for jobs - pass all job IDs at once
+    if canonical_resource[:3] == "job":
+        if not resource_names:
+            resource_names = [None]
+        # Separate job IDs from filter expressions
+        job_ids = [n for n in resource_names if n and n.isdigit()]
+        filters = [n for n in resource_names if n and not n.isdigit()]
+
+        if dry_run:
+            if job_ids:
+                console.print(
+                    f"[yellow]DRY RUN:[/yellow] "
+                    f"Would cancel {len(job_ids)} job(s): {', '.join(job_ids)}"
+                )
+            for f in filters:
+                console.print(
+                    f"[yellow]DRY RUN:[/yellow] "
+                    f"Would cancel jobs matching filter: {f}"
+                )
+            return
+
+        # Handle job IDs - pass all at once
+        if job_ids:
+            if not skip_confirm and not click.confirm(
+                f"Cancel {len(job_ids)} job(s): {', '.join(job_ids)}?"
+            ):
+                console.print("[red]Operation cancelled.[/red]")
+                raise click.Abort()
+            Job._cancel_jobs(job_ids, verbose=verbose)
+
+        # Handle filters
+        for f in filters:
+            Job.delete(f, verbose=verbose)
+        return
+
     # Standard handling for other resources
     if not resource_names:
         resource_names = [None]
@@ -2231,8 +2266,6 @@ def delete(
                 Partition.delete(resource_name)
             elif canonical_resource[:4] == "node":
                 Node.delete(resource_name, verbose=verbose)
-            elif canonical_resource[:3] == "job":
-                Job.delete(resource_name, verbose=verbose)
             # Note: coordinators handled above with special logic
             else:
                 console.print(
