@@ -126,6 +126,7 @@ class Resource:
 
     @classmethod
     def update_cache(cls, name: str) -> Dict[str, Any]:
+        list_data = None  # For the list file (names/IDs)
         if name == "partitions":
             raw_data = cls.run_cmd(cls.CACHE_CMD[name])
             raw_data = cls.partitions2json(raw_data)
@@ -140,6 +141,16 @@ class Resource:
             raw_data = {
                 hash.pop("name"): hash for hash in raw_data["nodes"]
             }
+        elif name == "jobs":
+            raw_data = cls.run_cmd_json(cls.CACHE_CMD[name])
+            # Jobs are stored as {"jobs": [...]} for jq compatibility
+            # List file needs job IDs, not dict keys
+            if raw_data and "jobs" in raw_data:
+                list_data = [
+                    str(j.get("job_id", ""))
+                    for j in raw_data["jobs"]
+                    if j.get("job_id")
+                ]
         else:
             raw_data = cls.run_cmd_json(cls.CACHE_CMD[name])
         if raw_data:
@@ -147,7 +158,10 @@ class Resource:
                 json.dump(raw_data, f)
                 os.chmod(cls.CACHE_FILES[name], 0o600)
             with open(cls.CACHE_LIST_FILES[name], "w") as f:
-                json.dump(list(raw_data.keys()), f)
+                if list_data is not None:
+                    json.dump(list_data, f)
+                else:
+                    json.dump(list(raw_data.keys()), f)
                 os.chmod(cls.CACHE_LIST_FILES[name], 0o600)
         return raw_data
 
