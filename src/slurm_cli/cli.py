@@ -2628,6 +2628,19 @@ _slurm_cli_initialize_autocomplete() {{
         fi
     fi
 
+    # Handle standalone commands that don't take resource arguments
+    case "$cmd" in
+        version|ping|reconfigure|takeover)
+            # These commands only take -v/--verbose option
+            COMPREPLY=($(compgen -W "-v --verbose" -- "$cur"))
+            return
+            ;;
+        autocomplete|help|list-resources)
+            # These commands don't need further completion
+            return
+            ;;
+    esac
+
     i=$((i+1))
     guessed="no"
     case "$resource" in
