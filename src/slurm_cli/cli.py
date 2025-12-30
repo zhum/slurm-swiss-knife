@@ -1329,7 +1329,9 @@ def register_commands() -> None:
     ping.help = "Ping slurmctld"
     takeover.help = "Take over as primary slurmctld"
     token.help = "Generate JWT authentication token (aliases: tok)"
-    drain.help = "Drain nodes (aliases: dr)"
+    drain.help = (
+        "Drain nodes (aliases: dr). Reason: -r, --reason, or reason="
+    )
     undrain.help = "Undrain/resume nodes (aliases: undr)"
     help.help = "Show help information"
 
@@ -3275,15 +3277,13 @@ def drain(
     reason: Optional[str] = None,
     verbose: bool = False,
 ) -> None:
-    """Drain nodes (set state to drain).
+    """Drain nodes (set state to drain). Reason: --reason, -r, or reason=VALUE.
 
-    Takes one or more node names or ranges (Slurm hostlist format).
-
+    \b
     Examples:
       slurm-cli drain node001
-      slurm-cli drain node001 node002 node003
       slurm-cli drain node[001-010]
-      slurm-cli drain node[001-005] node[010-015] --reason="Maintenance"
+      slurm-cli drain node001 --reason="Maintenance"
       slurm-cli drain node001 -r "Hardware issue"
       slurm-cli drain node001 reason="Scheduled maintenance"
     """
