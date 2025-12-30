@@ -2631,12 +2631,13 @@ _slurm_cli_initialize_autocomplete() {{
     # Handle standalone commands that don't take resource arguments
     case "$cmd" in
         version|ping|reconfigure|takeover)
-            # These commands only take -v/--verbose option
-            COMPREPLY=($(compgen -W "-v --verbose" -- "$cur"))
+            # These commands take -v/--verbose and -h/--help options
+            COMPREPLY=($(compgen -W "-v --verbose -h --help" -- "$cur"))
             return
             ;;
         autocomplete|help|list-resources)
-            # These commands don't need further completion
+            # These commands take -h/--help option
+            COMPREPLY=($(compgen -W "-h --help" -- "$cur"))
             return
             ;;
     esac
