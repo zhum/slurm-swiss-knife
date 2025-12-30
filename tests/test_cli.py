@@ -1125,3 +1125,56 @@ def test_undrain_command_alias(runner):
         result = runner.invoke(main, ["undr", "node001"])
         assert result.exit_code == 0
         assert "Undrained" in result.output
+
+
+def test_drain_command_with_partition_filter(runner):
+    """Test the drain command with partition filter."""
+    from slurm_cli.cli import register_commands
+
+    register_commands()
+
+    with patch("subprocess.run") as mock_run:
+        mock_run.return_value.stdout = ""
+        mock_run.return_value.returncode = 0
+        with patch("slurm_cli.cli.resolve_nodes_value") as mock_resolve:
+            mock_resolve.return_value = "node001,node002,node003"
+            result = runner.invoke(
+                main,
+                ["drain", "partition=gpu", "-r", "GPU maintenance"],
+            )
+            assert result.exit_code == 0
+            mock_resolve.assert_called_once()
+            call_args = mock_run.call_args[0][0]
+            assert "nodename=node001,node002,node003" in call_args
+            assert "state=drain" in call_args
+
+
+def test_undrain_command_with_state_filter(runner):
+    """Test the undrain command with state filter."""
+    from slurm_cli.cli import register_commands
+
+    register_commands()
+
+    with patch("subprocess.run") as mock_run:
+        mock_run.return_value.stdout = ""
+        mock_run.return_value.returncode = 0
+        with patch("slurm_cli.cli.resolve_nodes_value") as mock_resolve:
+            mock_resolve.return_value = "node001,node002"
+            result = runner.invoke(main, ["undrain", "state=drain"])
+            assert result.exit_code == 0
+            mock_resolve.assert_called_once()
+            call_args = mock_run.call_args[0][0]
+            assert "nodename=node001,node002" in call_args
+            assert "state=resume" in call_args
+
+
+def test_drain_command_filter_no_match(runner):
+    """Test the drain command when filter matches no nodes."""
+    from slurm_cli.cli import register_commands
+
+    register_commands()
+
+    with patch("slurm_cli.cli.resolve_nodes_value") as mock_resolve:
+        mock_resolve.return_value = ""
+        result = runner.invoke(main, ["drain", "partition=nonexistent"])
+        assert "matched no nodes" in result.output

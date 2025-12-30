@@ -360,13 +360,28 @@ slurm-cli drain node001 node002 node003
 # Drain with Slurm hostlist range
 slurm-cli drain node[001-010]
 
-# Drain with reason
+# Drain with reason (three ways)
 slurm-cli drain node001 --reason="Maintenance"
-slurm-cli drain node[001-005] -r "Hardware issue"
+slurm-cli drain node001 -r "Hardware issue"
+slurm-cli drain node001 reason="Scheduled maintenance"
 
-# Combine ranges and explicit nodes
-slurm-cli drain node001 node[010-015] node020 -r "Scheduled maintenance"
+# Drain using node filters
+slurm-cli drain partition=gpu reason="GPU maintenance"
+slurm-cli drain state=idle reason="Preventive maintenance"
+slurm-cli drain user=john reason="User requested"
+slurm-cli drain reservation=maint reason="Reserved maintenance"
+
+# Combine filters with explicit nodes
+slurm-cli drain partition=gpu node001 -r "Mixed drain"
 ```
+
+**Node filters:**
+| Filter | Example | Description |
+|--------|---------|-------------|
+| `partition=` | `partition=gpu` | All nodes from partition |
+| `state=` | `state=idle` | Nodes with specific state |
+| `user=` | `user=john` | Nodes running user's jobs |
+| `reservation=` | `reservation=maint` | Nodes in a reservation |
 
 ### Undrain
 
@@ -384,8 +399,10 @@ slurm-cli undrain node001 node002 node003
 # Undrain with Slurm hostlist range
 slurm-cli undrain node[001-010]
 
-# Combine ranges and explicit nodes
-slurm-cli undrain node001 node[010-015] node020
+# Undrain using node filters
+slurm-cli undrain partition=gpu
+slurm-cli undrain state=drain
+slurm-cli undrain reservation=maint
 ```
 
 ## Special Commands
