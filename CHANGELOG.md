@@ -40,6 +40,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - `nodes-=` - remove nodes from partition/reservation
   - Example: `slurm-cli update partitions gpu nodes+=node001,node002`
   - Supports node filters: `slurm-cli update partitions gpu nodes+=state=idle`
+- **Partition Options**: Complete set of partition update options with autocomplete
+  - All options in lowercase: `state`, `maxtime`, `allowaccounts`, `denyqos`, etc.
+  - Account/QoS options autocomplete with actual values
+  - Resource limits: `maxnodes`, `minnodes`, `maxcpuspernode`, `maxmempercpu`, etc.
+  - Access control: `allowaccounts`, `denyaccounts`, `allowqos`, `denyqos`, `allowgroups`
+  - Priority: `prioritytier`, `priorityjobfactor`, `preemptmode`, `gracetime`
+  - Flags: `hidden`, `lln`, `oversubscribe`, `reqresv`, `rootonly`, etc.
 - **Job Filter Syntax**: Select jobs by filter for delete and update operations
   - `user=<name>` - jobs by a specific user
   - `account=<name>` - jobs charged to a specific account
