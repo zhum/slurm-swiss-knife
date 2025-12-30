@@ -135,12 +135,13 @@ elif [ "$1" = "version" ]; then
     exit 0
 elif [ "$1" = "token" ]; then
     # Mock token command
+    echo "MOCK: scontrol $*" >&2
     echo "SLURM_JWT=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VybmFtZSI6InRlc3R1c2VyIiwiZXhwIjoxNzA0MDY3MjAwfQ.mock_signature"
     exit 0
 else
     # For other arguments, show usage or error
     echo "Usage: $0 show {nodes|partitions|reservations|config} [--json]" >&2
-    echo "       $0 {reconfigure|ping|takeover|version}" >&2
+    echo "       $0 {reconfigure|ping|takeover|version|token}" >&2
     echo "This is a mock scontrol script for testing purposes." >&2
     echo "Arguments received: $*" >&2
     exit 1
