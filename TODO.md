@@ -67,7 +67,7 @@
 - [ ] **hold/top**: add commands `hold {[jobs=]job-list}`, `top ...`,
       `unhold/release ...`, `requeue ...`, `suspend`; use joblist filters!
 - [x] **recon[figure], ping, takeover**
-- [ ] **token [lifespan=\<lifespan\>] [username=\<username\>]** lifespan=seconds/infinite (we need specify time)
+- [x] **token [lifespan=\<lifespan\>] [username=\<username\>]** lifespan=seconds/infinite (we need specify time)
 - [x] **version**
 - [ ] **batch_script job_id [filename]**
 - [ ] **write_config [filename]**

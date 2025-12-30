@@ -567,6 +567,8 @@ def resolve_command_alias(command: str) -> str:
         "ping": ["ping"],
         "takeover": ["takeover"],
         "token": ["token"],
+        "drain": ["drain"],
+        "undrain": ["undrain"],
     }
     matches = [
         (cmd, alias)
@@ -1265,6 +1267,8 @@ class CustomGroup(click.Group):
             "ping",
             "takeover",
             "token",
+            "drain",
+            "undrain",
         }
 
         for subcommand in self.list_commands(ctx):
@@ -1308,6 +1312,8 @@ def register_commands() -> None:
     main.add_command(ping, name="ping")
     main.add_command(takeover, name="takeover")
     main.add_command(token, name="token")
+    main.add_command(drain, name="drain")
+    main.add_command(undrain, name="undrain")
 
     # Modify help text to show aliases inline
     show.help = "Show information about Slurm resources (aliases: get)"
@@ -1323,6 +1329,8 @@ def register_commands() -> None:
     ping.help = "Ping slurmctld"
     takeover.help = "Take over as primary slurmctld"
     token.help = "Generate JWT authentication token (aliases: tok)"
+    drain.help = "Drain nodes (aliases: dr)"
+    undrain.help = "Undrain/resume nodes (aliases: undr)"
     help.help = "Show help information"
 
 
@@ -2621,6 +2629,14 @@ _slurm_cli_initialize_autocomplete() {{
             guessed="token"
             cmd="token"
             ;;
+        dr*)
+            guessed="drain"
+            cmd="drain"
+            ;;
+        undr*)
+            guessed="undrain"
+            cmd="undrain"
+            ;;
         *)
             ;;
     esac
@@ -2631,7 +2647,7 @@ _slurm_cli_initialize_autocomplete() {{
         else
             COMPREPLY=($(compgen -W "show get create add new update edit \\
                 change modify delete remove rm list-resources autocomplete \\
-                help version reconfigure ping takeover token {all_opts_str}" -- "$cur"))
+                help version reconfigure ping takeover token drain undrain {all_opts_str}" -- "$cur"))
             return
         fi
     fi
@@ -2660,6 +2676,29 @@ _slurm_cli_initialize_autocomplete() {{
                 esac
             else
                 COMPREPLY=($(compgen -W "lifespan= username= -v --verbose -h --help" -- "$cur"))
+            fi
+            return
+            ;;
+        drain)
+            # Drain command takes nodes and optional --reason/-r
+            local cached_nodes="$(_slurm_cache_nodes)"
+            if [[ "$cur" == -* ]]; then
+                COMPREPLY=($(compgen -W "-r --reason -v --verbose -h --help" -- "$cur"))
+            elif [[ "$prev" == "-r" || "$prev" == "--reason" ]]; then
+                # Reason value - no completion
+                return
+            else
+                COMPREPLY=($(compgen -W "$cached_nodes -r --reason -v --verbose -h --help" -- "$cur"))
+            fi
+            return
+            ;;
+        undrain)
+            # Undrain command takes nodes
+            local cached_nodes="$(_slurm_cache_nodes)"
+            if [[ "$cur" == -* ]]; then
+                COMPREPLY=($(compgen -W "-v --verbose -h --help" -- "$cur"))
+            else
+                COMPREPLY=($(compgen -W "$cached_nodes -v --verbose -h --help" -- "$cur"))
             fi
             return
             ;;
@@ -3214,6 +3253,108 @@ def token(options: Tuple[str, ...], verbose: bool = False) -> None:
         )
         if result.stdout:
             console.print(result.stdout.strip())
+    except subprocess.CalledProcessError as e:
+        console.print(f"[red]Error: {e.stderr.strip() or e}[/red]")
+    except FileNotFoundError:
+        console.print("[red]Error: scontrol not found[/red]")
+
+
+@click.command(context_settings=CONTEXT_SETTINGS)
+@click.argument("nodes", nargs=-1, required=True)
+@click.option(
+    "--reason", "-r", default=None, help="Reason for draining nodes"
+)
+@click.option(
+    "--verbose", "-v", is_flag=True, help="Enable verbose output"
+)
+def drain(
+    nodes: Tuple[str, ...],
+    reason: Optional[str] = None,
+    verbose: bool = False,
+) -> None:
+    """Drain nodes (set state to drain).
+
+    Takes one or more node names or ranges (Slurm hostlist format).
+
+    Examples:
+      slurm-cli drain node001
+      slurm-cli drain node001 node002 node003
+      slurm-cli drain node[001-010]
+      slurm-cli drain node[001-005] node[010-015] --reason="Maintenance"
+      slurm-cli drain node001 -r "Hardware issue"
+    """
+    if not nodes:
+        console.print("[red]Error: No nodes specified[/red]")
+        return
+
+    # Join nodes with comma for scontrol
+    nodelist = ",".join(nodes)
+    args = ["scontrol", "update", f"nodename={nodelist}", "state=drain"]
+
+    if reason:
+        args.append(f"reason={reason}")
+
+    if verbose:
+        console.print(f"[dim]Running: {' '.join(args)}[/dim]")
+
+    try:
+        result = subprocess.run(
+            args,
+            capture_output=True,
+            text=True,
+            check=True,
+        )
+        if result.stdout:
+            console.print(result.stdout.strip())
+        console.print(f"[green]Drained node(s): {nodelist}[/green]")
+    except subprocess.CalledProcessError as e:
+        console.print(f"[red]Error: {e.stderr.strip() or e}[/red]")
+    except FileNotFoundError:
+        console.print("[red]Error: scontrol not found[/red]")
+
+
+@click.command(context_settings=CONTEXT_SETTINGS)
+@click.argument("nodes", nargs=-1, required=True)
+@click.option(
+    "--verbose", "-v", is_flag=True, help="Enable verbose output"
+)
+def undrain(nodes: Tuple[str, ...], verbose: bool = False) -> None:
+    """Undrain nodes (set state to resume).
+
+    Takes one or more node names or ranges (Slurm hostlist format).
+
+    Examples:
+      slurm-cli undrain node001
+      slurm-cli undrain node001 node002 node003
+      slurm-cli undrain node[001-010]
+      slurm-cli undrain node[001-005] node[010-015]
+    """
+    if not nodes:
+        console.print("[red]Error: No nodes specified[/red]")
+        return
+
+    # Join nodes with comma for scontrol
+    nodelist = ",".join(nodes)
+    args = [
+        "scontrol",
+        "update",
+        f"nodename={nodelist}",
+        "state=resume",
+    ]
+
+    if verbose:
+        console.print(f"[dim]Running: {' '.join(args)}[/dim]")
+
+    try:
+        result = subprocess.run(
+            args,
+            capture_output=True,
+            text=True,
+            check=True,
+        )
+        if result.stdout:
+            console.print(result.stdout.strip())
+        console.print(f"[green]Undrained node(s): {nodelist}[/green]")
     except subprocess.CalledProcessError as e:
         console.print(f"[red]Error: {e.stderr.strip() or e}[/red]")
     except FileNotFoundError:

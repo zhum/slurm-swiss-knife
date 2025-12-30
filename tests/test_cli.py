@@ -769,6 +769,15 @@ def test_resolve_command_alias_new_commands():
     assert resolve_command_alias("token") == "token"
     assert resolve_command_alias("tok") == "token"
 
+    # Test drain - prefix matching
+    assert resolve_command_alias("drain") == "drain"
+    assert resolve_command_alias("dra") == "drain"
+    assert resolve_command_alias("dr") == "drain"
+
+    # Test undrain - prefix matching
+    assert resolve_command_alias("undrain") == "undrain"
+    assert resolve_command_alias("undr") == "undrain"
+
 
 def test_token_command(runner):
     """Test the token command."""
@@ -922,3 +931,153 @@ def test_parse_time_to_seconds():
     # Case insensitive
     assert parse_time_to_seconds("INFINITE") is None
     assert parse_time_to_seconds("1H") == 3600
+
+
+def test_drain_command(runner):
+    """Test the drain command."""
+    from slurm_cli.cli import register_commands
+
+    register_commands()
+
+    with patch("subprocess.run") as mock_run:
+        mock_run.return_value.stdout = ""
+        mock_run.return_value.returncode = 0
+        result = runner.invoke(main, ["drain", "node001"])
+        assert result.exit_code == 0
+        assert "Drained" in result.output
+        mock_run.assert_called_once()
+        call_args = mock_run.call_args[0][0]
+        assert call_args == [
+            "scontrol",
+            "update",
+            "nodename=node001",
+            "state=drain",
+        ]
+
+
+def test_drain_command_multiple_nodes(runner):
+    """Test the drain command with multiple nodes."""
+    from slurm_cli.cli import register_commands
+
+    register_commands()
+
+    with patch("subprocess.run") as mock_run:
+        mock_run.return_value.stdout = ""
+        mock_run.return_value.returncode = 0
+        result = runner.invoke(
+            main, ["drain", "node001", "node002", "node[003-005]"]
+        )
+        assert result.exit_code == 0
+        call_args = mock_run.call_args[0][0]
+        assert call_args == [
+            "scontrol",
+            "update",
+            "nodename=node001,node002,node[003-005]",
+            "state=drain",
+        ]
+
+
+def test_drain_command_with_reason(runner):
+    """Test the drain command with reason option."""
+    from slurm_cli.cli import register_commands
+
+    register_commands()
+
+    with patch("subprocess.run") as mock_run:
+        mock_run.return_value.stdout = ""
+        mock_run.return_value.returncode = 0
+        result = runner.invoke(
+            main, ["drain", "node001", "--reason", "Maintenance"]
+        )
+        assert result.exit_code == 0
+        call_args = mock_run.call_args[0][0]
+        assert "reason=Maintenance" in call_args
+
+
+def test_drain_command_with_short_reason(runner):
+    """Test the drain command with -r option."""
+    from slurm_cli.cli import register_commands
+
+    register_commands()
+
+    with patch("subprocess.run") as mock_run:
+        mock_run.return_value.stdout = ""
+        mock_run.return_value.returncode = 0
+        result = runner.invoke(
+            main, ["drain", "node001", "-r", "Hardware issue"]
+        )
+        assert result.exit_code == 0
+        call_args = mock_run.call_args[0][0]
+        assert "reason=Hardware issue" in call_args
+
+
+def test_undrain_command(runner):
+    """Test the undrain command."""
+    from slurm_cli.cli import register_commands
+
+    register_commands()
+
+    with patch("subprocess.run") as mock_run:
+        mock_run.return_value.stdout = ""
+        mock_run.return_value.returncode = 0
+        result = runner.invoke(main, ["undrain", "node001"])
+        assert result.exit_code == 0
+        assert "Undrained" in result.output
+        mock_run.assert_called_once()
+        call_args = mock_run.call_args[0][0]
+        assert call_args == [
+            "scontrol",
+            "update",
+            "nodename=node001",
+            "state=resume",
+        ]
+
+
+def test_undrain_command_multiple_nodes(runner):
+    """Test the undrain command with multiple nodes."""
+    from slurm_cli.cli import register_commands
+
+    register_commands()
+
+    with patch("subprocess.run") as mock_run:
+        mock_run.return_value.stdout = ""
+        mock_run.return_value.returncode = 0
+        result = runner.invoke(
+            main, ["undrain", "node001", "node002", "node[003-005]"]
+        )
+        assert result.exit_code == 0
+        call_args = mock_run.call_args[0][0]
+        assert call_args == [
+            "scontrol",
+            "update",
+            "nodename=node001,node002,node[003-005]",
+            "state=resume",
+        ]
+
+
+def test_drain_command_alias(runner):
+    """Test the drain command with alias 'dr'."""
+    from slurm_cli.cli import register_commands
+
+    register_commands()
+
+    with patch("subprocess.run") as mock_run:
+        mock_run.return_value.stdout = ""
+        mock_run.return_value.returncode = 0
+        result = runner.invoke(main, ["dr", "node001"])
+        assert result.exit_code == 0
+        assert "Drained" in result.output
+
+
+def test_undrain_command_alias(runner):
+    """Test the undrain command with alias 'undr'."""
+    from slurm_cli.cli import register_commands
+
+    register_commands()
+
+    with patch("subprocess.run") as mock_run:
+        mock_run.return_value.stdout = ""
+        mock_run.return_value.returncode = 0
+        result = runner.invoke(main, ["undr", "node001"])
+        assert result.exit_code == 0
+        assert "Undrained" in result.output

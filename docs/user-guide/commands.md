@@ -344,6 +344,50 @@ slurm-cli token lifespan=infinite
 | Nh/Nm/Ns/Nd | `1h`, `30m`, `45s`, `2d` | Hours, minutes, seconds, days |
 | infinite | `infinite`, `inf` | No expiration (if allowed) |
 
+### Drain
+
+Drain nodes (set state to drain).
+
+**Aliases:** `drain`, `dr`
+
+```bash
+# Drain a single node
+slurm-cli drain node001
+
+# Drain multiple nodes
+slurm-cli drain node001 node002 node003
+
+# Drain with Slurm hostlist range
+slurm-cli drain node[001-010]
+
+# Drain with reason
+slurm-cli drain node001 --reason="Maintenance"
+slurm-cli drain node[001-005] -r "Hardware issue"
+
+# Combine ranges and explicit nodes
+slurm-cli drain node001 node[010-015] node020 -r "Scheduled maintenance"
+```
+
+### Undrain
+
+Undrain/resume nodes (set state to resume).
+
+**Aliases:** `undrain`, `undr`
+
+```bash
+# Undrain a single node
+slurm-cli undrain node001
+
+# Undrain multiple nodes
+slurm-cli undrain node001 node002 node003
+
+# Undrain with Slurm hostlist range
+slurm-cli undrain node[001-010]
+
+# Combine ranges and explicit nodes
+slurm-cli undrain node001 node[010-015] node020
+```
+
 ## Special Commands
 
 ### Autocomplete
