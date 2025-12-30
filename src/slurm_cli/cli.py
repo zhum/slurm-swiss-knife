@@ -2680,15 +2680,18 @@ _slurm_cli_initialize_autocomplete() {{
             return
             ;;
         drain)
-            # Drain command takes nodes and optional --reason/-r
+            # Drain command takes nodes and optional --reason/-r or reason=
             local cached_nodes="$(_slurm_cache_nodes)"
             if [[ "$cur" == -* ]]; then
                 COMPREPLY=($(compgen -W "-r --reason -v --verbose -h --help" -- "$cur"))
             elif [[ "$prev" == "-r" || "$prev" == "--reason" ]]; then
                 # Reason value - no completion
                 return
+            elif [[ "$cur" == reason=* ]]; then
+                # reason= value - no completion, just show what user typed
+                COMPREPLY=("$cur")
             else
-                COMPREPLY=($(compgen -W "$cached_nodes -r --reason -v --verbose -h --help" -- "$cur"))
+                COMPREPLY=($(compgen -W "$cached_nodes reason= -r --reason -v --verbose -h --help" -- "$cur"))
             fi
             return
             ;;
@@ -3282,17 +3285,30 @@ def drain(
       slurm-cli drain node[001-010]
       slurm-cli drain node[001-005] node[010-015] --reason="Maintenance"
       slurm-cli drain node001 -r "Hardware issue"
+      slurm-cli drain node001 reason="Scheduled maintenance"
     """
-    if not nodes:
+    # Parse reason= from positional arguments
+    actual_nodes = []
+    inline_reason = None
+    for arg in nodes:
+        if arg.lower().startswith("reason="):
+            inline_reason = arg.split("=", 1)[1]
+        else:
+            actual_nodes.append(arg)
+
+    if not actual_nodes:
         console.print("[red]Error: No nodes specified[/red]")
         return
 
+    # Use --reason option if provided, otherwise use inline reason=
+    final_reason = reason if reason is not None else inline_reason
+
     # Join nodes with comma for scontrol
-    nodelist = ",".join(nodes)
+    nodelist = ",".join(actual_nodes)
     args = ["scontrol", "update", f"nodename={nodelist}", "state=drain"]
 
-    if reason:
-        args.append(f"reason={reason}")
+    if final_reason:
+        args.append(f"reason={final_reason}")
 
     if verbose:
         console.print(f"[dim]Running: {' '.join(args)}[/dim]")

@@ -1011,6 +1011,50 @@ def test_drain_command_with_short_reason(runner):
         assert "reason=Hardware issue" in call_args
 
 
+def test_drain_command_with_inline_reason(runner):
+    """Test the drain command with reason= inline option."""
+    from slurm_cli.cli import register_commands
+
+    register_commands()
+
+    with patch("subprocess.run") as mock_run:
+        mock_run.return_value.stdout = ""
+        mock_run.return_value.returncode = 0
+        result = runner.invoke(
+            main, ["drain", "node001", "reason=Scheduled maintenance"]
+        )
+        assert result.exit_code == 0
+        call_args = mock_run.call_args[0][0]
+        assert "reason=Scheduled maintenance" in call_args
+        # Node should not include the reason=
+        assert "nodename=node001" in call_args
+
+
+def test_drain_command_option_overrides_inline(runner):
+    """Test that --reason option overrides inline reason=."""
+    from slurm_cli.cli import register_commands
+
+    register_commands()
+
+    with patch("subprocess.run") as mock_run:
+        mock_run.return_value.stdout = ""
+        mock_run.return_value.returncode = 0
+        result = runner.invoke(
+            main,
+            [
+                "drain",
+                "node001",
+                "reason=Inline reason",
+                "--reason",
+                "Option reason",
+            ],
+        )
+        assert result.exit_code == 0
+        call_args = mock_run.call_args[0][0]
+        # --reason should override inline
+        assert "reason=Option reason" in call_args
+
+
 def test_undrain_command(runner):
     """Test the undrain command."""
     from slurm_cli.cli import register_commands
