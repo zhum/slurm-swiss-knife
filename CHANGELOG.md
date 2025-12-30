@@ -9,6 +9,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Control Commands**: Added scontrol commands with shortest unique prefix support
+  - `reconfigure` (aliases: reconf, rec) - Force slurmctld to re-read configuration
+  - `ping` (alias: pi) - Check if slurmctld is responding
+  - `takeover` (alias: tak) - Cause backup slurmctld to take over as primary
+  - `version` (alias: ver) - Show slurm-cli and Slurm version
 - **Format Option Alias**: Added `-o`/`--format` as alias for `--profile-str`
   - Autocomplete now shows available fields for each resource type
 - **Account Tree View**: Added tree mode for accounts with `-T`/`--tree`

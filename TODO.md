@@ -67,14 +67,14 @@
 - [ ] **hold/top**: add commands `hold {[jobs=]job-list}`, `top ...`,
       `unhold/release ...`, `requeue ...`, `suspend`; use joblist filters!
 - [ ] **recon[figure], ping, takeover**
-- [ ] **token [lifespan=<lifespan>] [username=<username>]** lifespan=seconds/infinite (we need specify time)
+- [ ] **token [lifespan=\<lifespan\>] [username=\<username\>]** lifespan=seconds/infinite (we need specify time)
 - [ ] **version**
 - [ ] **batch_script job_id [filename]**
 - [ ] **write_config [filename]**
 - [ ] **new resources (r/o)** bbstat, burstbuffer, daemons, dwstat, topology
 - [ ] **schedloglevel** 0, 1, yes, no, on, off
 - [ ] **setdebug** "quiet", "fatal", "error", "info", "verbose", "debug", "debug2", "debug3", "debug4", "debug5" [nodes=...]
-- [ ] **setdebugflags** {+|-}<FLAG> [{+|-}<FLAG>] [nodes=<NODES>]
+- [ ] **setdebugflags** {+|-}\<FLAG\> [{+|-}\<FLAG\>] [nodes=\<NODES\>]
   - Accrue           Accrue counters accounting details
   - Agent            RPC agents (outgoing RPCs from Slurm daemons)
   - AuditRPCs        For all inbound RPCs to slurmctld, print the originating address, authenticated user, and RPC type before the connection is processed.

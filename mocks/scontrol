@@ -117,9 +117,26 @@ elif [ "$1" = "delete" ]; then
     # Mock delete command - just print what was received
     echo "MOCK: scontrol $*"
     exit 0
+elif [ "$1" = "reconfigure" ]; then
+    # Mock reconfigure command
+    echo "MOCK: scontrol reconfigure"
+    exit 0
+elif [ "$1" = "ping" ]; then
+    # Mock ping command
+    echo "Slurmctld(primary) at localhost is UP"
+    exit 0
+elif [ "$1" = "takeover" ]; then
+    # Mock takeover command
+    echo "MOCK: scontrol takeover"
+    exit 0
+elif [ "$1" = "version" ]; then
+    # Mock version command
+    echo "slurm 23.11.4"
+    exit 0
 else
     # For other arguments, show usage or error
     echo "Usage: $0 show {nodes|partitions|reservations|config} [--json]" >&2
+    echo "       $0 {reconfigure|ping|takeover|version}" >&2
     echo "This is a mock scontrol script for testing purposes." >&2
     echo "Arguments received: $*" >&2
     exit 1

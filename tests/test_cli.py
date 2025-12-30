@@ -557,3 +557,210 @@ def test_context_object_storage():
         # We can't directly test the context here since it's internal to Click
         # but we can verify the commands run without error
         assert result.exit_code in [0, 2]  # Help can return 0 or 2
+
+
+# Tests for scontrol commands
+
+
+def test_version_command(runner):
+    """Test the version command."""
+    from slurm_cli.cli import register_commands
+
+    register_commands()
+
+    with patch("subprocess.run") as mock_run:
+        mock_run.return_value.stdout = "slurm 23.11.4"
+        mock_run.return_value.returncode = 0
+        result = runner.invoke(main, ["version"])
+        assert result.exit_code == 0
+        assert "slurm-cli" in result.output
+        assert "Slurm Swiss Knife" in result.output
+
+
+def test_version_command_alias(runner):
+    """Test the version command with alias 'ver'."""
+    from slurm_cli.cli import register_commands
+
+    register_commands()
+
+    with patch("subprocess.run") as mock_run:
+        mock_run.return_value.stdout = "slurm 23.11.4"
+        mock_run.return_value.returncode = 0
+        result = runner.invoke(main, ["ver"])
+        assert result.exit_code == 0
+        assert "slurm-cli" in result.output
+
+
+def test_reconfigure_command(runner):
+    """Test the reconfigure command."""
+    from slurm_cli.cli import register_commands
+
+    register_commands()
+
+    with patch("subprocess.run") as mock_run:
+        mock_run.return_value.stdout = ""
+        mock_run.return_value.returncode = 0
+        result = runner.invoke(main, ["reconfigure"])
+        assert result.exit_code == 0
+        assert "Reconfigure command sent successfully" in result.output
+        mock_run.assert_called_once()
+        call_args = mock_run.call_args[0][0]
+        assert call_args == ["scontrol", "reconfigure"]
+
+
+def test_reconfigure_command_alias(runner):
+    """Test the reconfigure command with alias 'reconf'."""
+    from slurm_cli.cli import register_commands
+
+    register_commands()
+
+    with patch("subprocess.run") as mock_run:
+        mock_run.return_value.stdout = ""
+        mock_run.return_value.returncode = 0
+        result = runner.invoke(main, ["reconf"])
+        assert result.exit_code == 0
+        assert "Reconfigure command sent successfully" in result.output
+
+
+def test_reconfigure_command_verbose(runner):
+    """Test the reconfigure command with verbose flag."""
+    from slurm_cli.cli import register_commands
+
+    register_commands()
+
+    with patch("subprocess.run") as mock_run:
+        mock_run.return_value.stdout = ""
+        mock_run.return_value.returncode = 0
+        result = runner.invoke(main, ["reconfigure", "-v"])
+        assert result.exit_code == 0
+        assert "Running: scontrol reconfigure" in result.output
+
+
+def test_ping_command(runner):
+    """Test the ping command."""
+    from slurm_cli.cli import register_commands
+
+    register_commands()
+
+    with patch("subprocess.run") as mock_run:
+        mock_run.return_value.stdout = (
+            "Slurmctld(primary) at localhost is UP"
+        )
+        mock_run.return_value.returncode = 0
+        result = runner.invoke(main, ["ping"])
+        assert result.exit_code == 0
+        assert "Slurmctld" in result.output
+        mock_run.assert_called_once()
+        call_args = mock_run.call_args[0][0]
+        assert call_args == ["scontrol", "ping"]
+
+
+def test_ping_command_alias(runner):
+    """Test the ping command with prefix alias 'pi'."""
+    from slurm_cli.cli import register_commands
+
+    register_commands()
+
+    with patch("subprocess.run") as mock_run:
+        mock_run.return_value.stdout = (
+            "Slurmctld(primary) at localhost is UP"
+        )
+        mock_run.return_value.returncode = 0
+        result = runner.invoke(main, ["pi"])
+        assert result.exit_code == 0
+        assert "Slurmctld" in result.output
+
+
+def test_takeover_command(runner):
+    """Test the takeover command."""
+    from slurm_cli.cli import register_commands
+
+    register_commands()
+
+    with patch("subprocess.run") as mock_run:
+        mock_run.return_value.stdout = ""
+        mock_run.return_value.returncode = 0
+        result = runner.invoke(main, ["takeover"])
+        assert result.exit_code == 0
+        assert "Takeover command sent successfully" in result.output
+        mock_run.assert_called_once()
+        call_args = mock_run.call_args[0][0]
+        assert call_args == ["scontrol", "takeover"]
+
+
+def test_takeover_command_alias(runner):
+    """Test the takeover command with prefix alias 'tak'."""
+    from slurm_cli.cli import register_commands
+
+    register_commands()
+
+    with patch("subprocess.run") as mock_run:
+        mock_run.return_value.stdout = ""
+        mock_run.return_value.returncode = 0
+        result = runner.invoke(main, ["tak"])
+        assert result.exit_code == 0
+        assert "Takeover command sent successfully" in result.output
+
+
+def test_scontrol_commands_error_handling(runner):
+    """Test error handling for scontrol commands."""
+    import subprocess as sp
+
+    from slurm_cli.cli import register_commands
+
+    register_commands()
+
+    # Test reconfigure error
+    with patch("subprocess.run") as mock_run:
+        mock_run.side_effect = sp.CalledProcessError(
+            1, "scontrol", stderr="Permission denied"
+        )
+        result = runner.invoke(main, ["reconfigure"])
+        assert result.exit_code == 0  # Command itself succeeds
+        assert "Error" in result.output
+
+    # Test ping error
+    with patch("subprocess.run") as mock_run:
+        mock_run.side_effect = sp.CalledProcessError(
+            1, "scontrol", stderr="Connection refused"
+        )
+        result = runner.invoke(main, ["ping"])
+        assert result.exit_code == 0
+        assert "Error" in result.output
+
+
+def test_scontrol_not_found(runner):
+    """Test handling when scontrol is not found."""
+    from slurm_cli.cli import register_commands
+
+    register_commands()
+
+    with patch("subprocess.run") as mock_run:
+        mock_run.side_effect = FileNotFoundError()
+        result = runner.invoke(main, ["ping"])
+        assert result.exit_code == 0
+        assert "scontrol not found" in result.output
+
+
+def test_resolve_command_alias_new_commands():
+    """Test resolve_command_alias for new commands."""
+    from slurm_cli.cli import resolve_command_alias
+
+    # Test reconfigure - prefix matching
+    assert resolve_command_alias("reconfigure") == "reconfigure"
+    assert resolve_command_alias("recon") == "reconfigure"
+    assert resolve_command_alias("reconf") == "reconfigure"
+    assert resolve_command_alias("reconfi") == "reconfigure"
+
+    # Test ping - prefix matching
+    assert resolve_command_alias("ping") == "ping"
+    assert resolve_command_alias("pin") == "ping"
+
+    # Test takeover - prefix matching
+    assert resolve_command_alias("takeover") == "takeover"
+    assert resolve_command_alias("take") == "takeover"
+    assert resolve_command_alias("tak") == "takeover"
+
+    # Test version - prefix matching
+    assert resolve_command_alias("version") == "version"
+    assert resolve_command_alias("ver") == "version"

@@ -22,6 +22,7 @@ which is available in Click 8.0+.
 """
 
 import os
+import subprocess
 from typing import Any, Dict, List, Optional, Tuple
 
 import click
@@ -562,6 +563,9 @@ def resolve_command_alias(command: str) -> str:
         "autocomplete": ["autocomplete"],
         "help": ["help"],
         "version": ["version"],
+        "reconfigure": ["reconfigure"],
+        "ping": ["ping"],
+        "takeover": ["takeover"],
     }
     matches = [
         (cmd, alias)
@@ -1256,6 +1260,9 @@ class CustomGroup(click.Group):
             "autocomplete",
             "help",
             "version",
+            "reconfigure",
+            "ping",
+            "takeover",
         }
 
         for subcommand in self.list_commands(ctx):
@@ -1295,6 +1302,9 @@ def register_commands() -> None:
     main.add_command(autocomplete, name="autocomplete")
     main.add_command(help, name="help")
     main.add_command(version, name="version")
+    main.add_command(reconfigure, name="reconfigure")
+    main.add_command(ping, name="ping")
+    main.add_command(takeover, name="takeover")
 
     # Modify help text to show aliases inline
     show.help = "Show information about Slurm resources (aliases: get)"
@@ -1305,8 +1315,10 @@ def register_commands() -> None:
     create.help = "Create Slurm resources (aliases: new, add)"
     delete.help = "Delete Slurm resources (aliases: remove, rm)"
     list_resources.help = "List available Slurm resources (aliases: ls)"
-    version.help = "Show version information"
-    # Show version information (aliases: ver, v)"
+    version.help = "Show slurm-cli and slurmctld version (aliases: ver)"
+    reconfigure.help = "Reconfigure slurmctld (aliases: reconf)"
+    ping.help = "Ping slurmctld"
+    takeover.help = "Take over as primary slurmctld"
     help.help = "Show help information"
 
 
@@ -2589,6 +2601,18 @@ _slurm_cli_initialize_autocomplete() {{
             guessed="version"
             cmd="version"
             ;;
+        rec*)
+            guessed="reconfigure"
+            cmd="reconfigure"
+            ;;
+        pi*)
+            guessed="ping"
+            cmd="ping"
+            ;;
+        ta*)
+            guessed="takeover"
+            cmd="takeover"
+            ;;
         *)
             ;;
     esac
@@ -2599,7 +2623,7 @@ _slurm_cli_initialize_autocomplete() {{
         else
             COMPREPLY=($(compgen -W "show get create add new update edit \\
                 change modify delete remove rm list-resources autocomplete \\
-                help version {all_opts_str}" -- "$cur"))
+                help version reconfigure ping takeover {all_opts_str}" -- "$cur"))
             return
         fi
     fi
@@ -2905,10 +2929,125 @@ def list_resources(
 
 
 @click.command(context_settings=CONTEXT_SETTINGS)
-def version() -> None:
+@click.option(
+    "--verbose", "-v", is_flag=True, help="Enable verbose output"
+)
+def version(verbose: bool = False) -> None:
     """Show version information."""
-    console.print("[bold blue]clurm-cli:[/] Slurm Swiss Knife v0.1.0")
+    console.print("[bold blue]slurm-cli:[/] Slurm Swiss Knife v0.1.0")
     console.print("A CLI tool for Slurm cluster management")
+
+    # Get slurmctld version
+    try:
+        result = subprocess.run(
+            ["scontrol", "version"],
+            capture_output=True,
+            text=True,
+            check=True,
+        )
+        console.print(f"\n[dim]{result.stdout.strip()}[/dim]")
+    except subprocess.CalledProcessError as e:
+        if verbose:
+            console.print(
+                f"[red]Error getting Slurm version: {e}[/red]"
+            )
+    except FileNotFoundError:
+        if verbose:
+            console.print("[yellow]scontrol not found[/yellow]")
+
+
+@click.command(context_settings=CONTEXT_SETTINGS)
+@click.option(
+    "--verbose", "-v", is_flag=True, help="Enable verbose output"
+)
+def reconfigure(verbose: bool = False) -> None:
+    """Reconfigure slurmctld (aliases: reconf).
+
+    Forces slurmctld to re-read its configuration file.
+    """
+    args = ["scontrol", "reconfigure"]
+
+    if verbose:
+        console.print(f"[dim]Running: {' '.join(args)}[/dim]")
+
+    try:
+        result = subprocess.run(
+            args,
+            capture_output=True,
+            text=True,
+            check=True,
+        )
+        if result.stdout:
+            console.print(result.stdout.strip())
+        console.print(
+            "[green]Reconfigure command sent successfully[/green]"
+        )
+    except subprocess.CalledProcessError as e:
+        console.print(f"[red]Error: {e.stderr.strip() or e}[/red]")
+    except FileNotFoundError:
+        console.print("[red]Error: scontrol not found[/red]")
+
+
+@click.command(context_settings=CONTEXT_SETTINGS)
+@click.option(
+    "--verbose", "-v", is_flag=True, help="Enable verbose output"
+)
+def ping(verbose: bool = False) -> None:
+    """Ping slurmctld.
+
+    Checks if the Slurm controller is responding.
+    """
+    args = ["scontrol", "ping"]
+
+    if verbose:
+        console.print(f"[dim]Running: {' '.join(args)}[/dim]")
+
+    try:
+        result = subprocess.run(
+            args,
+            capture_output=True,
+            text=True,
+            check=True,
+        )
+        if result.stdout:
+            console.print(result.stdout.strip())
+    except subprocess.CalledProcessError as e:
+        console.print(f"[red]Error: {e.stderr.strip() or e}[/red]")
+    except FileNotFoundError:
+        console.print("[red]Error: scontrol not found[/red]")
+
+
+@click.command(context_settings=CONTEXT_SETTINGS)
+@click.option(
+    "--verbose", "-v", is_flag=True, help="Enable verbose output"
+)
+def takeover(verbose: bool = False) -> None:
+    """Take over as primary slurmctld.
+
+    Causes the backup slurmctld to take over as the primary controller.
+    This command should only be run on a backup controller.
+    """
+    args = ["scontrol", "takeover"]
+
+    if verbose:
+        console.print(f"[dim]Running: {' '.join(args)}[/dim]")
+
+    try:
+        result = subprocess.run(
+            args,
+            capture_output=True,
+            text=True,
+            check=True,
+        )
+        if result.stdout:
+            console.print(result.stdout.strip())
+        console.print(
+            "[green]Takeover command sent successfully[/green]"
+        )
+    except subprocess.CalledProcessError as e:
+        console.print(f"[red]Error: {e.stderr.strip() or e}[/red]")
+    except FileNotFoundError:
+        console.print("[red]Error: scontrol not found[/red]")
 
 
 @click.command(context_settings=CONTEXT_SETTINGS)

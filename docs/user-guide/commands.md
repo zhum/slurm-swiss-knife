@@ -255,6 +255,57 @@ slurm-cli --no-dry-run delete users testuser  # Actually deletes
 | `coordinators` | `coord`, `coordinator` |
 | `events` | `event`, `ev` |
 
+## Control Commands
+
+These commands directly interact with the Slurm controller (slurmctld).
+
+### Version
+
+Show slurm-cli and Slurm version information.
+
+**Aliases:** `version`, `ver`, `v`
+
+```bash
+slurm-cli version
+slurm-cli ver
+```
+
+### Reconfigure
+
+Force slurmctld to re-read its configuration file.
+
+**Aliases:** `reconfigure`, `reconf`, `rec`
+
+```bash
+slurm-cli reconfigure
+slurm-cli reconf
+slurm-cli rec -v  # verbose output
+```
+
+### Ping
+
+Check if the Slurm controller is responding.
+
+**Aliases:** `ping`, `pi`
+
+```bash
+slurm-cli ping
+slurm-cli pi
+```
+
+### Takeover
+
+Cause the backup slurmctld to take over as the primary controller.
+
+**Aliases:** `takeover`, `tak`, `ta`
+
+```bash
+slurm-cli takeover
+slurm-cli tak -v  # verbose output
+```
+
+**Note:** This command should only be run on a backup controller.
+
 ## Special Commands
 
 ### Autocomplete
