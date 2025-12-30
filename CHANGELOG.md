@@ -14,6 +14,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - `ping` (alias: pi) - Check if slurmctld is responding
   - `takeover` (alias: tak) - Cause backup slurmctld to take over as primary
   - `version` (alias: ver) - Show slurm-cli and Slurm version
+  - `token` (alias: tok) - Generate JWT authentication token with lifespan/username options
+    - Supports time formats: `1h`, `30m`, `1:30:00`, `1-12:00:00`, `infinite`
 - **Format Option Alias**: Added `-o`/`--format` as alias for `--profile-str`
   - Autocomplete now shows available fields for each resource type
 - **Account Tree View**: Added tree mode for accounts with `-T`/`--tree`

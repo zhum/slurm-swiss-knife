@@ -764,3 +764,161 @@ def test_resolve_command_alias_new_commands():
     # Test version - prefix matching
     assert resolve_command_alias("version") == "version"
     assert resolve_command_alias("ver") == "version"
+
+    # Test token - prefix matching
+    assert resolve_command_alias("token") == "token"
+    assert resolve_command_alias("tok") == "token"
+
+
+def test_token_command(runner):
+    """Test the token command."""
+    from slurm_cli.cli import register_commands
+
+    register_commands()
+
+    with patch("subprocess.run") as mock_run:
+        mock_run.return_value.stdout = "SLURM_JWT=test_token"
+        mock_run.return_value.returncode = 0
+        result = runner.invoke(main, ["token"])
+        assert result.exit_code == 0
+        assert "SLURM_JWT" in result.output
+        mock_run.assert_called_once()
+        call_args = mock_run.call_args[0][0]
+        assert call_args == ["scontrol", "token"]
+
+
+def test_token_command_with_lifespan(runner):
+    """Test the token command with lifespan option."""
+    from slurm_cli.cli import register_commands
+
+    register_commands()
+
+    with patch("subprocess.run") as mock_run:
+        mock_run.return_value.stdout = "SLURM_JWT=test_token"
+        mock_run.return_value.returncode = 0
+        result = runner.invoke(main, ["token", "lifespan=1h"])
+        assert result.exit_code == 0
+        call_args = mock_run.call_args[0][0]
+        assert call_args == ["scontrol", "token", "lifespan=3600"]
+
+
+def test_token_command_with_time_formats(runner):
+    """Test the token command with various time formats."""
+    from slurm_cli.cli import register_commands
+
+    register_commands()
+
+    # Test HH:MM:SS format
+    with patch("subprocess.run") as mock_run:
+        mock_run.return_value.stdout = "SLURM_JWT=test_token"
+        mock_run.return_value.returncode = 0
+        result = runner.invoke(main, ["token", "lifespan=1:30:00"])
+        assert result.exit_code == 0
+        call_args = mock_run.call_args[0][0]
+        assert call_args == ["scontrol", "token", "lifespan=5400"]
+
+    # Test minutes format
+    with patch("subprocess.run") as mock_run:
+        mock_run.return_value.stdout = "SLURM_JWT=test_token"
+        mock_run.return_value.returncode = 0
+        result = runner.invoke(main, ["token", "lifespan=30m"])
+        assert result.exit_code == 0
+        call_args = mock_run.call_args[0][0]
+        assert call_args == ["scontrol", "token", "lifespan=1800"]
+
+    # Test days format
+    with patch("subprocess.run") as mock_run:
+        mock_run.return_value.stdout = "SLURM_JWT=test_token"
+        mock_run.return_value.returncode = 0
+        result = runner.invoke(main, ["token", "lifespan=1-12:00:00"])
+        assert result.exit_code == 0
+        call_args = mock_run.call_args[0][0]
+        # 1 day + 12 hours = 86400 + 43200 = 129600
+        assert call_args == ["scontrol", "token", "lifespan=129600"]
+
+
+def test_token_command_with_infinite(runner):
+    """Test the token command with infinite lifespan."""
+    from slurm_cli.cli import register_commands
+
+    register_commands()
+
+    with patch("subprocess.run") as mock_run:
+        mock_run.return_value.stdout = "SLURM_JWT=test_token"
+        mock_run.return_value.returncode = 0
+        result = runner.invoke(main, ["token", "lifespan=infinite"])
+        assert result.exit_code == 0
+        call_args = mock_run.call_args[0][0]
+        # Infinite should not add lifespan option
+        assert call_args == ["scontrol", "token"]
+
+
+def test_token_command_with_username(runner):
+    """Test the token command with username option."""
+    from slurm_cli.cli import register_commands
+
+    register_commands()
+
+    with patch("subprocess.run") as mock_run:
+        mock_run.return_value.stdout = "SLURM_JWT=test_token"
+        mock_run.return_value.returncode = 0
+        result = runner.invoke(main, ["token", "username=testuser"])
+        assert result.exit_code == 0
+        call_args = mock_run.call_args[0][0]
+        assert call_args == ["scontrol", "token", "username=testuser"]
+
+
+def test_token_command_with_both_options(runner):
+    """Test the token command with both lifespan and username."""
+    from slurm_cli.cli import register_commands
+
+    register_commands()
+
+    with patch("subprocess.run") as mock_run:
+        mock_run.return_value.stdout = "SLURM_JWT=test_token"
+        mock_run.return_value.returncode = 0
+        result = runner.invoke(
+            main, ["token", "lifespan=2h", "username=admin"]
+        )
+        assert result.exit_code == 0
+        call_args = mock_run.call_args[0][0]
+        assert "scontrol" in call_args
+        assert "token" in call_args
+        assert "lifespan=7200" in call_args
+        assert "username=admin" in call_args
+
+
+def test_parse_time_to_seconds():
+    """Test the parse_time_to_seconds function."""
+    from slurm_cli.cli import parse_time_to_seconds
+
+    # Integer seconds
+    assert parse_time_to_seconds("3600") == 3600
+
+    # HH:MM:SS format
+    assert parse_time_to_seconds("1:00:00") == 3600
+    assert parse_time_to_seconds("1:30:00") == 5400
+    assert parse_time_to_seconds("0:30:00") == 1800
+
+    # MM:SS format
+    assert parse_time_to_seconds("30:00") == 1800
+    assert parse_time_to_seconds("5:30") == 330
+
+    # D-HH:MM:SS format
+    assert parse_time_to_seconds("1-0:00:00") == 86400
+    assert parse_time_to_seconds("1-12:00:00") == 129600
+
+    # Nh, Nm, Ns format
+    assert parse_time_to_seconds("1h") == 3600
+    assert parse_time_to_seconds("30m") == 1800
+    assert parse_time_to_seconds("45s") == 45
+    assert parse_time_to_seconds("2d") == 172800
+
+    # Infinite
+    assert parse_time_to_seconds("infinite") is None
+    assert parse_time_to_seconds("inf") is None
+    assert parse_time_to_seconds("unlimited") is None
+
+    # Case insensitive
+    assert parse_time_to_seconds("INFINITE") is None
+    assert parse_time_to_seconds("1H") == 3600

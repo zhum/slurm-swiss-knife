@@ -306,6 +306,44 @@ slurm-cli tak -v  # verbose output
 
 **Note:** This command should only be run on a backup controller.
 
+### Token
+
+Generate a JWT authentication token.
+
+**Aliases:** `token`, `tok`, `to`
+
+```bash
+# Generate token with default lifespan
+slurm-cli token
+
+# Generate token with 1 hour lifespan
+slurm-cli token lifespan=1h
+
+# Generate token with specific time format
+slurm-cli token lifespan=1:30:00    # 1 hour 30 minutes
+slurm-cli token lifespan=30m        # 30 minutes
+slurm-cli token lifespan=2d         # 2 days
+
+# Generate token for another user (requires admin)
+slurm-cli token username=john
+
+# Combine options
+slurm-cli token lifespan=2h username=admin
+
+# Generate token with unlimited lifespan
+slurm-cli token lifespan=infinite
+```
+
+**Lifespan formats:**
+| Format | Example | Description |
+|--------|---------|-------------|
+| Seconds | `3600` | Direct seconds |
+| HH:MM:SS | `1:30:00` | Hours:minutes:seconds |
+| MM:SS | `30:00` | Minutes:seconds |
+| D-HH:MM:SS | `1-12:00:00` | Days-hours:minutes:seconds |
+| Nh/Nm/Ns/Nd | `1h`, `30m`, `45s`, `2d` | Hours, minutes, seconds, days |
+| infinite | `infinite`, `inf` | No expiration (if allowed) |
+
 ## Special Commands
 
 ### Autocomplete

@@ -566,6 +566,7 @@ def resolve_command_alias(command: str) -> str:
         "reconfigure": ["reconfigure"],
         "ping": ["ping"],
         "takeover": ["takeover"],
+        "token": ["token"],
     }
     matches = [
         (cmd, alias)
@@ -1263,6 +1264,7 @@ class CustomGroup(click.Group):
             "reconfigure",
             "ping",
             "takeover",
+            "token",
         }
 
         for subcommand in self.list_commands(ctx):
@@ -1305,6 +1307,7 @@ def register_commands() -> None:
     main.add_command(reconfigure, name="reconfigure")
     main.add_command(ping, name="ping")
     main.add_command(takeover, name="takeover")
+    main.add_command(token, name="token")
 
     # Modify help text to show aliases inline
     show.help = "Show information about Slurm resources (aliases: get)"
@@ -1319,6 +1322,7 @@ def register_commands() -> None:
     reconfigure.help = "Reconfigure slurmctld (aliases: reconf)"
     ping.help = "Ping slurmctld"
     takeover.help = "Take over as primary slurmctld"
+    token.help = "Generate JWT authentication token (aliases: tok)"
     help.help = "Show help information"
 
 
@@ -2613,6 +2617,10 @@ _slurm_cli_initialize_autocomplete() {{
             guessed="takeover"
             cmd="takeover"
             ;;
+        to*)
+            guessed="token"
+            cmd="token"
+            ;;
         *)
             ;;
     esac
@@ -2623,7 +2631,7 @@ _slurm_cli_initialize_autocomplete() {{
         else
             COMPREPLY=($(compgen -W "show get create add new update edit \\
                 change modify delete remove rm list-resources autocomplete \\
-                help version reconfigure ping takeover {all_opts_str}" -- "$cur"))
+                help version reconfigure ping takeover token {all_opts_str}" -- "$cur"))
             return
         fi
     fi
@@ -2633,6 +2641,26 @@ _slurm_cli_initialize_autocomplete() {{
         version|ping|reconfigure|takeover)
             # These commands take -v/--verbose and -h/--help options
             COMPREPLY=($(compgen -W "-v --verbose -h --help" -- "$cur"))
+            return
+            ;;
+        token)
+            # Token command takes lifespan= and username= options
+            if [[ "$cur" == *=* ]]; then
+                local key="${{cur%%=*}}"
+                local val="${{cur#*=}}"
+                case "$key" in
+                    lifespan)
+                        COMPREPLY=($(compgen -W "lifespan=1h lifespan=30m lifespan=1:00:00 lifespan=infinite" -- "$cur"))
+                        ;;
+                    username)
+                        local users="$(_slurm_cache_users)"
+                        COMPREPLY=($(compgen -W "${{users// / username=}}" -- "$cur"))
+                        [[ ${{#COMPREPLY[@]}} -gt 0 ]] && COMPREPLY=("${{COMPREPLY[@]/#/username=}}")
+                        ;;
+                esac
+            else
+                COMPREPLY=($(compgen -W "lifespan= username= -v --verbose -h --help" -- "$cur"))
+            fi
             return
             ;;
         autocomplete|help|list-resources)
@@ -3058,6 +3086,134 @@ def takeover(verbose: bool = False) -> None:
         console.print(
             "[green]Takeover command sent successfully[/green]"
         )
+    except subprocess.CalledProcessError as e:
+        console.print(f"[red]Error: {e.stderr.strip() or e}[/red]")
+    except FileNotFoundError:
+        console.print("[red]Error: scontrol not found[/red]")
+
+
+def parse_time_to_seconds(time_str: str) -> Optional[int]:
+    """Parse time string to seconds.
+
+    Accepts formats:
+    - integer (already seconds)
+    - HH:MM:SS
+    - MM:SS
+    - D-HH:MM:SS (days-hours:minutes:seconds)
+    - Nh, Nm, Ns (e.g., 1h, 30m, 45s)
+    - infinite (returns None)
+    """
+    import re
+
+    time_str = time_str.strip().lower()
+
+    # Handle infinite
+    if time_str in ("infinite", "inf", "unlimited"):
+        return None
+
+    # Try integer seconds
+    try:
+        return int(time_str)
+    except ValueError:
+        pass
+
+    # Try D-HH:MM:SS or HH:MM:SS
+    m = re.match(
+        r"^(?:(?P<days>\d+)-)?(?P<h>\d+):(?P<m>\d+):(?P<s>\d+)$",
+        time_str,
+    )
+    if m:
+        days = int(m.group("days") or 0)
+        hours = int(m.group("h"))
+        minutes = int(m.group("m"))
+        seconds = int(m.group("s"))
+        return days * 86400 + hours * 3600 + minutes * 60 + seconds
+
+    # Try MM:SS (two numbers = minutes:seconds)
+    m = re.match(r"^(?P<m>\d+):(?P<s>\d+)$", time_str)
+    if m:
+        minutes = int(m.group("m"))
+        seconds = int(m.group("s"))
+        return minutes * 60 + seconds
+
+    # Try Nh, Nm, Ns format
+    m = re.match(r"^(\d+)([dhms])$", time_str)
+    if m:
+        value = int(m.group(1))
+        unit = m.group(2)
+        if unit == "d":
+            return value * 86400
+        elif unit == "h":
+            return value * 3600
+        elif unit == "m":
+            return value * 60
+        else:  # s
+            return value
+
+    raise ValueError(f"Invalid time format: {time_str}")
+
+
+@click.command(context_settings=CONTEXT_SETTINGS)
+@click.argument("options", nargs=-1)
+@click.option(
+    "--verbose", "-v", is_flag=True, help="Enable verbose output"
+)
+def token(options: Tuple[str, ...], verbose: bool = False) -> None:
+    """Generate JWT authentication token.
+
+    Options can be specified as key=value pairs:
+      lifespan=<time>   Token lifespan (e.g., 1h, 30m, 1:00:00, infinite)
+      username=<user>   Generate token for specified user (requires admin)
+
+    Examples:
+      slurm-cli token
+      slurm-cli token lifespan=1h
+      slurm-cli token lifespan=30m username=john
+      slurm-cli token lifespan=infinite
+    """
+    args = ["scontrol", "token"]
+
+    # Parse options
+    for opt in options:
+        if "=" not in opt:
+            console.print(
+                f"[red]Error: Invalid option format: {opt}[/red]"
+            )
+            console.print("Options must be in key=value format")
+            return
+
+        key, value = opt.split("=", 1)
+        key = key.lower()
+
+        if key == "lifespan":
+            try:
+                seconds = parse_time_to_seconds(value)
+                if seconds is not None:
+                    args.append(f"lifespan={seconds}")
+                # If infinite, don't add lifespan (use default/max)
+            except ValueError as e:
+                console.print(f"[red]Error: {e}[/red]")
+                return
+        elif key == "username":
+            args.append(f"username={value}")
+        else:
+            console.print(
+                f"[yellow]Warning: Unknown option: {key}[/yellow]"
+            )
+            args.append(f"{key}={value}")
+
+    if verbose:
+        console.print(f"[dim]Running: {' '.join(args)}[/dim]")
+
+    try:
+        result = subprocess.run(
+            args,
+            capture_output=True,
+            text=True,
+            check=True,
+        )
+        if result.stdout:
+            console.print(result.stdout.strip())
     except subprocess.CalledProcessError as e:
         console.print(f"[red]Error: {e.stderr.strip() or e}[/red]")
     except FileNotFoundError:
