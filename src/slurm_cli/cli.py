@@ -2692,27 +2692,27 @@ _slurm_cli_initialize_autocomplete() {{
             elif [[ "$prev" == "-r" || "$prev" == "--reason" ]]; then
                 # Reason value - no completion
                 return
-            elif [[ "$cur" == reason=* ]]; then
+            elif [[ "$cur" == reason=* ]] || [[ "$prev" == "reason" && "${{COMP_WORDS[COMP_CWORD-1]}}" == "=" ]]; then
                 # reason= value - no completion
-                COMPREPLY=("$cur")
-            elif [[ "$cur" == partition=* ]]; then
+                return
+            elif [[ "$cur" == partition=* ]] || [[ "$prev" == "=" && "${{COMP_WORDS[COMP_CWORD-2]}}" == "partition" ]]; then
                 local val="${{cur#partition=}}"
+                [[ "$prev" == "=" ]] && val="$cur"
                 COMPREPLY=($(compgen -W "$cached_partitions" -- "$val"))
-                [[ ${{#COMPREPLY[@]}} -gt 0 ]] && COMPREPLY=("${{COMPREPLY[@]/#/partition=}}")
-            elif [[ "$cur" == state=* ]]; then
+            elif [[ "$cur" == state=* ]] || [[ "$prev" == "=" && "${{COMP_WORDS[COMP_CWORD-2]}}" == "state" ]]; then
                 local val="${{cur#state=}}"
+                [[ "$prev" == "=" ]] && val="$cur"
                 COMPREPLY=($(compgen -W "$node_states" -- "$val"))
-                [[ ${{#COMPREPLY[@]}} -gt 0 ]] && COMPREPLY=("${{COMPREPLY[@]/#/state=}}")
-            elif [[ "$cur" == user=* ]]; then
+            elif [[ "$cur" == user=* ]] || [[ "$prev" == "=" && "${{COMP_WORDS[COMP_CWORD-2]}}" == "user" ]]; then
                 local val="${{cur#user=}}"
+                [[ "$prev" == "=" ]] && val="$cur"
                 local users="$(_slurm_cache_users)"
                 COMPREPLY=($(compgen -W "$users" -- "$val"))
-                [[ ${{#COMPREPLY[@]}} -gt 0 ]] && COMPREPLY=("${{COMPREPLY[@]/#/user=}}")
-            elif [[ "$cur" == reservation=* ]]; then
+            elif [[ "$cur" == reservation=* ]] || [[ "$prev" == "=" && "${{COMP_WORDS[COMP_CWORD-2]}}" == "reservation" ]]; then
                 local val="${{cur#reservation=}}"
+                [[ "$prev" == "=" ]] && val="$cur"
                 local reservations="$(_slurm_cache_reservations)"
                 COMPREPLY=($(compgen -W "$reservations" -- "$val"))
-                [[ ${{#COMPREPLY[@]}} -gt 0 ]] && COMPREPLY=("${{COMPREPLY[@]/#/reservation=}}")
             else
                 COMPREPLY=($(compgen -W "$cached_nodes $node_filters reason= -r --reason -v --verbose -h --help" -- "$cur"))
             fi
@@ -2726,24 +2726,24 @@ _slurm_cli_initialize_autocomplete() {{
             local node_states="idle alloc drain down mixed comp"
             if [[ "$cur" == -* ]]; then
                 COMPREPLY=($(compgen -W "-v --verbose -h --help" -- "$cur"))
-            elif [[ "$cur" == partition=* ]]; then
+            elif [[ "$cur" == partition=* ]] || [[ "$prev" == "=" && "${{COMP_WORDS[COMP_CWORD-2]}}" == "partition" ]]; then
                 local val="${{cur#partition=}}"
+                [[ "$prev" == "=" ]] && val="$cur"
                 COMPREPLY=($(compgen -W "$cached_partitions" -- "$val"))
-                [[ ${{#COMPREPLY[@]}} -gt 0 ]] && COMPREPLY=("${{COMPREPLY[@]/#/partition=}}")
-            elif [[ "$cur" == state=* ]]; then
+            elif [[ "$cur" == state=* ]] || [[ "$prev" == "=" && "${{COMP_WORDS[COMP_CWORD-2]}}" == "state" ]]; then
                 local val="${{cur#state=}}"
+                [[ "$prev" == "=" ]] && val="$cur"
                 COMPREPLY=($(compgen -W "$node_states" -- "$val"))
-                [[ ${{#COMPREPLY[@]}} -gt 0 ]] && COMPREPLY=("${{COMPREPLY[@]/#/state=}}")
-            elif [[ "$cur" == user=* ]]; then
+            elif [[ "$cur" == user=* ]] || [[ "$prev" == "=" && "${{COMP_WORDS[COMP_CWORD-2]}}" == "user" ]]; then
                 local val="${{cur#user=}}"
+                [[ "$prev" == "=" ]] && val="$cur"
                 local users="$(_slurm_cache_users)"
                 COMPREPLY=($(compgen -W "$users" -- "$val"))
-                [[ ${{#COMPREPLY[@]}} -gt 0 ]] && COMPREPLY=("${{COMPREPLY[@]/#/user=}}")
-            elif [[ "$cur" == reservation=* ]]; then
+            elif [[ "$cur" == reservation=* ]] || [[ "$prev" == "=" && "${{COMP_WORDS[COMP_CWORD-2]}}" == "reservation" ]]; then
                 local val="${{cur#reservation=}}"
+                [[ "$prev" == "=" ]] && val="$cur"
                 local reservations="$(_slurm_cache_reservations)"
                 COMPREPLY=($(compgen -W "$reservations" -- "$val"))
-                [[ ${{#COMPREPLY[@]}} -gt 0 ]] && COMPREPLY=("${{COMPREPLY[@]/#/reservation=}}")
             else
                 COMPREPLY=($(compgen -W "$cached_nodes $node_filters -v --verbose -h --help" -- "$cur"))
             fi
