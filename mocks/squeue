@@ -90,7 +90,9 @@ jobs = [j for j in jobs if match_state(j)]
 if [[ "$*" == *"--json"* ]]; then
     if [ -f "$MOCKS_DIR/data/jobs.json" ]; then
         script=$(build_filter_script)
-        script+="print(json.dumps({'jobs': jobs}))"
+        # Add newline before print since $() strips trailing newlines
+        script+="
+print(json.dumps({'jobs': jobs}))"
         python3 -c "$script" 2>/dev/null || cat "$MOCKS_DIR/data/jobs.json"
     elif [ -f "$MOCKS_DIR/data/squeue.json" ]; then
         cat "$MOCKS_DIR/data/squeue.json"

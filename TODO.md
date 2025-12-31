@@ -77,9 +77,11 @@
 - [ ] **setdebugflags** {+|-}\<FLAG\> [{+|-}\<FLAG\>] [nodes=\<NODES\>]
   - Accrue           Accrue counters accounting details
   - Agent            RPC agents (outgoing RPCs from Slurm daemons)
-  - AuditRPCs        For all inbound RPCs to slurmctld, print the originating address, authenticated user, and RPC type before the connection is processed.
+  - AuditRPCs        For all inbound RPCs to slurmctld, print the originating address, authenticated user,
+                     and RPC type before the connection is processed.
   - Backfill         Backfill scheduler details
-  - BackfillMap      Backfill scheduler to log a very verbose map of reserved resources through time. Combine with Backfill for a verbose and complete view of the backfill scheduler's work.
+  - BackfillMap      Backfill scheduler to log a very verbose map of reserved resources through time.
+                     Combine with Backfill for a verbose and complete view of the backfill scheduler's work.
   - BurstBuffer      Burst Buffer plugin
   - Cgroup           Cgroup details
   - CPU_Bind         CPU binding details for jobs and steps
