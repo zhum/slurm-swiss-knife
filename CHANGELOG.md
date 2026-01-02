@@ -18,6 +18,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     - Supports time formats: `1h`, `30m`, `1:30:00`, `1-12:00:00`, `infinite`
   - `drain` (alias: dr) - Drain nodes with optional reason
   - `undrain` (alias: undr) - Undrain/resume nodes
+- **Compound Node States**: Added composite state filters for node selection
+  - `state=reserved` - Idle nodes with RESERVED flag (IDLE+RESERVED)
+  - `state=ralloc` - Allocated/completing nodes with RESERVED flag
 - **Format Option Alias**: Added `-o`/`--format` as alias for `--profile-str`
   - Autocomplete now shows available fields for each resource type
 - **Account Tree View**: Added tree mode for accounts with `-T`/`--tree`

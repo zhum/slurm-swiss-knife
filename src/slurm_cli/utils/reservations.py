@@ -623,7 +623,7 @@ _slurm_cli_reservations_autocomplete() {{
                                 _slurm_complete_value "yes no y n 1 0" "$_key" "$_val" "$cur" ;;
                             state)
                                 # Node filter: nodes=state=<state>
-                                local states="idle alloc drain down mixed comp"
+                                local states="idle alloc drain down mixed comp reserved ralloc"
                                 COMPREPLY=($(compgen -W "$states" -- "$_val"))
                                 [[ $cur == *=* && ${{#COMPREPLY[@]}} -gt 0 ]] && COMPREPLY=("${{COMPREPLY[@]/#/nodes=state=}}")
                                 ;;

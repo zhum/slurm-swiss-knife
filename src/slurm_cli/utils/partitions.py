@@ -812,7 +812,7 @@ _slurm_cli_partitions_autocomplete() {{
             state)
                 if $in_node_filter; then
                     # Node filter: nodes=state=<state>
-                    local node_states="idle alloc drain down mixed comp"
+                    local node_states="idle alloc drain down mixed comp reserved ralloc"
                     COMPREPLY=($(compgen -W "$node_states" -- "$_val"))
                     [[ $cur == *=* && ${{#COMPREPLY[@]}} -gt 0 ]] && COMPREPLY=("${{COMPREPLY[@]/#/nodes=state=}}")
                 else

@@ -2686,7 +2686,7 @@ _slurm_cli_initialize_autocomplete() {{
             local cached_nodes="$(_slurm_cache_nodes)"
             local cached_partitions="$(_slurm_cache_partitions)"
             local node_filters="partition= state= user= reservation="
-            local node_states="idle alloc drain down mixed comp"
+            local node_states="idle alloc drain down mixed comp reserved ralloc"
             if [[ "$cur" == -* ]]; then
                 COMPREPLY=($(compgen -W "-r --reason -v --verbose -h --help" -- "$cur"))
             elif [[ "$prev" == "-r" || "$prev" == "--reason" ]]; then
@@ -2723,7 +2723,7 @@ _slurm_cli_initialize_autocomplete() {{
             local cached_nodes="$(_slurm_cache_nodes)"
             local cached_partitions="$(_slurm_cache_partitions)"
             local node_filters="partition= state= user= reservation="
-            local node_states="idle alloc drain down mixed comp"
+            local node_states="idle alloc drain down mixed comp reserved ralloc"
             if [[ "$cur" == -* ]]; then
                 COMPREPLY=($(compgen -W "-v --verbose -h --help" -- "$cur"))
             elif [[ "$cur" == partition=* ]] || [[ "$prev" == "=" && "${{COMP_WORDS[COMP_CWORD-2]}}" == "partition" ]]; then

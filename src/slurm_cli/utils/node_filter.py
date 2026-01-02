@@ -140,6 +140,47 @@ def _get_nodes_by_partition_text(
         return ""
 
 
+# Compound state definitions
+# These states require multiple state flags to be present
+COMPOUND_STATES = {
+    # reserved = idle + RESERVED
+    "reserved": {"required": ["idle"], "flags": ["reserved"]},
+    # ralloc = (allocated OR completing) + reserved
+    "ralloc": {
+        "required": ["allocated", "completing"],
+        "flags": ["reserved"],
+    },
+}
+
+
+def _match_compound_state(state_strs: list, compound_def: dict) -> bool:
+    """Check if node states match a compound state definition.
+
+    Args:
+        state_strs: List of lowercased state strings from the node
+        compound_def: Dict with 'required' (any of these) and 'flags' (all of these)
+
+    Returns:
+        True if the node matches the compound state
+    """
+    required = compound_def.get("required", [])
+    flags = compound_def.get("flags", [])
+
+    # Check if any required state is present
+    has_required = any(
+        any(req in s or s.startswith(req) for s in state_strs)
+        for req in required
+    )
+
+    # Check if all flags are present
+    has_all_flags = all(
+        any(flag in s or s.startswith(flag) for s in state_strs)
+        for flag in flags
+    )
+
+    return has_required and has_all_flags
+
+
 def _get_nodes_by_state(state: str, verbose: bool = False) -> str:
     """Get nodes with a specific state."""
     try:
@@ -153,6 +194,10 @@ def _get_nodes_by_state(state: str, verbose: bool = False) -> str:
         data = json.loads(result.stdout)
         state_lower = state.lower()
         node_set = set()
+
+        # Check if this is a compound state
+        compound_def = COMPOUND_STATES.get(state_lower)
+
         for node in data.get("nodes", []):
             node_state = node.get("state", [])
             # state can be a list like ["IDLE"] or ["ALLOCATED", "DRAIN"]
@@ -160,11 +205,18 @@ def _get_nodes_by_state(state: str, verbose: bool = False) -> str:
                 state_strs = [s.lower() for s in node_state]
             else:
                 state_strs = [str(node_state).lower()]
-            # Match if any state component matches
-            for s in state_strs:
-                if state_lower in s or s.startswith(state_lower):
+
+            if compound_def:
+                # Match compound state (e.g., reserved, ralloc)
+                if _match_compound_state(state_strs, compound_def):
                     node_set.add(node.get("name", ""))
-                    break
+            else:
+                # Match if any state component matches
+                for s in state_strs:
+                    if state_lower in s or s.startswith(state_lower):
+                        node_set.add(node.get("name", ""))
+                        break
+
         nodes = ",".join(sorted(node_set))
         if verbose:
             console.print(

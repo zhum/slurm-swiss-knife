@@ -171,9 +171,22 @@ When specifying nodes in commands (e.g., for partitions or reservations), you ca
 | Filter | Description |
 |--------|-------------|
 | `partition=NAME` | All nodes from the specified partition |
-| `state=STATE` | All nodes with the specified state (idle, alloc, drain, etc.) |
+| `state=STATE` | All nodes with the specified state (see states below) |
 | `user=USERNAME` | All nodes running jobs by the specified user |
 | `reservation=NAME` | All nodes in the specified reservation |
+
+**Available states for `state=` filter:**
+
+| State | Description |
+|-------|-------------|
+| `idle` | Idle nodes |
+| `alloc` | Allocated nodes |
+| `mixed` | Nodes with mixed allocation |
+| `drain` | Drained nodes |
+| `down` | Down nodes |
+| `comp` | Completing nodes |
+| `reserved` | Idle nodes that are reserved (IDLE+RESERVED) |
+| `ralloc` | Allocated/completing nodes that are reserved |
 
 ### Examples
 
@@ -376,12 +389,26 @@ slurm-cli drain partition=gpu node001 -r "Mixed drain"
 ```
 
 **Node filters:**
+
 | Filter | Example | Description |
 |--------|---------|-------------|
 | `partition=` | `partition=gpu` | All nodes from partition |
 | `state=` | `state=idle` | Nodes with specific state |
 | `user=` | `user=john` | Nodes running user's jobs |
 | `reservation=` | `reservation=maint` | Nodes in a reservation |
+
+**Available states:**
+
+| State | Description |
+|-------|-------------|
+| `idle` | Idle nodes |
+| `alloc` | Allocated nodes |
+| `mixed` | Nodes with mixed allocation |
+| `drain` | Drained nodes |
+| `down` | Down nodes |
+| `comp` | Completing nodes |
+| `reserved` | Idle nodes that are reserved (IDLE+RESERVED) |
+| `ralloc` | Allocated/completing nodes that are reserved |
 
 ### Undrain
 

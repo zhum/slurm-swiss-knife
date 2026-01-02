@@ -11,11 +11,13 @@ import pytest
 sys.path.insert(0, "src")
 
 from slurm_cli.utils.node_filter import (  # noqa: E402
+    COMPOUND_STATES,
     NODE_FILTER_PREFIXES,
     _get_nodes_by_partition,
     _get_nodes_by_reservation,
     _get_nodes_by_state,
     _get_nodes_by_user,
+    _match_compound_state,
     is_node_filter,
     resolve_node_filter,
     resolve_nodes_value,
@@ -549,3 +551,166 @@ class TestNodeFilterPrefixes:
     def test_prefixes_count(self):
         """Test that NODE_FILTER_PREFIXES has expected count."""
         assert len(NODE_FILTER_PREFIXES) == 4
+
+
+class TestCompoundStates:
+    """Tests for compound state definitions and matching."""
+
+    def test_compound_states_defined(self):
+        """Test that compound states are defined."""
+        assert "reserved" in COMPOUND_STATES
+        assert "ralloc" in COMPOUND_STATES
+
+    def test_reserved_state_definition(self):
+        """Test reserved state requires idle + reserved."""
+        reserved = COMPOUND_STATES["reserved"]
+        assert "idle" in reserved["required"]
+        assert "reserved" in reserved["flags"]
+
+    def test_ralloc_state_definition(self):
+        """Test ralloc state requires allocated/completing + reserved."""
+        ralloc = COMPOUND_STATES["ralloc"]
+        assert "allocated" in ralloc["required"]
+        assert "completing" in ralloc["required"]
+        assert "reserved" in ralloc["flags"]
+
+    def test_match_reserved_idle_reserved(self):
+        """Test matching IDLE+RESERVED nodes."""
+        states = ["idle", "reserved"]
+        assert _match_compound_state(
+            states, COMPOUND_STATES["reserved"]
+        )
+
+    def test_match_reserved_not_just_idle(self):
+        """Test that just IDLE doesn't match reserved."""
+        states = ["idle"]
+        assert not _match_compound_state(
+            states, COMPOUND_STATES["reserved"]
+        )
+
+    def test_match_reserved_not_just_reserved(self):
+        """Test that just RESERVED doesn't match reserved."""
+        states = ["reserved"]
+        assert not _match_compound_state(
+            states, COMPOUND_STATES["reserved"]
+        )
+
+    def test_match_ralloc_allocated_reserved(self):
+        """Test matching ALLOCATED+RESERVED nodes."""
+        states = ["allocated", "reserved"]
+        assert _match_compound_state(states, COMPOUND_STATES["ralloc"])
+
+    def test_match_ralloc_completing_reserved(self):
+        """Test matching COMPLETING+RESERVED nodes."""
+        states = ["completing", "reserved"]
+        assert _match_compound_state(states, COMPOUND_STATES["ralloc"])
+
+    def test_match_ralloc_not_just_allocated(self):
+        """Test that just ALLOCATED doesn't match ralloc."""
+        states = ["allocated"]
+        assert not _match_compound_state(
+            states, COMPOUND_STATES["ralloc"]
+        )
+
+    def test_match_ralloc_not_idle_reserved(self):
+        """Test that IDLE+RESERVED doesn't match ralloc."""
+        states = ["idle", "reserved"]
+        assert not _match_compound_state(
+            states, COMPOUND_STATES["ralloc"]
+        )
+
+
+class TestGetNodesByStateCompound:
+    """Tests for _get_nodes_by_state with compound states."""
+
+    def test_state_reserved_nodes(self):
+        """Test _get_nodes_by_state for reserved (IDLE+RESERVED) nodes."""
+        json_response = json.dumps(
+            {
+                "nodes": [
+                    {"name": "node01", "state": ["IDLE", "RESERVED"]},
+                    {"name": "node02", "state": ["IDLE"]},
+                    {
+                        "name": "node03",
+                        "state": ["ALLOCATED", "RESERVED"],
+                    },
+                    {"name": "node04", "state": ["RESERVED"]},
+                ]
+            }
+        )
+        mock_result = create_mock_subprocess_result(
+            stdout=json_response
+        )
+
+        with patch.object(subprocess, "run", return_value=mock_result):
+            result = _get_nodes_by_state("reserved")
+            assert "node01" in result
+            assert "node02" not in result
+            assert "node03" not in result
+            assert "node04" not in result
+
+    def test_state_ralloc_nodes(self):
+        """Test _get_nodes_by_state for ralloc nodes."""
+        json_response = json.dumps(
+            {
+                "nodes": [
+                    {"name": "node01", "state": ["IDLE", "RESERVED"]},
+                    {
+                        "name": "node02",
+                        "state": ["ALLOCATED", "RESERVED"],
+                    },
+                    {
+                        "name": "node03",
+                        "state": ["COMPLETING", "RESERVED"],
+                    },
+                    {"name": "node04", "state": ["ALLOCATED"]},
+                ]
+            }
+        )
+        mock_result = create_mock_subprocess_result(
+            stdout=json_response
+        )
+
+        with patch.object(subprocess, "run", return_value=mock_result):
+            result = _get_nodes_by_state("ralloc")
+            assert "node01" not in result
+            assert "node02" in result
+            assert "node03" in result
+            assert "node04" not in result
+
+    def test_state_reserved_case_insensitive(self):
+        """Test reserved state matching is case insensitive."""
+        json_response = json.dumps(
+            {
+                "nodes": [
+                    {"name": "node01", "state": ["IDLE", "RESERVED"]},
+                ]
+            }
+        )
+        mock_result = create_mock_subprocess_result(
+            stdout=json_response
+        )
+
+        with patch.object(subprocess, "run", return_value=mock_result):
+            result = _get_nodes_by_state("RESERVED")
+            assert "node01" in result
+
+    def test_state_ralloc_case_insensitive(self):
+        """Test ralloc state matching is case insensitive."""
+        json_response = json.dumps(
+            {
+                "nodes": [
+                    {
+                        "name": "node01",
+                        "state": ["ALLOCATED", "RESERVED"],
+                    },
+                ]
+            }
+        )
+        mock_result = create_mock_subprocess_result(
+            stdout=json_response
+        )
+
+        with patch.object(subprocess, "run", return_value=mock_result):
+            result = _get_nodes_by_state("RALLOC")
+            assert "node01" in result

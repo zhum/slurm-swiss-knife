@@ -678,7 +678,7 @@ _slurm_cli_events_autocomplete() {{
             partition)
                 _slurm_complete_value "$(_slurm_cache_partitions)" "$_key" "$_val" "$cur" ;;
             state)
-                _slurm_complete_value "idle alloc drain down mixed comp" "$_key" "$_val" "$cur" ;;
+                _slurm_complete_value "idle alloc drain down mixed comp reserved ralloc" "$_key" "$_val" "$cur" ;;
             reservation)
                 _slurm_complete_value "$(_slurm_cache_reservations)" "$_key" "$_val" "$cur" ;;
         esac
