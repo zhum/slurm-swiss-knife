@@ -236,7 +236,7 @@ _slurm_complete_nodes_value() {
         [[ -n "$prefix" && ${#COMPREPLY[@]} -gt 0 ]] && COMPREPLY=("${COMPREPLY[@]/#/${prefix}partition=}")
     elif [[ "$val" == state=* ]]; then
         local filter_val="${val#state=}"
-        local states="idle alloc drain down mixed comp reserved ralloc"
+        local states="idle alloc drain down mixed comp"
         COMPREPLY=($(compgen -W "$states" -- "$filter_val"))
         [[ -n "$prefix" && ${#COMPREPLY[@]} -gt 0 ]] && COMPREPLY=("${COMPREPLY[@]/#/${prefix}state=}")
     elif [[ "$val" == user=* ]]; then

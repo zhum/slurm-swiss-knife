@@ -6,14 +6,21 @@ Supports filtering nodes by:
 - user=<username> - nodes running jobs by a specific user
 - reservation=<name> - nodes in a specific reservation
 
+Prefix with '-' to exclude nodes matching the filter:
+- -partition=<name> - exclude nodes from a specific partition
+- -state=<state> - exclude nodes with a specific state
+- -user=<username> - exclude nodes running jobs by a specific user
+- -reservation=<name> - exclude nodes in a specific reservation
+
 Filter syntax can be used anywhere node names are expected, e.g.:
 - slurm-cli update reservations test nodes=partition=cpu
 - slurm-cli update nodes state=drain partition=gpu
+- slurm-cli drain partition=gpu -reservation=maint
 """
 
 import json
 import subprocess
-from typing import List, Optional
+from typing import List, Optional, Set, Tuple
 
 from .utils import console
 
@@ -25,15 +32,32 @@ NODE_FILTER_PREFIXES = [
     "reservation=",
 ]
 
+# Available node states for completion
+NODE_STATES = [
+    "idle",
+    "alloc",
+    "drain",
+    "down",
+    "mixed",
+    "comp",
+]
+
 
 def is_node_filter(value: str) -> bool:
-    """Check if a value is a node filter expression or special keyword."""
+    """Check if a value is a node filter expression or special keyword.
+
+    Recognizes both positive filters (partition=gpu) and negative
+    filters (-partition=gpu).
+    """
     if not value:
         return False
     value_lower = value.lower()
     # Check for ALL keyword
     if value_lower == "all":
         return True
+    # Handle negative filter prefix
+    if value_lower.startswith("-"):
+        value_lower = value_lower[1:]
     return any(value_lower.startswith(p) for p in NODE_FILTER_PREFIXES)
 
 
@@ -140,47 +164,6 @@ def _get_nodes_by_partition_text(
         return ""
 
 
-# Compound state definitions
-# These states require multiple state flags to be present
-COMPOUND_STATES = {
-    # reserved = idle + RESERVED
-    "reserved": {"required": ["idle"], "flags": ["reserved"]},
-    # ralloc = (allocated OR completing) + reserved
-    "ralloc": {
-        "required": ["allocated", "completing"],
-        "flags": ["reserved"],
-    },
-}
-
-
-def _match_compound_state(state_strs: list, compound_def: dict) -> bool:
-    """Check if node states match a compound state definition.
-
-    Args:
-        state_strs: List of lowercased state strings from the node
-        compound_def: Dict with 'required' (any of these) and 'flags' (all of these)
-
-    Returns:
-        True if the node matches the compound state
-    """
-    required = compound_def.get("required", [])
-    flags = compound_def.get("flags", [])
-
-    # Check if any required state is present
-    has_required = any(
-        any(req in s or s.startswith(req) for s in state_strs)
-        for req in required
-    )
-
-    # Check if all flags are present
-    has_all_flags = all(
-        any(flag in s or s.startswith(flag) for s in state_strs)
-        for flag in flags
-    )
-
-    return has_required and has_all_flags
-
-
 def _get_nodes_by_state(state: str, verbose: bool = False) -> str:
     """Get nodes with a specific state."""
     try:
@@ -194,10 +177,6 @@ def _get_nodes_by_state(state: str, verbose: bool = False) -> str:
         data = json.loads(result.stdout)
         state_lower = state.lower()
         node_set = set()
-
-        # Check if this is a compound state
-        compound_def = COMPOUND_STATES.get(state_lower)
-
         for node in data.get("nodes", []):
             node_state = node.get("state", [])
             # state can be a list like ["IDLE"] or ["ALLOCATED", "DRAIN"]
@@ -205,18 +184,11 @@ def _get_nodes_by_state(state: str, verbose: bool = False) -> str:
                 state_strs = [s.lower() for s in node_state]
             else:
                 state_strs = [str(node_state).lower()]
-
-            if compound_def:
-                # Match compound state (e.g., reserved, ralloc)
-                if _match_compound_state(state_strs, compound_def):
+            # Match if any state component matches
+            for s in state_strs:
+                if state_lower in s or s.startswith(state_lower):
                     node_set.add(node.get("name", ""))
-            else:
-                # Match if any state component matches
-                for s in state_strs:
-                    if state_lower in s or s.startswith(state_lower):
-                        node_set.add(node.get("name", ""))
-                        break
-
+                    break
         nodes = ",".join(sorted(node_set))
         if verbose:
             console.print(
@@ -402,3 +374,203 @@ def resolve_nodes_value(value: str, verbose: bool = False) -> str:
             return ""
         return resolved
     return value
+
+
+def _get_all_nodes(verbose: bool = False) -> Set[str]:
+    """Get all nodes in the cluster."""
+    try:
+        result = subprocess.run(
+            ["scontrol", "show", "nodes", "--json"],
+            capture_output=True,
+            text=True,
+            check=True,
+        )
+        data = json.loads(result.stdout)
+        nodes = {node.get("name", "") for node in data.get("nodes", [])}
+        nodes.discard("")
+        return nodes
+    except (subprocess.CalledProcessError, json.JSONDecodeError):
+        return set()
+
+
+def _expand_node_list(node_str: str) -> Set[str]:
+    """Expand a comma-separated node list or range to a set of nodes."""
+    if not node_str:
+        return set()
+
+    # Simple case: no brackets or commas, just return as-is
+    if "[" not in node_str and "," not in node_str:
+        return {node_str}
+
+    # Use scontrol to expand hostlist with ranges
+    try:
+        result = subprocess.run(
+            ["scontrol", "show", "hostnames", node_str],
+            capture_output=True,
+            text=True,
+            check=True,
+        )
+        expanded = {
+            n.strip()
+            for n in result.stdout.strip().split("\n")
+            if n.strip()
+        }
+        # If expansion returned something, use it
+        if expanded:
+            return expanded
+        # Otherwise fall back
+        return {n.strip() for n in node_str.split(",") if n.strip()}
+    except subprocess.CalledProcessError:
+        # Fallback: just split by comma
+        return {n.strip() for n in node_str.split(",") if n.strip()}
+
+
+def resolve_node_filters(
+    args: List[str], verbose: bool = False
+) -> Tuple[Set[str], List[str]]:
+    """Resolve multiple node filters including exclusions.
+
+    Handles:
+    - Direct node names/ranges
+    - Positive filters (partition=gpu, state=idle, etc.)
+    - Negative filters (-partition=gpu, -state=drain, etc.)
+
+    Args:
+        args: List of node specs and filters
+        verbose: Print debug information
+
+    Returns:
+        Tuple of (resolved node set, list of unrecognized args)
+    """
+    include_nodes: Set[str] = set()
+    exclude_nodes: Set[str] = set()
+    other_args: List[str] = []
+    has_include_filter = False
+
+    for arg in args:
+        if not arg:
+            continue
+
+        # Check for negative filter
+        if arg.startswith("-") and is_node_filter(arg):
+            # Negative filter: -partition=gpu, -state=drain, etc.
+            filter_expr = arg[1:]  # Remove leading '-'
+            resolved = resolve_node_filter(filter_expr, verbose)
+            if resolved and resolved != "ALL":
+                exclude_nodes.update(_expand_node_list(resolved))
+                if verbose:
+                    console.print(
+                        f"[dim]Excluding nodes from '{filter_expr}': "
+                        f"{len(exclude_nodes)} nodes[/dim]"
+                    )
+        elif is_node_filter(arg):
+            # Positive filter
+            has_include_filter = True
+            if arg.lower() == "all":
+                include_nodes.update(_get_all_nodes(verbose))
+            else:
+                resolved = resolve_node_filter(arg, verbose)
+                if resolved and resolved != "ALL":
+                    include_nodes.update(_expand_node_list(resolved))
+                elif resolved == "ALL":
+                    include_nodes.update(_get_all_nodes(verbose))
+        elif "=" not in arg and not arg.startswith("-"):
+            # Direct node name or range
+            include_nodes.update(_expand_node_list(arg))
+        else:
+            # Not a node filter, pass through
+            other_args.append(arg)
+
+    # If we have exclusions but no inclusions, start with all nodes
+    if exclude_nodes and not include_nodes and not has_include_filter:
+        include_nodes = _get_all_nodes(verbose)
+
+    # Apply exclusions
+    result_nodes = include_nodes - exclude_nodes
+
+    if verbose and exclude_nodes:
+        console.print(
+            f"[dim]After exclusions: {len(result_nodes)} nodes[/dim]"
+        )
+
+    return result_nodes, other_args
+
+
+def generate_node_filter_autocomplete() -> str:
+    """Generate bash autocomplete script for node filters.
+
+    Returns:
+        Bash script fragment for node filter completion
+    """
+    states = " ".join(NODE_STATES)
+    filters = " ".join(NODE_FILTER_PREFIXES)
+    neg_filters = " ".join(f"-{p}" for p in NODE_FILTER_PREFIXES)
+
+    return f"""
+# Node filter completion helper
+_slurm_complete_node_filter() {{
+    local cur="$1"
+    local prev="$2"
+    local cached_nodes="$(_slurm_cache_nodes)"
+    local cached_partitions="$(_slurm_cache_partitions)"
+    local node_filters="{filters}"
+    local neg_filters="{neg_filters}"
+    local node_states="{states}"
+
+    # Handle negative filters
+    if [[ "$cur" == -partition=* ]]; then
+        local val="${{cur#-partition=}}"
+        COMPREPLY=($(compgen -W "$cached_partitions" -- "$val"))
+        [[ ${{#COMPREPLY[@]}} -gt 0 ]] && COMPREPLY=("${{COMPREPLY[@]/#/-partition=}}")
+        return 0
+    elif [[ "$cur" == -state=* ]]; then
+        local val="${{cur#-state=}}"
+        COMPREPLY=($(compgen -W "$node_states" -- "$val"))
+        [[ ${{#COMPREPLY[@]}} -gt 0 ]] && COMPREPLY=("${{COMPREPLY[@]/#/-state=}}")
+        return 0
+    elif [[ "$cur" == -user=* ]]; then
+        local val="${{cur#-user=}}"
+        local users="$(_slurm_cache_users)"
+        COMPREPLY=($(compgen -W "$users" -- "$val"))
+        [[ ${{#COMPREPLY[@]}} -gt 0 ]] && COMPREPLY=("${{COMPREPLY[@]/#/-user=}}")
+        return 0
+    elif [[ "$cur" == -reservation=* ]]; then
+        local val="${{cur#-reservation=}}"
+        local reservations="$(_slurm_cache_reservations)"
+        COMPREPLY=($(compgen -W "$reservations" -- "$val"))
+        [[ ${{#COMPREPLY[@]}} -gt 0 ]] && COMPREPLY=("${{COMPREPLY[@]/#/-reservation=}}")
+        return 0
+    # Handle positive filters
+    elif [[ "$cur" == partition=* ]] || [[ "$prev" == "=" && "${{COMP_WORDS[COMP_CWORD-2]}}" == "partition" ]]; then
+        local val="${{cur#partition=}}"
+        [[ "$prev" == "=" ]] && val="$cur"
+        COMPREPLY=($(compgen -W "$cached_partitions" -- "$val"))
+        [[ ${{#COMPREPLY[@]}} -gt 0 && "$cur" == *=* ]] && COMPREPLY=("${{COMPREPLY[@]/#/partition=}}")
+        return 0
+    elif [[ "$cur" == state=* ]] || [[ "$prev" == "=" && "${{COMP_WORDS[COMP_CWORD-2]}}" == "state" ]]; then
+        local val="${{cur#state=}}"
+        [[ "$prev" == "=" ]] && val="$cur"
+        COMPREPLY=($(compgen -W "$node_states" -- "$val"))
+        [[ ${{#COMPREPLY[@]}} -gt 0 && "$cur" == *=* ]] && COMPREPLY=("${{COMPREPLY[@]/#/state=}}")
+        return 0
+    elif [[ "$cur" == user=* ]] || [[ "$prev" == "=" && "${{COMP_WORDS[COMP_CWORD-2]}}" == "user" ]]; then
+        local val="${{cur#user=}}"
+        [[ "$prev" == "=" ]] && val="$cur"
+        local users="$(_slurm_cache_users)"
+        COMPREPLY=($(compgen -W "$users" -- "$val"))
+        [[ ${{#COMPREPLY[@]}} -gt 0 && "$cur" == *=* ]] && COMPREPLY=("${{COMPREPLY[@]/#/user=}}")
+        return 0
+    elif [[ "$cur" == reservation=* ]] || [[ "$prev" == "=" && "${{COMP_WORDS[COMP_CWORD-2]}}" == "reservation" ]]; then
+        local val="${{cur#reservation=}}"
+        [[ "$prev" == "=" ]] && val="$cur"
+        local reservations="$(_slurm_cache_reservations)"
+        COMPREPLY=($(compgen -W "$reservations" -- "$val"))
+        [[ ${{#COMPREPLY[@]}} -gt 0 && "$cur" == *=* ]] && COMPREPLY=("${{COMPREPLY[@]/#/reservation=}}")
+        return 0
+    fi
+
+    # Default: show nodes and filter options
+    COMPREPLY=($(compgen -W "$cached_nodes $node_filters $neg_filters" -- "$cur"))
+    return 0
+}}
+"""

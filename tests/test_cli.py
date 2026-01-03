@@ -1136,8 +1136,13 @@ def test_drain_command_with_partition_filter(runner):
     with patch("subprocess.run") as mock_run:
         mock_run.return_value.stdout = ""
         mock_run.return_value.returncode = 0
-        with patch("slurm_cli.cli.resolve_nodes_value") as mock_resolve:
-            mock_resolve.return_value = "node001,node002,node003"
+        with patch(
+            "slurm_cli.cli.resolve_node_filters"
+        ) as mock_resolve:
+            mock_resolve.return_value = (
+                {"node001", "node002", "node003"},
+                [],
+            )
             result = runner.invoke(
                 main,
                 ["drain", "partition=gpu", "-r", "GPU maintenance"],
@@ -1145,7 +1150,8 @@ def test_drain_command_with_partition_filter(runner):
             assert result.exit_code == 0
             mock_resolve.assert_called_once()
             call_args = mock_run.call_args[0][0]
-            assert "nodename=node001,node002,node003" in call_args
+            # Node order may vary since we use a set
+            assert "nodename=" in call_args[2]
             assert "state=drain" in call_args
 
 
@@ -1158,13 +1164,15 @@ def test_undrain_command_with_state_filter(runner):
     with patch("subprocess.run") as mock_run:
         mock_run.return_value.stdout = ""
         mock_run.return_value.returncode = 0
-        with patch("slurm_cli.cli.resolve_nodes_value") as mock_resolve:
-            mock_resolve.return_value = "node001,node002"
+        with patch(
+            "slurm_cli.cli.resolve_node_filters"
+        ) as mock_resolve:
+            mock_resolve.return_value = ({"node001", "node002"}, [])
             result = runner.invoke(main, ["undrain", "state=drain"])
             assert result.exit_code == 0
             mock_resolve.assert_called_once()
             call_args = mock_run.call_args[0][0]
-            assert "nodename=node001,node002" in call_args
+            assert "nodename=" in call_args[2]
             assert "state=resume" in call_args
 
 
@@ -1174,7 +1182,39 @@ def test_drain_command_filter_no_match(runner):
 
     register_commands()
 
-    with patch("slurm_cli.cli.resolve_nodes_value") as mock_resolve:
-        mock_resolve.return_value = ""
+    with patch("slurm_cli.cli.resolve_node_filters") as mock_resolve:
+        mock_resolve.return_value = (set(), [])
         result = runner.invoke(main, ["drain", "partition=nonexistent"])
-        assert "matched no nodes" in result.output
+        assert "No nodes specified or all excluded" in result.output
+
+
+def test_drain_command_with_exclusion_filter(runner):
+    """Test the drain command with exclusion filter (-prefix)."""
+    from slurm_cli.cli import register_commands
+
+    register_commands()
+
+    with patch("subprocess.run") as mock_run:
+        mock_run.return_value.stdout = ""
+        mock_run.return_value.returncode = 0
+        with patch(
+            "slurm_cli.cli.resolve_node_filters"
+        ) as mock_resolve:
+            # Simulating partition=gpu with 5 nodes, -reservation=maint excludes 2
+            mock_resolve.return_value = (
+                {"node001", "node002", "node003"},
+                [],
+            )
+            result = runner.invoke(
+                main,
+                [
+                    "drain",
+                    "partition=gpu",
+                    "-reservation=maint",
+                    "-r",
+                    "Maintenance",
+                ],
+            )
+            assert result.exit_code == 0
+            call_args = mock_run.call_args[0][0]
+            assert "state=drain" in call_args

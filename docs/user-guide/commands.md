@@ -171,22 +171,9 @@ When specifying nodes in commands (e.g., for partitions or reservations), you ca
 | Filter | Description |
 |--------|-------------|
 | `partition=NAME` | All nodes from the specified partition |
-| `state=STATE` | All nodes with the specified state (see states below) |
+| `state=STATE` | All nodes with the specified state (idle, alloc, drain, etc.) |
 | `user=USERNAME` | All nodes running jobs by the specified user |
 | `reservation=NAME` | All nodes in the specified reservation |
-
-**Available states for `state=` filter:**
-
-| State | Description |
-|-------|-------------|
-| `idle` | Idle nodes |
-| `alloc` | Allocated nodes |
-| `mixed` | Nodes with mixed allocation |
-| `drain` | Drained nodes |
-| `down` | Down nodes |
-| `comp` | Completing nodes |
-| `reserved` | Idle nodes that are reserved (IDLE+RESERVED) |
-| `ralloc` | Allocated/completing nodes that are reserved |
 
 ### Examples
 
@@ -386,6 +373,11 @@ slurm-cli drain reservation=maint reason="Reserved maintenance"
 
 # Combine filters with explicit nodes
 slurm-cli drain partition=gpu node001 -r "Mixed drain"
+
+# Exclude nodes using negative filters (prefix with -)
+slurm-cli drain partition=gpu -reservation=maint reason="GPU nodes except reserved"
+slurm-cli drain state=idle -user=admin reason="Idle nodes except admin's jobs"
+slurm-cli drain partition=batch -state=drain reason="Batch nodes not already drained"
 ```
 
 **Node filters:**
@@ -397,18 +389,14 @@ slurm-cli drain partition=gpu node001 -r "Mixed drain"
 | `user=` | `user=john` | Nodes running user's jobs |
 | `reservation=` | `reservation=maint` | Nodes in a reservation |
 
-**Available states:**
+**Exclusion filters (prefix with -):**
 
-| State | Description |
-|-------|-------------|
-| `idle` | Idle nodes |
-| `alloc` | Allocated nodes |
-| `mixed` | Nodes with mixed allocation |
-| `drain` | Drained nodes |
-| `down` | Down nodes |
-| `comp` | Completing nodes |
-| `reserved` | Idle nodes that are reserved (IDLE+RESERVED) |
-| `ralloc` | Allocated/completing nodes that are reserved |
+| Filter | Example | Description |
+|--------|---------|-------------|
+| `-partition=` | `-partition=gpu` | Exclude nodes from partition |
+| `-state=` | `-state=drain` | Exclude nodes with state |
+| `-user=` | `-user=admin` | Exclude nodes running user's jobs |
+| `-reservation=` | `-reservation=maint` | Exclude nodes in reservation |
 
 ### Undrain
 
@@ -429,6 +417,9 @@ slurm-cli undrain node[001-010]
 # Undrain using node filters
 slurm-cli undrain partition=gpu
 slurm-cli undrain state=drain
+
+# Exclude nodes using negative filters
+slurm-cli undrain state=drain -reservation=maint
 slurm-cli undrain reservation=maint
 ```
 
