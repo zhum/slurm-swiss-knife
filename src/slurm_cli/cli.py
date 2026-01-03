@@ -3390,8 +3390,10 @@ def drain(
       slurm-cli drain node001 -r "Hardware issue"
       slurm-cli drain node001 reason="Scheduled maintenance"
       slurm-cli drain partition=gpu reason="GPU maintenance"
-      slurm-cli drain partition=gpu -reservation=maint reason="Drain except reserved"
-      slurm-cli drain state=idle -user=admin reason="Idle nodes except admin's"
+      slurm-cli drain partition=gpu -reservation=maint \
+          reason="Drain except reserved"
+      slurm-cli drain state=idle -user=admin \
+          reason="Idle nodes except admin's"
     """
     # Parse reason= from positional arguments
     args_list = list(nodes)

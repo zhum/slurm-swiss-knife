@@ -19,6 +19,7 @@ Filter syntax can be used anywhere node names are expected, e.g.:
 """
 
 import json
+import re
 import subprocess
 from typing import List, Optional, Set, Tuple
 
@@ -393,8 +394,71 @@ def _get_all_nodes(verbose: bool = False) -> Set[str]:
         return set()
 
 
+# Expand Slurm-style node list with ranges
+def _expand_range(expr: str) -> Set[str]:
+    """Expand a Slurm range expression like [001-003,005]
+    to a list of strings.
+
+    Args:
+        expr: Slurm range expression like "001-003,005"
+
+    Returns:
+        Set of node names
+    """
+    result = set()
+    # e.g., expr = "001-003,005"
+    for part in expr.split(","):
+        part = part.strip()
+        if "-" in part:
+            start, end = part.split("-", 1)
+            # Keep the original width for leading zeros
+            width = max(len(start), len(end))
+            try:
+                for i in range(int(start), int(end) + 1):
+                    result.add(str(i).zfill(width))
+            except ValueError:
+                result.add(part)  # If badly formatted, keep raw
+        elif part:
+            result.add(part)
+    return result
+
+
+def _split_hostlist(node_str: str) -> List[str]:
+    """Split a hostlist by commas, respecting brackets.
+
+    E.g., "node[1-3,5],foo[2-4]" -> ["node[1-3,5]", "foo[2-4]"]
+    """
+    segments = []
+    current = []
+    depth = 0
+    for char in node_str:
+        if char == "[":
+            depth += 1
+            current.append(char)
+        elif char == "]":
+            depth -= 1
+            current.append(char)
+        elif char == "," and depth == 0:
+            segment = "".join(current).strip()
+            if segment:
+                segments.append(segment)
+            current = []
+        else:
+            current.append(char)
+    # Don't forget the last segment
+    segment = "".join(current).strip()
+    if segment:
+        segments.append(segment)
+    return segments
+
+
 def _expand_node_list(node_str: str) -> Set[str]:
-    """Expand a comma-separated node list or range to a set of nodes."""
+    """Expand a comma-separated node list or range to a set of nodes.
+
+    Handles Slurm hostlist format like:
+    - "node[10-14,19],node[20,22,25-27]"
+    - "gpu-node[001-004],cpu-node[1-3]"
+    """
     if not node_str:
         return set()
 
@@ -402,27 +466,26 @@ def _expand_node_list(node_str: str) -> Set[str]:
     if "[" not in node_str and "," not in node_str:
         return {node_str}
 
-    # Use scontrol to expand hostlist with ranges
-    try:
-        result = subprocess.run(
-            ["scontrol", "show", "hostnames", node_str],
-            capture_output=True,
-            text=True,
-            check=True,
-        )
-        expanded = {
-            n.strip()
-            for n in result.stdout.strip().split("\n")
-            if n.strip()
-        }
-        # If expansion returned something, use it
-        if expanded:
-            return expanded
-        # Otherwise fall back
-        return {n.strip() for n in node_str.split(",") if n.strip()}
-    except subprocess.CalledProcessError:
-        # Fallback: just split by comma
-        return {n.strip() for n in node_str.split(",") if n.strip()}
+    # Parse hostlist like "node[001-004,007],foo1,foo[2-3]"
+    node_names = set()
+    pattern = re.compile(r"^([^\[]+)\[(.+)\]$")
+    # ^ matches "prefix[ranges]"
+
+    for segment in _split_hostlist(node_str):
+        segment = segment.strip()
+        if not segment:
+            continue
+        m = pattern.match(segment)
+        if m:
+            prefix = m.group(1)
+            ranges = m.group(2)
+            for suffix in _expand_range(ranges):
+                node_names.add(f"{prefix}{suffix}")
+        else:
+            # No brackets, just a plain node name
+            node_names.add(segment)
+
+    return node_names
 
 
 def resolve_node_filters(
@@ -573,4 +636,4 @@ _slurm_complete_node_filter() {{
     COMPREPLY=($(compgen -W "$cached_nodes $node_filters $neg_filters" -- "$cur"))
     return 0
 }}
-"""
+"""  # noqa: E501
