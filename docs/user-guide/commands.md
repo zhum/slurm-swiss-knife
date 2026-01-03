@@ -374,10 +374,10 @@ slurm-cli drain reservation=maint reason="Reserved maintenance"
 # Combine filters with explicit nodes
 slurm-cli drain partition=gpu node001 -r "Mixed drain"
 
-# Exclude nodes using exclusion filters (prefix with ~)
-slurm-cli drain partition=gpu ~reservation=maint reason="GPU nodes except reserved"
-slurm-cli drain state=idle ~user=admin reason="Idle nodes except admin's jobs"
-slurm-cli drain partition=batch ~state=drain reason="Batch nodes not already drained"
+# Exclude nodes using exclusion filters (prefix with not:)
+slurm-cli drain partition=gpu not:reservation=maint reason="GPU nodes except reserved"
+slurm-cli drain state=idle not:user=admin reason="Idle nodes except admin's jobs"
+slurm-cli drain partition=batch not:state=drain reason="Batch nodes not already drained"
 ```
 
 **Node filters:**
@@ -389,14 +389,14 @@ slurm-cli drain partition=batch ~state=drain reason="Batch nodes not already dra
 | `user=` | `user=john` | Nodes running user's jobs |
 | `reservation=` | `reservation=maint` | Nodes in a reservation |
 
-**Exclusion filters (prefix with ~):**
+**Exclusion filters (prefix with not:):**
 
 | Filter | Example | Description |
 |--------|---------|-------------|
-| `~partition=` | `~partition=gpu` | Exclude nodes from partition |
-| `~state=` | `~state=drain` | Exclude nodes with state |
-| `~user=` | `~user=admin` | Exclude nodes running user's jobs |
-| `~reservation=` | `~reservation=maint` | Exclude nodes in reservation |
+| `not:partition=` | `not:partition=gpu` | Exclude nodes from partition |
+| `not:state=` | `not:state=drain` | Exclude nodes with state |
+| `not:user=` | `not:user=admin` | Exclude nodes running user's jobs |
+| `not:reservation=` | `not:reservation=maint` | Exclude nodes in reservation |
 
 ### Undrain
 
@@ -419,7 +419,7 @@ slurm-cli undrain partition=gpu
 slurm-cli undrain state=drain
 
 # Exclude nodes using exclusion filters
-slurm-cli undrain state=drain ~reservation=maint
+slurm-cli undrain state=drain not:reservation=maint
 slurm-cli undrain reservation=maint
 ```
 

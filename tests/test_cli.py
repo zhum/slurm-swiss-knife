@@ -1202,7 +1202,7 @@ def test_drain_command_with_exclusion_filter(runner):
         with patch(
             "slurm_cli.cli.resolve_node_filters"
         ) as mock_resolve:
-            # Simulating partition=gpu with 5 nodes, ~reservation=maint excludes 2
+            # Simulating partition=gpu with 5 nodes, not:reservation=maint excludes 2
             mock_resolve.return_value = (
                 {"node001", "node002", "node003"},
                 [],
@@ -1212,7 +1212,7 @@ def test_drain_command_with_exclusion_filter(runner):
                 [
                     "drain",
                     "partition=gpu",
-                    "~reservation=maint",
+                    "not:reservation=maint",
                     "-r",
                     "Maintenance",
                 ],

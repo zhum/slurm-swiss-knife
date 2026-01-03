@@ -48,8 +48,8 @@ def is_node_filter(value: str) -> bool:
     """Check if a value is a node filter expression or special keyword.
 
     Recognizes both positive filters (partition=gpu) and negative/exclusion
-    filters (~partition=gpu). Uses ~ prefix to avoid conflict with Click's
-    option parsing (- would be interpreted as option flag).
+    filters (not:partition=gpu). Uses 'not:' prefix to avoid conflicts with
+    CLI option parsing (-) and bash tilde expansion (~).
     """
     if not value:
         return False
@@ -57,9 +57,9 @@ def is_node_filter(value: str) -> bool:
     # Check for ALL keyword
     if value_lower == "all":
         return True
-    # Handle negative filter prefix (~)
-    if value_lower.startswith("~"):
-        value_lower = value_lower[1:]
+    # Handle negative filter prefix (not:)
+    if value_lower.startswith("not:"):
+        value_lower = value_lower[4:]
     return any(value_lower.startswith(p) for p in NODE_FILTER_PREFIXES)
 
 
@@ -515,10 +515,10 @@ def resolve_node_filters(
         if not arg:
             continue
 
-        # Check for negative/exclusion filter (~ prefix)
-        if arg.startswith("~") and is_node_filter(arg):
-            # Negative filter: ~partition=gpu, ~state=drain, etc.
-            filter_expr = arg[1:]  # Remove leading '~'
+        # Check for negative/exclusion filter (not: prefix)
+        if arg.lower().startswith("not:") and is_node_filter(arg):
+            # Negative filter: not:partition=gpu, not:state=drain, etc.
+            filter_expr = arg[4:]  # Remove leading 'not:'
             resolved = resolve_node_filter(filter_expr, verbose)
             if resolved and resolved != "ALL":
                 exclude_nodes.update(_expand_node_list(resolved))
@@ -538,7 +538,7 @@ def resolve_node_filters(
                     include_nodes.update(_expand_node_list(resolved))
                 elif resolved == "ALL":
                     include_nodes.update(_get_all_nodes(verbose))
-        elif "=" not in arg and not arg.startswith("~"):
+        elif "=" not in arg and not arg.lower().startswith("not:"):
             # Direct node name or range
             include_nodes.update(_expand_node_list(arg))
         else:
