@@ -956,7 +956,7 @@ def test_drain_command(runner):
 
 
 def test_drain_command_multiple_nodes(runner):
-    """Test the drain command with multiple nodes."""
+    """Test the drain command with multiple nodes (ranges are expanded)."""
     from slurm_cli.cli import register_commands
 
     register_commands()
@@ -969,10 +969,11 @@ def test_drain_command_multiple_nodes(runner):
         )
         assert result.exit_code == 0
         call_args = mock_run.call_args[0][0]
+        # Ranges are expanded to individual nodes
         assert call_args == [
             "scontrol",
             "update",
-            "nodename=node001,node002,node[003-005]",
+            "nodename=node001,node002,node003,node004,node005",
             "state=drain",
         ]
 
@@ -1078,7 +1079,7 @@ def test_undrain_command(runner):
 
 
 def test_undrain_command_multiple_nodes(runner):
-    """Test the undrain command with multiple nodes."""
+    """Test the undrain command with multiple nodes (ranges are expanded)."""
     from slurm_cli.cli import register_commands
 
     register_commands()
@@ -1091,10 +1092,11 @@ def test_undrain_command_multiple_nodes(runner):
         )
         assert result.exit_code == 0
         call_args = mock_run.call_args[0][0]
+        # Ranges are expanded to individual nodes
         assert call_args == [
             "scontrol",
             "update",
-            "nodename=node001,node002,node[003-005]",
+            "nodename=node001,node002,node003,node004,node005",
             "state=resume",
         ]
 
@@ -1200,7 +1202,7 @@ def test_drain_command_with_exclusion_filter(runner):
         with patch(
             "slurm_cli.cli.resolve_node_filters"
         ) as mock_resolve:
-            # Simulating partition=gpu with 5 nodes, -reservation=maint excludes 2
+            # Simulating partition=gpu with 5 nodes, ~reservation=maint excludes 2
             mock_resolve.return_value = (
                 {"node001", "node002", "node003"},
                 [],
@@ -1210,7 +1212,7 @@ def test_drain_command_with_exclusion_filter(runner):
                 [
                     "drain",
                     "partition=gpu",
-                    "-reservation=maint",
+                    "~reservation=maint",
                     "-r",
                     "Maintenance",
                 ],

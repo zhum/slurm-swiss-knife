@@ -18,12 +18,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     - Supports time formats: `1h`, `30m`, `1:30:00`, `1-12:00:00`, `infinite`
   - `drain` (alias: dr) - Drain nodes with optional reason
   - `undrain` (alias: undr) - Undrain/resume nodes
-- **Node Filter Exclusions**: Prefix filters with `-` to exclude nodes
-  - `-partition=gpu` - exclude nodes from GPU partition
-  - `-state=drain` - exclude drained nodes
-  - `-user=admin` - exclude nodes running admin's jobs
-  - `-reservation=maint` - exclude nodes in maintenance reservation
-  - Example: `slurm-cli drain partition=gpu -reservation=maint` drains GPU nodes except reserved ones
+- **Node Filter Exclusions**: Prefix filters with `~` to exclude nodes
+  - `~partition=gpu` - exclude nodes from GPU partition
+  - `~state=drain` - exclude drained nodes
+  - `~user=admin` - exclude nodes running admin's jobs
+  - `~reservation=maint` - exclude nodes in maintenance reservation
+  - Example: `slurm-cli drain partition=gpu ~reservation=maint` drains GPU nodes except reserved ones
+  - Note: Uses `~` instead of `-` to avoid conflict with CLI option parsing
 - **Format Option Alias**: Added `-o`/`--format` as alias for `--profile-str`
   - Autocomplete now shows available fields for each resource type
 - **Account Tree View**: Added tree mode for accounts with `-T`/`--tree`

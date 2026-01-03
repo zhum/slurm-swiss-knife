@@ -2691,7 +2691,7 @@ _slurm_cli_initialize_autocomplete() {{
             local cached_nodes="$(_slurm_cache_nodes)"
             local cached_partitions="$(_slurm_cache_partitions)"
             local node_filters="partition= state= user= reservation="
-            local neg_filters="-partition= -state= -user= -reservation="
+            local neg_filters="~partition= ~state= ~user= ~reservation="
             local node_states="idle alloc drain down mixed comp"
             if [[ "$cur" == --* ]]; then
                 COMPREPLY=($(compgen -W "--reason --verbose --help" -- "$cur"))
@@ -2701,29 +2701,29 @@ _slurm_cli_initialize_autocomplete() {{
             elif [[ "$cur" == reason=* ]] || [[ "$prev" == "reason" && "${{COMP_WORDS[COMP_CWORD-1]}}" == "=" ]]; then
                 # reason= value - no completion
                 return
-            # Negative filters (handle both "cur=-filter=val" and bash splitting on =)
-            elif [[ "$cur" == -partition=* ]] || [[ "$prev" == "=" && "${{COMP_WORDS[COMP_CWORD-2]}}" == "-partition" ]]; then
-                local val="${{cur#-partition=}}"
+            # Exclusion filters with ~ prefix (handle both "cur=~filter=val" and bash splitting on =)
+            elif [[ "$cur" == ~partition=* ]] || [[ "$prev" == "=" && "${{COMP_WORDS[COMP_CWORD-2]}}" == "~partition" ]]; then
+                local val="${{cur#~partition=}}"
                 [[ "$prev" == "=" ]] && val="$cur"
                 COMPREPLY=($(compgen -W "$cached_partitions" -- "$val"))
-                [[ ${{#COMPREPLY[@]}} -gt 0 ]] && COMPREPLY=("${{COMPREPLY[@]/#/-partition=}}")
-            elif [[ "$cur" == -state=* ]] || [[ "$prev" == "=" && "${{COMP_WORDS[COMP_CWORD-2]}}" == "-state" ]]; then
-                local val="${{cur#-state=}}"
+                [[ ${{#COMPREPLY[@]}} -gt 0 ]] && COMPREPLY=("${{COMPREPLY[@]/#/~partition=}}")
+            elif [[ "$cur" == ~state=* ]] || [[ "$prev" == "=" && "${{COMP_WORDS[COMP_CWORD-2]}}" == "~state" ]]; then
+                local val="${{cur#~state=}}"
                 [[ "$prev" == "=" ]] && val="$cur"
                 COMPREPLY=($(compgen -W "$node_states" -- "$val"))
-                [[ ${{#COMPREPLY[@]}} -gt 0 ]] && COMPREPLY=("${{COMPREPLY[@]/#/-state=}}")
-            elif [[ "$cur" == -user=* ]] || [[ "$prev" == "=" && "${{COMP_WORDS[COMP_CWORD-2]}}" == "-user" ]]; then
-                local val="${{cur#-user=}}"
+                [[ ${{#COMPREPLY[@]}} -gt 0 ]] && COMPREPLY=("${{COMPREPLY[@]/#/~state=}}")
+            elif [[ "$cur" == ~user=* ]] || [[ "$prev" == "=" && "${{COMP_WORDS[COMP_CWORD-2]}}" == "~user" ]]; then
+                local val="${{cur#~user=}}"
                 [[ "$prev" == "=" ]] && val="$cur"
                 local users="$(_slurm_cache_users)"
                 COMPREPLY=($(compgen -W "$users" -- "$val"))
-                [[ ${{#COMPREPLY[@]}} -gt 0 ]] && COMPREPLY=("${{COMPREPLY[@]/#/-user=}}")
-            elif [[ "$cur" == -reservation=* ]] || [[ "$prev" == "=" && "${{COMP_WORDS[COMP_CWORD-2]}}" == "-reservation" ]]; then
-                local val="${{cur#-reservation=}}"
+                [[ ${{#COMPREPLY[@]}} -gt 0 ]] && COMPREPLY=("${{COMPREPLY[@]/#/~user=}}")
+            elif [[ "$cur" == ~reservation=* ]] || [[ "$prev" == "=" && "${{COMP_WORDS[COMP_CWORD-2]}}" == "~reservation" ]]; then
+                local val="${{cur#~reservation=}}"
                 [[ "$prev" == "=" ]] && val="$cur"
                 local reservations="$(_slurm_cache_reservations)"
                 COMPREPLY=($(compgen -W "$reservations" -- "$val"))
-                [[ ${{#COMPREPLY[@]}} -gt 0 ]] && COMPREPLY=("${{COMPREPLY[@]/#/-reservation=}}")
+                [[ ${{#COMPREPLY[@]}} -gt 0 ]] && COMPREPLY=("${{COMPREPLY[@]/#/~reservation=}}")
             # Positive filters
             elif [[ "$cur" == partition=* ]] || [[ "$prev" == "=" && "${{COMP_WORDS[COMP_CWORD-2]}}" == "partition" ]]; then
                 local val="${{cur#partition=}}"
@@ -2757,33 +2757,33 @@ _slurm_cli_initialize_autocomplete() {{
             local cached_nodes="$(_slurm_cache_nodes)"
             local cached_partitions="$(_slurm_cache_partitions)"
             local node_filters="partition= state= user= reservation="
-            local neg_filters="-partition= -state= -user= -reservation="
+            local neg_filters="~partition= ~state= ~user= ~reservation="
             local node_states="idle alloc drain down mixed comp"
             if [[ "$cur" == --* ]]; then
                 COMPREPLY=($(compgen -W "--verbose --help" -- "$cur"))
-            # Negative filters (handle both "cur=-filter=val" and bash splitting on =)
-            elif [[ "$cur" == -partition=* ]] || [[ "$prev" == "=" && "${{COMP_WORDS[COMP_CWORD-2]}}" == "-partition" ]]; then
-                local val="${{cur#-partition=}}"
+            # Exclusion filters with ~ prefix (handle both "cur=~filter=val" and bash splitting on =)
+            elif [[ "$cur" == ~partition=* ]] || [[ "$prev" == "=" && "${{COMP_WORDS[COMP_CWORD-2]}}" == "~partition" ]]; then
+                local val="${{cur#~partition=}}"
                 [[ "$prev" == "=" ]] && val="$cur"
                 COMPREPLY=($(compgen -W "$cached_partitions" -- "$val"))
-                [[ ${{#COMPREPLY[@]}} -gt 0 ]] && COMPREPLY=("${{COMPREPLY[@]/#/-partition=}}")
-            elif [[ "$cur" == -state=* ]] || [[ "$prev" == "=" && "${{COMP_WORDS[COMP_CWORD-2]}}" == "-state" ]]; then
-                local val="${{cur#-state=}}"
+                [[ ${{#COMPREPLY[@]}} -gt 0 ]] && COMPREPLY=("${{COMPREPLY[@]/#/~partition=}}")
+            elif [[ "$cur" == ~state=* ]] || [[ "$prev" == "=" && "${{COMP_WORDS[COMP_CWORD-2]}}" == "~state" ]]; then
+                local val="${{cur#~state=}}"
                 [[ "$prev" == "=" ]] && val="$cur"
                 COMPREPLY=($(compgen -W "$node_states" -- "$val"))
-                [[ ${{#COMPREPLY[@]}} -gt 0 ]] && COMPREPLY=("${{COMPREPLY[@]/#/-state=}}")
-            elif [[ "$cur" == -user=* ]] || [[ "$prev" == "=" && "${{COMP_WORDS[COMP_CWORD-2]}}" == "-user" ]]; then
-                local val="${{cur#-user=}}"
+                [[ ${{#COMPREPLY[@]}} -gt 0 ]] && COMPREPLY=("${{COMPREPLY[@]/#/~state=}}")
+            elif [[ "$cur" == ~user=* ]] || [[ "$prev" == "=" && "${{COMP_WORDS[COMP_CWORD-2]}}" == "~user" ]]; then
+                local val="${{cur#~user=}}"
                 [[ "$prev" == "=" ]] && val="$cur"
                 local users="$(_slurm_cache_users)"
                 COMPREPLY=($(compgen -W "$users" -- "$val"))
-                [[ ${{#COMPREPLY[@]}} -gt 0 ]] && COMPREPLY=("${{COMPREPLY[@]/#/-user=}}")
-            elif [[ "$cur" == -reservation=* ]] || [[ "$prev" == "=" && "${{COMP_WORDS[COMP_CWORD-2]}}" == "-reservation" ]]; then
-                local val="${{cur#-reservation=}}"
+                [[ ${{#COMPREPLY[@]}} -gt 0 ]] && COMPREPLY=("${{COMPREPLY[@]/#/~user=}}")
+            elif [[ "$cur" == ~reservation=* ]] || [[ "$prev" == "=" && "${{COMP_WORDS[COMP_CWORD-2]}}" == "~reservation" ]]; then
+                local val="${{cur#~reservation=}}"
                 [[ "$prev" == "=" ]] && val="$cur"
                 local reservations="$(_slurm_cache_reservations)"
                 COMPREPLY=($(compgen -W "$reservations" -- "$val"))
-                [[ ${{#COMPREPLY[@]}} -gt 0 ]] && COMPREPLY=("${{COMPREPLY[@]/#/-reservation=}}")
+                [[ ${{#COMPREPLY[@]}} -gt 0 ]] && COMPREPLY=("${{COMPREPLY[@]/#/~reservation=}}")
             # Positive filters
             elif [[ "$cur" == partition=* ]] || [[ "$prev" == "=" && "${{COMP_WORDS[COMP_CWORD-2]}}" == "partition" ]]; then
                 local val="${{cur#partition=}}"
@@ -3384,11 +3384,11 @@ def drain(
 ) -> None:
     """Drain nodes (set state to drain). Reason: --reason, -r, or reason=VALUE.
 
-    Supports node filters with optional exclusion (prefix with -):
-    - partition=NAME, -partition=NAME
-    - state=STATE, -state=STATE
-    - user=USER, -user=USER
-    - reservation=NAME, -reservation=NAME
+    Supports node filters with optional exclusion (prefix with ~):
+    - partition=NAME, ~partition=NAME
+    - state=STATE, ~state=STATE
+    - user=USER, ~user=USER
+    - reservation=NAME, ~reservation=NAME
 
     \b
     Examples:
@@ -3398,9 +3398,9 @@ def drain(
       slurm-cli drain node001 -r "Hardware issue"
       slurm-cli drain node001 reason="Scheduled maintenance"
       slurm-cli drain partition=gpu reason="GPU maintenance"
-      slurm-cli drain partition=gpu -reservation=maint \
+      slurm-cli drain partition=gpu ~reservation=maint \
           reason="Drain except reserved"
-      slurm-cli drain state=idle -user=admin \
+      slurm-cli drain state=idle ~user=admin \
           reason="Idle nodes except admin's"
     """
     # Parse reason= from positional arguments
@@ -3464,11 +3464,11 @@ def drain(
 def undrain(nodes: Tuple[str, ...], verbose: bool = False) -> None:
     """Undrain nodes (set state to resume).
 
-    Supports node filters with optional exclusion (prefix with -):
-    - partition=NAME, -partition=NAME
-    - state=STATE, -state=STATE
-    - user=USER, -user=USER
-    - reservation=NAME, -reservation=NAME
+    Supports node filters with optional exclusion (prefix with ~):
+    - partition=NAME, ~partition=NAME
+    - state=STATE, ~state=STATE
+    - user=USER, ~user=USER
+    - reservation=NAME, ~reservation=NAME
 
     \b
     Examples:
@@ -3477,7 +3477,7 @@ def undrain(nodes: Tuple[str, ...], verbose: bool = False) -> None:
       slurm-cli undrain node[001-010]
       slurm-cli undrain partition=gpu
       slurm-cli undrain state=drain
-      slurm-cli undrain state=drain -reservation=maint
+      slurm-cli undrain state=drain ~reservation=maint
     """
     # Resolve node filters with exclusions
     resolved_nodes, other_args = resolve_node_filters(
