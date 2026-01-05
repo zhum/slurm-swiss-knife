@@ -1129,6 +1129,20 @@ def test_undrain_command_alias(runner):
         assert "Undrained" in result.output
 
 
+def test_undrain_command_resume_alias(runner):
+    """Test the undrain command with alias 'resume'."""
+    from slurm_cli.cli import register_commands
+
+    register_commands()
+
+    with patch("subprocess.run") as mock_run:
+        mock_run.return_value.stdout = ""
+        mock_run.return_value.returncode = 0
+        result = runner.invoke(main, ["resume", "node001"])
+        assert result.exit_code == 0
+        assert "Undrained" in result.output
+
+
 def test_drain_command_with_partition_filter(runner):
     """Test the drain command with partition filter."""
     from slurm_cli.cli import register_commands

@@ -572,7 +572,7 @@ def resolve_command_alias(command: str) -> str:
         "takeover": ["takeover"],
         "token": ["token"],
         "drain": ["drain"],
-        "undrain": ["undrain"],
+        "undrain": ["undrain", "resume"],
     }
     matches = [
         (cmd, alias)
@@ -1336,7 +1336,7 @@ def register_commands() -> None:
     drain.help = (
         "Drain nodes (aliases: dr). Reason: -r, --reason, or reason="
     )
-    undrain.help = "Undrain/resume nodes (aliases: undr)"
+    undrain.help = "Undrain/resume nodes (aliases: undr, resume)"
     help.help = "Show help information"
 
 
@@ -2639,7 +2639,7 @@ _slurm_cli_initialize_autocomplete() {{
             guessed="drain"
             cmd="drain"
             ;;
-        undr*)
+        undr*|resu*)
             guessed="undrain"
             cmd="undrain"
             ;;
@@ -2653,7 +2653,7 @@ _slurm_cli_initialize_autocomplete() {{
         else
             COMPREPLY=($(compgen -W "show get create add new update edit \\
                 change modify delete remove rm list-resources autocomplete \\
-                help version reconfigure ping takeover token drain undrain {all_opts_str}" -- "$cur"))
+                help version reconfigure ping takeover token drain undrain resume {all_opts_str}" -- "$cur"))
             return
         fi
     fi

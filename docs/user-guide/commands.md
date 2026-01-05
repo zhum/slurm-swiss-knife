@@ -402,7 +402,7 @@ slurm-cli drain partition=batch not:state=drain reason="Batch nodes not already 
 
 Undrain/resume nodes (set state to resume).
 
-**Aliases:** `undrain`, `undr`
+**Aliases:** `undrain`, `undr`, `resume`
 
 ```bash
 # Undrain a single node

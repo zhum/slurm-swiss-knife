@@ -55,6 +55,7 @@
 - [x] **Tree-like Associations Display**: Optionally show associations in hierarchical tree format
 - [ ] **Interactive Mode**: Add interactive shell mode for better user experience
 - [x] **Filter nodes**: Add filter options for nodes by reservation, state, partition, user
+- [x] **Negative nodes filters**: Add fiters to exclude nodes
 - [x] **Filter jobs**: Add jobs options for jobs by reservation, state, partition, user
 - [ ] **Selection objects**: Add -L option, which forces to return just list of objects via comma (or -s'separator'),
                              for nodes add -F sub-option for folding in slurm-style.

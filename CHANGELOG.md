@@ -17,7 +17,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - `token` (alias: tok) - Generate JWT authentication token with lifespan/username options
     - Supports time formats: `1h`, `30m`, `1:30:00`, `1-12:00:00`, `infinite`
   - `drain` (alias: dr) - Drain nodes with optional reason
-  - `undrain` (alias: undr) - Undrain/resume nodes
+  - `undrain` (aliases: undr, resume) - Undrain/resume nodes
 - **Node Filter Exclusions**: Prefix filters with `not:` to exclude nodes
   - `not:partition=gpu` - exclude nodes from GPU partition
   - `not:state=drain` - exclude drained nodes
