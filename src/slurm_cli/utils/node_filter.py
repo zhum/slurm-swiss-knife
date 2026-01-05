@@ -6,16 +6,16 @@ Supports filtering nodes by:
 - user=<username> - nodes running jobs by a specific user
 - reservation=<name> - nodes in a specific reservation
 
-Prefix with '-' to exclude nodes matching the filter:
-- -partition=<name> - exclude nodes from a specific partition
-- -state=<state> - exclude nodes with a specific state
-- -user=<username> - exclude nodes running jobs by a specific user
-- -reservation=<name> - exclude nodes in a specific reservation
+Prefix with 'not:' to exclude nodes matching the filter:
+- not:partition=<name> - exclude nodes from a specific partition
+- not:state=<state> - exclude nodes with a specific state
+- not:user=<username> - exclude nodes running jobs by a specific user
+- not:reservation=<name> - exclude nodes in a specific reservation
 
 Filter syntax can be used anywhere node names are expected, e.g.:
 - slurm-cli update reservations test nodes=partition=cpu
 - slurm-cli update nodes state=drain partition=gpu
-- slurm-cli drain partition=gpu -reservation=maint
+- slurm-cli drain partition=gpu not:reservation=maint
 """
 
 import json
