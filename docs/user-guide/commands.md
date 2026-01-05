@@ -423,6 +423,51 @@ slurm-cli undrain state=drain not:reservation=maint
 slurm-cli undrain reservation=maint
 ```
 
+### Reboot
+
+Reboot nodes with optional flags.
+
+**Aliases:** `reboot`, `reb`
+
+**Options:**
+
+| Option | Description |
+|--------|-------------|
+| `asap` | Reboot as soon as possible (when node becomes idle) |
+| `nextstate=RESUME` | Set node to RESUME state after reboot |
+| `nextstate=DOWN` | Set node to DOWN state after reboot |
+| `reason=<reason>` | Reason for the reboot |
+
+```bash
+# Reboot a single node
+slurm-cli reboot node001
+
+# Reboot multiple nodes
+slurm-cli reboot node001 node002 node003
+
+# Reboot with Slurm hostlist range
+slurm-cli reboot node[001-010]
+
+# Reboot as soon as possible
+slurm-cli reboot asap node001
+
+# Reboot with nextstate
+slurm-cli reboot nextstate=DOWN node001
+
+# Reboot with reason
+slurm-cli reboot reason="Kernel update" node001
+
+# Reboot with all options
+slurm-cli reboot asap nextstate=RESUME reason="Firmware update" node001
+
+# Reboot using node filters
+slurm-cli reboot partition=gpu reason="GPU firmware update"
+slurm-cli reboot partition=gpu not:reservation=maint
+
+# Reboot all nodes
+slurm-cli reboot ALL
+```
+
 ## Special Commands
 
 ### Autocomplete

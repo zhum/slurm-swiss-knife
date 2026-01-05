@@ -1234,3 +1234,182 @@ def test_drain_command_with_exclusion_filter(runner):
             assert result.exit_code == 0
             call_args = mock_run.call_args[0][0]
             assert "state=drain" in call_args
+
+
+def test_reboot_command(runner):
+    """Test the reboot command."""
+    from slurm_cli.cli import register_commands
+
+    register_commands()
+
+    with patch("subprocess.run") as mock_run:
+        mock_run.return_value.stdout = ""
+        mock_run.return_value.returncode = 0
+        result = runner.invoke(main, ["reboot", "node001"])
+        assert result.exit_code == 0
+        assert "Rebooting" in result.output
+        call_args = mock_run.call_args[0][0]
+        assert "scontrol" in call_args
+        assert "reboot" in call_args
+        assert "node001" in call_args
+
+
+def test_reboot_command_multiple_nodes(runner):
+    """Test the reboot command with multiple nodes."""
+    from slurm_cli.cli import register_commands
+
+    register_commands()
+
+    with patch("subprocess.run") as mock_run:
+        mock_run.return_value.stdout = ""
+        mock_run.return_value.returncode = 0
+        result = runner.invoke(
+            main, ["reboot", "node001", "node002", "node003"]
+        )
+        assert result.exit_code == 0
+        assert "Rebooting" in result.output
+        call_args = mock_run.call_args[0][0]
+        # Nodes are joined with commas
+        assert "node001,node002,node003" in call_args[-1]
+
+
+def test_reboot_command_with_asap(runner):
+    """Test the reboot command with asap flag."""
+    from slurm_cli.cli import register_commands
+
+    register_commands()
+
+    with patch("subprocess.run") as mock_run:
+        mock_run.return_value.stdout = ""
+        mock_run.return_value.returncode = 0
+        result = runner.invoke(main, ["reboot", "asap", "node001"])
+        assert result.exit_code == 0
+        call_args = mock_run.call_args[0][0]
+        assert "asap" in call_args
+
+
+def test_reboot_command_with_nextstate(runner):
+    """Test the reboot command with nextstate option."""
+    from slurm_cli.cli import register_commands
+
+    register_commands()
+
+    with patch("subprocess.run") as mock_run:
+        mock_run.return_value.stdout = ""
+        mock_run.return_value.returncode = 0
+        result = runner.invoke(
+            main, ["reboot", "nextstate=DOWN", "node001"]
+        )
+        assert result.exit_code == 0
+        call_args = mock_run.call_args[0][0]
+        assert "nextstate=DOWN" in call_args
+
+
+def test_reboot_command_with_reason(runner):
+    """Test the reboot command with reason option."""
+    from slurm_cli.cli import register_commands
+
+    register_commands()
+
+    with patch("subprocess.run") as mock_run:
+        mock_run.return_value.stdout = ""
+        mock_run.return_value.returncode = 0
+        result = runner.invoke(
+            main, ["reboot", "reason=Kernel update", "node001"]
+        )
+        assert result.exit_code == 0
+        call_args = mock_run.call_args[0][0]
+        assert "reason=Kernel update" in call_args
+
+
+def test_reboot_command_with_all_options(runner):
+    """Test the reboot command with all options."""
+    from slurm_cli.cli import register_commands
+
+    register_commands()
+
+    with patch("subprocess.run") as mock_run:
+        mock_run.return_value.stdout = ""
+        mock_run.return_value.returncode = 0
+        result = runner.invoke(
+            main,
+            [
+                "reboot",
+                "asap",
+                "nextstate=RESUME",
+                "reason=Maintenance",
+                "node001",
+            ],
+        )
+        assert result.exit_code == 0
+        call_args = mock_run.call_args[0][0]
+        assert "asap" in call_args
+        assert "nextstate=RESUME" in call_args
+        assert "reason=Maintenance" in call_args
+
+
+def test_reboot_command_all_nodes(runner):
+    """Test the reboot command with ALL keyword."""
+    from slurm_cli.cli import register_commands
+
+    register_commands()
+
+    with patch("subprocess.run") as mock_run:
+        mock_run.return_value.stdout = ""
+        mock_run.return_value.returncode = 0
+        result = runner.invoke(main, ["reboot", "ALL"])
+        assert result.exit_code == 0
+        call_args = mock_run.call_args[0][0]
+        assert "ALL" in call_args
+
+
+def test_reboot_command_alias(runner):
+    """Test the reboot command with alias 'reb'."""
+    from slurm_cli.cli import register_commands
+
+    register_commands()
+
+    with patch("subprocess.run") as mock_run:
+        mock_run.return_value.stdout = ""
+        mock_run.return_value.returncode = 0
+        result = runner.invoke(main, ["reb", "node001"])
+        assert result.exit_code == 0
+        assert "Rebooting" in result.output
+
+
+def test_reboot_command_invalid_nextstate(runner):
+    """Test the reboot command with invalid nextstate."""
+    from slurm_cli.cli import register_commands
+
+    register_commands()
+
+    result = runner.invoke(
+        main, ["reboot", "nextstate=INVALID", "node001"]
+    )
+    assert "Error" in result.output
+    assert "RESUME or DOWN" in result.output
+
+
+def test_reboot_command_with_filter(runner):
+    """Test the reboot command with partition filter."""
+    from slurm_cli.cli import register_commands
+
+    register_commands()
+
+    with patch("subprocess.run") as mock_run:
+        mock_run.return_value.stdout = ""
+        mock_run.return_value.returncode = 0
+        with patch(
+            "slurm_cli.cli.resolve_node_filters"
+        ) as mock_resolve:
+            mock_resolve.return_value = (
+                {"node001", "node002", "node003"},
+                [],
+            )
+            result = runner.invoke(
+                main, ["reboot", "partition=gpu", "reason=GPU firmware"]
+            )
+            assert result.exit_code == 0
+            mock_resolve.assert_called_once()
+            call_args = mock_run.call_args[0][0]
+            assert "reason=GPU firmware" in call_args
