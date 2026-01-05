@@ -2598,7 +2598,7 @@ _slurm_cli_initialize_autocomplete() {{
             guessed="delete"
             cmd="delete"
             ;;
-        re*)
+        rem*)
             guessed="remove"
             cmd="delete"
             ;;
