@@ -1488,3 +1488,21 @@ def test_cancel_reboot_command_with_filter(runner):
             mock_resolve.assert_called_once()
             call_args = mock_run.call_args[0][0]
             assert "cancel_reboot" in call_args
+
+
+def test_show_nodes_with_filter(runner):
+    """Test show nodes command with node filter."""
+    from slurm_cli.cli import register_commands
+
+    register_commands()
+
+    with patch("slurm_cli.cli.resolve_node_filters") as mock_resolve:
+        mock_resolve.return_value = ({"node001", "node002"}, [])
+        # Mock data would be loaded by the show command
+        with patch("slurm_cli.utils.nodes.Node.show") as mock_show:
+            result = runner.invoke(
+                main, ["show", "nodes", "partition=gpu"]
+            )
+            # The command should not crash with KeyError
+            # It should call resolve_node_filters for the filter
+            mock_resolve.assert_called_once()

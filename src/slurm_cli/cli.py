@@ -1477,16 +1477,39 @@ def show(
             )
     elif canonical_resource[:4] == "node":
         if field:
-            Node.show(
-                name=field,
-                data=data,
-                style=style,
-                verbose=verbose,
-                delimiter=delimiter,
-                zebra=zebra,
-                profile=profile,
-                profile_str=profile_str,
-            )
+            # Check if field is a node filter (partition=, state=, etc.)
+            if is_node_filter(field):
+                resolved_nodes, _ = resolve_node_filters(
+                    [field], verbose
+                )
+                if not resolved_nodes:
+                    console.print(
+                        f"[yellow]No nodes matched filter: {field}[/yellow]"
+                    )
+                    return
+                # Filter data to only include resolved nodes
+                filtered_data = {
+                    k: v for k, v in data.items() if k in resolved_nodes
+                }
+                Node.show(
+                    data=filtered_data,
+                    style=style,
+                    delimiter=delimiter,
+                    zebra=zebra,
+                    profile=profile,
+                    profile_str=profile_str,
+                )
+            else:
+                Node.show(
+                    name=field,
+                    data=data,
+                    style=style,
+                    verbose=verbose,
+                    delimiter=delimiter,
+                    zebra=zebra,
+                    profile=profile,
+                    profile_str=profile_str,
+                )
         else:
             Node.show(
                 data=data,
@@ -2443,7 +2466,7 @@ def delete(
     help="Maximum number of suggestions to return",
 )
 def autocomplete(word: str, max_cost: int, size: int) -> None:
-    """Test autocomplete functionality."""
+    """Print bash autocomplete function."""
     # Dynamically extract options from the main CLI group
     main_cmd = main
     short_opts = []
