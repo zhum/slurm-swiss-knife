@@ -468,6 +468,27 @@ slurm-cli reboot partition=gpu not:reservation=maint
 slurm-cli reboot ALL
 ```
 
+### Cancel Reboot
+
+Cancel pending reboot on nodes.
+
+**Aliases:** `cancel_reboot`, `cancel_reb`
+
+```bash
+# Cancel reboot on a single node
+slurm-cli cancel_reboot node001
+
+# Cancel reboot on multiple nodes
+slurm-cli cancel_reboot node001 node002 node003
+
+# Cancel reboot with Slurm hostlist range
+slurm-cli cancel_reboot node[001-010]
+
+# Cancel reboot using node filters
+slurm-cli cancel_reboot partition=gpu
+slurm-cli cancel_reboot partition=gpu not:reservation=maint
+```
+
 ## Special Commands
 
 ### Autocomplete

@@ -574,6 +574,7 @@ def resolve_command_alias(command: str) -> str:
         "drain": ["drain"],
         "undrain": ["undrain", "resume"],
         "reboot": ["reboot"],
+        "cancel_reboot": ["cancel_reboot"],
     }
     matches = [
         (cmd, alias)
@@ -1320,6 +1321,7 @@ def register_commands() -> None:
     main.add_command(drain, name="drain")
     main.add_command(undrain, name="undrain")
     main.add_command(reboot, name="reboot")
+    main.add_command(cancel_reboot, name="cancel_reboot")
 
     # Modify help text to show aliases inline
     show.help = "Show information about Slurm resources (aliases: get)"
@@ -1340,6 +1342,7 @@ def register_commands() -> None:
     )
     undrain.help = "Undrain/resume nodes (aliases: undr, resume)"
     reboot.help = "Reboot nodes (aliases: reb)"
+    cancel_reboot.help = "Cancel pending reboot (aliases: cancel_reb)"
     help.help = "Show help information"
 
 
@@ -2650,6 +2653,10 @@ _slurm_cli_initialize_autocomplete() {{
             guessed="reboot"
             cmd="reboot"
             ;;
+        cancel_reb*|cancel_r*)
+            guessed="cancel_reboot"
+            cmd="cancel_reboot"
+            ;;
         *)
             ;;
     esac
@@ -2660,7 +2667,7 @@ _slurm_cli_initialize_autocomplete() {{
         else
             COMPREPLY=($(compgen -W "show get create add new update edit \\
                 change modify delete remove rm list-resources autocomplete \\
-                help version reconfigure ping takeover token drain undrain resume reboot {all_opts_str}" -- "$cur"))
+                help version reconfigure ping takeover token drain undrain resume reboot cancel_reboot {all_opts_str}" -- "$cur"))
             return
         fi
     fi
@@ -2885,6 +2892,66 @@ _slurm_cli_initialize_autocomplete() {{
                 [[ ${{#COMPREPLY[@]}} -gt 0 && "$cur" == *=* ]] && COMPREPLY=("${{COMPREPLY[@]/#/reservation=}}")
             else
                 COMPREPLY=($(compgen -W "ALL asap nextstate= reason= $cached_nodes $node_filters $neg_filters -v --verbose -h --help" -- "$cur"))
+            fi
+            return
+            ;;
+        cancel_reboot)
+            # Cancel reboot command takes nodes and filters
+            local cached_nodes="$(_slurm_cache_nodes)"
+            local cached_partitions="$(_slurm_cache_partitions)"
+            local node_filters="partition= state= user= reservation="
+            local neg_filters="not:partition= not:state= not:user= not:reservation="
+            local node_states="idle alloc drain down mixed comp"
+            if [[ "$cur" == --* ]]; then
+                COMPREPLY=($(compgen -W "--verbose --help" -- "$cur"))
+            # Exclusion filters with not: prefix
+            elif [[ "$cur" == not:partition=* ]] || [[ "$prev" == "=" && "${{COMP_WORDS[COMP_CWORD-2]}}" == "not:partition" ]]; then
+                local val="${{cur#not:partition=}}"
+                [[ "$prev" == "=" ]] && val="$cur"
+                COMPREPLY=($(compgen -W "$cached_partitions" -- "$val"))
+                [[ ${{#COMPREPLY[@]}} -gt 0 ]] && COMPREPLY=("${{COMPREPLY[@]/#/not:partition=}}")
+            elif [[ "$cur" == not:state=* ]] || [[ "$prev" == "=" && "${{COMP_WORDS[COMP_CWORD-2]}}" == "not:state" ]]; then
+                local val="${{cur#not:state=}}"
+                [[ "$prev" == "=" ]] && val="$cur"
+                COMPREPLY=($(compgen -W "$node_states" -- "$val"))
+                [[ ${{#COMPREPLY[@]}} -gt 0 ]] && COMPREPLY=("${{COMPREPLY[@]/#/not:state=}}")
+            elif [[ "$cur" == not:user=* ]] || [[ "$prev" == "=" && "${{COMP_WORDS[COMP_CWORD-2]}}" == "not:user" ]]; then
+                local val="${{cur#not:user=}}"
+                [[ "$prev" == "=" ]] && val="$cur"
+                local users="$(_slurm_cache_users)"
+                COMPREPLY=($(compgen -W "$users" -- "$val"))
+                [[ ${{#COMPREPLY[@]}} -gt 0 ]] && COMPREPLY=("${{COMPREPLY[@]/#/not:user=}}")
+            elif [[ "$cur" == not:reservation=* ]] || [[ "$prev" == "=" && "${{COMP_WORDS[COMP_CWORD-2]}}" == "not:reservation" ]]; then
+                local val="${{cur#not:reservation=}}"
+                [[ "$prev" == "=" ]] && val="$cur"
+                local reservations="$(_slurm_cache_reservations)"
+                COMPREPLY=($(compgen -W "$reservations" -- "$val"))
+                [[ ${{#COMPREPLY[@]}} -gt 0 ]] && COMPREPLY=("${{COMPREPLY[@]/#/not:reservation=}}")
+            # Positive filters
+            elif [[ "$cur" == partition=* ]] || [[ "$prev" == "=" && "${{COMP_WORDS[COMP_CWORD-2]}}" == "partition" ]]; then
+                local val="${{cur#partition=}}"
+                [[ "$prev" == "=" ]] && val="$cur"
+                COMPREPLY=($(compgen -W "$cached_partitions" -- "$val"))
+                [[ ${{#COMPREPLY[@]}} -gt 0 && "$cur" == *=* ]] && COMPREPLY=("${{COMPREPLY[@]/#/partition=}}")
+            elif [[ "$cur" == state=* ]] || [[ "$prev" == "=" && "${{COMP_WORDS[COMP_CWORD-2]}}" == "state" ]]; then
+                local val="${{cur#state=}}"
+                [[ "$prev" == "=" ]] && val="$cur"
+                COMPREPLY=($(compgen -W "$node_states" -- "$val"))
+                [[ ${{#COMPREPLY[@]}} -gt 0 && "$cur" == *=* ]] && COMPREPLY=("${{COMPREPLY[@]/#/state=}}")
+            elif [[ "$cur" == user=* ]] || [[ "$prev" == "=" && "${{COMP_WORDS[COMP_CWORD-2]}}" == "user" ]]; then
+                local val="${{cur#user=}}"
+                [[ "$prev" == "=" ]] && val="$cur"
+                local users="$(_slurm_cache_users)"
+                COMPREPLY=($(compgen -W "$users" -- "$val"))
+                [[ ${{#COMPREPLY[@]}} -gt 0 && "$cur" == *=* ]] && COMPREPLY=("${{COMPREPLY[@]/#/user=}}")
+            elif [[ "$cur" == reservation=* ]] || [[ "$prev" == "=" && "${{COMP_WORDS[COMP_CWORD-2]}}" == "reservation" ]]; then
+                local val="${{cur#reservation=}}"
+                [[ "$prev" == "=" ]] && val="$cur"
+                local reservations="$(_slurm_cache_reservations)"
+                COMPREPLY=($(compgen -W "$reservations" -- "$val"))
+                [[ ${{#COMPREPLY[@]}} -gt 0 && "$cur" == *=* ]] && COMPREPLY=("${{COMPREPLY[@]/#/reservation=}}")
+            else
+                COMPREPLY=($(compgen -W "$cached_nodes $node_filters $neg_filters -v --verbose -h --help" -- "$cur"))
             fi
             return
             ;;
@@ -3693,6 +3760,67 @@ def reboot(nodes: Tuple[str, ...], verbose: bool = False) -> None:
         if result.stdout:
             console.print(result.stdout.strip())
         console.print(f"[green]Rebooting node(s): {nodelist}[/green]")
+    except subprocess.CalledProcessError as e:
+        console.print(f"[red]Error: {e.stderr.strip() or e}[/red]")
+    except FileNotFoundError:
+        console.print("[red]Error: scontrol not found[/red]")
+
+
+@click.command(context_settings=CONTEXT_SETTINGS)
+@click.argument("nodes", nargs=-1, required=True)
+@click.option(
+    "--verbose", "-v", is_flag=True, help="Enable verbose output"
+)
+def cancel_reboot(
+    nodes: Tuple[str, ...], verbose: bool = False
+) -> None:
+    """Cancel pending reboot on nodes.
+
+    Supports node filters with optional exclusion (prefix with not:):
+    - partition=NAME, not:partition=NAME
+    - state=STATE, not:state=STATE
+    - user=USER, not:user=USER
+    - reservation=NAME, not:reservation=NAME
+
+    \b
+    Examples:
+      slurm-cli cancel_reboot node001
+      slurm-cli cancel_reboot node[001-010]
+      slurm-cli cancel_reboot partition=gpu
+      slurm-cli cancel_reboot partition=gpu not:reservation=maint
+    """
+    # Resolve node filters with exclusions
+    resolved_nodes, other_args = resolve_node_filters(
+        list(nodes), verbose
+    )
+
+    if not resolved_nodes:
+        console.print(
+            "[red]Error: No nodes specified or all excluded[/red]"
+        )
+        return
+
+    # Convert set to sorted list for consistent output
+    actual_nodes = sorted(resolved_nodes)
+    nodelist = ",".join(actual_nodes)
+
+    args = ["scontrol", "cancel_reboot", nodelist]
+
+    if verbose:
+        console.print(f"[dim]Running: {' '.join(args)}[/dim]")
+
+    try:
+        result = subprocess.run(
+            args,
+            capture_output=True,
+            text=True,
+            check=True,
+        )
+        if result.stdout:
+            console.print(result.stdout.strip())
+        console.print(
+            f"[green]Cancelled reboot for node(s): {nodelist}[/green]"
+        )
     except subprocess.CalledProcessError as e:
         console.print(f"[red]Error: {e.stderr.strip() or e}[/red]")
     except FileNotFoundError:

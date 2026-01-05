@@ -1413,3 +1413,78 @@ def test_reboot_command_with_filter(runner):
             mock_resolve.assert_called_once()
             call_args = mock_run.call_args[0][0]
             assert "reason=GPU firmware" in call_args
+
+
+def test_cancel_reboot_command(runner):
+    """Test the cancel_reboot command."""
+    from slurm_cli.cli import register_commands
+
+    register_commands()
+
+    with patch("subprocess.run") as mock_run:
+        mock_run.return_value.stdout = ""
+        mock_run.return_value.returncode = 0
+        result = runner.invoke(main, ["cancel_reboot", "node001"])
+        assert result.exit_code == 0
+        assert "Cancelled reboot" in result.output
+        call_args = mock_run.call_args[0][0]
+        assert "scontrol" in call_args
+        assert "cancel_reboot" in call_args
+        assert "node001" in call_args
+
+
+def test_cancel_reboot_command_multiple_nodes(runner):
+    """Test the cancel_reboot command with multiple nodes."""
+    from slurm_cli.cli import register_commands
+
+    register_commands()
+
+    with patch("subprocess.run") as mock_run:
+        mock_run.return_value.stdout = ""
+        mock_run.return_value.returncode = 0
+        result = runner.invoke(
+            main, ["cancel_reboot", "node001", "node002", "node003"]
+        )
+        assert result.exit_code == 0
+        assert "Cancelled reboot" in result.output
+        call_args = mock_run.call_args[0][0]
+        assert "node001,node002,node003" in call_args[-1]
+
+
+def test_cancel_reboot_command_alias(runner):
+    """Test the cancel_reboot command with alias 'cancel_reb'."""
+    from slurm_cli.cli import register_commands
+
+    register_commands()
+
+    with patch("subprocess.run") as mock_run:
+        mock_run.return_value.stdout = ""
+        mock_run.return_value.returncode = 0
+        result = runner.invoke(main, ["cancel_reb", "node001"])
+        assert result.exit_code == 0
+        assert "Cancelled reboot" in result.output
+
+
+def test_cancel_reboot_command_with_filter(runner):
+    """Test the cancel_reboot command with partition filter."""
+    from slurm_cli.cli import register_commands
+
+    register_commands()
+
+    with patch("subprocess.run") as mock_run:
+        mock_run.return_value.stdout = ""
+        mock_run.return_value.returncode = 0
+        with patch(
+            "slurm_cli.cli.resolve_node_filters"
+        ) as mock_resolve:
+            mock_resolve.return_value = (
+                {"node001", "node002", "node003"},
+                [],
+            )
+            result = runner.invoke(
+                main, ["cancel_reboot", "partition=gpu"]
+            )
+            assert result.exit_code == 0
+            mock_resolve.assert_called_once()
+            call_args = mock_run.call_args[0][0]
+            assert "cancel_reboot" in call_args
