@@ -62,7 +62,7 @@
 
 ## Medium Priority Features
 
-- [ ] **drain/undrain**: add commands `drain node-list [[reason=]'reason']`, `undrain/resume`,
+- [x] **drain/undrain**: add commands `drain node-list [[reason=]'reason']`, `undrain/resume`,
       `reboot [asap] [nextstate=...]`, `cancel_reboot ...`;
       use nodelist filters!
 - [ ] **hold/top**: add commands `hold {[jobs=]job-list}`, `top ...`,

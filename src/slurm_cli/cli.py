@@ -1275,6 +1275,8 @@ class CustomGroup(click.Group):
             "token",
             "drain",
             "undrain",
+            "reboot",
+            "cancel_reboot",
         }
 
         for subcommand in self.list_commands(ctx):
