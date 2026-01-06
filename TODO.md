@@ -70,6 +70,7 @@
 - [x] **recon[figure], ping, takeover**
 - [x] **token [lifespan=\<lifespan\>] [username=\<username\>]** lifespan=seconds/infinite (we need specify time)
 - [x] **version**
+- [ ] **confreload** = reconfigure alias
 - [ ] **batch_script job_id [filename]**
 - [ ] **write_config [filename]**
 - [ ] **new resources (r/o)** bbstat, burstbuffer, daemons, dwstat, topology

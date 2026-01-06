@@ -38,7 +38,11 @@ from .utils.autocomplete_helpers import (
 from .utils.config import ROUTES, VERBS
 from .utils.coordinators import Coordinator
 from .utils.events import Event
-from .utils.job_filter import is_job_filter, resolve_job_ids
+from .utils.job_filter import (
+    is_job_filter,
+    resolve_job_filter,
+    resolve_job_ids,
+)
 from .utils.jobs import Job
 from .utils.node_filter import (
     is_node_filter,
@@ -3993,8 +3997,13 @@ def hold(
     # Resolve job filters
     job_ids, user_filters = resolve_job_ids(job_args, verbose)
 
-    if not job_ids and not user_filters:
-        console.print("[red]Error: No jobs specified[/red]")
+    # Resolve user filters to job IDs (scontrol hold doesn't have -u option)
+    for user in user_filters:
+        user_job_ids = resolve_job_filter(f"user={user}", verbose)
+        job_ids.extend(user_job_ids)
+
+    if not job_ids:
+        console.print("[red]Error: No jobs specified or found[/red]")
         return
 
     # Use --reason option if provided, otherwise use inline reason=
@@ -4058,8 +4067,13 @@ def release(jobs: Tuple[str, ...], verbose: bool = False) -> None:
     # Resolve job filters
     job_ids, user_filters = resolve_job_ids(list(jobs), verbose)
 
-    if not job_ids and not user_filters:
-        console.print("[red]Error: No jobs specified[/red]")
+    # Resolve user filters to job IDs (scontrol release doesn't have -u option)
+    for user in user_filters:
+        user_job_ids = resolve_job_filter(f"user={user}", verbose)
+        job_ids.extend(user_job_ids)
+
+    if not job_ids:
+        console.print("[red]Error: No jobs specified or found[/red]")
         return
 
     for job_id in job_ids:
@@ -4115,8 +4129,13 @@ def top(jobs: Tuple[str, ...], verbose: bool = False) -> None:
     # Resolve job filters
     job_ids, user_filters = resolve_job_ids(list(jobs), verbose)
 
-    if not job_ids and not user_filters:
-        console.print("[red]Error: No jobs specified[/red]")
+    # Resolve user filters to job IDs (scontrol top doesn't have -u option)
+    for user in user_filters:
+        user_job_ids = resolve_job_filter(f"user={user}", verbose)
+        job_ids.extend(user_job_ids)
+
+    if not job_ids:
+        console.print("[red]Error: No jobs specified or found[/red]")
         return
 
     # scontrol top takes comma-separated job list
@@ -4167,8 +4186,13 @@ def requeue(jobs: Tuple[str, ...], verbose: bool = False) -> None:
     # Resolve job filters
     job_ids, user_filters = resolve_job_ids(list(jobs), verbose)
 
-    if not job_ids and not user_filters:
-        console.print("[red]Error: No jobs specified[/red]")
+    # Resolve user filters to job IDs (scontrol requeue doesn't have -u option)
+    for user in user_filters:
+        user_job_ids = resolve_job_filter(f"user={user}", verbose)
+        job_ids.extend(user_job_ids)
+
+    if not job_ids:
+        console.print("[red]Error: No jobs specified or found[/red]")
         return
 
     for job_id in job_ids:
@@ -4225,8 +4249,13 @@ def suspend(jobs: Tuple[str, ...], verbose: bool = False) -> None:
     # Resolve job filters
     job_ids, user_filters = resolve_job_ids(list(jobs), verbose)
 
-    if not job_ids and not user_filters:
-        console.print("[red]Error: No jobs specified[/red]")
+    # Resolve user filters to job IDs (scontrol suspend doesn't have -u option)
+    for user in user_filters:
+        user_job_ids = resolve_job_filter(f"user={user}", verbose)
+        job_ids.extend(user_job_ids)
+
+    if not job_ids:
+        console.print("[red]Error: No jobs specified or found[/red]")
         return
 
     for job_id in job_ids:

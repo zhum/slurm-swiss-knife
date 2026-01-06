@@ -1912,3 +1912,26 @@ def test_autocomplete_hold_options(runner):
     assert "user=" in result.output
     assert "partition=" in result.output
     assert "reason=" in result.output
+
+
+def test_job_command_with_user_filter(runner):
+    """Test job commands resolve user= filter to job IDs."""
+    from slurm_cli.cli import register_commands
+
+    register_commands()
+    with patch("slurm_cli.cli.resolve_job_ids") as mock_resolve:
+        with patch("slurm_cli.cli.resolve_job_filter") as mock_filter:
+            # Simulate user= returning no direct job IDs, but username in filters
+            mock_resolve.return_value = ([], ["testuser"])
+            # Simulate resolve_job_filter returning job IDs for user
+            mock_filter.return_value = ["12345", "12346"]
+
+            with patch("subprocess.run") as mock_run:
+                mock_run.return_value = MagicMock(
+                    returncode=0, stdout="", stderr=""
+                )
+                result = runner.invoke(main, ["hold", "user=testuser"])
+                # Should have called resolve_job_filter for the user
+                mock_filter.assert_called_once_with("user=testuser", False)
+                # Should have run scontrol for each resolved job
+                assert mock_run.call_count == 2
