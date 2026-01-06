@@ -1496,16 +1496,26 @@ def test_show_nodes_with_filter(runner):
 
     register_commands()
 
-    with patch("slurm_cli.cli.resolve_node_filters") as mock_resolve:
-        mock_resolve.return_value = ({"node001", "node002"}, [])
-        # Mock data would be loaded by the show command
-        with patch("slurm_cli.utils.nodes.Node.show") as mock_show:
-            result = runner.invoke(
-                main, ["show", "nodes", "partition=gpu"]
-            )
-            # The command should not crash with KeyError
-            # It should call resolve_node_filters for the filter
-            mock_resolve.assert_called_once()
+    # Mock Resource.cached_resource to return test data
+    with patch(
+        "slurm_cli.utils.resources.Resource.cached_resource"
+    ) as mock_cache:
+        mock_cache.return_value = {
+            "node001": {"name": "node001", "state": "idle"},
+            "node002": {"name": "node002", "state": "idle"},
+        }
+        # Mock resolve_node_filters in cli module (where it's imported)
+        with patch(
+            "slurm_cli.cli.resolve_node_filters"
+        ) as mock_resolve:
+            mock_resolve.return_value = ({"node001", "node002"}, [])
+            with patch("slurm_cli.utils.nodes.Node.show") as mock_show:
+                result = runner.invoke(
+                    main, ["show", "nodes", "partition=gpu"]
+                )
+                # The command should not crash with KeyError
+                # It should call resolve_node_filters for the filter
+                mock_resolve.assert_called_once()
 
 
 def test_autocomplete_nodes_filter_options(runner):
