@@ -722,6 +722,25 @@ def get_dry_run(
     return ctx.obj.get("dry_run", False)
 
 
+def get_skip_confirm(
+    ctx: click.Context, yes: bool = False, force: bool = False
+) -> bool:
+    """Get skip confirmation flag from context and local options.
+
+    Combines global --yes (-y) flag with command-level --yes or --force.
+
+    Args:
+        ctx: Click context
+        yes: Command-level --yes flag
+        force: Command-level --force flag
+
+    Returns:
+        True if confirmation should be skipped
+    """
+    global_yes = ctx.obj.get("yes", False) if ctx.obj else False
+    return yes or force or global_yes
+
+
 def get_profile(
     ctx: click.Context, profile_override: str = None
 ) -> str:
@@ -1718,11 +1737,11 @@ def update(
     # Combine local and global dry-run settings
     dry_run = get_dry_run(ctx, dry_run)
 
-    # Get global --yes option from context, combine with local --yes
-    # global_yes = ctx.obj.get("yes", False) if ctx.obj else False
-    # skip_confirm = (
-    #     yes or global_yes
-    # )  # noqa: F841 - reserved for future use
+    # Combine local and global --yes options
+    skip_confirm = get_skip_confirm(
+        ctx, yes
+    )  # noqa: F841 - for future use
+
     # Show help if no resource, field, or value is provided
     if not resource or not field or not value:
         show_command_help(ctx, None, True)
@@ -2144,8 +2163,7 @@ def create(
                     return
 
             # Check if account or wckey is specified
-            global_yes = ctx.obj.get("yes", False) if ctx.obj else False
-            skip_confirm = force or yes or global_yes
+            skip_confirm = get_skip_confirm(ctx, yes, force)
             has_account = any(
                 k.lower() in ("account", "defaultaccount")
                 for k in create_options
@@ -2288,10 +2306,8 @@ def delete(
     # Combine local and global dry-run settings
     dry_run = get_dry_run(ctx, dry_run)
 
-    # Get global --yes option from context,
-    # combine with local --yes and --force
-    global_yes = ctx.obj.get("yes", False) if ctx.obj else False
-    skip_confirm = force or yes or global_yes
+    # Combine local and global --yes/--force options
+    skip_confirm = get_skip_confirm(ctx, yes, force)
 
     canonical_resource = resolve_resource_alias(resource)
 

@@ -2174,6 +2174,75 @@ class TestDryRun:
                 assert "DRY RUN" in result.output
 
 
+class TestGlobalYesOption:
+    """Tests for global --yes option."""
+
+    def test_global_yes_skips_confirmation(self, runner):
+        """Test that global -y skips confirmation in delete."""
+        from slurm_cli.cli import register_commands
+
+        register_commands()
+        with patch("subprocess.run") as mock_run:
+            mock_run.return_value = MagicMock(
+                returncode=0,
+                stdout='{"users": [{"name": "testuser"}]}',
+                stderr="",
+            )
+            # Global -y should skip confirmation
+            result = runner.invoke(
+                main, ["-y", "delete", "users", "testuser"]
+            )
+            # Should not prompt for confirmation
+            # (result depends on mocks, but no prompt should occur)
+            assert "cancelled" not in result.output.lower()
+
+    def test_command_yes_skips_confirmation(self, runner):
+        """Test that command-level -y skips confirmation."""
+        from slurm_cli.cli import register_commands
+
+        register_commands()
+        with patch("subprocess.run") as mock_run:
+            mock_run.return_value = MagicMock(
+                returncode=0,
+                stdout='{"users": [{"name": "testuser"}]}',
+                stderr="",
+            )
+            result = runner.invoke(
+                main, ["delete", "users", "testuser", "-y"]
+            )
+            assert "cancelled" not in result.output.lower()
+
+    def test_get_skip_confirm_function(self):
+        """Test the get_skip_confirm helper function."""
+        from unittest.mock import MagicMock
+
+        from slurm_cli.cli import get_skip_confirm
+
+        # Create mock context
+        ctx = MagicMock()
+
+        # Test with no yes flags
+        ctx.obj = {"yes": False}
+        assert get_skip_confirm(ctx, yes=False, force=False) is False
+
+        # Test with global yes
+        ctx.obj = {"yes": True}
+        assert get_skip_confirm(ctx, yes=False, force=False) is True
+
+        # Test with local yes
+        ctx.obj = {"yes": False}
+        assert get_skip_confirm(ctx, yes=True, force=False) is True
+
+        # Test with local force
+        ctx.obj = {"yes": False}
+        assert get_skip_confirm(ctx, yes=False, force=True) is True
+
+        # Test with ctx.obj as None
+        ctx.obj = None
+        assert get_skip_confirm(ctx, yes=False, force=False) is False
+        assert get_skip_confirm(ctx, yes=True, force=False) is True
+
+
 class TestResourceSpecificHelp:
     """Tests for resource-specific help."""
 
