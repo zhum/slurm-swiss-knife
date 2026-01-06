@@ -41,6 +41,7 @@ from .utils.events import Event
 from .utils.job_filter import (
     is_job_filter,
     resolve_job_filter,
+    resolve_job_filters,
     resolve_job_ids,
 )
 from .utils.jobs import Job
@@ -3013,6 +3014,7 @@ _slurm_cli_initialize_autocomplete() {{
             local cached_partitions="$(_slurm_cache_partitions)"
             local cached_accounts="$(_slurm_cache_accounts)"
             local job_filters="user= account= partition= state= name="
+            local neg_job_filters="not:user= not:account= not:partition= not:state= not:name="
             local job_states="pending running suspended"
             if [[ "$cur" == --* ]]; then
                 COMPREPLY=($(compgen -W "--reason --verbose --help" -- "$cur"))
@@ -3021,6 +3023,28 @@ _slurm_cli_initialize_autocomplete() {{
             elif [[ "$cur" == reason=* ]] || [[ "$prev" == "reason" && "${{COMP_WORDS[COMP_CWORD-1]}}" == "=" ]]; then
                 # reason= value - no completion
                 return
+            # Exclusion filters with not: prefix
+            elif [[ "$cur" == not:user=* ]] || [[ "$prev" == "=" && "${{COMP_WORDS[COMP_CWORD-2]}}" == "not:user" ]]; then
+                local val="${{cur#not:user=}}"
+                [[ "$prev" == "=" ]] && val="$cur"
+                COMPREPLY=($(compgen -W "$cached_users" -- "$val"))
+                [[ ${{#COMPREPLY[@]}} -gt 0 ]] && COMPREPLY=("${{COMPREPLY[@]/#/not:user=}}")
+            elif [[ "$cur" == not:account=* ]] || [[ "$prev" == "=" && "${{COMP_WORDS[COMP_CWORD-2]}}" == "not:account" ]]; then
+                local val="${{cur#not:account=}}"
+                [[ "$prev" == "=" ]] && val="$cur"
+                COMPREPLY=($(compgen -W "$cached_accounts" -- "$val"))
+                [[ ${{#COMPREPLY[@]}} -gt 0 ]] && COMPREPLY=("${{COMPREPLY[@]/#/not:account=}}")
+            elif [[ "$cur" == not:partition=* ]] || [[ "$prev" == "=" && "${{COMP_WORDS[COMP_CWORD-2]}}" == "not:partition" ]]; then
+                local val="${{cur#not:partition=}}"
+                [[ "$prev" == "=" ]] && val="$cur"
+                COMPREPLY=($(compgen -W "$cached_partitions" -- "$val"))
+                [[ ${{#COMPREPLY[@]}} -gt 0 ]] && COMPREPLY=("${{COMPREPLY[@]/#/not:partition=}}")
+            elif [[ "$cur" == not:state=* ]] || [[ "$prev" == "=" && "${{COMP_WORDS[COMP_CWORD-2]}}" == "not:state" ]]; then
+                local val="${{cur#not:state=}}"
+                [[ "$prev" == "=" ]] && val="$cur"
+                COMPREPLY=($(compgen -W "$job_states" -- "$val"))
+                [[ ${{#COMPREPLY[@]}} -gt 0 ]] && COMPREPLY=("${{COMPREPLY[@]/#/not:state=}}")
+            # Positive filters
             elif [[ "$cur" == user=* ]] || [[ "$prev" == "=" && "${{COMP_WORDS[COMP_CWORD-2]}}" == "user" ]]; then
                 local val="${{cur#user=}}"
                 [[ "$prev" == "=" ]] && val="$cur"
@@ -3042,7 +3066,7 @@ _slurm_cli_initialize_autocomplete() {{
                 COMPREPLY=($(compgen -W "$job_states" -- "$val"))
                 [[ ${{#COMPREPLY[@]}} -gt 0 && "$cur" == *=* ]] && COMPREPLY=("${{COMPREPLY[@]/#/state=}}")
             else
-                COMPREPLY=($(compgen -W "$cached_jobs $job_filters reason= -r --reason -v --verbose -h --help" -- "$cur"))
+                COMPREPLY=($(compgen -W "$cached_jobs $job_filters $neg_job_filters reason= -r --reason -v --verbose -h --help" -- "$cur"))
             fi
             return
             ;;
@@ -3053,9 +3077,32 @@ _slurm_cli_initialize_autocomplete() {{
             local cached_partitions="$(_slurm_cache_partitions)"
             local cached_accounts="$(_slurm_cache_accounts)"
             local job_filters="user= account= partition= state= name="
+            local neg_job_filters="not:user= not:account= not:partition= not:state= not:name="
             local job_states="pending running suspended"
             if [[ "$cur" == --* ]]; then
                 COMPREPLY=($(compgen -W "--verbose --help" -- "$cur"))
+            # Exclusion filters with not: prefix
+            elif [[ "$cur" == not:user=* ]] || [[ "$prev" == "=" && "${{COMP_WORDS[COMP_CWORD-2]}}" == "not:user" ]]; then
+                local val="${{cur#not:user=}}"
+                [[ "$prev" == "=" ]] && val="$cur"
+                COMPREPLY=($(compgen -W "$cached_users" -- "$val"))
+                [[ ${{#COMPREPLY[@]}} -gt 0 ]] && COMPREPLY=("${{COMPREPLY[@]/#/not:user=}}")
+            elif [[ "$cur" == not:account=* ]] || [[ "$prev" == "=" && "${{COMP_WORDS[COMP_CWORD-2]}}" == "not:account" ]]; then
+                local val="${{cur#not:account=}}"
+                [[ "$prev" == "=" ]] && val="$cur"
+                COMPREPLY=($(compgen -W "$cached_accounts" -- "$val"))
+                [[ ${{#COMPREPLY[@]}} -gt 0 ]] && COMPREPLY=("${{COMPREPLY[@]/#/not:account=}}")
+            elif [[ "$cur" == not:partition=* ]] || [[ "$prev" == "=" && "${{COMP_WORDS[COMP_CWORD-2]}}" == "not:partition" ]]; then
+                local val="${{cur#not:partition=}}"
+                [[ "$prev" == "=" ]] && val="$cur"
+                COMPREPLY=($(compgen -W "$cached_partitions" -- "$val"))
+                [[ ${{#COMPREPLY[@]}} -gt 0 ]] && COMPREPLY=("${{COMPREPLY[@]/#/not:partition=}}")
+            elif [[ "$cur" == not:state=* ]] || [[ "$prev" == "=" && "${{COMP_WORDS[COMP_CWORD-2]}}" == "not:state" ]]; then
+                local val="${{cur#not:state=}}"
+                [[ "$prev" == "=" ]] && val="$cur"
+                COMPREPLY=($(compgen -W "$job_states" -- "$val"))
+                [[ ${{#COMPREPLY[@]}} -gt 0 ]] && COMPREPLY=("${{COMPREPLY[@]/#/not:state=}}")
+            # Positive filters
             elif [[ "$cur" == user=* ]] || [[ "$prev" == "=" && "${{COMP_WORDS[COMP_CWORD-2]}}" == "user" ]]; then
                 local val="${{cur#user=}}"
                 [[ "$prev" == "=" ]] && val="$cur"
@@ -3077,7 +3124,7 @@ _slurm_cli_initialize_autocomplete() {{
                 COMPREPLY=($(compgen -W "$job_states" -- "$val"))
                 [[ ${{#COMPREPLY[@]}} -gt 0 && "$cur" == *=* ]] && COMPREPLY=("${{COMPREPLY[@]/#/state=}}")
             else
-                COMPREPLY=($(compgen -W "$cached_jobs $job_filters -v --verbose -h --help" -- "$cur"))
+                COMPREPLY=($(compgen -W "$cached_jobs $job_filters $neg_job_filters -v --verbose -h --help" -- "$cur"))
             fi
             return
             ;;
@@ -3968,12 +4015,12 @@ def hold(
 ) -> None:
     """Hold jobs (prevent them from starting).
 
-    Supports job filters:
-    - user=USER - jobs by user
-    - account=ACCOUNT - jobs by account
-    - partition=PARTITION - jobs in partition
-    - state=STATE - jobs with state
-    - name=PATTERN - jobs matching name
+    Supports job filters with optional exclusion (prefix with not:):
+    - user=USER, not:user=USER
+    - account=ACCOUNT, not:account=ACCOUNT
+    - partition=PARTITION, not:partition=PARTITION
+    - state=STATE, not:state=STATE
+    - name=PATTERN, not:name=PATTERN
 
     \b
     Examples:
@@ -3983,6 +4030,7 @@ def hold(
       slurm-cli hold partition=gpu --reason="Maintenance"
       slurm-cli hold 12345 -r "Waiting for data"
       slurm-cli hold 12345 reason="Need review"
+      slurm-cli hold partition=gpu not:user=admin
     """
     args_list = list(jobs)
     inline_reason = None
@@ -3994,13 +4042,9 @@ def hold(
         else:
             job_args.append(arg)
 
-    # Resolve job filters
-    job_ids, user_filters = resolve_job_ids(job_args, verbose)
-
-    # Resolve user filters to job IDs (scontrol hold doesn't have -u option)
-    for user in user_filters:
-        user_job_ids = resolve_job_filter(f"user={user}", verbose)
-        job_ids.extend(user_job_ids)
+    # Resolve job filters with exclusion support
+    job_ids_set, other_args = resolve_job_filters(job_args, verbose)
+    job_ids = list(job_ids_set)
 
     if not job_ids:
         console.print("[red]Error: No jobs specified or found[/red]")
@@ -4050,12 +4094,12 @@ def hold(
 def release(jobs: Tuple[str, ...], verbose: bool = False) -> None:
     """Release held jobs (allow them to start).
 
-    Supports job filters:
-    - user=USER - jobs by user
-    - account=ACCOUNT - jobs by account
-    - partition=PARTITION - jobs in partition
-    - state=STATE - jobs with state
-    - name=PATTERN - jobs matching name
+    Supports job filters with optional exclusion (prefix with not:):
+    - user=USER, not:user=USER
+    - account=ACCOUNT, not:account=ACCOUNT
+    - partition=PARTITION, not:partition=PARTITION
+    - state=STATE, not:state=STATE
+    - name=PATTERN, not:name=PATTERN
 
     \b
     Examples:
@@ -4063,14 +4107,11 @@ def release(jobs: Tuple[str, ...], verbose: bool = False) -> None:
       slurm-cli release 12345 12346 12347
       slurm-cli release user=john
       slurm-cli release state=pending
+      slurm-cli release partition=gpu not:user=admin
     """
-    # Resolve job filters
-    job_ids, user_filters = resolve_job_ids(list(jobs), verbose)
-
-    # Resolve user filters to job IDs (scontrol release doesn't have -u option)
-    for user in user_filters:
-        user_job_ids = resolve_job_filter(f"user={user}", verbose)
-        job_ids.extend(user_job_ids)
+    # Resolve job filters with exclusion support
+    job_ids_set, other_args = resolve_job_filters(list(jobs), verbose)
+    job_ids = list(job_ids_set)
 
     if not job_ids:
         console.print("[red]Error: No jobs specified or found[/red]")
@@ -4113,26 +4154,23 @@ def release(jobs: Tuple[str, ...], verbose: bool = False) -> None:
 def top(jobs: Tuple[str, ...], verbose: bool = False) -> None:
     """Move jobs to the top of the queue.
 
-    Supports job filters:
-    - user=USER - jobs by user
-    - account=ACCOUNT - jobs by account
-    - partition=PARTITION - jobs in partition
-    - state=STATE - jobs with state
-    - name=PATTERN - jobs matching name
+    Supports job filters with optional exclusion (prefix with not:):
+    - user=USER, not:user=USER
+    - account=ACCOUNT, not:account=ACCOUNT
+    - partition=PARTITION, not:partition=PARTITION
+    - state=STATE, not:state=STATE
+    - name=PATTERN, not:name=PATTERN
 
     \b
     Examples:
       slurm-cli top 12345
       slurm-cli top 12345 12346 12347
       slurm-cli top user=john
+      slurm-cli top partition=gpu not:user=admin
     """
-    # Resolve job filters
-    job_ids, user_filters = resolve_job_ids(list(jobs), verbose)
-
-    # Resolve user filters to job IDs (scontrol top doesn't have -u option)
-    for user in user_filters:
-        user_job_ids = resolve_job_filter(f"user={user}", verbose)
-        job_ids.extend(user_job_ids)
+    # Resolve job filters with exclusion support
+    job_ids_set, other_args = resolve_job_filters(list(jobs), verbose)
+    job_ids = list(job_ids_set)
 
     if not job_ids:
         console.print("[red]Error: No jobs specified or found[/red]")
@@ -4169,12 +4207,12 @@ def top(jobs: Tuple[str, ...], verbose: bool = False) -> None:
 def requeue(jobs: Tuple[str, ...], verbose: bool = False) -> None:
     """Requeue jobs (restart from beginning).
 
-    Supports job filters:
-    - user=USER - jobs by user
-    - account=ACCOUNT - jobs by account
-    - partition=PARTITION - jobs in partition
-    - state=STATE - jobs with state
-    - name=PATTERN - jobs matching name
+    Supports job filters with optional exclusion (prefix with not:):
+    - user=USER, not:user=USER
+    - account=ACCOUNT, not:account=ACCOUNT
+    - partition=PARTITION, not:partition=PARTITION
+    - state=STATE, not:state=STATE
+    - name=PATTERN, not:name=PATTERN
 
     \b
     Examples:
@@ -4182,14 +4220,11 @@ def requeue(jobs: Tuple[str, ...], verbose: bool = False) -> None:
       slurm-cli requeue 12345 12346 12347
       slurm-cli requeue user=john
       slurm-cli requeue state=failed
+      slurm-cli requeue partition=gpu not:state=running
     """
-    # Resolve job filters
-    job_ids, user_filters = resolve_job_ids(list(jobs), verbose)
-
-    # Resolve user filters to job IDs (scontrol requeue doesn't have -u option)
-    for user in user_filters:
-        user_job_ids = resolve_job_filter(f"user={user}", verbose)
-        job_ids.extend(user_job_ids)
+    # Resolve job filters with exclusion support
+    job_ids_set, other_args = resolve_job_filters(list(jobs), verbose)
+    job_ids = list(job_ids_set)
 
     if not job_ids:
         console.print("[red]Error: No jobs specified or found[/red]")
@@ -4232,12 +4267,12 @@ def requeue(jobs: Tuple[str, ...], verbose: bool = False) -> None:
 def suspend(jobs: Tuple[str, ...], verbose: bool = False) -> None:
     """Suspend running jobs.
 
-    Supports job filters:
-    - user=USER - jobs by user
-    - account=ACCOUNT - jobs by account
-    - partition=PARTITION - jobs in partition
-    - state=STATE - jobs with state
-    - name=PATTERN - jobs matching name
+    Supports job filters with optional exclusion (prefix with not:):
+    - user=USER, not:user=USER
+    - account=ACCOUNT, not:account=ACCOUNT
+    - partition=PARTITION, not:partition=PARTITION
+    - state=STATE, not:state=STATE
+    - name=PATTERN, not:name=PATTERN
 
     \b
     Examples:
@@ -4245,14 +4280,11 @@ def suspend(jobs: Tuple[str, ...], verbose: bool = False) -> None:
       slurm-cli suspend 12345 12346 12347
       slurm-cli suspend user=john
       slurm-cli suspend partition=gpu
+      slurm-cli suspend partition=gpu not:user=admin
     """
-    # Resolve job filters
-    job_ids, user_filters = resolve_job_ids(list(jobs), verbose)
-
-    # Resolve user filters to job IDs (scontrol suspend doesn't have -u option)
-    for user in user_filters:
-        user_job_ids = resolve_job_filter(f"user={user}", verbose)
-        job_ids.extend(user_job_ids)
+    # Resolve job filters with exclusion support
+    job_ids_set, other_args = resolve_job_filters(list(jobs), verbose)
+    job_ids = list(job_ids_set)
 
     if not job_ids:
         console.print("[red]Error: No jobs specified or found[/red]")

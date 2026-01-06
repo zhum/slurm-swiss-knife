@@ -491,7 +491,7 @@ slurm-cli cancel_reboot partition=gpu not:reservation=maint
 
 ## Job Control Commands
 
-Job control commands allow you to manage job execution state.
+Job control commands allow you to manage job execution state. All commands support job filters with optional exclusion (prefix with `not:`).
 
 ### Hold
 
@@ -523,6 +523,10 @@ slurm-cli hold user=john
 slurm-cli hold partition=gpu
 slurm-cli hold account=research
 slurm-cli hold state=pending
+
+# Hold with exclusion filter
+slurm-cli hold partition=gpu not:user=admin
+slurm-cli hold state=pending not:account=priority
 ```
 
 ### Release
@@ -608,6 +612,12 @@ Job control commands support the following filters:
 | `user=` | `user=john` | Jobs by specific user |
 | `account=` | `account=research` | Jobs charged to account |
 | `partition=` | `partition=gpu` | Jobs in partition |
+| `state=` | `state=pending` | Jobs with state |
+| `name=` | `name=myjob` | Jobs matching name pattern |
+| `not:user=` | `not:user=admin` | Exclude jobs by user |
+| `not:account=` | `not:account=system` | Exclude jobs by account |
+| `not:partition=` | `not:partition=debug` | Exclude jobs in partition |
+| `not:state=` | `not:state=running` | Exclude jobs with state |
 | `state=` | `state=pending` | Jobs with state |
 | `name=` | `name=myjob` | Jobs matching name pattern |
 

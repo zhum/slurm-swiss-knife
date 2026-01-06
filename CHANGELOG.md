@@ -27,6 +27,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - `requeue` (alias: req) - Requeue jobs (restart from beginning)
   - `suspend` (alias: sus) - Suspend running jobs
   - All job control commands support job filters: user=, account=, partition=, state=, name=
+  - Exclusion filters: not:user=, not:account=, not:partition=, not:state=, not:name=
+  - Example: `slurm-cli hold partition=gpu not:user=admin` holds all GPU jobs except admin's
 - **Node Filter Exclusions**: Prefix filters with `not:` to exclude nodes
   - `not:partition=gpu` - exclude nodes from GPU partition
   - `not:state=drain` - exclude drained nodes

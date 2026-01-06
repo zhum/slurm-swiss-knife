@@ -9,9 +9,16 @@ Supports filtering jobs by:
 - nodes=<nodelist> - jobs running on specific nodes
 - reservation=<name> - jobs using a specific reservation
 
+Exclusion filters (prefix with not:):
+- not:user=<username> - exclude jobs by user
+- not:account=<account> - exclude jobs by account
+- not:partition=<name> - exclude jobs in partition
+- not:state=<state> - exclude jobs with state
+
 Filter syntax can be used in delete and update jobs commands:
 - slurm-cli delete jobs user=john
 - slurm-cli update jobs state=pending priority=100
+- slurm-cli hold partition=gpu not:user=admin
 """
 
 import json
@@ -35,6 +42,8 @@ JOB_FILTER_PREFIXES = [
 def is_job_filter(value: str) -> bool:
     """Check if a value is a job filter expression.
 
+    Recognizes both positive and negative (not:) filters.
+
     Args:
         value: Value to check
 
@@ -44,6 +53,9 @@ def is_job_filter(value: str) -> bool:
     if not value:
         return False
     value_lower = value.lower()
+    # Check for not: prefix
+    if value_lower.startswith("not:"):
+        value_lower = value_lower[4:]
     return any(value_lower.startswith(p) for p in JOB_FILTER_PREFIXES)
 
 
@@ -323,10 +335,117 @@ def _get_jobs_by_reservation(
         return []
 
 
+def _get_all_jobs(verbose: bool = False) -> List[str]:
+    """Get all job IDs from the queue."""
+    try:
+        result = subprocess.run(
+            ["squeue", "-h", "-o", "%i"],
+            capture_output=True,
+            text=True,
+            check=True,
+            errors="replace",
+        )
+        job_ids = [
+            jid.strip()
+            for jid in result.stdout.strip().split("\n")
+            if jid.strip()
+        ]
+        if verbose:
+            console.print(f"[dim]All jobs: {len(job_ids)} found[/dim]")
+        return job_ids
+    except subprocess.CalledProcessError as e:
+        if verbose:
+            console.print(
+                f"[red]Failed to get all jobs: {e.stderr}[/red]"
+            )
+        return []
+
+
+def resolve_job_filters(
+    args: List[str], verbose: bool = False
+) -> tuple[set, List[str]]:
+    """Resolve a list of job arguments with inclusion/exclusion support.
+
+    Handles positive filters, negative filters (not:prefix), and direct job IDs.
+    Returns a set of job IDs after applying all filters.
+
+    Args:
+        args: List of job IDs or filter expressions
+        verbose: Print debug information
+
+    Returns:
+        Tuple of (job_ids_set, other_args) where:
+        - job_ids_set: Set of resolved job IDs after exclusions
+        - other_args: List of args that are not job IDs or filters
+    """
+    included_jobs: set = set()
+    excluded_jobs: set = set()
+    other_args: List[str] = []
+    has_positive_filter = False
+
+    for arg in args:
+        if not arg:
+            continue
+
+        arg_lower = arg.lower()
+
+        # Check for not: prefix (exclusion)
+        if arg_lower.startswith("not:"):
+            filter_part = arg[4:]  # Remove "not:" prefix
+            if is_job_filter(filter_part):
+                resolved = resolve_job_filter(filter_part, verbose)
+                excluded_jobs.update(resolved)
+                if verbose:
+                    console.print(
+                        f"[dim]Excluding {len(resolved)} jobs "
+                        f"from filter: {filter_part}[/dim]"
+                    )
+            else:
+                other_args.append(arg)
+        elif is_job_filter(arg):
+            # Positive filter
+            has_positive_filter = True
+            resolved = resolve_job_filter(arg, verbose)
+            included_jobs.update(resolved)
+            if verbose:
+                console.print(
+                    f"[dim]Including {len(resolved)} jobs "
+                    f"from filter: {arg}[/dim]"
+                )
+        elif arg.isdigit() or "_" in arg:
+            # Direct job ID (may include array job IDs like 123_4)
+            has_positive_filter = True
+            included_jobs.add(arg)
+        else:
+            other_args.append(arg)
+
+    # If only exclusions specified, start with all jobs
+    if not has_positive_filter and excluded_jobs:
+        all_jobs = _get_all_jobs(verbose)
+        included_jobs = set(all_jobs)
+        if verbose:
+            console.print(
+                f"[dim]Starting with all {len(included_jobs)} jobs[/dim]"
+            )
+
+    # Apply exclusions
+    final_jobs = included_jobs - excluded_jobs
+
+    if verbose and excluded_jobs:
+        console.print(
+            f"[dim]After exclusions: {len(final_jobs)} jobs[/dim]"
+        )
+
+    return final_jobs, other_args
+
+
 def resolve_job_ids(
     args: List[str], verbose: bool = False
 ) -> tuple[List[str], List[str]]:
     """Resolve a list of job IDs and filters to job IDs.
+
+    Note: This function is kept for backward compatibility with scancel.
+    For job control commands that need exclusion support, use resolve_job_filters.
 
     Args:
         args: List of job IDs or filter expressions

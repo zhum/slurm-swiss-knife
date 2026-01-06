@@ -1808,8 +1808,10 @@ class TestJobControlCommands:
             call_args = mock_run.call_args[0][0]
             assert "scontrol" in call_args
             assert "top" in call_args
-            # top uses comma-separated job list
-            assert "12345,12346" in call_args
+            # top uses comma-separated job list (order may vary due to set)
+            job_list = call_args[2]
+            assert "12345" in job_list
+            assert "12346" in job_list
 
     def test_requeue_command_basic(self, runner):
         """Test requeue command with job ID."""
@@ -1919,19 +1921,54 @@ def test_job_command_with_user_filter(runner):
     from slurm_cli.cli import register_commands
 
     register_commands()
-    with patch("slurm_cli.cli.resolve_job_ids") as mock_resolve:
-        with patch("slurm_cli.cli.resolve_job_filter") as mock_filter:
-            # Simulate user= returning no direct job IDs, but username in filters
-            mock_resolve.return_value = ([], ["testuser"])
-            # Simulate resolve_job_filter returning job IDs for user
-            mock_filter.return_value = ["12345", "12346"]
+    with patch("slurm_cli.cli.resolve_job_filters") as mock_resolve:
+        # Simulate filter returning job IDs set
+        mock_resolve.return_value = ({"12345", "12346"}, [])
 
-            with patch("subprocess.run") as mock_run:
-                mock_run.return_value = MagicMock(
-                    returncode=0, stdout="", stderr=""
-                )
-                result = runner.invoke(main, ["hold", "user=testuser"])
-                # Should have called resolve_job_filter for the user
-                mock_filter.assert_called_once_with("user=testuser", False)
-                # Should have run scontrol for each resolved job
-                assert mock_run.call_count == 2
+        with patch("subprocess.run") as mock_run:
+            mock_run.return_value = MagicMock(
+                returncode=0, stdout="", stderr=""
+            )
+            result = runner.invoke(main, ["hold", "user=testuser"])
+            # Should have called resolve_job_filters
+            mock_resolve.assert_called_once()
+            # Should have run scontrol for each resolved job
+            assert mock_run.call_count == 2
+
+
+def test_job_command_with_exclusion_filter(runner):
+    """Test job commands with not: exclusion filter."""
+    from slurm_cli.cli import register_commands
+
+    register_commands()
+    with patch("slurm_cli.cli.resolve_job_filters") as mock_resolve:
+        # Simulate partition=gpu not:user=admin returning filtered jobs
+        mock_resolve.return_value = ({"12345", "12346"}, [])
+
+        with patch("subprocess.run") as mock_run:
+            mock_run.return_value = MagicMock(
+                returncode=0, stdout="", stderr=""
+            )
+            result = runner.invoke(
+                main, ["hold", "partition=gpu", "not:user=admin"]
+            )
+            assert result.exit_code == 0
+            # Should have called resolve_job_filters with both filters
+            mock_resolve.assert_called_once()
+            call_args = mock_resolve.call_args[0][0]
+            assert "partition=gpu" in call_args
+            assert "not:user=admin" in call_args
+
+
+def test_autocomplete_job_negative_filters(runner):
+    """Test that autocomplete includes negative job filters."""
+    from slurm_cli.cli import register_commands
+
+    register_commands()
+    result = runner.invoke(main, ["autocomplete"])
+    assert result.exit_code == 0
+    # Check negative job filters
+    assert "not:user=" in result.output
+    assert "not:partition=" in result.output
+    assert "not:account=" in result.output
+    assert "not:state=" in result.output
