@@ -591,45 +591,94 @@ class Qos(BaseSlurmResource):
                     ),
                 ]
 
-                # Determine which columns have non-default values
+                # Determine which columns to show
                 visible_columns = []
-                for (
-                    col_key,
-                    col_name,
-                    col_style,
-                    col_justify,
-                    col_func,
-                ) in column_definitions:
-                    # Check if any QoS has a non-default value
-                    has_value = False
-                    for qos in qos_list:
-                        value = col_func(qos)
-                        # Consider non-default if not empty/"-"
-                        if value and value != "-":
-                            # Skip default values
-                            if (
-                                col_key == "usage_factor"
-                                and value == "1.0"
-                            ):
-                                continue
-                            if col_key == "priority" and value == "0":
-                                continue
-                            if (
-                                col_key == "preempt_mode"
-                                and value == "DISABLED"
-                            ):
-                                continue
-                            has_value = True
-                            break
 
-                    # Always show name, id, and description
-                    if (
-                        col_key in ["name", "id", "description"]
-                        or has_value
-                    ):
-                        visible_columns.append(
-                            (col_name, col_style, col_justify, col_func)
+                # If profile specifies columns, use only those
+                if columns_cfg and columns_cfg != "*":
+                    # Build a dict of column_key -> column_def
+                    col_map = {
+                        col_key: (
+                            col_name,
+                            col_style,
+                            col_justify,
+                            col_func,
                         )
+                        for (
+                            col_key,
+                            col_name,
+                            col_style,
+                            col_justify,
+                            col_func,
+                        ) in column_definitions
+                    }
+                    # Add columns in the order specified by the profile
+                    for col_key in columns_cfg:
+                        if col_key in col_map:
+                            (
+                                col_name,
+                                col_style,
+                                col_justify,
+                                col_func,
+                            ) = col_map[col_key]
+                            # Apply custom style if provided
+                            if styles_cfg and col_key in styles_cfg:
+                                col_style = styles_cfg[col_key]
+                            visible_columns.append(
+                                (
+                                    col_name,
+                                    col_style,
+                                    col_justify,
+                                    col_func,
+                                )
+                            )
+                else:
+                    # Default: auto-detect columns with non-default values
+                    for (
+                        col_key,
+                        col_name,
+                        col_style,
+                        col_justify,
+                        col_func,
+                    ) in column_definitions:
+                        # Check if any QoS has a non-default value
+                        has_value = False
+                        for qos in qos_list:
+                            value = col_func(qos)
+                            # Consider non-default if not empty/"-"
+                            if value and value != "-":
+                                # Skip default values
+                                if (
+                                    col_key == "usage_factor"
+                                    and value == "1.0"
+                                ):
+                                    continue
+                                if (
+                                    col_key == "priority"
+                                    and value == "0"
+                                ):
+                                    continue
+                                if (
+                                    col_key == "preempt_mode"
+                                    and value == "DISABLED"
+                                ):
+                                    continue
+                                has_value = True
+                                break
+
+                        # Always show name, id, and description
+                        if (
+                            col_key in ["name", "id", "description"]
+                            or has_value
+                        ):
+                            visible_columns.append(
+                                (
+                                    col_name,
+                                    col_style,
+                                    col_justify,
+                                    col_func,
+                                )
+                            )
 
                 # Output based on style
                 if style == "csv":
