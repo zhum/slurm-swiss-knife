@@ -350,3 +350,455 @@ class TestAssociationConstants:
         """Test DEFAULT_STYLES is defined."""
         assert Association.DEFAULT_STYLES is not None
         assert "account" in Association.DEFAULT_STYLES
+
+
+class TestAssociationFormatValueEdgeCases:
+    """Tests for Association._format_value edge cases."""
+
+    def test_format_id_dict(self):
+        """Test formatting nested id field."""
+        assoc = {"id": {"id": 12345}}
+        result = Association._format_value(assoc, "id")
+        assert result == "12345"
+
+    def test_format_priority_set(self):
+        """Test formatting priority when set is True."""
+        assoc = {"priority": {"set": True, "number": 100}}
+        result = Association._format_value(assoc, "priority")
+        assert result == "100"
+
+    def test_format_priority_not_set(self):
+        """Test formatting priority when set is False."""
+        assoc = {"priority": {"set": False, "number": 0}}
+        result = Association._format_value(assoc, "priority")
+        assert result == "-"
+
+    def test_format_default_qos(self):
+        """Test formatting default field with qos."""
+        assoc = {"default": {"qos": "normal"}}
+        result = Association._format_value(assoc, "default")
+        assert result == "normal"
+
+    def test_format_default_empty(self):
+        """Test formatting default field with empty qos."""
+        assoc = {"default": {"qos": ""}}
+        result = Association._format_value(assoc, "default")
+        assert result == "-"
+
+    def test_format_max_with_jobs(self):
+        """Test formatting max field with jobs limit."""
+        assoc = {
+            "max": {
+                "jobs": {"active": {"set": True, "number": 10}}
+            }
+        }
+        result = Association._format_value(assoc, "max")
+        assert "jobs=10" in result
+
+    def test_format_max_with_tres(self):
+        """Test formatting max field with tres limits."""
+        assoc = {
+            "max": {
+                "tres": {
+                    "per": {"cpu": {"set": True, "number": 100}}
+                }
+            }
+        }
+        result = Association._format_value(assoc, "max")
+        assert "cpu=100" in result
+
+    def test_format_min_empty(self):
+        """Test formatting min field with empty structure."""
+        assoc = {"min": {}}
+        result = Association._format_value(assoc, "min")
+        assert result == "-"
+
+    def test_format_flags_list(self):
+        """Test formatting flags as list."""
+        assoc = {"flags": ["admin", "nolimit"]}
+        result = Association._format_value(assoc, "flags")
+        assert result == "admin,nolimit"
+
+    def test_format_accounting_list(self):
+        """Test formatting accounting as list."""
+        assoc = {"accounting": ["item1", "item2"]}
+        result = Association._format_value(assoc, "accounting")
+        assert result == "item1,item2"
+
+
+class TestAssociationSortHierarchically:
+    """Tests for Association._sort_hierarchically method."""
+
+    def test_sort_single_account(self):
+        """Test sorting with single account and no users."""
+        associations = [
+            {"account": "root", "user": "", "parent_account": ""}
+        ]
+        result = Association._sort_hierarchically(associations)
+        assert len(result) == 1
+        assert result[0]["_depth"] == 0
+        assert result[0]["_indent"] == ""
+
+    def test_sort_account_with_users(self):
+        """Test sorting account with users."""
+        associations = [
+            {"account": "nvidia", "user": "", "parent_account": "root"},
+            {"account": "nvidia", "user": "john", "parent_account": "root"},
+            {"account": "nvidia", "user": "alice", "parent_account": "root"},
+        ]
+        result = Association._sort_hierarchically(associations)
+        # Should have account + 2 users
+        assert len(result) == 3
+        # Account first
+        assert result[0]["user"] == ""
+        assert result[0]["_depth"] == 0
+        # Users sorted alphabetically
+        assert result[1]["user"] == "alice"
+        assert result[1]["_depth"] == 1
+        assert result[2]["user"] == "john"
+        assert result[2]["_depth"] == 1
+
+    def test_sort_nested_hierarchy(self):
+        """Test sorting with nested account hierarchy."""
+        associations = [
+            {"account": "root", "user": "", "parent_account": ""},
+            {"account": "nvidia", "user": "", "parent_account": "root"},
+            {"account": "research", "user": "", "parent_account": "nvidia"},
+        ]
+        result = Association._sort_hierarchically(associations)
+        assert len(result) == 3
+        assert result[0]["account"] == "root"
+        assert result[0]["_depth"] == 0
+        assert result[1]["account"] == "nvidia"
+        assert result[1]["_depth"] == 1
+        assert result[2]["account"] == "research"
+        assert result[2]["_depth"] == 2
+
+    def test_sort_custom_indent(self):
+        """Test sorting with custom indentation."""
+        associations = [
+            {"account": "root", "user": "", "parent_account": ""},
+            {"account": "nvidia", "user": "", "parent_account": "root"},
+        ]
+        result = Association._sort_hierarchically(associations, indent="    ")
+        assert result[0]["_indent"] == ""
+        assert result[1]["_indent"] == "    "
+
+
+class TestAssociationShowTree:
+    """Tests for Association._show_tree method."""
+
+    @patch("slurm_cli.utils.associations.console")
+    def test_show_tree_basic(self, mock_console):
+        """Test _show_tree with basic hierarchy."""
+        associations = [
+            {
+                "account": "root",
+                "user": "",
+                "parent_account": "",
+                "partition": "",
+                "qos": [],
+            },
+            {
+                "account": "nvidia",
+                "user": "",
+                "parent_account": "root",
+                "partition": "gpu",
+                "qos": ["normal"],
+            },
+            {
+                "account": "nvidia",
+                "user": "john",
+                "parent_account": "root",
+                "partition": "gpu",
+                "qos": ["high"],
+            },
+        ]
+        # Should not raise
+        Association._show_tree(associations)
+        mock_console.print.assert_called()
+
+    @patch("slurm_cli.utils.associations.console")
+    def test_show_tree_with_qos(self, mock_console):
+        """Test _show_tree shows QOS information."""
+        associations = [
+            {
+                "account": "nvidia",
+                "user": "",
+                "parent_account": "",
+                "partition": "",
+                "qos": ["normal", "high"],
+            },
+        ]
+        Association._show_tree(associations)
+        mock_console.print.assert_called()
+
+
+class TestAssociationShowStyles:
+    """Tests for Association.show with different styles."""
+
+    @patch("slurm_cli.utils.associations.subprocess.run")
+    def test_show_csv_style(self, mock_run):
+        """Test show with CSV output style."""
+        mock_result = MagicMock()
+        mock_result.stdout = json.dumps(
+            {
+                "associations": [
+                    {
+                        "account": "nvidia",
+                        "user": "testuser",
+                        "cluster": "test",
+                        "partition": "gpu",
+                        "shares_raw": 100,
+                        "qos": ["normal"],
+                    }
+                ]
+            }
+        )
+        mock_run.return_value = mock_result
+
+        # Should not raise
+        Association.show(style="csv")
+        mock_run.assert_called_once()
+
+    @patch("slurm_cli.utils.associations.subprocess.run")
+    def test_show_pretty_style(self, mock_run):
+        """Test show with pretty (table) output style."""
+        mock_result = MagicMock()
+        mock_result.stdout = json.dumps(
+            {
+                "associations": [
+                    {
+                        "account": "nvidia",
+                        "user": "testuser",
+                        "cluster": "test",
+                        "partition": "",
+                        "shares_raw": 100,
+                        "qos": [],
+                    }
+                ]
+            }
+        )
+        mock_run.return_value = mock_result
+
+        # Should not raise
+        Association.show(style="pretty")
+        mock_run.assert_called_once()
+
+    @patch("slurm_cli.utils.associations.subprocess.run")
+    def test_show_tree_mode(self, mock_run):
+        """Test show with tree mode."""
+        mock_result = MagicMock()
+        mock_result.stdout = json.dumps(
+            {
+                "associations": [
+                    {
+                        "account": "root",
+                        "user": "",
+                        "parent_account": "",
+                        "cluster": "test",
+                        "partition": "",
+                        "shares_raw": 1,
+                        "qos": [],
+                    },
+                    {
+                        "account": "nvidia",
+                        "user": "",
+                        "parent_account": "root",
+                        "cluster": "test",
+                        "partition": "",
+                        "shares_raw": 100,
+                        "qos": [],
+                    },
+                ]
+            }
+        )
+        mock_run.return_value = mock_result
+
+        # Should not raise
+        Association.show(tree=True)
+        mock_run.assert_called_once()
+
+    @patch("slurm_cli.utils.associations.subprocess.run")
+    def test_show_with_account_name_filter(self, mock_run):
+        """Test show filtering by account name (not key=value format)."""
+        mock_result = MagicMock()
+        mock_result.stdout = json.dumps(
+            {
+                "associations": [
+                    {
+                        "account": "nvidia",
+                        "user": "",
+                        "cluster": "test",
+                        "partition": "",
+                        "shares_raw": 100,
+                        "qos": [],
+                    },
+                    {
+                        "account": "root",
+                        "user": "",
+                        "cluster": "test",
+                        "partition": "",
+                        "shares_raw": 1,
+                        "qos": [],
+                    },
+                ]
+            }
+        )
+        mock_run.return_value = mock_result
+
+        # Filter by account name (not account=nvidia, just nvidia)
+        Association.show(field="nvidia", style="json")
+        mock_run.assert_called_once()
+
+    @patch("slurm_cli.utils.associations.subprocess.run")
+    def test_show_no_match_filter(self, mock_run):
+        """Test show with filter that matches nothing."""
+        mock_result = MagicMock()
+        mock_result.stdout = json.dumps(
+            {
+                "associations": [
+                    {
+                        "account": "nvidia",
+                        "user": "",
+                        "cluster": "test",
+                        "partition": "",
+                        "shares_raw": 100,
+                        "qos": [],
+                    }
+                ]
+            }
+        )
+        mock_run.return_value = mock_result
+
+        # Filter that matches nothing
+        Association.show(field="account=nonexistent")
+        mock_run.assert_called_once()
+
+    @patch("slurm_cli.utils.associations.subprocess.run")
+    def test_show_no_match_account_name(self, mock_run):
+        """Test show with account name that doesn't exist."""
+        mock_result = MagicMock()
+        mock_result.stdout = json.dumps(
+            {
+                "associations": [
+                    {
+                        "account": "nvidia",
+                        "user": "",
+                        "cluster": "test",
+                        "partition": "",
+                        "shares_raw": 100,
+                        "qos": [],
+                    }
+                ]
+            }
+        )
+        mock_run.return_value = mock_result
+
+        # Account name that doesn't exist
+        Association.show(field="nonexistent")
+        mock_run.assert_called_once()
+
+    @patch("slurm_cli.utils.associations.subprocess.run")
+    def test_show_json_decode_error(self, mock_run):
+        """Test show handles JSON decode errors."""
+        mock_result = MagicMock()
+        mock_result.stdout = "invalid json{"
+        mock_run.return_value = mock_result
+
+        # Should not raise, just print error
+        Association.show()
+
+    @patch("slurm_cli.utils.associations.subprocess.run")
+    def test_show_subprocess_error(self, mock_run):
+        """Test show handles subprocess errors."""
+        from subprocess import CalledProcessError
+
+        mock_run.side_effect = CalledProcessError(
+            1, "cmd", stderr="sacctmgr error"
+        )
+
+        # Should not raise, just print error
+        Association.show()
+
+
+class TestAssociationCreate:
+    """Tests for Association.create method."""
+
+    @patch("slurm_cli.utils.associations.subprocess.run")
+    def test_create_basic(self, mock_run):
+        """Test creating a basic association."""
+        mock_run.return_value = MagicMock(stdout="", stderr="")
+
+        Association.create("testuser", verbose=True, account="nvidia")
+        mock_run.assert_called_once()
+        call_args = mock_run.call_args[0][0]
+        assert "create" in call_args
+        assert "user" in call_args
+        assert "name=testuser" in call_args
+        assert "account=nvidia" in call_args
+
+    @patch("slurm_cli.utils.associations.subprocess.run")
+    def test_create_with_output(self, mock_run):
+        """Test create with output from sacctmgr."""
+        mock_run.return_value = MagicMock(
+            stdout="Added user: testuser", stderr=""
+        )
+
+        Association.create("testuser", account="nvidia")
+        mock_run.assert_called_once()
+
+    @patch("slurm_cli.utils.associations.subprocess.run")
+    def test_create_failure(self, mock_run):
+        """Test create handles errors gracefully."""
+        from subprocess import CalledProcessError
+
+        mock_run.side_effect = CalledProcessError(
+            1, "cmd", stderr="User already exists"
+        )
+
+        # Should not raise, just print error
+        Association.create("testuser", account="nvidia")
+
+
+class TestAssociationUpdateVerbose:
+    """Tests for Association.update with verbose output."""
+
+    @patch("slurm_cli.utils.associations.subprocess.run")
+    def test_update_verbose_success(self, mock_run):
+        """Test update with verbose flag shows success message."""
+        mock_run.return_value = MagicMock(stdout="", stderr="")
+
+        Association.update("testuser", verbose=True, shares="100")
+        mock_run.assert_called_once()
+
+
+class TestAssociationDeleteEdgeCases:
+    """Tests for Association.delete edge cases."""
+
+    def test_delete_empty_conditions(self):
+        """Test delete with empty conditions list."""
+        # Should not raise, just print error
+        Association.delete([])
+
+    @patch("slurm_cli.utils.associations.subprocess.run")
+    def test_delete_with_output(self, mock_run):
+        """Test delete with output from sacctmgr."""
+        mock_run.return_value = MagicMock(
+            stdout="Deleted 3 associations", stderr=""
+        )
+
+        Association.delete(["user=testuser"])
+        mock_run.assert_called_once()
+
+    @patch("slurm_cli.utils.associations.subprocess.run")
+    def test_delete_failure(self, mock_run):
+        """Test delete handles errors gracefully."""
+        from subprocess import CalledProcessError
+
+        mock_run.side_effect = CalledProcessError(
+            1, "cmd", stderr="No associations found"
+        )
+
+        # Should not raise, just print error
+        Association.delete(["user=nonexistent"])
