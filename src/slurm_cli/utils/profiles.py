@@ -351,7 +351,12 @@ DEFAULT_PROFILES: Dict[str, Dict[str, Any]] = {
         "qos": {
             "template": (
                 "[cyan bold]{name}[/cyan bold] "
-                "priority=[green]{priority}[/green]"
+                "priority=[green]{priority}[/green] "
+                "max_jobs/user={max_jobs_per_user} "
+                "max_active/user={max_jobs_active_per_user} "
+                "max_tres/job=[yellow]{max_tres_per_job}[/yellow] "
+                "max_tres/user=[yellow]{max_tres_per_user}[/yellow] "
+                "max_tres_total=[yellow]{max_tres_total}[/yellow]"
             )
         },
         "partitions": {
