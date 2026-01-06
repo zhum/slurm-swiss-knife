@@ -1506,3 +1506,83 @@ def test_show_nodes_with_filter(runner):
             # The command should not crash with KeyError
             # It should call resolve_node_filters for the filter
             mock_resolve.assert_called_once()
+
+
+def test_autocomplete_nodes_filter_options(runner):
+    """Test that autocomplete includes node filter options for show nodes."""
+    from slurm_cli.cli import register_commands
+
+    register_commands()
+
+    result = runner.invoke(main, ["autocomplete"])
+    assert result.exit_code == 0
+
+    # Check that node filter options are included in the autocomplete script
+    # for the show command
+    assert "filter_options" in result.output
+    assert "partition=" in result.output
+    assert "state=" in result.output
+    assert "user=" in result.output
+    assert "reservation=" in result.output
+
+    # Check that the show command includes filter_options
+    assert (
+        "$filter_options $show_options $cached_nodes" in result.output
+        or "filter_options $show_options" in result.output
+    )
+
+
+def test_autocomplete_drain_undrain_options(runner):
+    """Test that autocomplete includes options for drain/undrain commands."""
+    from slurm_cli.cli import register_commands
+
+    register_commands()
+
+    result = runner.invoke(main, ["autocomplete"])
+    assert result.exit_code == 0
+
+    # Check drain command options
+    assert "drain)" in result.output
+    assert "reason=" in result.output
+    assert "--reason" in result.output
+
+    # Check undrain command options
+    assert "undrain)" in result.output
+
+    # Check node filters are available
+    assert "not:partition=" in result.output
+    assert "not:state=" in result.output
+    assert "not:user=" in result.output
+    assert "not:reservation=" in result.output
+
+
+def test_autocomplete_reboot_options(runner):
+    """Test that autocomplete includes options for reboot command."""
+    from slurm_cli.cli import register_commands
+
+    register_commands()
+
+    result = runner.invoke(main, ["autocomplete"])
+    assert result.exit_code == 0
+
+    # Check reboot command options
+    assert "reboot)" in result.output
+    assert "asap" in result.output
+    assert "nextstate=" in result.output
+    assert "RESUME" in result.output
+    assert "DOWN" in result.output
+
+
+def test_autocomplete_cancel_reboot_options(runner):
+    """Test that autocomplete includes options for cancel_reboot command."""
+    from slurm_cli.cli import register_commands
+
+    register_commands()
+
+    result = runner.invoke(main, ["autocomplete"])
+    assert result.exit_code == 0
+
+    # Check cancel_reboot command options
+    assert "cancel_reboot)" in result.output
+    # Should have node filters
+    assert "partition=" in result.output

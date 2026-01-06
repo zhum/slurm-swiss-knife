@@ -188,9 +188,9 @@ _slurm_cli_nodes_autocomplete() {{
         [[ ${{#COMPREPLY[@]}} -gt 0 ]] && return
     fi
 
-    # For show command: options first, then node names
+    # For show command: filter options, show options, then node names
     if [[ "$cmd" == "show" ]]; then
-        _slurm_complete "$show_options $cached_nodes" "$cur"
+        _slurm_complete "$filter_options $show_options $cached_nodes" "$cur"
         return
     fi
 
