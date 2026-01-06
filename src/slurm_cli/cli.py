@@ -25,12 +25,15 @@ import os
 import subprocess
 from typing import Any, Dict, List, Optional, Tuple
 
-import click
-from fast_autocomplete import AutoComplete
-from rich.box import SIMPLE_HEAVY
-from rich.table import Table
+import click  # pyright: ignore[reportMissingImports]
+from fast_autocomplete import AutoComplete  # pyright: ignore
+from rich.box import (
+    SIMPLE_HEAVY,
+)  # pyright: ignore[reportMissingImports]
+from rich.table import Table  # pyright: ignore[reportMissingImports]
 
 from .utils.accounts import Account
+
 from .utils.associations import Association
 from .utils.autocomplete_helpers import (
     get_common_autocomplete_functions,
@@ -40,7 +43,6 @@ from .utils.coordinators import Coordinator
 from .utils.events import Event
 from .utils.job_filter import (
     is_job_filter,
-    resolve_job_filter,
     resolve_job_filters,
     resolve_job_ids,
 )
@@ -4074,7 +4076,8 @@ def hold(
                 console.print(result.stdout.strip())
         except subprocess.CalledProcessError as e:
             console.print(
-                f"[red]Error holding job {job_id}: {e.stderr.strip() or e}[/red]"
+                f"[red]Error holding job {job_id}: "
+                f"{e.stderr.strip() or e}[/red]"
             )
         except FileNotFoundError:
             console.print("[red]Error: scontrol not found[/red]")
@@ -4134,7 +4137,8 @@ def release(jobs: Tuple[str, ...], verbose: bool = False) -> None:
                 console.print(result.stdout.strip())
         except subprocess.CalledProcessError as e:
             console.print(
-                f"[red]Error releasing job {job_id}: {e.stderr.strip() or e}[/red]"
+                f"[red]Error releasing job {job_id}: "
+                f"{e.stderr.strip() or e}[/red]"
             )
         except FileNotFoundError:
             console.print("[red]Error: scontrol not found[/red]")
@@ -4247,7 +4251,8 @@ def requeue(jobs: Tuple[str, ...], verbose: bool = False) -> None:
                 console.print(result.stdout.strip())
         except subprocess.CalledProcessError as e:
             console.print(
-                f"[red]Error requeuing job {job_id}: {e.stderr.strip() or e}[/red]"
+                f"[red]Error requeuing job {job_id}: "
+                f"{e.stderr.strip() or e}[/red]"
             )
         except FileNotFoundError:
             console.print("[red]Error: scontrol not found[/red]")
@@ -4307,7 +4312,8 @@ def suspend(jobs: Tuple[str, ...], verbose: bool = False) -> None:
                 console.print(result.stdout.strip())
         except subprocess.CalledProcessError as e:
             console.print(
-                f"[red]Error suspending job {job_id}: {e.stderr.strip() or e}[/red]"
+                f"[red]Error suspending job {job_id}: "
+                f"{e.stderr.strip() or e}[/red]"
             )
         except FileNotFoundError:
             console.print("[red]Error: scontrol not found[/red]")

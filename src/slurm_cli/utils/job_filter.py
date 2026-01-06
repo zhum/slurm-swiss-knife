@@ -23,7 +23,7 @@ Filter syntax can be used in delete and update jobs commands:
 
 import json
 import subprocess
-from typing import List, Optional
+from typing import List
 
 from .utils import console
 
@@ -366,7 +366,8 @@ def resolve_job_filters(
 ) -> tuple[set, List[str]]:
     """Resolve a list of job arguments with inclusion/exclusion support.
 
-    Handles positive filters, negative filters (not:prefix), and direct job IDs.
+    Handles positive filters, negative filters (not:prefix),
+    and direct job IDs.
     Returns a set of job IDs after applying all filters.
 
     Args:
@@ -445,7 +446,8 @@ def resolve_job_ids(
     """Resolve a list of job IDs and filters to job IDs.
 
     Note: This function is kept for backward compatibility with scancel.
-    For job control commands that need exclusion support, use resolve_job_filters.
+    For job control commands that need exclusion support,
+    use resolve_job_filters.
 
     Args:
         args: List of job IDs or filter expressions

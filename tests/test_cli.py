@@ -1722,6 +1722,67 @@ class TestProfileOutput:
         assert oneline[2] is not None  # template
 
 
+class TestListFields:
+    """Tests for --list-fields option."""
+
+    def test_list_fields_all(self, runner):
+        """Test --list-fields shows all resource fields."""
+        result = runner.invoke(main, ["--list-fields"])
+        assert result.exit_code == 0
+        # Should show fields for multiple resources
+        assert "[jobs]" in result.output
+        assert "[nodes]" in result.output
+        assert "[partitions]" in result.output
+        assert "[reservations]" in result.output
+        # Should show template syntax help
+        assert "Template syntax:" in result.output
+        assert "{field}" in result.output
+
+    def test_list_fields_specific_resource(self, runner):
+        """Test --list-fields=jobs shows fields for specific resource."""
+        result = runner.invoke(main, ["--list-fields=jobs"])
+        assert result.exit_code == 0
+        assert "Available fields for 'jobs'" in result.output
+        # Should show job-specific fields
+        assert "job_id" in result.output or "jobid" in result.output.lower()
+        # Should not show fields from other resources
+        assert "[nodes]" not in result.output
+
+    def test_list_fields_nodes(self, runner):
+        """Test --list-fields=nodes shows node fields."""
+        result = runner.invoke(main, ["--list-fields=nodes"])
+        assert result.exit_code == 0
+        assert "Available fields for 'nodes'" in result.output
+        assert "Template syntax:" in result.output
+
+    def test_list_fields_short_form(self, runner):
+        """Test --list-fields with short resource names."""
+        # 'res' should map to 'reservations'
+        result = runner.invoke(main, ["--list-fields=res"])
+        assert result.exit_code == 0
+        assert "Available fields for 'reservations'" in result.output
+
+        # 'part' should map to 'partitions'
+        result = runner.invoke(main, ["--list-fields=part"])
+        assert result.exit_code == 0
+        assert "Available fields for 'partitions'" in result.output
+
+    def test_list_fields_invalid_resource(self, runner):
+        """Test --list-fields with unknown resource."""
+        result = runner.invoke(main, ["--list-fields=invalid"])
+        assert result.exit_code == 0
+        assert "No field documentation for resource: invalid" in result.output
+        assert "Available resources:" in result.output
+
+    def test_list_fields_qos(self, runner):
+        """Test --list-fields=qos shows QoS fields."""
+        result = runner.invoke(main, ["--list-fields=qos"])
+        assert result.exit_code == 0
+        assert "Available fields for 'qos'" in result.output
+        # Check for common QoS fields
+        assert "name" in result.output or "priority" in result.output
+
+
 class TestJobControlCommands:
     """Tests for job control commands: hold, release, top, requeue, suspend."""
 
