@@ -2033,3 +2033,381 @@ def test_autocomplete_job_negative_filters(runner):
     assert "not:partition=" in result.output
     assert "not:account=" in result.output
     assert "not:state=" in result.output
+
+
+class TestDryRun:
+    """Tests for --dry-run and --no-dry-run options."""
+
+    def test_global_dry_run_option(self, runner):
+        """Test global --dry-run option."""
+        from slurm_cli.cli import register_commands
+
+        register_commands()
+        with patch("subprocess.run") as mock_run:
+            mock_run.return_value = MagicMock(
+                returncode=0, stdout="", stderr=""
+            )
+            result = runner.invoke(
+                main, ["--dry-run", "delete", "users", "testuser", "-y"]
+            )
+            assert result.exit_code == 0
+            # Should show DRY RUN output
+            assert "DRY RUN" in result.output
+            # Should NOT actually call sacctmgr for deletion
+            # (only for verification queries are allowed)
+
+    def test_command_dry_run_option(self, runner):
+        """Test command-level --dry-run option."""
+        from slurm_cli.cli import register_commands
+
+        register_commands()
+        with patch("subprocess.run") as mock_run:
+            mock_run.return_value = MagicMock(
+                returncode=0,
+                stdout='{"users": [{"name": "testuser"}]}',
+                stderr="",
+            )
+            result = runner.invoke(
+                main, ["delete", "users", "testuser", "--dry-run", "-y"]
+            )
+            assert result.exit_code == 0
+            assert "DRY RUN" in result.output
+
+    def test_no_dry_run_override(self, runner):
+        """Test --no-dry-run overrides env var."""
+        import os
+
+        from slurm_cli.cli import register_commands
+
+        register_commands()
+        # Set env var to enable dry-run
+        with patch.dict(os.environ, {"SLURM_CLI_DRYRUN": "y"}):
+            with patch("subprocess.run") as mock_run:
+                mock_run.return_value = MagicMock(
+                    returncode=0,
+                    stdout='{"users": []}',
+                    stderr="",
+                )
+                result = runner.invoke(
+                    main,
+                    ["--no-dry-run", "delete", "users", "testuser", "-y"],
+                )
+                # Should NOT show DRY RUN - env var is overridden
+                # (may show error because user doesn't exist, but not DRY RUN)
+                assert "DRY RUN" not in result.output
+
+    def test_env_var_dry_run(self, runner):
+        """Test SLURM_CLI_DRYRUN environment variable."""
+        import os
+
+        from slurm_cli.cli import register_commands
+
+        register_commands()
+        with patch.dict(os.environ, {"SLURM_CLI_DRYRUN": "y"}):
+            with patch("subprocess.run") as mock_run:
+                mock_run.return_value = MagicMock(
+                    returncode=0,
+                    stdout='{"users": [{"name": "testuser"}]}',
+                    stderr="",
+                )
+                result = runner.invoke(
+                    main, ["delete", "users", "testuser", "-y"]
+                )
+                assert result.exit_code == 0
+                assert "DRY RUN" in result.output
+
+    def test_env_var_true_value(self, runner):
+        """Test SLURM_CLI_DRYRUN with 'true' value."""
+        import os
+
+        from slurm_cli.cli import register_commands
+
+        register_commands()
+        with patch.dict(os.environ, {"SLURM_CLI_DRYRUN": "true"}):
+            with patch("subprocess.run") as mock_run:
+                mock_run.return_value = MagicMock(
+                    returncode=0,
+                    stdout='{"users": [{"name": "testuser"}]}',
+                    stderr="",
+                )
+                result = runner.invoke(
+                    main, ["delete", "users", "testuser", "-y"]
+                )
+                assert "DRY RUN" in result.output
+
+    def test_env_var_yes_value(self, runner):
+        """Test SLURM_CLI_DRYRUN with 'yes' value."""
+        import os
+
+        from slurm_cli.cli import register_commands
+
+        register_commands()
+        with patch.dict(os.environ, {"SLURM_CLI_DRYRUN": "yes"}):
+            with patch("subprocess.run") as mock_run:
+                mock_run.return_value = MagicMock(
+                    returncode=0,
+                    stdout='{"users": [{"name": "testuser"}]}',
+                    stderr="",
+                )
+                result = runner.invoke(
+                    main, ["delete", "users", "testuser", "-y"]
+                )
+                assert "DRY RUN" in result.output
+
+    def test_env_var_1_value(self, runner):
+        """Test SLURM_CLI_DRYRUN with '1' value."""
+        import os
+
+        from slurm_cli.cli import register_commands
+
+        register_commands()
+        with patch.dict(os.environ, {"SLURM_CLI_DRYRUN": "1"}):
+            with patch("subprocess.run") as mock_run:
+                mock_run.return_value = MagicMock(
+                    returncode=0,
+                    stdout='{"users": [{"name": "testuser"}]}',
+                    stderr="",
+                )
+                result = runner.invoke(
+                    main, ["delete", "users", "testuser", "-y"]
+                )
+                assert "DRY RUN" in result.output
+
+
+class TestResourceSpecificHelp:
+    """Tests for resource-specific help."""
+
+    def test_add_command_help(self, runner):
+        """Test add command shows available resources in help."""
+        result = runner.invoke(main, ["add", "-h"])
+        assert result.exit_code == 0
+        # Should list available resources
+        assert "coord" in result.output.lower()
+        assert "users" in result.output.lower()
+        assert "assoc" in result.output.lower()
+
+    def test_show_command_help(self, runner):
+        """Test show command shows available resources in help."""
+        result = runner.invoke(main, ["show", "-h"])
+        assert result.exit_code == 0
+        # Should list available resources
+        assert "partitions" in result.output.lower()
+        assert "nodes" in result.output.lower()
+        assert "qos" in result.output.lower()
+
+    def test_delete_command_help(self, runner):
+        """Test delete command shows available resources in help."""
+        result = runner.invoke(main, ["delete", "-h"])
+        assert result.exit_code == 0
+        assert "users" in result.output.lower()
+        assert "assoc" in result.output.lower()
+
+    def test_modify_command_help(self, runner):
+        """Test modify command shows available resources in help."""
+        result = runner.invoke(main, ["modify", "-h"])
+        assert result.exit_code == 0
+        assert "users" in result.output.lower()
+
+    def test_resource_specific_help_function(self):
+        """Test the show_resource_help function directly."""
+        from slurm_cli.cli import show_resource_help
+
+        # Test coordinators help
+        result = show_resource_help("create", "coordinators")
+        assert result is True
+
+        # Test users help
+        result = show_resource_help("create", "users")
+        assert result is True
+
+        # Test unknown resource
+        result = show_resource_help("create", "unknown_resource")
+        assert result is False
+
+
+class TestGuessResourceType:
+    """Tests for guessing resource type from item name."""
+
+    def test_guess_job_by_numeric_id(self):
+        """Test guessing 'jobs' from numeric ID."""
+        from slurm_cli.utils.resources import Resource
+
+        resource_type, _ = Resource.guess_resource_type("12345")
+        assert resource_type == "jobs"
+
+    def test_guess_job_by_array_id(self):
+        """Test guessing 'jobs' from array job ID."""
+        from slurm_cli.utils.resources import Resource
+
+        resource_type, _ = Resource.guess_resource_type("12345_1")
+        assert resource_type == "jobs"
+
+    def test_guess_job_by_prefix(self):
+        """Test guessing 'jobs' from 'j' prefix."""
+        from slurm_cli.utils.resources import Resource
+
+        resource_type, _ = Resource.guess_resource_type("jobs")
+        assert resource_type == "jobs"
+
+    def test_guess_partition_by_prefix(self):
+        """Test guessing 'partitions' from 'part' prefix."""
+        from slurm_cli.utils.resources import Resource
+
+        with patch.object(
+            Resource, "cached_resource_list", return_value=[]
+        ):
+            with patch.object(
+                Resource, "cached_resource", return_value=[]
+            ):
+                resource_type, _ = Resource.guess_resource_type(
+                    "partitions"
+                )
+                assert resource_type == "partitions"
+
+    def test_guess_node_by_prefix(self):
+        """Test guessing 'nodes' from 'node' prefix."""
+        from slurm_cli.utils.resources import Resource
+
+        with patch.object(
+            Resource, "cached_resource_list", return_value=[]
+        ):
+            with patch.object(
+                Resource, "cached_resource", return_value=[]
+            ):
+                resource_type, _ = Resource.guess_resource_type("nodes")
+                assert resource_type == "nodes"
+
+    def test_guess_qos_by_prefix(self):
+        """Test guessing 'qos' from 'qos' prefix."""
+        from slurm_cli.utils.resources import Resource
+
+        with patch.object(
+            Resource, "cached_resource_list", return_value=[]
+        ):
+            with patch.object(
+                Resource, "cached_resource", return_value=[]
+            ):
+                resource_type, _ = Resource.guess_resource_type("qos")
+                assert resource_type == "qos"
+
+    def test_guess_account_by_prefix(self):
+        """Test guessing 'accounts' from 'acc' prefix."""
+        from slurm_cli.utils.resources import Resource
+
+        with patch.object(
+            Resource, "cached_resource_list", return_value=[]
+        ):
+            with patch.object(
+                Resource, "cached_resource", return_value=[]
+            ):
+                resource_type, _ = Resource.guess_resource_type("accounts")
+                assert resource_type == "accounts"
+
+    def test_guess_reservation_by_prefix(self):
+        """Test guessing 'reservations' from 'res' prefix."""
+        from slurm_cli.utils.resources import Resource
+
+        with patch.object(
+            Resource, "cached_resource_list", return_value=[]
+        ):
+            with patch.object(
+                Resource, "cached_resource", return_value=[]
+            ):
+                resource_type, _ = Resource.guess_resource_type(
+                    "reservations"
+                )
+                assert resource_type == "reservations"
+
+    def test_guess_user_by_prefix(self):
+        """Test guessing 'users' from 'user' prefix."""
+        from slurm_cli.utils.resources import Resource
+
+        with patch.object(
+            Resource, "cached_resource_list", return_value=[]
+        ):
+            with patch.object(
+                Resource, "cached_resource", return_value=[]
+            ):
+                resource_type, _ = Resource.guess_resource_type("users")
+                assert resource_type == "users"
+
+    def test_guess_coordinator_by_prefix(self):
+        """Test guessing 'coordinators' from 'coord' prefix."""
+        from slurm_cli.utils.resources import Resource
+
+        with patch.object(
+            Resource, "cached_resource_list", return_value=[]
+        ):
+            with patch.object(
+                Resource, "cached_resource", return_value=[]
+            ):
+                resource_type, _ = Resource.guess_resource_type(
+                    "coordinators"
+                )
+                assert resource_type == "coordinators"
+
+    def test_guess_events_by_prefix(self):
+        """Test guessing 'events' from 'ev' prefix."""
+        from slurm_cli.utils.resources import Resource
+
+        with patch.object(
+            Resource, "cached_resource_list", return_value=[]
+        ):
+            resource_type, _ = Resource.guess_resource_type("events")
+            assert resource_type == "events"
+
+    def test_guess_licenses_by_prefix(self):
+        """Test guessing 'licenses' from 'lic' prefix."""
+        from slurm_cli.utils.resources import Resource
+
+        with patch.object(
+            Resource, "cached_resource_list", return_value=[]
+        ):
+            resource_type, _ = Resource.guess_resource_type("licenses")
+            assert resource_type == "licenses"
+
+    def test_guess_by_known_item_name(self):
+        """Test guessing resource type when item name matches cache."""
+        from slurm_cli.utils.resources import Resource
+
+        # Simulate 'gpu' being in the partitions cache
+        def mock_cached_list(resource):
+            if resource == "partitions":
+                return ["gpu", "cpu", "debug"]
+            return []
+
+        with patch.object(
+            Resource, "cached_resource_list", side_effect=mock_cached_list
+        ):
+            with patch.object(
+                Resource,
+                "cached_resource",
+                return_value=[{"name": "gpu"}],
+            ):
+                resource_type, _ = Resource.guess_resource_type("gpu")
+                assert resource_type == "partitions"
+
+    def test_guess_user_by_known_username(self):
+        """Test guessing 'users' when username is in cache."""
+        from slurm_cli.utils.resources import Resource
+
+        # Use 'admin' - doesn't start with j/part/node/qos/acc/res/coord
+        def mock_cached_list(resource):
+            if resource == "partitions":
+                return []
+            if resource == "nodes":
+                return []
+            if resource == "users":
+                return ["alice", "bob", "admin"]
+            return []
+
+        with patch.object(
+            Resource, "cached_resource_list", side_effect=mock_cached_list
+        ):
+            with patch.object(
+                Resource,
+                "cached_resource",
+                return_value=[{"name": "alice"}],
+            ):
+                resource_type, _ = Resource.guess_resource_type("alice")
+                assert resource_type == "users"

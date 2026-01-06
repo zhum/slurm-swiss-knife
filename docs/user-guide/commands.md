@@ -8,6 +8,38 @@ Slurm CLI provides a unified interface for managing Slurm resources through four
 slurm-cli <command> <resource> [name] [options] [key=value ...]
 ```
 
+## Automatic Resource Type Detection
+
+When you specify an item name without a resource type, slurm-cli can automatically detect the resource type:
+
+1. **By prefix**: Resource names are recognized by their prefix
+   - `j*` → jobs
+   - `part*` → partitions
+   - `node*` → nodes
+   - `user*` → users
+   - `qos*` → qos
+   - `acc*` → accounts
+   - `res*` → reservations
+   - `coord*` → coordinators
+   - `ev*` → events
+   - `lic*` → licenses
+
+1. **By numeric ID**: Numeric values are recognized as job IDs
+   - `12345` → job ID
+   - `12345_1` → array job ID
+
+1. **By cached item name**: If the name matches a known item from cache
+
+```bash
+# These are equivalent when 'gpu' is a known partition:
+slurm-cli show gpu
+slurm-cli show partitions gpu
+
+# Job IDs are automatically detected:
+slurm-cli show 12345
+slurm-cli show jobs 12345
+```
+
 ## Show Command
 
 Display information about Slurm resources.
