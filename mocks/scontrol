@@ -146,6 +146,26 @@ elif [ "$1" = "cancel_reboot" ]; then
     # Mock cancel_reboot command
     echo "MOCK: scontrol $*"
     exit 0
+elif [ "$1" = "hold" ]; then
+    # Mock hold command
+    echo "MOCK: scontrol $*"
+    exit 0
+elif [ "$1" = "release" ]; then
+    # Mock release command
+    echo "MOCK: scontrol $*"
+    exit 0
+elif [ "$1" = "top" ]; then
+    # Mock top command
+    echo "MOCK: scontrol $*"
+    exit 0
+elif [ "$1" = "requeue" ]; then
+    # Mock requeue command
+    echo "MOCK: scontrol $*"
+    exit 0
+elif [ "$1" = "suspend" ]; then
+    # Mock suspend command
+    echo "MOCK: scontrol $*"
+    exit 0
 else
     # For other arguments, show usage or error
     echo "Usage: $0 show {nodes|partitions|reservations|config} [--json]" >&2

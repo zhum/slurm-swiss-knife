@@ -3,7 +3,7 @@
 import json
 import os
 import tempfile
-from unittest.mock import patch
+from unittest.mock import MagicMock, patch
 
 import pytest
 from click.testing import CliRunner
@@ -1720,3 +1720,195 @@ class TestProfileOutput:
         assert len(compact[0]) > len(minimal[0])
         # Oneline uses template instead of columns
         assert oneline[2] is not None  # template
+
+
+class TestJobControlCommands:
+    """Tests for job control commands: hold, release, top, requeue, suspend."""
+
+    def test_hold_command_basic(self, runner):
+        """Test hold command with job ID."""
+        from slurm_cli.cli import register_commands
+
+        register_commands()
+        with patch("subprocess.run") as mock_run:
+            mock_run.return_value = MagicMock(
+                returncode=0, stdout="", stderr=""
+            )
+            result = runner.invoke(main, ["hold", "12345"])
+            assert result.exit_code == 0
+            mock_run.assert_called()
+            call_args = mock_run.call_args[0][0]
+            assert "scontrol" in call_args
+            assert "hold" in call_args
+            assert "12345" in call_args
+
+    def test_hold_command_with_reason_option(self, runner):
+        """Test hold command with --reason option."""
+        from slurm_cli.cli import register_commands
+
+        register_commands()
+        with patch("subprocess.run") as mock_run:
+            mock_run.return_value = MagicMock(
+                returncode=0, stdout="", stderr=""
+            )
+            result = runner.invoke(
+                main, ["hold", "12345", "--reason", "Waiting for data"]
+            )
+            assert result.exit_code == 0
+            mock_run.assert_called()
+            call_args = mock_run.call_args[0][0]
+            assert "reason=Waiting for data" in call_args
+
+    def test_hold_command_with_inline_reason(self, runner):
+        """Test hold command with reason= inline."""
+        from slurm_cli.cli import register_commands
+
+        register_commands()
+        with patch("subprocess.run") as mock_run:
+            mock_run.return_value = MagicMock(
+                returncode=0, stdout="", stderr=""
+            )
+            result = runner.invoke(
+                main, ["hold", "12345", "reason=Need review"]
+            )
+            assert result.exit_code == 0
+            mock_run.assert_called()
+            call_args = mock_run.call_args[0][0]
+            assert "reason=Need review" in call_args
+
+    def test_release_command_basic(self, runner):
+        """Test release command with job ID."""
+        from slurm_cli.cli import register_commands
+
+        register_commands()
+        with patch("subprocess.run") as mock_run:
+            mock_run.return_value = MagicMock(
+                returncode=0, stdout="", stderr=""
+            )
+            result = runner.invoke(main, ["release", "12345"])
+            assert result.exit_code == 0
+            mock_run.assert_called()
+            call_args = mock_run.call_args[0][0]
+            assert "scontrol" in call_args
+            assert "release" in call_args
+            assert "12345" in call_args
+
+    def test_top_command_basic(self, runner):
+        """Test top command with job IDs."""
+        from slurm_cli.cli import register_commands
+
+        register_commands()
+        with patch("subprocess.run") as mock_run:
+            mock_run.return_value = MagicMock(
+                returncode=0, stdout="", stderr=""
+            )
+            result = runner.invoke(main, ["top", "12345", "12346"])
+            assert result.exit_code == 0
+            mock_run.assert_called()
+            call_args = mock_run.call_args[0][0]
+            assert "scontrol" in call_args
+            assert "top" in call_args
+            # top uses comma-separated job list
+            assert "12345,12346" in call_args
+
+    def test_requeue_command_basic(self, runner):
+        """Test requeue command with job ID."""
+        from slurm_cli.cli import register_commands
+
+        register_commands()
+        with patch("subprocess.run") as mock_run:
+            mock_run.return_value = MagicMock(
+                returncode=0, stdout="", stderr=""
+            )
+            result = runner.invoke(main, ["requeue", "12345"])
+            assert result.exit_code == 0
+            mock_run.assert_called()
+            call_args = mock_run.call_args[0][0]
+            assert "scontrol" in call_args
+            assert "requeue" in call_args
+            assert "12345" in call_args
+
+    def test_suspend_command_basic(self, runner):
+        """Test suspend command with job ID."""
+        from slurm_cli.cli import register_commands
+
+        register_commands()
+        with patch("subprocess.run") as mock_run:
+            mock_run.return_value = MagicMock(
+                returncode=0, stdout="", stderr=""
+            )
+            result = runner.invoke(main, ["suspend", "12345"])
+            assert result.exit_code == 0
+            mock_run.assert_called()
+            call_args = mock_run.call_args[0][0]
+            assert "scontrol" in call_args
+            assert "suspend" in call_args
+            assert "12345" in call_args
+
+    def test_hold_command_no_jobs(self, runner):
+        """Test hold command with no jobs shows error."""
+        from slurm_cli.cli import register_commands
+
+        register_commands()
+        result = runner.invoke(main, ["hold"])
+        assert result.exit_code != 0
+
+    def test_hold_command_verbose(self, runner):
+        """Test hold command with verbose output."""
+        from slurm_cli.cli import register_commands
+
+        register_commands()
+        with patch("subprocess.run") as mock_run:
+            mock_run.return_value = MagicMock(
+                returncode=0, stdout="", stderr=""
+            )
+            result = runner.invoke(main, ["hold", "12345", "-v"])
+            assert result.exit_code == 0
+            assert "Running:" in result.output
+
+    def test_job_commands_in_help(self, runner):
+        """Test that job control commands appear in help."""
+        from slurm_cli.cli import register_commands
+
+        register_commands()
+        result = runner.invoke(main, ["-h"])
+        assert result.exit_code == 0
+        assert "hold" in result.output
+        assert "release" in result.output
+        assert "top" in result.output
+        assert "requeue" in result.output
+        assert "suspend" in result.output
+
+    def test_hold_command_help(self, runner):
+        """Test hold command help shows reason option."""
+        from slurm_cli.cli import register_commands
+
+        register_commands()
+        result = runner.invoke(main, ["hold", "--help"])
+        assert result.exit_code == 0
+        assert "--reason" in result.output or "-r" in result.output
+
+
+def test_autocomplete_job_commands(runner):
+    """Test that autocomplete includes job control commands."""
+    from slurm_cli.cli import register_commands
+
+    register_commands()
+    result = runner.invoke(main, ["autocomplete"])
+    assert result.exit_code == 0
+    # Check job control commands are in autocomplete
+    assert "hold)" in result.output
+    assert "release|top|requeue|suspend)" in result.output
+
+
+def test_autocomplete_hold_options(runner):
+    """Test that autocomplete includes hold command options."""
+    from slurm_cli.cli import register_commands
+
+    register_commands()
+    result = runner.invoke(main, ["autocomplete"])
+    assert result.exit_code == 0
+    # Check hold has job filters and reason option
+    assert "user=" in result.output
+    assert "partition=" in result.output
+    assert "reason=" in result.output

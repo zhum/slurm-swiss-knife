@@ -20,6 +20,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - `undrain` (aliases: undr, resume) - Undrain/resume nodes
   - `reboot` (alias: reb) - Reboot nodes with optional asap, nextstate, and reason
   - `cancel_reboot` (alias: cancel_reb) - Cancel pending reboot on nodes
+- **Job Control Commands**: Added commands to manage job execution state
+  - `hold` (alias: hol) - Hold jobs with optional reason (-r, --reason, or reason=)
+  - `release` (alias: rel) - Release held jobs
+  - `top` - Move jobs to top of queue
+  - `requeue` (alias: req) - Requeue jobs (restart from beginning)
+  - `suspend` (alias: sus) - Suspend running jobs
+  - All job control commands support job filters: user=, account=, partition=, state=, name=
 - **Node Filter Exclusions**: Prefix filters with `not:` to exclude nodes
   - `not:partition=gpu` - exclude nodes from GPU partition
   - `not:state=drain` - exclude drained nodes

@@ -489,6 +489,128 @@ slurm-cli cancel_reboot partition=gpu
 slurm-cli cancel_reboot partition=gpu not:reservation=maint
 ```
 
+## Job Control Commands
+
+Job control commands allow you to manage job execution state.
+
+### Hold
+
+Hold jobs to prevent them from starting.
+
+**Aliases:** `hold`, `hol`
+
+| Option | Description |
+|--------|-------------|
+| `--reason`, `-r` | Reason for holding jobs |
+| `reason=<reason>` | Inline reason specification |
+
+```bash
+# Hold a single job
+slurm-cli hold 12345
+
+# Hold multiple jobs
+slurm-cli hold 12345 12346 12347
+
+# Hold with reason (option)
+slurm-cli hold 12345 --reason="Waiting for data"
+slurm-cli hold 12345 -r "Waiting for data"
+
+# Hold with reason (inline)
+slurm-cli hold 12345 reason="Need review"
+
+# Hold using job filters
+slurm-cli hold user=john
+slurm-cli hold partition=gpu
+slurm-cli hold account=research
+slurm-cli hold state=pending
+```
+
+### Release
+
+Release held jobs to allow them to start.
+
+**Aliases:** `release`, `rel`
+
+```bash
+# Release a single job
+slurm-cli release 12345
+
+# Release multiple jobs
+slurm-cli release 12345 12346 12347
+
+# Release using job filters
+slurm-cli release user=john
+slurm-cli release partition=gpu
+slurm-cli release state=pending
+```
+
+### Top
+
+Move jobs to the top of the queue (highest priority).
+
+**Aliases:** `top`
+
+```bash
+# Move a single job to top
+slurm-cli top 12345
+
+# Move multiple jobs to top
+slurm-cli top 12345 12346 12347
+
+# Move jobs by filter to top
+slurm-cli top user=john
+slurm-cli top partition=gpu
+```
+
+### Requeue
+
+Requeue jobs (restart from the beginning).
+
+**Aliases:** `requeue`, `req`
+
+```bash
+# Requeue a single job
+slurm-cli requeue 12345
+
+# Requeue multiple jobs
+slurm-cli requeue 12345 12346 12347
+
+# Requeue using job filters
+slurm-cli requeue user=john
+slurm-cli requeue state=failed
+slurm-cli requeue partition=gpu
+```
+
+### Suspend
+
+Suspend running jobs.
+
+**Aliases:** `suspend`, `sus`
+
+```bash
+# Suspend a single job
+slurm-cli suspend 12345
+
+# Suspend multiple jobs
+slurm-cli suspend 12345 12346 12347
+
+# Suspend using job filters
+slurm-cli suspend user=john
+slurm-cli suspend partition=gpu
+```
+
+### Job Filters
+
+Job control commands support the following filters:
+
+| Filter | Example | Description |
+|--------|---------|-------------|
+| `user=` | `user=john` | Jobs by specific user |
+| `account=` | `account=research` | Jobs charged to account |
+| `partition=` | `partition=gpu` | Jobs in partition |
+| `state=` | `state=pending` | Jobs with state |
+| `name=` | `name=myjob` | Jobs matching name pattern |
+
 ## Special Commands
 
 ### Autocomplete

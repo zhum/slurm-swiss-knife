@@ -575,6 +575,11 @@ def resolve_command_alias(command: str) -> str:
         "undrain": ["undrain", "resume"],
         "reboot": ["reboot"],
         "cancel_reboot": ["cancel_reboot"],
+        "hold": ["hold"],
+        "release": ["release"],
+        "top": ["top"],
+        "requeue": ["requeue"],
+        "suspend": ["suspend"],
     }
     matches = [
         (cmd, alias)
@@ -1277,6 +1282,11 @@ class CustomGroup(click.Group):
             "undrain",
             "reboot",
             "cancel_reboot",
+            "hold",
+            "release",
+            "top",
+            "requeue",
+            "suspend",
         }
 
         for subcommand in self.list_commands(ctx):
@@ -1324,6 +1334,11 @@ def register_commands() -> None:
     main.add_command(undrain, name="undrain")
     main.add_command(reboot, name="reboot")
     main.add_command(cancel_reboot, name="cancel_reboot")
+    main.add_command(hold, name="hold")
+    main.add_command(release, name="release")
+    main.add_command(top, name="top")
+    main.add_command(requeue, name="requeue")
+    main.add_command(suspend, name="suspend")
 
     # Modify help text to show aliases inline
     show.help = "Show information about Slurm resources (aliases: get)"
@@ -1345,6 +1360,13 @@ def register_commands() -> None:
     undrain.help = "Undrain/resume nodes (aliases: undr, resume)"
     reboot.help = "Reboot nodes (aliases: reb)"
     cancel_reboot.help = "Cancel pending reboot (aliases: cancel_reb)"
+    hold.help = (
+        "Hold jobs (aliases: hol). Reason: -r, --reason, or reason="
+    )
+    release.help = "Release held jobs (aliases: rel)"
+    top.help = "Move jobs to top of queue"
+    requeue.help = "Requeue jobs (aliases: req)"
+    suspend.help = "Suspend running jobs (aliases: sus)"
     help.help = "Show help information"
 
 
@@ -2980,6 +3002,81 @@ _slurm_cli_initialize_autocomplete() {{
             fi
             return
             ;;
+        hold)
+            # Hold command takes job IDs and job filters, with optional reason
+            local cached_jobs="$(_slurm_cache_jobs)"
+            local cached_users="$(_slurm_cache_users)"
+            local cached_partitions="$(_slurm_cache_partitions)"
+            local cached_accounts="$(_slurm_cache_accounts)"
+            local job_filters="user= account= partition= state= name="
+            local job_states="pending running suspended"
+            if [[ "$cur" == --* ]]; then
+                COMPREPLY=($(compgen -W "--reason --verbose --help" -- "$cur"))
+            elif [[ "$cur" == -* && "${{#cur}}" -eq 2 ]]; then
+                COMPREPLY=($(compgen -W "-r -v -h" -- "$cur"))
+            elif [[ "$cur" == reason=* ]] || [[ "$prev" == "reason" && "${{COMP_WORDS[COMP_CWORD-1]}}" == "=" ]]; then
+                # reason= value - no completion
+                return
+            elif [[ "$cur" == user=* ]] || [[ "$prev" == "=" && "${{COMP_WORDS[COMP_CWORD-2]}}" == "user" ]]; then
+                local val="${{cur#user=}}"
+                [[ "$prev" == "=" ]] && val="$cur"
+                COMPREPLY=($(compgen -W "$cached_users" -- "$val"))
+                [[ ${{#COMPREPLY[@]}} -gt 0 && "$cur" == *=* ]] && COMPREPLY=("${{COMPREPLY[@]/#/user=}}")
+            elif [[ "$cur" == account=* ]] || [[ "$prev" == "=" && "${{COMP_WORDS[COMP_CWORD-2]}}" == "account" ]]; then
+                local val="${{cur#account=}}"
+                [[ "$prev" == "=" ]] && val="$cur"
+                COMPREPLY=($(compgen -W "$cached_accounts" -- "$val"))
+                [[ ${{#COMPREPLY[@]}} -gt 0 && "$cur" == *=* ]] && COMPREPLY=("${{COMPREPLY[@]/#/account=}}")
+            elif [[ "$cur" == partition=* ]] || [[ "$prev" == "=" && "${{COMP_WORDS[COMP_CWORD-2]}}" == "partition" ]]; then
+                local val="${{cur#partition=}}"
+                [[ "$prev" == "=" ]] && val="$cur"
+                COMPREPLY=($(compgen -W "$cached_partitions" -- "$val"))
+                [[ ${{#COMPREPLY[@]}} -gt 0 && "$cur" == *=* ]] && COMPREPLY=("${{COMPREPLY[@]/#/partition=}}")
+            elif [[ "$cur" == state=* ]] || [[ "$prev" == "=" && "${{COMP_WORDS[COMP_CWORD-2]}}" == "state" ]]; then
+                local val="${{cur#state=}}"
+                [[ "$prev" == "=" ]] && val="$cur"
+                COMPREPLY=($(compgen -W "$job_states" -- "$val"))
+                [[ ${{#COMPREPLY[@]}} -gt 0 && "$cur" == *=* ]] && COMPREPLY=("${{COMPREPLY[@]/#/state=}}")
+            else
+                COMPREPLY=($(compgen -W "$cached_jobs $job_filters reason= -r --reason -v --verbose -h --help" -- "$cur"))
+            fi
+            return
+            ;;
+        release|top|requeue|suspend)
+            # Job control commands take job IDs and job filters
+            local cached_jobs="$(_slurm_cache_jobs)"
+            local cached_users="$(_slurm_cache_users)"
+            local cached_partitions="$(_slurm_cache_partitions)"
+            local cached_accounts="$(_slurm_cache_accounts)"
+            local job_filters="user= account= partition= state= name="
+            local job_states="pending running suspended"
+            if [[ "$cur" == --* ]]; then
+                COMPREPLY=($(compgen -W "--verbose --help" -- "$cur"))
+            elif [[ "$cur" == user=* ]] || [[ "$prev" == "=" && "${{COMP_WORDS[COMP_CWORD-2]}}" == "user" ]]; then
+                local val="${{cur#user=}}"
+                [[ "$prev" == "=" ]] && val="$cur"
+                COMPREPLY=($(compgen -W "$cached_users" -- "$val"))
+                [[ ${{#COMPREPLY[@]}} -gt 0 && "$cur" == *=* ]] && COMPREPLY=("${{COMPREPLY[@]/#/user=}}")
+            elif [[ "$cur" == account=* ]] || [[ "$prev" == "=" && "${{COMP_WORDS[COMP_CWORD-2]}}" == "account" ]]; then
+                local val="${{cur#account=}}"
+                [[ "$prev" == "=" ]] && val="$cur"
+                COMPREPLY=($(compgen -W "$cached_accounts" -- "$val"))
+                [[ ${{#COMPREPLY[@]}} -gt 0 && "$cur" == *=* ]] && COMPREPLY=("${{COMPREPLY[@]/#/account=}}")
+            elif [[ "$cur" == partition=* ]] || [[ "$prev" == "=" && "${{COMP_WORDS[COMP_CWORD-2]}}" == "partition" ]]; then
+                local val="${{cur#partition=}}"
+                [[ "$prev" == "=" ]] && val="$cur"
+                COMPREPLY=($(compgen -W "$cached_partitions" -- "$val"))
+                [[ ${{#COMPREPLY[@]}} -gt 0 && "$cur" == *=* ]] && COMPREPLY=("${{COMPREPLY[@]/#/partition=}}")
+            elif [[ "$cur" == state=* ]] || [[ "$prev" == "=" && "${{COMP_WORDS[COMP_CWORD-2]}}" == "state" ]]; then
+                local val="${{cur#state=}}"
+                [[ "$prev" == "=" ]] && val="$cur"
+                COMPREPLY=($(compgen -W "$job_states" -- "$val"))
+                [[ ${{#COMPREPLY[@]}} -gt 0 && "$cur" == *=* ]] && COMPREPLY=("${{COMPREPLY[@]/#/state=}}")
+            else
+                COMPREPLY=($(compgen -W "$cached_jobs $job_filters -v --verbose -h --help" -- "$cur"))
+            fi
+            return
+            ;;
         autocomplete|help|list-resources)
             # These commands take -h/--help option
             COMPREPLY=($(compgen -W "-h --help" -- "$cur"))
@@ -3850,6 +3947,315 @@ def cancel_reboot(
         console.print(f"[red]Error: {e.stderr.strip() or e}[/red]")
     except FileNotFoundError:
         console.print("[red]Error: scontrol not found[/red]")
+
+
+@click.command(context_settings=CONTEXT_SETTINGS)
+@click.argument("jobs", nargs=-1, required=True)
+@click.option(
+    "--reason", "-r", default=None, help="Reason for holding jobs"
+)
+@click.option(
+    "--verbose", "-v", is_flag=True, help="Enable verbose output"
+)
+def hold(
+    jobs: Tuple[str, ...],
+    reason: Optional[str] = None,
+    verbose: bool = False,
+) -> None:
+    """Hold jobs (prevent them from starting).
+
+    Supports job filters:
+    - user=USER - jobs by user
+    - account=ACCOUNT - jobs by account
+    - partition=PARTITION - jobs in partition
+    - state=STATE - jobs with state
+    - name=PATTERN - jobs matching name
+
+    \b
+    Examples:
+      slurm-cli hold 12345
+      slurm-cli hold 12345 12346 12347
+      slurm-cli hold user=john
+      slurm-cli hold partition=gpu --reason="Maintenance"
+      slurm-cli hold 12345 -r "Waiting for data"
+      slurm-cli hold 12345 reason="Need review"
+    """
+    args_list = list(jobs)
+    inline_reason = None
+    job_args = []
+
+    for arg in args_list:
+        if arg.lower().startswith("reason="):
+            inline_reason = arg.split("=", 1)[1]
+        else:
+            job_args.append(arg)
+
+    # Resolve job filters
+    job_ids, user_filters = resolve_job_ids(job_args, verbose)
+
+    if not job_ids and not user_filters:
+        console.print("[red]Error: No jobs specified[/red]")
+        return
+
+    # Use --reason option if provided, otherwise use inline reason=
+    final_reason = reason if reason is not None else inline_reason
+
+    # Build scontrol hold command
+    for job_id in job_ids:
+        args = ["scontrol", "hold"]
+        if final_reason:
+            args.append(f"reason={final_reason}")
+        args.append(job_id)
+
+        if verbose:
+            console.print(f"[dim]Running: {' '.join(args)}[/dim]")
+
+        try:
+            result = subprocess.run(
+                args,
+                capture_output=True,
+                text=True,
+                check=True,
+            )
+            if result.stdout:
+                console.print(result.stdout.strip())
+        except subprocess.CalledProcessError as e:
+            console.print(
+                f"[red]Error holding job {job_id}: {e.stderr.strip() or e}[/red]"
+            )
+        except FileNotFoundError:
+            console.print("[red]Error: scontrol not found[/red]")
+            return
+
+    if job_ids:
+        console.print(
+            f"[green]Held job(s): {', '.join(job_ids)}[/green]"
+        )
+
+
+@click.command(context_settings=CONTEXT_SETTINGS)
+@click.argument("jobs", nargs=-1, required=True)
+@click.option(
+    "--verbose", "-v", is_flag=True, help="Enable verbose output"
+)
+def release(jobs: Tuple[str, ...], verbose: bool = False) -> None:
+    """Release held jobs (allow them to start).
+
+    Supports job filters:
+    - user=USER - jobs by user
+    - account=ACCOUNT - jobs by account
+    - partition=PARTITION - jobs in partition
+    - state=STATE - jobs with state
+    - name=PATTERN - jobs matching name
+
+    \b
+    Examples:
+      slurm-cli release 12345
+      slurm-cli release 12345 12346 12347
+      slurm-cli release user=john
+      slurm-cli release state=pending
+    """
+    # Resolve job filters
+    job_ids, user_filters = resolve_job_ids(list(jobs), verbose)
+
+    if not job_ids and not user_filters:
+        console.print("[red]Error: No jobs specified[/red]")
+        return
+
+    for job_id in job_ids:
+        args = ["scontrol", "release", job_id]
+
+        if verbose:
+            console.print(f"[dim]Running: {' '.join(args)}[/dim]")
+
+        try:
+            result = subprocess.run(
+                args,
+                capture_output=True,
+                text=True,
+                check=True,
+            )
+            if result.stdout:
+                console.print(result.stdout.strip())
+        except subprocess.CalledProcessError as e:
+            console.print(
+                f"[red]Error releasing job {job_id}: {e.stderr.strip() or e}[/red]"
+            )
+        except FileNotFoundError:
+            console.print("[red]Error: scontrol not found[/red]")
+            return
+
+    if job_ids:
+        console.print(
+            f"[green]Released job(s): {', '.join(job_ids)}[/green]"
+        )
+
+
+@click.command(context_settings=CONTEXT_SETTINGS)
+@click.argument("jobs", nargs=-1, required=True)
+@click.option(
+    "--verbose", "-v", is_flag=True, help="Enable verbose output"
+)
+def top(jobs: Tuple[str, ...], verbose: bool = False) -> None:
+    """Move jobs to the top of the queue.
+
+    Supports job filters:
+    - user=USER - jobs by user
+    - account=ACCOUNT - jobs by account
+    - partition=PARTITION - jobs in partition
+    - state=STATE - jobs with state
+    - name=PATTERN - jobs matching name
+
+    \b
+    Examples:
+      slurm-cli top 12345
+      slurm-cli top 12345 12346 12347
+      slurm-cli top user=john
+    """
+    # Resolve job filters
+    job_ids, user_filters = resolve_job_ids(list(jobs), verbose)
+
+    if not job_ids and not user_filters:
+        console.print("[red]Error: No jobs specified[/red]")
+        return
+
+    # scontrol top takes comma-separated job list
+    job_list = ",".join(job_ids)
+    args = ["scontrol", "top", job_list]
+
+    if verbose:
+        console.print(f"[dim]Running: {' '.join(args)}[/dim]")
+
+    try:
+        result = subprocess.run(
+            args,
+            capture_output=True,
+            text=True,
+            check=True,
+        )
+        if result.stdout:
+            console.print(result.stdout.strip())
+        console.print(f"[green]Moved to top: {job_list}[/green]")
+    except subprocess.CalledProcessError as e:
+        console.print(f"[red]Error: {e.stderr.strip() or e}[/red]")
+    except FileNotFoundError:
+        console.print("[red]Error: scontrol not found[/red]")
+
+
+@click.command(context_settings=CONTEXT_SETTINGS)
+@click.argument("jobs", nargs=-1, required=True)
+@click.option(
+    "--verbose", "-v", is_flag=True, help="Enable verbose output"
+)
+def requeue(jobs: Tuple[str, ...], verbose: bool = False) -> None:
+    """Requeue jobs (restart from beginning).
+
+    Supports job filters:
+    - user=USER - jobs by user
+    - account=ACCOUNT - jobs by account
+    - partition=PARTITION - jobs in partition
+    - state=STATE - jobs with state
+    - name=PATTERN - jobs matching name
+
+    \b
+    Examples:
+      slurm-cli requeue 12345
+      slurm-cli requeue 12345 12346 12347
+      slurm-cli requeue user=john
+      slurm-cli requeue state=failed
+    """
+    # Resolve job filters
+    job_ids, user_filters = resolve_job_ids(list(jobs), verbose)
+
+    if not job_ids and not user_filters:
+        console.print("[red]Error: No jobs specified[/red]")
+        return
+
+    for job_id in job_ids:
+        args = ["scontrol", "requeue", job_id]
+
+        if verbose:
+            console.print(f"[dim]Running: {' '.join(args)}[/dim]")
+
+        try:
+            result = subprocess.run(
+                args,
+                capture_output=True,
+                text=True,
+                check=True,
+            )
+            if result.stdout:
+                console.print(result.stdout.strip())
+        except subprocess.CalledProcessError as e:
+            console.print(
+                f"[red]Error requeuing job {job_id}: {e.stderr.strip() or e}[/red]"
+            )
+        except FileNotFoundError:
+            console.print("[red]Error: scontrol not found[/red]")
+            return
+
+    if job_ids:
+        console.print(
+            f"[green]Requeued job(s): {', '.join(job_ids)}[/green]"
+        )
+
+
+@click.command(context_settings=CONTEXT_SETTINGS)
+@click.argument("jobs", nargs=-1, required=True)
+@click.option(
+    "--verbose", "-v", is_flag=True, help="Enable verbose output"
+)
+def suspend(jobs: Tuple[str, ...], verbose: bool = False) -> None:
+    """Suspend running jobs.
+
+    Supports job filters:
+    - user=USER - jobs by user
+    - account=ACCOUNT - jobs by account
+    - partition=PARTITION - jobs in partition
+    - state=STATE - jobs with state
+    - name=PATTERN - jobs matching name
+
+    \b
+    Examples:
+      slurm-cli suspend 12345
+      slurm-cli suspend 12345 12346 12347
+      slurm-cli suspend user=john
+      slurm-cli suspend partition=gpu
+    """
+    # Resolve job filters
+    job_ids, user_filters = resolve_job_ids(list(jobs), verbose)
+
+    if not job_ids and not user_filters:
+        console.print("[red]Error: No jobs specified[/red]")
+        return
+
+    for job_id in job_ids:
+        args = ["scontrol", "suspend", job_id]
+
+        if verbose:
+            console.print(f"[dim]Running: {' '.join(args)}[/dim]")
+
+        try:
+            result = subprocess.run(
+                args,
+                capture_output=True,
+                text=True,
+                check=True,
+            )
+            if result.stdout:
+                console.print(result.stdout.strip())
+        except subprocess.CalledProcessError as e:
+            console.print(
+                f"[red]Error suspending job {job_id}: {e.stderr.strip() or e}[/red]"
+            )
+        except FileNotFoundError:
+            console.print("[red]Error: scontrol not found[/red]")
+            return
+
+    if job_ids:
+        console.print(
+            f"[green]Suspended job(s): {', '.join(job_ids)}[/green]"
+        )
 
 
 @click.command(context_settings=CONTEXT_SETTINGS)
