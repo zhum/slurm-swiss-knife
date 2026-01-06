@@ -1586,3 +1586,137 @@ def test_autocomplete_cancel_reboot_options(runner):
     assert "cancel_reboot)" in result.output
     # Should have node filters
     assert "partition=" in result.output
+
+
+class TestProfileOutput:
+    """Tests for profile-based output formatting."""
+
+    def test_qos_minimal_profile_columns(self, runner):
+        """Test that minimal profile shows only name column for QoS."""
+        from slurm_cli.utils.profiles import get_profile_config
+
+        (
+            columns,
+            styles,
+            template,
+            sort_field,
+            sort_asc,
+        ) = get_profile_config("minimal", "qos", None)
+        assert columns == ["name"]
+
+    def test_qos_compact_profile_columns(self, runner):
+        """Test that compact profile shows name and priority for QoS."""
+        from slurm_cli.utils.profiles import get_profile_config
+
+        (
+            columns,
+            styles,
+            template,
+            sort_field,
+            sort_asc,
+        ) = get_profile_config("compact", "qos", None)
+        assert "name" in columns
+        assert "priority" in columns
+
+    def test_qos_oneline_profile_template(self, runner):
+        """Test that oneline profile has template with max_tres fields."""
+        from slurm_cli.utils.profiles import get_profile_config
+
+        (
+            columns,
+            styles,
+            template,
+            sort_field,
+            sort_asc,
+        ) = get_profile_config("oneline", "qos", None)
+        assert template is not None
+        assert "max_tres" in template
+        assert "max_jobs" in template
+
+    def test_qos_default_profile_auto_columns(self, runner):
+        """Test that default profile uses auto-detection (no columns)."""
+        from slurm_cli.utils.profiles import get_profile_config
+
+        (
+            columns,
+            styles,
+            template,
+            sort_field,
+            sort_asc,
+        ) = get_profile_config("default", "qos", None)
+        # Default profile doesn't specify columns for QoS
+        assert columns is None or columns == "*" or columns == []
+
+    def test_nodes_minimal_profile_columns(self, runner):
+        """Test that minimal profile shows limited columns for nodes."""
+        from slurm_cli.utils.profiles import get_profile_config
+
+        (
+            columns,
+            styles,
+            template,
+            sort_field,
+            sort_asc,
+        ) = get_profile_config("minimal", "nodes", None)
+        assert "name" in columns
+        assert "state" in columns
+
+    def test_nodes_oneline_profile_template(self, runner):
+        """Test that oneline profile has template for nodes."""
+        from slurm_cli.utils.profiles import get_profile_config
+
+        (
+            columns,
+            styles,
+            template,
+            sort_field,
+            sort_asc,
+        ) = get_profile_config("oneline", "nodes", None)
+        assert template is not None
+        assert "name" in template
+        assert "state" in template
+
+    def test_partitions_minimal_profile_columns(self, runner):
+        """Test that minimal profile shows limited columns for partitions."""
+        from slurm_cli.utils.profiles import get_profile_config
+
+        (
+            columns,
+            styles,
+            template,
+            sort_field,
+            sort_asc,
+        ) = get_profile_config("minimal", "partitions", None)
+        assert "name" in columns
+        assert "state" in columns
+
+    def test_profile_str_override(self, runner):
+        """Test that profile_str overrides profile."""
+        from slurm_cli.utils.profiles import get_profile_config
+
+        # Use profile_str to specify custom columns
+        (
+            columns,
+            styles,
+            template,
+            sort_field,
+            sort_asc,
+        ) = get_profile_config(
+            "default", "qos", "qos.columns=name,priority,flags"
+        )
+        assert columns == ["name", "priority", "flags"]
+
+    def test_different_profiles_different_output(self, runner):
+        """Test that different profiles produce different configurations."""
+        from slurm_cli.utils.profiles import get_profile_config
+
+        minimal = get_profile_config("minimal", "qos", None)
+        compact = get_profile_config("compact", "qos", None)
+        oneline = get_profile_config("oneline", "qos", None)
+
+        # Minimal has fewer columns
+        assert minimal[0] == ["name"]
+        # Compact has more columns
+        assert len(compact[0]) > len(minimal[0])
+        # Oneline uses template instead of columns
+        assert oneline[2] is not None  # template
