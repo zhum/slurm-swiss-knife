@@ -34,8 +34,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - `not:state=drain` - exclude drained nodes
   - `not:user=admin` - exclude nodes running admin's jobs
   - `not:reservation=maint` - exclude nodes in maintenance reservation
+  - `not:drainreason=pattern` - exclude nodes with reason matching regex
   - Example: `slurm-cli drain partition=gpu not:reservation=maint` drains GPU nodes except reserved ones
   - Note: Uses `not:` prefix to avoid conflicts with CLI option parsing (`-`) and bash tilde expansion (`~`)
+- **Drain Reason Filter for Nodes**: Added `drainreason=REGEX` filter to select nodes by drain reason
+  - Matches node reason field against a regex pattern (case-insensitive)
+  - Uses `drainreason=` to avoid conflict with drain command's `reason=` parameter
+  - Example: `slurm-cli drain drainreason="Not responding" reason="Re-drain"` - redrain unresponsive nodes
+  - Example: `slurm-cli undrain drainreason=".*temp.*"` - undrain nodes with temperature-related reasons
 - **Format Option Alias**: Added `-o`/`--format` as alias for `--profile-str`
   - Autocomplete now shows available fields for each resource type
 - **Account Tree View**: Added tree mode for accounts with `-T`/`--tree`

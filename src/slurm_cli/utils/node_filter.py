@@ -5,17 +5,20 @@ Supports filtering nodes by:
 - state=<state> - nodes with a specific state
 - user=<username> - nodes running jobs by a specific user
 - reservation=<name> - nodes in a specific reservation
+- drainreason=<regex> - nodes with drain reason matching regex pattern
 
 Prefix with 'not:' to exclude nodes matching the filter:
 - not:partition=<name> - exclude nodes from a specific partition
 - not:state=<state> - exclude nodes with a specific state
 - not:user=<username> - exclude nodes running jobs by a specific user
 - not:reservation=<name> - exclude nodes in a specific reservation
+- not:drainreason=<regex> - exclude nodes with reason matching regex
 
 Filter syntax can be used anywhere node names are expected, e.g.:
 - slurm-cli update reservations test nodes=partition=cpu
 - slurm-cli update nodes state=drain partition=gpu
 - slurm-cli drain partition=gpu not:reservation=maint
+- slurm-cli drain drainreason="Not responding"
 """
 
 import json
@@ -31,6 +34,7 @@ NODE_FILTER_PREFIXES = [
     "state=",
     "user=",
     "reservation=",
+    "drainreason=",
 ]
 
 # Available node states for completion
@@ -96,6 +100,8 @@ def resolve_node_filter(
         return _get_nodes_by_user(filter_expr[5:], verbose)
     elif filter_lower.startswith("reservation="):
         return _get_nodes_by_reservation(filter_expr[12:], verbose)
+    elif filter_lower.startswith("drainreason="):
+        return _get_nodes_by_reason(filter_expr[12:], verbose)
     else:
         # Not a filter, return as-is
         return filter_expr
@@ -353,6 +359,105 @@ def _get_nodes_by_reservation_text(
                             )
                         return nodes
         return ""
+    except subprocess.CalledProcessError:
+        return ""
+
+
+def _get_nodes_by_reason(
+    reason_pattern: str, verbose: bool = False
+) -> str:
+    """Get nodes with reason matching a regex pattern.
+
+    Args:
+        reason_pattern: Regex pattern to match against node reason
+        verbose: Print debug information
+
+    Returns:
+        Comma-separated list of matching node names
+    """
+    try:
+        # Use scontrol with JSON for reliable parsing
+        result = subprocess.run(
+            ["scontrol", "show", "nodes", "--json"],
+            capture_output=True,
+            text=True,
+            check=True,
+        )
+        data = json.loads(result.stdout)
+        try:
+            pattern = re.compile(reason_pattern, re.IGNORECASE)
+        except re.error as e:
+            if verbose:
+                console.print(
+                    f"[red]Invalid regex pattern '{reason_pattern}': "
+                    f"{e}[/red]"
+                )
+            return ""
+
+        node_set = set()
+        for node in data.get("nodes", []):
+            reason = node.get("reason", "")
+            if reason and pattern.search(reason):
+                node_set.add(node.get("name", ""))
+
+        nodes = ",".join(sorted(node_set))
+        if verbose:
+            console.print(
+                f"[dim]Nodes matching reason '{reason_pattern}': "
+                f"{nodes}[/dim]"
+            )
+        return nodes
+    except subprocess.CalledProcessError as e:
+        if verbose:
+            console.print(
+                f"[red]Failed to get nodes by reason: {e.stderr}[/red]"
+            )
+        return ""
+    except json.JSONDecodeError:
+        return _get_nodes_by_reason_text(reason_pattern, verbose)
+
+
+def _get_nodes_by_reason_text(
+    reason_pattern: str, verbose: bool = False
+) -> str:
+    """Get nodes by reason using text output (fallback)."""
+    try:
+        result = subprocess.run(
+            ["scontrol", "show", "nodes"],
+            capture_output=True,
+            text=True,
+            check=True,
+        )
+        try:
+            pattern = re.compile(reason_pattern, re.IGNORECASE)
+        except re.error:
+            return ""
+
+        node_set = set()
+        current_node = None
+        for line in result.stdout.split("\n"):
+            if line.startswith("NodeName="):
+                # Extract node name
+                parts = line.split()
+                for part in parts:
+                    if part.startswith("NodeName="):
+                        current_node = part[9:]
+                        break
+            if "Reason=" in line and current_node:
+                # Extract reason
+                idx = line.find("Reason=")
+                if idx >= 0:
+                    reason = line[idx + 7 :].strip()
+                    if pattern.search(reason):
+                        node_set.add(current_node)
+
+        nodes = ",".join(sorted(node_set))
+        if verbose:
+            console.print(
+                f"[dim]Nodes matching reason '{reason_pattern}': "
+                f"{nodes}[/dim]"
+            )
+        return nodes
     except subprocess.CalledProcessError:
         return ""
 

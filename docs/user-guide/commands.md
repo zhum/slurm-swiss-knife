@@ -206,6 +206,7 @@ When specifying nodes in commands (e.g., for partitions or reservations), you ca
 | `state=STATE` | All nodes with the specified state (idle, alloc, drain, etc.) |
 | `user=USERNAME` | All nodes running jobs by the specified user |
 | `reservation=NAME` | All nodes in the specified reservation |
+| `drainreason=REGEX` | All nodes with drain reason matching regex pattern (case-insensitive) |
 
 ### Examples
 
@@ -402,6 +403,7 @@ slurm-cli drain partition=gpu reason="GPU maintenance"
 slurm-cli drain state=idle reason="Preventive maintenance"
 slurm-cli drain user=john reason="User requested"
 slurm-cli drain reservation=maint reason="Reserved maintenance"
+slurm-cli drain drainreason="Not responding" reason="Re-draining unresponsive nodes"
 
 # Combine filters with explicit nodes
 slurm-cli drain partition=gpu node001 -r "Mixed drain"
@@ -420,6 +422,7 @@ slurm-cli drain partition=batch not:state=drain reason="Batch nodes not already 
 | `state=` | `state=idle` | Nodes with specific state |
 | `user=` | `user=john` | Nodes running user's jobs |
 | `reservation=` | `reservation=maint` | Nodes in a reservation |
+| `drainreason=` | `drainreason="Not responding"` | Nodes matching drain reason regex |
 
 **Exclusion filters (prefix with not:):**
 
@@ -429,6 +432,7 @@ slurm-cli drain partition=batch not:state=drain reason="Batch nodes not already 
 | `not:state=` | `not:state=drain` | Exclude nodes with state |
 | `not:user=` | `not:user=admin` | Exclude nodes running user's jobs |
 | `not:reservation=` | `not:reservation=maint` | Exclude nodes in reservation |
+| `not:drainreason=` | `not:drainreason="maint"` | Exclude nodes matching drain reason |
 
 ### Undrain
 

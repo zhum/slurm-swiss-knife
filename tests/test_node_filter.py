@@ -13,6 +13,7 @@ sys.path.insert(0, "src")
 from slurm_cli.utils.node_filter import (  # noqa: E402
     NODE_FILTER_PREFIXES,
     _get_nodes_by_partition,
+    _get_nodes_by_reason,
     _get_nodes_by_reservation,
     _get_nodes_by_state,
     _get_nodes_by_state_text,
@@ -88,6 +89,13 @@ class TestIsNodeFilter:
         assert is_node_filter("nodes=gpu01") is False
         assert is_node_filter("name=node01") is False
         assert is_node_filter("partitions=gpu") is False
+
+    def test_drainreason_filter(self):
+        """Test is_node_filter with drainreason= prefix."""
+        assert is_node_filter("drainreason=Not responding") is True
+        assert is_node_filter("drainreason=") is True
+        assert is_node_filter("DRAINREASON=error") is True
+        assert is_node_filter("Drainreason=.*temp.*") is True
 
 
 class TestResolveNodeFilterAll:
@@ -547,10 +555,11 @@ class TestNodeFilterPrefixes:
         assert "state=" in NODE_FILTER_PREFIXES
         assert "user=" in NODE_FILTER_PREFIXES
         assert "reservation=" in NODE_FILTER_PREFIXES
+        assert "drainreason=" in NODE_FILTER_PREFIXES
 
     def test_prefixes_count(self):
         """Test that NODE_FILTER_PREFIXES has expected count."""
-        assert len(NODE_FILTER_PREFIXES) == 4
+        assert len(NODE_FILTER_PREFIXES) == 5
 
 
 class TestGetNodesByStateText:
@@ -737,3 +746,172 @@ class TestResolveNodeFilters:
             assert "node01" in result_nodes
             assert "node03" in result_nodes
             assert "node02" not in result_nodes
+
+
+class TestGetNodesByReason:
+    """Tests for _get_nodes_by_reason function."""
+
+    def test_reason_exact_match(self):
+        """Test _get_nodes_by_reason with exact match."""
+        json_response = json.dumps(
+            {
+                "nodes": [
+                    {"name": "node01", "reason": "Not responding"},
+                    {"name": "node02", "reason": "Maintenance"},
+                    {"name": "node03", "reason": "Not responding"},
+                ]
+            }
+        )
+        mock_result = create_mock_subprocess_result(
+            stdout=json_response
+        )
+
+        with patch.object(subprocess, "run", return_value=mock_result):
+            result = _get_nodes_by_reason("Not responding")
+            assert "node01" in result
+            assert "node03" in result
+            assert "node02" not in result
+
+    def test_reason_regex_pattern(self):
+        """Test _get_nodes_by_reason with regex pattern."""
+        json_response = json.dumps(
+            {
+                "nodes": [
+                    {"name": "node01", "reason": "HC temp issue"},
+                    {"name": "node02", "reason": "Manual drain"},
+                    {"name": "node03", "reason": "temp check failed"},
+                ]
+            }
+        )
+        mock_result = create_mock_subprocess_result(
+            stdout=json_response
+        )
+
+        with patch.object(subprocess, "run", return_value=mock_result):
+            result = _get_nodes_by_reason(".*temp.*")
+            assert "node01" in result
+            assert "node03" in result
+            assert "node02" not in result
+
+    def test_reason_case_insensitive(self):
+        """Test _get_nodes_by_reason is case insensitive."""
+        json_response = json.dumps(
+            {
+                "nodes": [
+                    {"name": "node01", "reason": "NOT RESPONDING"},
+                    {"name": "node02", "reason": "not responding"},
+                ]
+            }
+        )
+        mock_result = create_mock_subprocess_result(
+            stdout=json_response
+        )
+
+        with patch.object(subprocess, "run", return_value=mock_result):
+            result = _get_nodes_by_reason("not responding")
+            assert "node01" in result
+            assert "node02" in result
+
+    def test_reason_no_matches(self):
+        """Test _get_nodes_by_reason with no matches."""
+        json_response = json.dumps(
+            {
+                "nodes": [
+                    {"name": "node01", "reason": "Maintenance"},
+                    {"name": "node02", "reason": "Upgrade"},
+                ]
+            }
+        )
+        mock_result = create_mock_subprocess_result(
+            stdout=json_response
+        )
+
+        with patch.object(subprocess, "run", return_value=mock_result):
+            result = _get_nodes_by_reason("Not responding")
+            assert result == ""
+
+    def test_reason_empty_reasons(self):
+        """Test _get_nodes_by_reason with empty reason fields."""
+        json_response = json.dumps(
+            {
+                "nodes": [
+                    {"name": "node01", "reason": ""},
+                    {"name": "node02", "reason": "Has reason"},
+                    {"name": "node03"},  # No reason field
+                ]
+            }
+        )
+        mock_result = create_mock_subprocess_result(
+            stdout=json_response
+        )
+
+        with patch.object(subprocess, "run", return_value=mock_result):
+            result = _get_nodes_by_reason("reason")
+            assert "node02" in result
+            assert "node01" not in result
+            assert "node03" not in result
+
+    def test_reason_invalid_regex(self):
+        """Test _get_nodes_by_reason with invalid regex pattern."""
+        json_response = json.dumps({"nodes": []})
+        mock_result = create_mock_subprocess_result(
+            stdout=json_response
+        )
+
+        with patch.object(subprocess, "run", return_value=mock_result):
+            result = _get_nodes_by_reason("[invalid")
+            assert result == ""
+
+    def test_reason_subprocess_error(self):
+        """Test _get_nodes_by_reason with subprocess error."""
+        error = subprocess.CalledProcessError(
+            1, "scontrol", stderr="error"
+        )
+
+        with patch.object(subprocess, "run", side_effect=error):
+            result = _get_nodes_by_reason("pattern")
+            assert result == ""
+
+    def test_reason_verbose(self):
+        """Test _get_nodes_by_reason with verbose output."""
+        json_response = json.dumps(
+            {
+                "nodes": [
+                    {"name": "node01", "reason": "test reason"},
+                ]
+            }
+        )
+        mock_result = create_mock_subprocess_result(
+            stdout=json_response
+        )
+
+        with patch.object(subprocess, "run", return_value=mock_result):
+            with patch(
+                "slurm_cli.utils.node_filter.console.print"
+            ) as mock_print:
+                result = _get_nodes_by_reason("test", verbose=True)
+                assert "node01" in result
+                mock_print.assert_called_once()
+
+
+class TestResolveNodeFilterReason:
+    """Tests for resolve_node_filter with drainreason filter."""
+
+    def test_resolve_drainreason_filter(self):
+        """Test resolve_node_filter with drainreason= prefix."""
+        json_response = json.dumps(
+            {
+                "nodes": [
+                    {"name": "node01", "reason": "Not responding"},
+                    {"name": "node02", "reason": "Maintenance"},
+                ]
+            }
+        )
+        mock_result = create_mock_subprocess_result(
+            stdout=json_response
+        )
+
+        with patch.object(subprocess, "run", return_value=mock_result):
+            result = resolve_node_filter("drainreason=Not responding")
+            assert "node01" in result
+            assert "node02" not in result
