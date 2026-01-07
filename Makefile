@@ -17,7 +17,7 @@ test: ## Run tests
 	poetry run pytest
 
 test-cov: ## Run tests with coverage
-	poetry run pytest --cov=slurm_cli --cov-report=html --cov-report=term-missing
+	poetry run pytest --cov=slurm_cli --cov-report=xml --cov-report=term-missing
 
 lint: ## Run linting checks
 	poetry run flake8 --max-line-length=88 --extend-ignore=E203,W503,E501 src tests

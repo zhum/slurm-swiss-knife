@@ -1754,7 +1754,10 @@ class TestListFields:
         assert result.exit_code == 0
         assert "Available fields for 'jobs'" in result.output
         # Should show job-specific fields
-        assert "job_id" in result.output or "jobid" in result.output.lower()
+        assert (
+            "job_id" in result.output
+            or "jobid" in result.output.lower()
+        )
         # Should not show fields from other resources
         assert "[nodes]" not in result.output
 
@@ -1781,7 +1784,10 @@ class TestListFields:
         """Test --list-fields with unknown resource."""
         result = runner.invoke(main, ["--list-fields=invalid"])
         assert result.exit_code == 0
-        assert "No field documentation for resource: invalid" in result.output
+        assert (
+            "No field documentation for resource: invalid"
+            in result.output
+        )
         assert "Available resources:" in result.output
 
     def test_list_fields_qos(self, runner):
@@ -2100,7 +2106,13 @@ class TestDryRun:
                 )
                 result = runner.invoke(
                     main,
-                    ["--no-dry-run", "delete", "users", "testuser", "-y"],
+                    [
+                        "--no-dry-run",
+                        "delete",
+                        "users",
+                        "testuser",
+                        "-y",
+                    ],
                 )
                 # Should NOT show DRY RUN - env var is overridden
                 # (may show error because user doesn't exist, but not DRY RUN)
@@ -2379,7 +2391,9 @@ class TestGuessResourceType:
             with patch.object(
                 Resource, "cached_resource", return_value=[]
             ):
-                resource_type, _ = Resource.guess_resource_type("accounts")
+                resource_type, _ = Resource.guess_resource_type(
+                    "accounts"
+                )
                 assert resource_type == "accounts"
 
     def test_guess_reservation_by_prefix(self):
@@ -2456,7 +2470,9 @@ class TestGuessResourceType:
             return []
 
         with patch.object(
-            Resource, "cached_resource_list", side_effect=mock_cached_list
+            Resource,
+            "cached_resource_list",
+            side_effect=mock_cached_list,
         ):
             with patch.object(
                 Resource,
@@ -2481,7 +2497,9 @@ class TestGuessResourceType:
             return []
 
         with patch.object(
-            Resource, "cached_resource_list", side_effect=mock_cached_list
+            Resource,
+            "cached_resource_list",
+            side_effect=mock_cached_list,
         ):
             with patch.object(
                 Resource,

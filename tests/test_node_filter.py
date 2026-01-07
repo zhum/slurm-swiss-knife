@@ -15,9 +15,11 @@ from slurm_cli.utils.node_filter import (  # noqa: E402
     _get_nodes_by_partition,
     _get_nodes_by_reservation,
     _get_nodes_by_state,
+    _get_nodes_by_state_text,
     _get_nodes_by_user,
     is_node_filter,
     resolve_node_filter,
+    resolve_node_filters,
     resolve_nodes_value,
 )
 
@@ -549,3 +551,189 @@ class TestNodeFilterPrefixes:
     def test_prefixes_count(self):
         """Test that NODE_FILTER_PREFIXES has expected count."""
         assert len(NODE_FILTER_PREFIXES) == 4
+
+
+class TestGetNodesByStateText:
+    """Tests for _get_nodes_by_state_text fallback function."""
+
+    def test_state_text_multiple_nodes(self):
+        """Test _get_nodes_by_state_text with multiple nodes."""
+        mock_result = create_mock_subprocess_result(
+            stdout="node01\nnode02\nnode03\n"
+        )
+
+        with patch.object(subprocess, "run", return_value=mock_result):
+            result = _get_nodes_by_state_text("idle")
+            assert "node01" in result
+            assert "node02" in result
+            assert "node03" in result
+
+    def test_state_text_deduplicates(self):
+        """Test _get_nodes_by_state_text deduplicates nodes."""
+        mock_result = create_mock_subprocess_result(
+            stdout="node01\nnode01\nnode02\n"
+        )
+
+        with patch.object(subprocess, "run", return_value=mock_result):
+            result = _get_nodes_by_state_text("idle")
+            # Result is comma-separated, should only have each node once
+            nodes = result.split(",")
+            assert len(nodes) == 2
+            assert "node01" in nodes
+            assert "node02" in nodes
+
+    def test_state_text_empty_lines(self):
+        """Test _get_nodes_by_state_text handles empty lines."""
+        mock_result = create_mock_subprocess_result(
+            stdout="node01\n\nnode02\n  \nnode03\n"
+        )
+
+        with patch.object(subprocess, "run", return_value=mock_result):
+            result = _get_nodes_by_state_text("drain")
+            nodes = result.split(",")
+            # Empty and whitespace-only lines should be skipped
+            assert len(nodes) == 3
+
+    def test_state_text_subprocess_error(self):
+        """Test _get_nodes_by_state_text with subprocess error."""
+        error = subprocess.CalledProcessError(
+            1, "sinfo", stderr="error"
+        )
+
+        with patch.object(subprocess, "run", side_effect=error):
+            result = _get_nodes_by_state_text("idle")
+            assert result == ""
+
+    def test_state_text_verbose(self):
+        """Test _get_nodes_by_state_text with verbose output."""
+        mock_result = create_mock_subprocess_result(
+            stdout="node01\nnode02\n"
+        )
+
+        with patch.object(subprocess, "run", return_value=mock_result):
+            with patch(
+                "slurm_cli.utils.node_filter.console.print"
+            ) as mock_print:
+                result = _get_nodes_by_state_text("idle", verbose=True)
+                assert "node01" in result
+                assert "node02" in result
+                mock_print.assert_called_once()
+                call_args = str(mock_print.call_args)
+                assert "idle" in call_args
+
+
+class TestResolveNodeFilters:
+    """Tests for resolve_node_filters function with exclusion support."""
+
+    def test_exclusion_filter_not_prefix(self):
+        """Test resolve_node_filters with not: exclusion filter."""
+        # Mock partition filter returning nodes
+        json_response = json.dumps(
+            {
+                "partitions": [
+                    {
+                        "name": "gpu",
+                        "nodes": {"nodes": "node01,node02,node03"},
+                    }
+                ]
+            }
+        )
+        mock_result = create_mock_subprocess_result(
+            stdout=json_response
+        )
+
+        with patch.object(subprocess, "run", return_value=mock_result):
+            result_nodes, other_args = resolve_node_filters(
+                ["node01", "node02", "node03", "not:partition=gpu"]
+            )
+            # All nodes were excluded
+            assert len(result_nodes) == 0
+            assert other_args == []
+
+    def test_exclusion_with_verbose(self):
+        """Test resolve_node_filters exclusion with verbose output."""
+        json_response = json.dumps(
+            {
+                "partitions": [
+                    {"name": "gpu", "nodes": {"nodes": "node02"}}
+                ]
+            }
+        )
+        mock_result = create_mock_subprocess_result(
+            stdout=json_response
+        )
+
+        with patch.object(subprocess, "run", return_value=mock_result):
+            with patch(
+                "slurm_cli.utils.node_filter.console.print"
+            ) as mock_print:
+                result_nodes, _ = resolve_node_filters(
+                    ["node01", "node02", "node03", "not:partition=gpu"],
+                    verbose=True,
+                )
+                # Check verbose output was called for exclusions
+                assert mock_print.called
+                # node02 should be excluded
+                assert "node01" in result_nodes
+                assert "node02" not in result_nodes
+                assert "node03" in result_nodes
+
+    def test_exclusion_expands_node_list(self):
+        """Test resolve_node_filters expands exclusion node list."""
+        # Mock state filter returning range
+        json_response = json.dumps(
+            {
+                "nodes": [
+                    {"name": "node01", "state": ["DRAIN"]},
+                    {"name": "node02", "state": ["DRAIN"]},
+                ]
+            }
+        )
+        mock_result = create_mock_subprocess_result(
+            stdout=json_response
+        )
+
+        with patch.object(subprocess, "run", return_value=mock_result):
+            result_nodes, _ = resolve_node_filters(
+                ["node01", "node02", "node03", "not:state=drain"]
+            )
+            # node01 and node02 should be excluded (in drain state)
+            assert "node03" in result_nodes
+            assert len(result_nodes) == 1
+
+    def test_mixed_inclusion_and_exclusion(self):
+        """Test resolve_node_filters with both inclusion and exclusion."""
+        partition_response = json.dumps(
+            {
+                "partitions": [
+                    {
+                        "name": "all",
+                        "nodes": {"nodes": "node01,node02,node03"},
+                    }
+                ]
+            }
+        )
+        state_response = json.dumps(
+            {
+                "nodes": [
+                    {"name": "node02", "state": ["DRAIN"]},
+                ]
+            }
+        )
+
+        def mock_run(cmd, **kwargs):
+            if "partition" in cmd:
+                return create_mock_subprocess_result(
+                    stdout=partition_response
+                )
+            return create_mock_subprocess_result(stdout=state_response)
+
+        with patch.object(subprocess, "run", side_effect=mock_run):
+            result_nodes, _ = resolve_node_filters(
+                ["partition=all", "not:state=drain"]
+            )
+            # partition=all gives node01,node02,node03
+            # not:state=drain excludes node02
+            assert "node01" in result_nodes
+            assert "node03" in result_nodes
+            assert "node02" not in result_nodes

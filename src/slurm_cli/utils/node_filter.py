@@ -418,7 +418,7 @@ def _expand_range(expr: str) -> Set[str]:
                 for i in range(int(start), int(end) + 1):
                     result.add(str(i).zfill(width))
             except ValueError:
-                result.add(part)  # If badly formatted, keep raw
+                result.add(part)  # If badly formatted, keep as is
         elif part:
             result.add(part)
     return result

@@ -33,7 +33,6 @@ from rich.box import (
 from rich.table import Table  # pyright: ignore[reportMissingImports]
 
 from .utils.accounts import Account
-
 from .utils.associations import Association
 from .utils.autocomplete_helpers import (
     get_common_autocomplete_functions,

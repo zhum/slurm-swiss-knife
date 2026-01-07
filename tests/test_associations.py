@@ -388,9 +388,7 @@ class TestAssociationFormatValueEdgeCases:
     def test_format_max_with_jobs(self):
         """Test formatting max field with jobs limit."""
         assoc = {
-            "max": {
-                "jobs": {"active": {"set": True, "number": 10}}
-            }
+            "max": {"jobs": {"active": {"set": True, "number": 10}}}
         }
         result = Association._format_value(assoc, "max")
         assert "jobs=10" in result
@@ -399,9 +397,7 @@ class TestAssociationFormatValueEdgeCases:
         """Test formatting max field with tres limits."""
         assoc = {
             "max": {
-                "tres": {
-                    "per": {"cpu": {"set": True, "number": 100}}
-                }
+                "tres": {"per": {"cpu": {"set": True, "number": 100}}}
             }
         }
         result = Association._format_value(assoc, "max")
@@ -443,8 +439,16 @@ class TestAssociationSortHierarchically:
         """Test sorting account with users."""
         associations = [
             {"account": "nvidia", "user": "", "parent_account": "root"},
-            {"account": "nvidia", "user": "john", "parent_account": "root"},
-            {"account": "nvidia", "user": "alice", "parent_account": "root"},
+            {
+                "account": "nvidia",
+                "user": "john",
+                "parent_account": "root",
+            },
+            {
+                "account": "nvidia",
+                "user": "alice",
+                "parent_account": "root",
+            },
         ]
         result = Association._sort_hierarchically(associations)
         # Should have account + 2 users
@@ -463,7 +467,11 @@ class TestAssociationSortHierarchically:
         associations = [
             {"account": "root", "user": "", "parent_account": ""},
             {"account": "nvidia", "user": "", "parent_account": "root"},
-            {"account": "research", "user": "", "parent_account": "nvidia"},
+            {
+                "account": "research",
+                "user": "",
+                "parent_account": "nvidia",
+            },
         ]
         result = Association._sort_hierarchically(associations)
         assert len(result) == 3
@@ -480,7 +488,9 @@ class TestAssociationSortHierarchically:
             {"account": "root", "user": "", "parent_account": ""},
             {"account": "nvidia", "user": "", "parent_account": "root"},
         ]
-        result = Association._sort_hierarchically(associations, indent="    ")
+        result = Association._sort_hierarchically(
+            associations, indent="    "
+        )
         assert result[0]["_indent"] == ""
         assert result[1]["_indent"] == "    "
 
