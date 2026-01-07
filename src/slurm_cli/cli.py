@@ -23,7 +23,7 @@ which is available in Click 8.0+.
 
 import os
 import subprocess
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional, Tuple, Union
 
 import click  # pyright: ignore[reportMissingImports]
 from fast_autocomplete import AutoComplete  # pyright: ignore
@@ -889,12 +889,12 @@ def create_autocomplete() -> AutoComplete:
 
 def ensure_resource_name(
     resource: str,
-    field: str = None,
+    field: Union[str, Tuple[str, ...]] = None,
     force_update: bool = False,
-) -> Tuple[str, str, dict]:
+) -> Tuple[str, Union[str, Tuple[str, ...]], dict]:
     """
     Ensure the resource name is a valid resource name.
-    Return the resource type, field, and cached resource data.
+    Return the resource type, field (may be tuple), and cached resource data.
     """
     if resource[:4] == "prob":
         return "problems", field, []
@@ -1402,7 +1402,7 @@ def register_commands() -> None:
     type=click.Choice(get_show_resource_choices()),
     required=False,
 )
-@click.argument("field", required=False)
+@click.argument("field", required=False, nargs=-1)
 @click.option(
     "--verbose", "-v", is_flag=True, help="Enable verbose output"
 )
@@ -1430,7 +1430,7 @@ def register_commands() -> None:
 def show(
     ctx: click.Context,
     resource: Optional[str],
-    field: Optional[str],
+    field: Tuple[str, ...],
     verbose: bool,
     tree: bool = False,
     indent: str = "  ",
@@ -1445,6 +1445,9 @@ def show(
     **kwargs,
 ) -> None:
     """Show information about Slurm resources (aliases: sh, s)."""
+    # Convert tuple to first element for backward compatibility
+    # (for resources that expect a single field)
+    first_field = field[0] if field else None
     if not resource:
         show_command_help(ctx, None, True)
         return
@@ -1483,9 +1486,9 @@ def show(
             profile_str=profile_str,
         )
     elif canonical_resource[:3] == "res":
-        if field:
+        if first_field:
             Reservation.show(
-                name=field,
+                name=first_field,
                 data=data,
                 style=style,
                 delimiter=delimiter,
@@ -1503,9 +1506,9 @@ def show(
                 profile_str=profile_str,
             )
     elif canonical_resource[:4] == "part":
-        if field:
+        if first_field:
             Partition.show(
-                name=field,
+                name=first_field,
                 data=data,
                 style=style,
                 delimiter=delimiter,
@@ -1524,14 +1527,16 @@ def show(
             )
     elif canonical_resource[:4] == "node":
         if field:
-            # Check if field is a node filter (partition=, state=, etc.)
-            if is_node_filter(field):
+            # Check if any field is a node filter (partition=, state=, etc.)
+            has_filters = any(is_node_filter(f) for f in field)
+            if has_filters:
+                # Use resolve_node_filters for all fields (supports exclusions)
                 resolved_nodes, _ = resolve_node_filters(
-                    [field], verbose
+                    list(field), verbose
                 )
                 if not resolved_nodes:
                     console.print(
-                        f"[yellow]No nodes matched filter: {field}[/yellow]"
+                        "[yellow]No nodes matched filters[/yellow]"
                     )
                     return
                 # Filter data to only include resolved nodes
@@ -1547,8 +1552,9 @@ def show(
                     profile_str=profile_str,
                 )
             else:
+                # Single node name
                 Node.show(
-                    name=field,
+                    name=first_field,
                     data=data,
                     style=style,
                     verbose=verbose,
@@ -1567,9 +1573,9 @@ def show(
                 profile_str=profile_str,
             )
     elif canonical_resource[:4] == "user":
-        if field:
+        if first_field:
             User.show(
-                name=field,
+                name=first_field,
                 data=data,
                 style=style,
                 delimiter=delimiter,
@@ -1587,9 +1593,9 @@ def show(
                 profile_str=profile_str,
             )
     elif canonical_resource[:3] == "qos":
-        if field:
+        if first_field:
             Qos.show(
-                field=field,
+                field=first_field,
                 style=style,
                 delimiter=delimiter,
                 zebra=zebra,
@@ -1605,9 +1611,9 @@ def show(
                 profile_str=profile_str,
             )
     elif canonical_resource[:3] == "acc":
-        if field:
+        if first_field:
             Account.show(
-                field=field,
+                field=first_field,
                 style=style,
                 delimiter=delimiter,
                 zebra=zebra,
@@ -1625,9 +1631,9 @@ def show(
                 tree=tree,
             )
     elif canonical_resource[:5] == "assoc":
-        if field:
+        if first_field:
             Association.show(
-                field=field,
+                field=first_field,
                 style=style,
                 delimiter=delimiter,
                 zebra=zebra,
@@ -1647,9 +1653,9 @@ def show(
                 indent=indent,
             )
     elif canonical_resource[:5] == "coord":
-        if field:
+        if first_field:
             Coordinator.show(
-                field=field,
+                field=first_field,
                 style=style,
                 delimiter=delimiter,
                 zebra=zebra,
@@ -1665,25 +1671,90 @@ def show(
                 profile_str=profile_str,
             )
     elif canonical_resource[:5] == "event":
-        Event.show(
-            field=field,
-            style=style,
-            force_cache_update=force_update,
-            delimiter=delimiter,
-            zebra=zebra,
-            profile=profile,
-            profile_str=profile_str,
-        )
+        # Events support node filters (like nodes command)
+        if field:
+            has_filters = any(is_node_filter(f) for f in field)
+            if has_filters:
+                resolved_nodes, _ = resolve_node_filters(
+                    list(field), verbose
+                )
+                if not resolved_nodes:
+                    console.print(
+                        "[yellow]No nodes matched filters[/yellow]"
+                    )
+                    return
+                # Pass the resolved nodes as comma-separated list
+                Event.show(
+                    field=",".join(resolved_nodes),
+                    style=style,
+                    force_cache_update=force_update,
+                    delimiter=delimiter,
+                    zebra=zebra,
+                    profile=profile,
+                    profile_str=profile_str,
+                )
+            else:
+                Event.show(
+                    field=first_field,
+                    style=style,
+                    force_cache_update=force_update,
+                    delimiter=delimiter,
+                    zebra=zebra,
+                    profile=profile,
+                    profile_str=profile_str,
+                )
+        else:
+            Event.show(
+                field=None,
+                style=style,
+                force_cache_update=force_update,
+                delimiter=delimiter,
+                zebra=zebra,
+                profile=profile,
+                profile_str=profile_str,
+            )
     elif canonical_resource[:3] == "job":
-        Job.show(
-            field=field,
-            style=style,
-            force_cache_update=force_update,
-            delimiter=delimiter,
-            zebra=zebra,
-            profile=profile,
-            profile_str=profile_str,
-        )
+        # Jobs support job filters
+        if field:
+            has_filters = any(is_job_filter(f) for f in field)
+            if has_filters:
+                resolved_jobs, _ = resolve_job_ids(list(field), verbose)
+                if not resolved_jobs:
+                    console.print(
+                        "[yellow]No jobs matched filters[/yellow]"
+                    )
+                    return
+                # Pass resolved job IDs
+                for job_id in resolved_jobs:
+                    Job.show(
+                        field=job_id,
+                        style=style,
+                        force_cache_update=force_update,
+                        delimiter=delimiter,
+                        zebra=zebra,
+                        profile=profile,
+                        profile_str=profile_str,
+                    )
+            else:
+                Job.show(
+                    field=first_field,
+                    style=style,
+                    force_cache_update=force_update,
+                    delimiter=delimiter,
+                    zebra=zebra,
+                    profile=profile,
+                    profile_str=profile_str,
+                )
+        else:
+            Job.show(
+                field=None,
+                style=style,
+                force_cache_update=force_update,
+                delimiter=delimiter,
+                zebra=zebra,
+                profile=profile,
+                profile_str=profile_str,
+            )
     else:
         console.print(f"[red]Resource '{resource}' not found.[/red]")
 
@@ -2650,7 +2721,7 @@ _slurm_cli_initialize_autocomplete() {{
             guessed="add"
             cmd="create"
             ;;
-        u*)
+        up*)
             guessed="update"
             cmd="update"
             ;;
@@ -2773,8 +2844,8 @@ _slurm_cli_initialize_autocomplete() {{
             # and optional --reason/-r or reason=
             local cached_nodes="$(_slurm_cache_nodes)"
             local cached_partitions="$(_slurm_cache_partitions)"
-            local node_filters="partition= state= user= reservation="
-            local neg_filters="not:partition= not:state= not:user= not:reservation="
+            local node_filters="partition= state= user= reservation= drainreason="
+            local neg_filters="not:partition= not:state= not:user= not:reservation= not:drainreason="
             local node_states="idle alloc drain down mixed comp"
             if [[ "$cur" == --* ]]; then
                 COMPREPLY=($(compgen -W "--reason --verbose --help" -- "$cur"))
@@ -2839,8 +2910,8 @@ _slurm_cli_initialize_autocomplete() {{
             # Undrain command takes nodes and filters (with optional - prefix for exclusion)
             local cached_nodes="$(_slurm_cache_nodes)"
             local cached_partitions="$(_slurm_cache_partitions)"
-            local node_filters="partition= state= user= reservation="
-            local neg_filters="not:partition= not:state= not:user= not:reservation="
+            local node_filters="partition= state= user= reservation= drainreason="
+            local neg_filters="not:partition= not:state= not:user= not:reservation= not:drainreason="
             local node_states="idle alloc drain down mixed comp"
             if [[ "$cur" == --* ]]; then
                 COMPREPLY=($(compgen -W "--verbose --help" -- "$cur"))
@@ -2899,8 +2970,8 @@ _slurm_cli_initialize_autocomplete() {{
             # Reboot command takes nodes, filters, asap, nextstate=, reason=
             local cached_nodes="$(_slurm_cache_nodes)"
             local cached_partitions="$(_slurm_cache_partitions)"
-            local node_filters="partition= state= user= reservation="
-            local neg_filters="not:partition= not:state= not:user= not:reservation="
+            local node_filters="partition= state= user= reservation= drainreason="
+            local neg_filters="not:partition= not:state= not:user= not:reservation= not:drainreason="
             local node_states="idle alloc drain down mixed comp"
             local nextstates="RESUME DOWN"
             if [[ "$cur" == --* ]]; then
@@ -2968,8 +3039,8 @@ _slurm_cli_initialize_autocomplete() {{
             # Cancel reboot command takes nodes and filters
             local cached_nodes="$(_slurm_cache_nodes)"
             local cached_partitions="$(_slurm_cache_partitions)"
-            local node_filters="partition= state= user= reservation="
-            local neg_filters="not:partition= not:state= not:user= not:reservation="
+            local node_filters="partition= state= user= reservation= drainreason="
+            local neg_filters="not:partition= not:state= not:user= not:reservation= not:drainreason="
             local node_states="idle alloc drain down mixed comp"
             if [[ "$cur" == --* ]]; then
                 COMPREPLY=($(compgen -W "--verbose --help" -- "$cur"))

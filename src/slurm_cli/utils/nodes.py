@@ -122,6 +122,7 @@ class Node(BaseSlurmResource):
         "state",
         "user",
         "reservation",
+        "drainreason",
     ]
 
     @classmethod
@@ -135,6 +136,12 @@ class Node(BaseSlurmResource):
         filter_opts = " ".join(
             f"{opt}=" if opt != "ALL" else opt
             for opt in cls.NODE_FILTER_OPTIONS
+        )
+        # Add negation filter options (not:filter=)
+        neg_filter_opts = " ".join(
+            f"not:{opt}="
+            for opt in cls.NODE_FILTER_OPTIONS
+            if opt != "ALL"
         )
         create_opts = " ".join(
             f"{opt}=" for opt in cls.NODE_CREATE_OPTIONS
@@ -157,6 +164,7 @@ _slurm_cli_nodes_autocomplete() {{
     local show_options="{show_opts}"
     local update_options="{update_opts}"
     local filter_options="{filter_opts}"
+    local neg_filter_options="{neg_filter_opts}"
     local create_options="{create_opts}"
 
     # Handle key=value completion
@@ -190,7 +198,7 @@ _slurm_cli_nodes_autocomplete() {{
 
     # For show command: filter options, show options, then node names
     if [[ "$cmd" == "show" ]]; then
-        _slurm_complete "$filter_options $show_options $cached_nodes" "$cur"
+        _slurm_complete "$filter_options $neg_filter_options $show_options $cached_nodes" "$cur"
         return
     fi
 

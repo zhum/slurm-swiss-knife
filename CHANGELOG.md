@@ -42,6 +42,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Uses `drainreason=` to avoid conflict with drain command's `reason=` parameter
   - Example: `slurm-cli drain drainreason="Not responding" reason="Re-drain"` - redrain unresponsive nodes
   - Example: `slurm-cli undrain drainreason=".*temp.*"` - undrain nodes with temperature-related reasons
+- **Unified Node Filter Support**: All commands accepting node lists now support full node filter syntax
+  - `show nodes`, `show events`, `drain`, `undrain`/`resume`, `reboot`, `cancel_reboot`
+  - Multiple filters use AND (intersection) logic: `partition=gpu state=drain` -> nodes in gpu AND drained
+  - Supports exclusions: `slurm-cli show nodes state=drain 'not:drainreason=HC.*'`
+  - Events also support node filters: `slurm-cli show events partition=gpu`
 - **Format Option Alias**: Added `-o`/`--format` as alias for `--profile-str`
   - Autocomplete now shows available fields for each resource type
 - **Account Tree View**: Added tree mode for accounts with `-T`/`--tree`

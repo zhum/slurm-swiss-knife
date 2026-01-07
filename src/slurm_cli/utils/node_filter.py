@@ -601,8 +601,11 @@ def resolve_node_filters(
 
     Handles:
     - Direct node names/ranges
-    - Positive filters (partition=gpu, state=idle, etc.)
-    - Negative filters (-partition=gpu, -state=drain, etc.)
+    - Positive filters (partition=gpu, state=idle, etc.) - INTERSECTED
+    - Negative filters (not:partition=gpu, not:state=drain, etc.)
+
+    Multiple positive filters are INTERSECTED (AND logic):
+    partition=gpu state=drain -> nodes that are in gpu AND drained
 
     Args:
         args: List of node specs and filters
@@ -611,10 +614,11 @@ def resolve_node_filters(
     Returns:
         Tuple of (resolved node set, list of unrecognized args)
     """
-    include_nodes: Set[str] = set()
+    # List of filter results to intersect
+    include_filters: List[Set[str]] = []
     exclude_nodes: Set[str] = set()
     other_args: List[str] = []
-    has_include_filter = False
+    direct_nodes: Set[str] = set()
 
     for arg in args:
         if not arg:
@@ -633,26 +637,40 @@ def resolve_node_filters(
                         f"{len(exclude_nodes)} nodes[/dim]"
                     )
         elif is_node_filter(arg):
-            # Positive filter
-            has_include_filter = True
+            # Positive filter - add to list for intersection
             if arg.lower() == "all":
-                include_nodes.update(_get_all_nodes(verbose))
+                include_filters.append(_get_all_nodes(verbose))
             else:
                 resolved = resolve_node_filter(arg, verbose)
                 if resolved and resolved != "ALL":
-                    include_nodes.update(_expand_node_list(resolved))
+                    include_filters.append(_expand_node_list(resolved))
                 elif resolved == "ALL":
-                    include_nodes.update(_get_all_nodes(verbose))
+                    include_filters.append(_get_all_nodes(verbose))
         elif "=" not in arg and not arg.lower().startswith("not:"):
             # Direct node name or range
-            include_nodes.update(_expand_node_list(arg))
+            direct_nodes.update(_expand_node_list(arg))
         else:
             # Not a node filter, pass through
             other_args.append(arg)
 
-    # If we have exclusions but no inclusions, start with all nodes
-    if exclude_nodes and not include_nodes and not has_include_filter:
+    # Build result from filters
+    if include_filters:
+        # Intersect all positive filters (AND logic)
+        include_nodes = include_filters[0]
+        for filter_set in include_filters[1:]:
+            include_nodes = include_nodes & filter_set
+        # Add any direct nodes
+        if direct_nodes:
+            include_nodes = include_nodes | direct_nodes
+    elif direct_nodes:
+        # Only direct nodes
+        include_nodes = direct_nodes
+    elif exclude_nodes:
+        # Only exclusions, start with all nodes
         include_nodes = _get_all_nodes(verbose)
+    else:
+        # No filters at all
+        include_nodes = set()
 
     # Apply exclusions
     result_nodes = include_nodes - exclude_nodes
@@ -673,7 +691,7 @@ def generate_node_filter_autocomplete() -> str:
     """
     states = " ".join(NODE_STATES)
     filters = " ".join(NODE_FILTER_PREFIXES)
-    neg_filters = " ".join(f"-{p}" for p in NODE_FILTER_PREFIXES)
+    neg_filters = " ".join(f"not:{p}" for p in NODE_FILTER_PREFIXES)
 
     return f"""
 # Node filter completion helper
@@ -686,28 +704,31 @@ _slurm_complete_node_filter() {{
     local neg_filters="{neg_filters}"
     local node_states="{states}"
 
-    # Handle negative filters
-    if [[ "$cur" == -partition=* ]]; then
-        local val="${{cur#-partition=}}"
+    # Handle negative filters (not: prefix)
+    if [[ "$cur" == not:partition=* ]]; then
+        local val="${{cur#not:partition=}}"
         COMPREPLY=($(compgen -W "$cached_partitions" -- "$val"))
-        [[ ${{#COMPREPLY[@]}} -gt 0 ]] && COMPREPLY=("${{COMPREPLY[@]/#/-partition=}}")
+        [[ ${{#COMPREPLY[@]}} -gt 0 ]] && COMPREPLY=("${{COMPREPLY[@]/#/not:partition=}}")
         return 0
-    elif [[ "$cur" == -state=* ]]; then
-        local val="${{cur#-state=}}"
+    elif [[ "$cur" == not:state=* ]]; then
+        local val="${{cur#not:state=}}"
         COMPREPLY=($(compgen -W "$node_states" -- "$val"))
-        [[ ${{#COMPREPLY[@]}} -gt 0 ]] && COMPREPLY=("${{COMPREPLY[@]/#/-state=}}")
+        [[ ${{#COMPREPLY[@]}} -gt 0 ]] && COMPREPLY=("${{COMPREPLY[@]/#/not:state=}}")
         return 0
-    elif [[ "$cur" == -user=* ]]; then
-        local val="${{cur#-user=}}"
+    elif [[ "$cur" == not:user=* ]]; then
+        local val="${{cur#not:user=}}"
         local users="$(_slurm_cache_users)"
         COMPREPLY=($(compgen -W "$users" -- "$val"))
-        [[ ${{#COMPREPLY[@]}} -gt 0 ]] && COMPREPLY=("${{COMPREPLY[@]/#/-user=}}")
+        [[ ${{#COMPREPLY[@]}} -gt 0 ]] && COMPREPLY=("${{COMPREPLY[@]/#/not:user=}}")
         return 0
-    elif [[ "$cur" == -reservation=* ]]; then
-        local val="${{cur#-reservation=}}"
+    elif [[ "$cur" == not:reservation=* ]]; then
+        local val="${{cur#not:reservation=}}"
         local reservations="$(_slurm_cache_reservations)"
         COMPREPLY=($(compgen -W "$reservations" -- "$val"))
-        [[ ${{#COMPREPLY[@]}} -gt 0 ]] && COMPREPLY=("${{COMPREPLY[@]/#/-reservation=}}")
+        [[ ${{#COMPREPLY[@]}} -gt 0 ]] && COMPREPLY=("${{COMPREPLY[@]/#/not:reservation=}}")
+        return 0
+    elif [[ "$cur" == not:drainreason=* ]]; then
+        # drainreason takes a regex pattern, no value completion
         return 0
     # Handle positive filters
     elif [[ "$cur" == partition=* ]] || [[ "$prev" == "=" && "${{COMP_WORDS[COMP_CWORD-2]}}" == "partition" ]]; then
@@ -735,6 +756,9 @@ _slurm_complete_node_filter() {{
         local reservations="$(_slurm_cache_reservations)"
         COMPREPLY=($(compgen -W "$reservations" -- "$val"))
         [[ ${{#COMPREPLY[@]}} -gt 0 && "$cur" == *=* ]] && COMPREPLY=("${{COMPREPLY[@]/#/reservation=}}")
+        return 0
+    elif [[ "$cur" == drainreason=* ]]; then
+        # drainreason takes a regex pattern, no value completion
         return 0
     fi
 

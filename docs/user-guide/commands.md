@@ -224,7 +224,39 @@ slurm-cli create reservations idle_test nodes=state=idle starttime=now duration=
 slurm-cli show nodes user=john
 ```
 
+### Multiple Filters and Exclusions
+
+Node filters support combining multiple filters and exclusions:
+
+- **Multiple positive filters**: INTERSECTED (AND logic) - nodes must match ALL filters
+- **Exclusion filters**: Use `not:` prefix to exclude nodes matching the filter
+
+```bash
+# Show drained nodes from gpu partition (nodes that are IN gpu AND have state drain)
+slurm-cli show nodes partition=gpu state=drain
+
+# Show drained nodes excluding those with hardware check reason
+slurm-cli show nodes state=drain 'not:drainreason=HC.*'
+
+# Show events for nodes in partition (filters work for events too)
+slurm-cli show events partition=gpu
+
+# Drain all idle nodes except those in a reservation
+slurm-cli drain state=idle 'not:reservation=maint' reason="Taking offline"
+
+# Undrain nodes by drain reason pattern
+slurm-cli undrain drainreason="scheduled.*maintenance"
+
+# Cancel reboot for nodes except those in maintenance
+slurm-cli cancel_reboot partition=gpu 'not:reservation=maint'
+
+# Complex filter: drained GPU nodes, exclude hardware checks, exclude reserved
+slurm-cli show nodes partition=gpu state=drain 'not:drainreason=HC.*' 'not:reservation=maint'
+```
+
 The node filter is resolved at command execution time, so it always uses the current state of the cluster.
+
+All commands that accept node lists support the full set of node filters: `show nodes`, `show events`, `drain`, `undrain`/`resume`, `reboot`, and `cancel_reboot`.
 
 ## Global Options
 
