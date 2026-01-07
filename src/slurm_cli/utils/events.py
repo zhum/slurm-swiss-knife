@@ -6,8 +6,10 @@ import re
 import subprocess
 from typing import Any, Dict, List, Optional
 
-from rich.box import SIMPLE_HEAVY
-from rich.table import Table
+from rich.box import (
+    SIMPLE_HEAVY,
+)  # pyright: ignore[reportMissingImports]
+from rich.table import Table  # pyright: ignore[reportMissingImports]
 
 from .base_resource import BaseSlurmResource
 from .node_filter import is_node_filter, resolve_node_filter
@@ -499,7 +501,8 @@ class Event(BaseSlurmResource):
                     key, value = part.split("=", 1)
                     filters[key] = value
 
-        # Resolve node filters (e.g., nodes=partition=defq -> nodes=node1,node2)
+        # Resolve node filters
+        # (e.g., nodes=partition=defq -> nodes=node1,node2)
         nodes_value = filters.get("nodes") or filters.get("Nodes")
         if nodes_value and is_node_filter(nodes_value):
             resolved = resolve_node_filter(nodes_value)
@@ -574,7 +577,7 @@ class Event(BaseSlurmResource):
 
             if not events:
                 console.print(
-                    f"[yellow]No events matching filters found.[/yellow]"
+                    "[yellow]No events matching filters found.[/yellow]"
                 )
                 return
 
@@ -688,5 +691,5 @@ _slurm_cli_events_autocomplete() {{
     # Default: show filter options
     [[ $cmd == "show" ]] && _slurm_complete "$filter_options" "$cur"
 }}
-"""
+"""  # noqa: E501
         return script
