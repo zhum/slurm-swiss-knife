@@ -446,6 +446,34 @@ class TestResolveJobFilters:
         assert "12345" not in result_jobs
 
     @mock.patch("slurm_cli.utils.job_filter.subprocess.run")
+    def test_only_exclusions_gets_all_jobs_verbose(self, mock_run):
+        """Test exclusion-only with verbose output."""
+
+        def mock_squeue(cmd, **kwargs):
+            if "-u" in cmd:
+                return mock.Mock(stdout="12345\n", returncode=0)
+            else:
+                return mock.Mock(
+                    stdout="12345\n12346\n12347\n", returncode=0
+                )
+
+        mock_run.side_effect = mock_squeue
+
+        with mock.patch(
+            "slurm_cli.utils.job_filter.console.print"
+        ) as mock_print:
+            result_jobs, _ = resolve_job_filters(
+                ["not:user=john"], verbose=True
+            )
+
+            # Should print "Starting with all X jobs"
+            assert mock_print.called
+            calls = [str(c) for c in mock_print.call_args_list]
+            assert any("Starting with all" in c for c in calls)
+            assert "12346" in result_jobs
+            assert "12347" in result_jobs
+
+    @mock.patch("slurm_cli.utils.job_filter.subprocess.run")
     def test_positive_filter(self, mock_run):
         """Test resolve_job_filters with positive filter."""
         mock_run.return_value = mock.Mock(
