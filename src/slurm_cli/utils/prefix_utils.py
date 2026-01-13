@@ -268,6 +268,10 @@ COMMANDS = {
         "description": "Takeover as primary controller",
     },
     "token": {"aliases": [], "description": "Generate auth token"},
+    "assoc_mgr": {
+        "aliases": [],
+        "description": "Display slurmctld's internal cache",
+    },
     "drain": {"aliases": [], "description": "Drain nodes"},
     "undrain": {
         "aliases": ["resume"],

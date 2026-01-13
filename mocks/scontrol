@@ -166,10 +166,51 @@ elif [ "$1" = "suspend" ]; then
     # Mock suspend command
     echo "MOCK: scontrol $*"
     exit 0
+elif [ "$1" = "assoc_mgr" ]; then
+    # Mock assoc_mgr command
+    echo "MOCK: scontrol $*"
+    echo ""
+    echo "Current Association Manager state:"
+    # Check for flags option
+    for arg in "$@"; do
+        if [[ "$arg" == "flags=users" ]]; then
+            echo "User Records:"
+            echo "  UserName=root(0) AdminLevel=Administrator"
+            echo "  UserName=testuser(1000) AdminLevel=None"
+            exit 0
+        elif [[ "$arg" == "flags=assoc" ]]; then
+            echo "Association Records:"
+            echo "  ClusterName=cluster Account=root UserName= Partition="
+            echo "  ClusterName=cluster Account=general_cs_infra UserName= Partition="
+            exit 0
+        elif [[ "$arg" == "flags=qos" ]]; then
+            echo "QOS Records:"
+            echo "  Name=normal Priority=0"
+            echo "  Name=high Priority=100"
+            exit 0
+        fi
+    done
+    # Default: show all
+    echo "User Records:"
+    echo "  UserName=root(0) AdminLevel=Administrator"
+    echo "  UserName=testuser(1000) AdminLevel=None"
+    echo ""
+    echo "Association Records:"
+    echo "  ClusterName=cluster Account=root UserName= Partition="
+    echo "  ClusterName=cluster Account=general_cs_infra UserName= Partition="
+    echo ""
+    echo "QOS Records:"
+    echo "  Name=normal Priority=0"
+    echo "  Name=high Priority=100"
+    exit 0
+elif [ "$1" = "uhold" ]; then
+    # Mock uhold command (user hold)
+    echo "MOCK: scontrol $*"
+    exit 0
 else
     # For other arguments, show usage or error
     echo "Usage: $0 show {nodes|partitions|reservations|config} [--json]" >&2
-    echo "       $0 {reconfigure|ping|takeover|version|token}" >&2
+    echo "       $0 {reconfigure|ping|takeover|version|token|assoc_mgr}" >&2
     echo "This is a mock scontrol script for testing purposes." >&2
     echo "Arguments received: $*" >&2
     exit 1

@@ -2702,3 +2702,186 @@ class TestResourceTypeAutodetection:
                     "test-user"
                 )
                 assert resource_type == "users"
+
+
+# ============================================================================
+# assoc_mgr Command Tests
+# ============================================================================
+
+
+def test_assoc_mgr_command(runner):
+    """Test the assoc_mgr command."""
+    from slurm_cli.cli import register_commands
+
+    register_commands()
+
+    with patch("subprocess.run") as mock_run:
+        mock_run.return_value.stdout = (
+            "User Records\nAssociation Records"
+        )
+        mock_run.return_value.returncode = 0
+        result = runner.invoke(main, ["assoc_mgr"])
+        assert result.exit_code == 0
+        mock_run.assert_called_once()
+        call_args = mock_run.call_args[0][0]
+        assert call_args == ["scontrol", "assoc_mgr"]
+
+
+def test_assoc_mgr_command_with_users(runner):
+    """Test the assoc_mgr command with users option."""
+    from slurm_cli.cli import register_commands
+
+    register_commands()
+
+    with patch("subprocess.run") as mock_run:
+        mock_run.return_value.stdout = "User Records"
+        mock_run.return_value.returncode = 0
+        result = runner.invoke(main, ["assoc_mgr", "users=john,jane"])
+        assert result.exit_code == 0
+        call_args = mock_run.call_args[0][0]
+        assert call_args == ["scontrol", "assoc_mgr", "users=john,jane"]
+
+
+def test_assoc_mgr_command_with_accounts(runner):
+    """Test the assoc_mgr command with accounts option."""
+    from slurm_cli.cli import register_commands
+
+    register_commands()
+
+    with patch("subprocess.run") as mock_run:
+        mock_run.return_value.stdout = "Association Records"
+        mock_run.return_value.returncode = 0
+        result = runner.invoke(
+            main, ["assoc_mgr", "accounts=physics,chemistry"]
+        )
+        assert result.exit_code == 0
+        call_args = mock_run.call_args[0][0]
+        assert call_args == [
+            "scontrol",
+            "assoc_mgr",
+            "accounts=physics,chemistry",
+        ]
+
+
+def test_assoc_mgr_command_with_qos(runner):
+    """Test the assoc_mgr command with qos option."""
+    from slurm_cli.cli import register_commands
+
+    register_commands()
+
+    with patch("subprocess.run") as mock_run:
+        mock_run.return_value.stdout = "QOS Records"
+        mock_run.return_value.returncode = 0
+        result = runner.invoke(main, ["assoc_mgr", "qos=normal,high"])
+        assert result.exit_code == 0
+        call_args = mock_run.call_args[0][0]
+        assert call_args == ["scontrol", "assoc_mgr", "qos=normal,high"]
+
+
+def test_assoc_mgr_command_with_flags(runner):
+    """Test the assoc_mgr command with flags option."""
+    from slurm_cli.cli import register_commands
+
+    register_commands()
+
+    with patch("subprocess.run") as mock_run:
+        mock_run.return_value.stdout = "User Records"
+        mock_run.return_value.returncode = 0
+        result = runner.invoke(main, ["assoc_mgr", "flags=users"])
+        assert result.exit_code == 0
+        call_args = mock_run.call_args[0][0]
+        assert call_args == ["scontrol", "assoc_mgr", "flags=users"]
+
+
+def test_assoc_mgr_command_invalid_flags(runner):
+    """Test the assoc_mgr command with invalid flags value."""
+    from slurm_cli.cli import register_commands
+
+    register_commands()
+
+    result = runner.invoke(main, ["assoc_mgr", "flags=invalid"])
+    assert "Error: Invalid flags value" in result.output
+    assert "users, assoc, qos" in result.output
+
+
+def test_assoc_mgr_command_dry_run(runner):
+    """Test the assoc_mgr command with dry-run."""
+    from slurm_cli.cli import register_commands
+
+    register_commands()
+
+    result = runner.invoke(
+        main,
+        ["assoc_mgr", "users=john", "flags=users", "--dry-run"],
+    )
+    assert result.exit_code == 0
+    assert "DRY RUN" in result.output
+    assert "scontrol assoc_mgr users=john flags=users" in result.output
+
+
+def test_assoc_mgr_command_user_filter_account(runner):
+    """Test the assoc_mgr command with user filter by account."""
+    from slurm_cli.cli import register_commands
+
+    register_commands()
+
+    # Mock sacctmgr to return users for account
+    def mock_subprocess_run(args, **kwargs):
+        mock_result = MagicMock()
+        mock_result.returncode = 0
+        mock_result.stderr = ""
+        if args[0] == "sacctmgr":
+            mock_result.stdout = json.dumps(
+                {
+                    "users": [
+                        {"name": "user1"},
+                        {"name": "user2"},
+                    ]
+                }
+            )
+        else:
+            mock_result.stdout = "User Records"
+        return mock_result
+
+    with patch("subprocess.run", side_effect=mock_subprocess_run):
+        result = runner.invoke(
+            main, ["assoc_mgr", "users=account=research", "--dry-run"]
+        )
+        assert result.exit_code == 0
+        assert "DRY RUN" in result.output
+        assert "users=user1,user2" in result.output
+
+
+def test_assoc_mgr_command_multiple_options(runner):
+    """Test the assoc_mgr command with multiple options."""
+    from slurm_cli.cli import register_commands
+
+    register_commands()
+
+    with patch("subprocess.run") as mock_run:
+        mock_run.return_value.stdout = "Records"
+        mock_run.return_value.returncode = 0
+        result = runner.invoke(
+            main,
+            [
+                "assoc_mgr",
+                "accounts=physics",
+                "qos=normal",
+                "flags=assoc",
+            ],
+        )
+        assert result.exit_code == 0
+        call_args = mock_run.call_args[0][0]
+        assert "accounts=physics" in call_args
+        assert "qos=normal" in call_args
+        assert "flags=assoc" in call_args
+
+
+def test_assoc_mgr_command_invalid_format(runner):
+    """Test the assoc_mgr command with invalid option format."""
+    from slurm_cli.cli import register_commands
+
+    register_commands()
+
+    result = runner.invoke(main, ["assoc_mgr", "invalid_option"])
+    assert "Error: Invalid option format" in result.output

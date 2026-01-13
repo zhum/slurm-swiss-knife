@@ -72,7 +72,7 @@
 - [x] **token [lifespan=\<lifespan\>] [username=\<username\>]** lifespan=seconds/infinite (we need specify time)
 - [x] **version**
 - [x] **confreload** = reconfigure alias
-- [ ] **show assoc_mgr** users=..., users=..., users==..., flags={users|assoc|qos}
+- [x] **assoc_mgr** users=..., accounts=..., qos=..., flags={users|assoc|qos}
 - [ ] **batch_script job_id [filename]**
 - [ ] **write_config [filename]**
 - [ ] **new resources (r/o)** bbstat, burstbuffer, daemons, dwstat, topology

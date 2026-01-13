@@ -409,6 +409,60 @@ slurm-cli token lifespan=infinite
 | Nh/Nm/Ns/Nd | `1h`, `30m`, `45s`, `2d` | Hours, minutes, seconds, days |
 | infinite | `infinite`, `inf` | No expiration (if allowed) |
 
+### Assoc Manager
+
+Display slurmctld's internal cache for associations, users, and QOS.
+
+**Aliases:** `assoc_mgr`, `assoc`
+
+```bash
+# Show all cached records
+slurm-cli assoc_mgr
+
+# Show only user records
+slurm-cli assoc_mgr flags=users
+
+# Show only association records
+slurm-cli assoc_mgr flags=assoc
+
+# Show only QOS records
+slurm-cli assoc_mgr flags=qos
+
+# Filter by specific users
+slurm-cli assoc_mgr users=john,jane
+
+# Filter by users in an account (user filter)
+slurm-cli assoc_mgr users=account=research
+
+# Filter by specific accounts
+slurm-cli assoc_mgr accounts=physics,chemistry
+
+# Filter by specific QOS
+slurm-cli assoc_mgr qos=normal,high
+
+# Combine filters
+slurm-cli assoc_mgr accounts=physics qos=normal flags=assoc
+
+# Dry run (show command without executing)
+slurm-cli assoc_mgr flags=users --dry-run
+```
+
+**Options:**
+
+| Option | Description |
+|--------|-------------|
+| `users=<list>` | Limit to specific users (supports user filters) |
+| `accounts=<list>` | Limit to specific accounts |
+| `qos=<list>` | Limit to specific QOS names |
+| `flags=<type>` | Show only: `users`, `assoc`, or `qos` |
+
+**User filters:**
+
+| Filter | Example | Description |
+|--------|---------|-------------|
+| Direct list | `users=john,jane` | Specific user names |
+| By account | `users=account=research` | Users in the specified account |
+
 ### Drain
 
 Drain nodes (set state to drain).

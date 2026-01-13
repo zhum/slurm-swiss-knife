@@ -21,6 +21,7 @@ Note: This requires Click's completion support
 which is available in Click 8.0+.
 """
 
+import json
 import os
 import subprocess
 from typing import Any, Dict, List, Optional, Tuple, Union
@@ -964,6 +965,7 @@ def register_commands() -> None:
     main.add_command(ping, name="ping")
     main.add_command(takeover, name="takeover")
     main.add_command(token, name="token")
+    main.add_command(assoc_mgr, name="assoc_mgr")
     main.add_command(drain, name="drain")
     main.add_command(undrain, name="undrain")
     main.add_command(reboot, name="reboot")
@@ -2421,6 +2423,45 @@ _slurm_cli_initialize_autocomplete() {{
             fi
             return
             ;;
+        assoc_mgr)
+            # assoc_mgr command takes users=, accounts=, qos=, flags= options
+            local assoc_flags="users assoc qos"
+            if [[ "$cur" == --* ]]; then
+                COMPREPLY=($(compgen -W "--verbose --dry-run --help" -- "$cur"))
+            # Handle users=account= filter - only when cur is part of the filter
+            elif [[ "$cur" == users=account=* ]]; then
+                # cur contains full users=account=... pattern
+                local cached_accounts="$(_slurm_cache_accounts)"
+                local acct_val="${{cur#users=account=}}"
+                COMPREPLY=($(compgen -W "$cached_accounts" -- "$acct_val"))
+                [[ ${{#COMPREPLY[@]}} -gt 0 ]] && COMPREPLY=("${{COMPREPLY[@]/#/users=account=}}")
+            elif [[ "$prev" == "=" && "${{COMP_WORDS[COMP_CWORD-2]}}" == "account" && "$COMP_LINE" == *users=account=* ]]; then
+                # Bash split: users = account = <value>
+                local cached_accounts="$(_slurm_cache_accounts)"
+                COMPREPLY=($(compgen -W "$cached_accounts" -- "$cur"))
+            elif _slurm_parse_keyval "$cur" "$prev"; then
+                case "$_key" in
+                    flags)
+                        _slurm_complete_value "$assoc_flags" "$_key" "$_val" "$cur"
+                        ;;
+                    users)
+                        # Show account= filter first, then users
+                        local cached_users="$(_slurm_cache_users)"
+                        COMPREPLY=($(compgen -W "account= $cached_users" -- "$_val"))
+                        [[ $cur == *=* && ${{#COMPREPLY[@]}} -gt 0 ]] && COMPREPLY=("${{COMPREPLY[@]/#/users=}}")
+                        ;;
+                    accounts)
+                        _slurm_complete_value "$(_slurm_cache_accounts)" "$_key" "$_val" "$cur"
+                        ;;
+                    qos)
+                        _slurm_complete_value "$(_slurm_cache_qos)" "$_key" "$_val" "$cur"
+                        ;;
+                esac
+            else
+                COMPREPLY=($(compgen -W "users= accounts= qos= flags= -v --verbose --dry-run -h --help" -- "$cur"))
+            fi
+            return
+            ;;
         drain)
             # Drain command takes nodes, filters (with optional - prefix for exclusion),
             # and optional --reason/-r or reason=
@@ -3322,6 +3363,193 @@ def token(
                 return
         elif key == "username":
             args.append(f"username={value}")
+        else:
+            console.print(
+                f"[yellow]Warning: Unknown option: {key}[/yellow]"
+            )
+            args.append(f"{key}={value}")
+
+    if dry_run:
+        console.print(f"[yellow]DRY RUN:[/yellow] {' '.join(args)}")
+        return
+
+    if verbose:
+        console.print(f"[dim]Running: {' '.join(args)}[/dim]")
+
+    try:
+        result = subprocess.run(
+            args,
+            capture_output=True,
+            text=True,
+            check=True,
+        )
+        if result.stdout:
+            console.print(result.stdout.strip())
+    except subprocess.CalledProcessError as e:
+        console.print(f"[red]Error: {e.stderr.strip() or e}[/red]")
+    except FileNotFoundError:
+        console.print("[red]Error: scontrol not found[/red]")
+
+
+def _resolve_user_filter(
+    value: str, verbose: bool = False
+) -> Optional[str]:
+    """Resolve a user filter expression to a comma-separated list of users.
+
+    Supports:
+    - Direct user list: "john,jane" -> "john,jane"
+    - Account filter: "account=research" -> resolve to users in account
+
+    Args:
+        value: User value or filter expression
+        verbose: Enable verbose output
+
+    Returns:
+        Comma-separated list of users, or None if resolution failed
+    """
+    if not value:
+        return None
+
+    # Check if it's a filter expression
+    if "=" in value:
+        key, filter_value = value.split("=", 1)
+        key = key.lower()
+
+        if key == "account":
+            # Get users in the account
+            try:
+                result = subprocess.run(
+                    [
+                        "sacctmgr",
+                        "show",
+                        "users",
+                        f"account={filter_value}",
+                        "--json",
+                    ],
+                    capture_output=True,
+                    text=True,
+                    check=True,
+                )
+                if result.stdout:
+                    data = json.loads(result.stdout)
+                    users = data.get("users", [])
+                    user_names = [
+                        u.get("name") for u in users if u.get("name")
+                    ]
+                    if user_names:
+                        if verbose:
+                            console.print(
+                                f"[dim]Resolved account={filter_value} to "
+                                f"{len(user_names)} users: "
+                                f"{', '.join(user_names[:5])}"
+                                f"{'...' if len(user_names) > 5 else ''}[/dim]"
+                            )
+                        return ",".join(user_names)
+                    else:
+                        console.print(
+                            f"[yellow]No users found in account "
+                            f"'{filter_value}'[/yellow]"
+                        )
+                        return None
+            except subprocess.CalledProcessError as e:
+                console.print(
+                    f"[red]Error resolving user filter: "
+                    f"{e.stderr.strip() or e}[/red]"
+                )
+                return None
+            except json.JSONDecodeError:
+                console.print("[red]Error parsing user data[/red]")
+                return None
+        else:
+            # Unknown filter, return as-is (scontrol might handle it)
+            if verbose:
+                console.print(
+                    f"[dim]Unknown user filter '{key}', "
+                    f"passing as-is[/dim]"
+                )
+            return value
+
+    # Direct user list
+    return value
+
+
+# Valid flags for assoc_mgr command
+ASSOC_MGR_FLAGS = ["users", "assoc", "qos"]
+
+
+@click.command(context_settings=CONTEXT_SETTINGS)
+@click.argument("options", nargs=-1)
+@click.option(
+    "--verbose", "-v", is_flag=True, help="Enable verbose output"
+)
+@click.option(
+    "--dry-run",
+    is_flag=True,
+    help="Show command without executing",
+)
+@click.pass_context
+def assoc_mgr(
+    ctx: click.Context,
+    options: Tuple[str, ...],
+    verbose: bool = False,
+    dry_run: bool = False,
+) -> None:
+    """Display slurmctld's internal cache (associations, users, QOS).
+
+    Options can be specified as key=value pairs:
+
+    \b
+      users=<list>      Limit to specific users (supports filters)
+      accounts=<list>   Limit to specific accounts
+      qos=<list>        Limit to specific QOS names
+      flags=<type>      Show only: users, assoc, or qos
+
+    User filters:
+      users=john,jane          Direct user list
+      users=account=research   Users in the 'research' account
+
+    \b
+    Examples:
+      slurm-cli assoc_mgr
+      slurm-cli assoc_mgr flags=users
+      slurm-cli assoc_mgr users=john,jane
+      slurm-cli assoc_mgr users=account=research
+      slurm-cli assoc_mgr accounts=physics,chemistry
+      slurm-cli assoc_mgr qos=normal,high flags=qos
+    """
+    dry_run = get_dry_run(ctx) or dry_run
+    args = ["scontrol", "assoc_mgr"]
+
+    # Parse options
+    for opt in options:
+        if "=" not in opt:
+            console.print(
+                f"[red]Error: Invalid option format: {opt}[/red]"
+            )
+            console.print("Options must be in key=value format")
+            return
+
+        key, value = opt.split("=", 1)
+        key = key.lower()
+
+        if key == "users":
+            # Resolve user filter
+            resolved = _resolve_user_filter(value, verbose)
+            if resolved is None:
+                return
+            args.append(f"users={resolved}")
+        elif key == "accounts":
+            args.append(f"accounts={value}")
+        elif key == "qos":
+            args.append(f"qos={value}")
+        elif key == "flags":
+            if value.lower() not in ASSOC_MGR_FLAGS:
+                console.print(
+                    f"[red]Error: Invalid flags value '{value}'. "
+                    f"Must be one of: {', '.join(ASSOC_MGR_FLAGS)}[/red]"
+                )
+                return
+            args.append(f"flags={value}")
         else:
             console.print(
                 f"[yellow]Warning: Unknown option: {key}[/yellow]"

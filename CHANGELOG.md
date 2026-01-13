@@ -56,6 +56,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - `version` (alias: ver) - Show slurm-cli and Slurm version
   - `token` (alias: tok) - Generate JWT authentication token with lifespan/username options
     - Supports time formats: `1h`, `30m`, `1:30:00`, `1-12:00:00`, `infinite`
+  - `assoc_mgr` - Display slurmctld's internal cache for associations, users, QOS
+    - Options: `users=`, `accounts=`, `qos=`, `flags={users|assoc|qos}`
+    - User filters: `users=account=research` resolves to users in the account
   - `drain` (alias: dr) - Drain nodes with optional reason
   - `undrain` (aliases: undr, resume) - Undrain/resume nodes
   - `reboot` (alias: reb) - Reboot nodes with optional asap, nextstate, and reason
