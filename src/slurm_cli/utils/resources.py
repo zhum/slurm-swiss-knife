@@ -16,7 +16,7 @@ SPINNER_SPEED = 1.0
 
 
 class Resource:
-    CACHE_TIMEOUT = 60
+    CACHE_TIMEOUT = 600
     CACHE_DIR = "/tmp/"
     CACHE_FILES = {
         "nodes": f"{CACHE_DIR}slurm_cli_nodes.json",
@@ -41,7 +41,6 @@ class Resource:
         "reservations": f"{CACHE_DIR}slurm_cli_reservations.list",
         "coordinators": f"{CACHE_DIR}slurm_cli_coordinators.list",
         "config": f"{CACHE_DIR}slurm_cli_config.list",
-        "jobs": f"{CACHE_DIR}slurm_cli_jobs.list",
     }
     CACHE_CMD = {
         "nodes": ["scontrol", "show", "nodes", "--json"],
@@ -96,8 +95,8 @@ class Resource:
             return "reservations", Resource.cached_resource(
                 "reservations", force_update
             )
-        coordinator = cls.cached_resource_list("coordinators")
-        if name[:5] == "coord" or (coordinator and name in coordinator):
+        # Check for coordinator prefix (don't fetch list yet to avoid errors)
+        if name[:5] == "coord":
             return "coordinators", Resource.cached_resource(
                 "coordinators", force_update
             )
@@ -121,6 +120,14 @@ class Resource:
             return "tres", []
         elif name[:2] == "ar":
             return "archive", []
+
+        # If name looks like a username (alphanumeric with
+        # underscores/hyphens), assume it's a user - this handles cases
+        # where user isn't in cached list
+        if re.match(r"^[a-zA-Z][a-zA-Z0-9_-]*$", name):
+            return "users", Resource.cached_resource(
+                "users", force_update
+            )
 
         return "unknown", None
 

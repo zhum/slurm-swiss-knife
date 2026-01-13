@@ -141,6 +141,7 @@ _slurm_cli_accounts_autocomplete() {{
         cls,
         name: str,
         verbose: bool = False,
+        dry_run: bool = False,
         where_conditions: Optional[List[str]] = None,
         set_values: Optional[List[str]] = None,
         **kwargs: Any,
@@ -155,6 +156,7 @@ _slurm_cli_accounts_autocomplete() {{
         Args:
             name: Account name (simple mode) or ignored (where mode)
             verbose: Enable verbose output
+            dry_run: If True, print command without executing
             where_conditions: List of WHERE conditions (e.g., ["cluster=test"])
             set_values: List of SET values (e.g., ["description=foo"])
             **kwargs: Additional SET values (simple mode only)
@@ -171,9 +173,10 @@ _slurm_cli_accounts_autocomplete() {{
                 args.extend(set_values)
             where_str = " ".join(where_conditions)
             set_str = " ".join(set_values) if set_values else ""
-            console.print(
-                f"Updating accounts where {where_str} set {set_str}"
-            )
+            if not dry_run:
+                console.print(
+                    f"Updating accounts where {where_str} set {set_str}"
+                )
         else:
             # Simple mode - update by name
             args.append("where")
@@ -184,7 +187,12 @@ _slurm_cli_accounts_autocomplete() {{
                     args.append(f"{key}={value}")
                 else:
                     args.append(key)
-            console.print(f"Updating account: {name}")
+            if not dry_run:
+                console.print(f"Updating account: {name}")
+
+        if dry_run:
+            console.print(f"[yellow]DRY RUN:[/yellow] {' '.join(args)}")
+            return
 
         try:
             result = subprocess.run(

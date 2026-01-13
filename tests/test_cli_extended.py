@@ -14,7 +14,6 @@ from click.testing import CliRunner
 sys.path.insert(0, "src")
 
 from slurm_cli.cli import (  # noqa: E402
-    RESOURCES_ALIASES,
     STYLE_OPTIONS,
     create_autocomplete,
     ensure_resource_name,
@@ -32,6 +31,7 @@ from slurm_cli.cli import (  # noqa: E402
     resolve_command_alias,
     resolve_resource_alias,
 )
+from slurm_cli.utils.prefix_utils import RESOURCES  # noqa: E402
 
 
 @pytest.fixture
@@ -77,7 +77,7 @@ class TestGetResourceChoices:
         choices = get_resource_choices()
         assert "part" in choices
         assert "acc" in choices
-        assert "res" in choices
+        assert "reservation" in choices
 
     def test_is_sorted(self):
         """Test that choices are sorted."""
@@ -149,9 +149,9 @@ class TestResolveCommandAlias:
         assert resolve_command_alias("remove") == "delete"
 
     def test_resolve_unknown_command(self):
-        """Test that unknown commands return None."""
+        """Test that unknown commands return the input unchanged."""
         result = resolve_command_alias("xyzunknown123")
-        assert result is None
+        assert result == "xyzunknown123"
 
 
 class TestGetDelimiter:
@@ -812,23 +812,23 @@ class TestStyleOptions:
 
 
 class TestResourcesAliases:
-    """Tests for RESOURCES_ALIASES constant."""
+    """Tests for RESOURCES configuration."""
 
     def test_aliases_defined(self):
-        """Test that main aliases are defined."""
-        assert "partitions" in RESOURCES_ALIASES
-        assert "nodes" in RESOURCES_ALIASES
-        assert "accounts" in RESOURCES_ALIASES
+        """Test that main resources are defined."""
+        assert "partitions" in RESOURCES
+        assert "nodes" in RESOURCES
+        assert "accounts" in RESOURCES
 
     def test_partition_aliases(self):
         """Test partition aliases."""
-        assert "part" in RESOURCES_ALIASES["partitions"]
-        assert "parts" in RESOURCES_ALIASES["partitions"]
+        assert "part" in RESOURCES["partitions"]["aliases"]
+        assert "parts" in RESOURCES["partitions"]["aliases"]
 
     def test_account_aliases(self):
         """Test account aliases."""
-        assert "acc" in RESOURCES_ALIASES["accounts"]
-        assert "account" in RESOURCES_ALIASES["accounts"]
+        assert "acc" in RESOURCES["accounts"]["aliases"]
+        assert "account" in RESOURCES["accounts"]["aliases"]
 
 
 class TestEnsureResourceNameBranches:

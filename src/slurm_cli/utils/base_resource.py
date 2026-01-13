@@ -126,11 +126,14 @@ class BaseSlurmResource:
                     )
                     return False
             elif key_type[0] == "[" and key_type[-1] == "]":
-                if value.lower() not in key_type[1:-1].split(","):
+                valid_values = [
+                    v.strip() for v in key_type[1:-1].split(",")
+                ]
+                if value.lower() not in valid_values:
                     console.print(
                         f"Invalid list argument: {full_key}={value}."
                         " Valid values are: "
-                        f"{', '.join(key_type[1:-1].split(','))}"
+                        f"{', '.join(valid_values)}"
                     )
                     return False
                 set[full_key] = value.lower()
@@ -192,11 +195,11 @@ class BaseSlurmResource:
         if not m:
             raise ValueError("Invalid time format")
 
-        date = m.group("date") if "date" in m.groupdict() else None
-        days = int(m.group("days")) if "days" in m.groupdict() else 0
-        hh = int(m.group("h")) if "h" in m.groupdict() else 0
-        mm = int(m.group("m")) if "m" in m.groupdict() else 0
-        ss = int(m.group("s")) if "s" in m.groupdict() else 0
+        date = m.group("date") if m.group("date") else None
+        days = int(m.group("days")) if m.group("days") else 0
+        hh = int(m.group("h")) if m.group("h") else 0
+        mm = int(m.group("m")) if m.group("m") else 0
+        ss = int(m.group("s")) if m.group("s") else 0
 
         total_seconds = days * 86400 + hh * 3600 + mm * 60 + ss
 

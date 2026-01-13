@@ -66,12 +66,13 @@
 - [x] **drain/undrain**: add commands `drain node-list [[reason=]'reason']`, `undrain/resume`,
       `reboot [asap] [nextstate=...]`, `cancel_reboot ...`;
       use nodelist filters!
-- [ ] **hold/top**: add commands `hold {[jobs=]job-list}`, `top ...`,
+- [x] **hold/top**: add commands `hold {[jobs=]job-list}`, `top ...`,
       `unhold/release ...`, `requeue ...`, `suspend`; use joblist filters!
 - [x] **recon[figure], ping, takeover**
 - [x] **token [lifespan=\<lifespan\>] [username=\<username\>]** lifespan=seconds/infinite (we need specify time)
 - [x] **version**
 - [ ] **confreload** = reconfigure alias
+- [ ] **show assoc_mgr** users=..., users=..., users==..., flags={users|assoc|qos}
 - [ ] **batch_script job_id [filename]**
 - [ ] **write_config [filename]**
 - [ ] **new resources (r/o)** bbstat, burstbuffer, daemons, dwstat, topology
@@ -104,8 +105,11 @@
   - JobComp          Job Completion plugin details
   - JobContainer     Job container plugin details
   - License          License management details
-  - Network          Network details. Warning: activating this flag may cause logging of passwords, tokens or other authentication credentials.
-  - NetworkRaw       Dump raw hex values of key Network communications. Warning: This flag will cause very verbose logs and may cause logging of passwords, tokens or other authentication credentials.
+  - Network          Network details. Warning: activating this flag may cause logging of
+                     passwords, tokens or other authentication credentials.
+  - NetworkRaw       Dump raw hex values of key Network communications. Warning:
+                     This flag will cause very verbose logs and may cause logging of
+                     passwords, tokens or other authentication credentials.
   - NodeFeatures     Node Features plugin debug info
   - NO_CONF_HASH     Do not log when the slurm.conf files differ between Slurm daemons
   - Power            Power management plugin and power save (suspend/resume programs) details
@@ -114,12 +118,14 @@
   - Protocol         Communication protocol details
   - Reservation      Advanced reservations
   - Route            Message forwarding debug info
-  - Script           Debug info regarding any script called by Slurm. This includes slurmctld executed scripts such as PrologSlurmctld and EpilogSlurmctld.
+  - Script           Debug info regarding any script called by Slurm. This includes slurmctld
+                     executed scripts such as PrologSlurmctld and EpilogSlurmctld.
   - SelectType       Resource selection plugin
   - Steps            Slurmctld resource allocation for job steps
   - Switch           Switch plugin
   - TLS              TLS plugin
-  - TraceJobs        Trace jobs in slurmctld. It will print detailed job information including state, job ids and allocated nodes counter.
+  - TraceJobs        Trace jobs in slurmctld. It will print detailed job information including
+                     state, job ids and allocated nodes counter.
   - Triggers         Slurmctld triggers
   - WorkQueue        Work Queue details
 
@@ -217,4 +223,3 @@
 - Items marked with [ ] are not started, [x] are completed
 - Consider breaking down large items into smaller, manageable tasks
 - Regular review and updates of this TODO list are recommended
-

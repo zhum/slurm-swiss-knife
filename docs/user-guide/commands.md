@@ -570,6 +570,7 @@ Hold jobs to prevent them from starting.
 | Option | Description |
 |--------|-------------|
 | `--reason`, `-r` | Reason for holding jobs |
+| `--user`, `-u` | User hold (uhold) - only job owner or admin can release |
 | `reason=<reason>` | Inline reason specification |
 
 ```bash
@@ -585,6 +586,10 @@ slurm-cli hold 12345 -r "Waiting for data"
 
 # Hold with reason (inline)
 slurm-cli hold 12345 reason="Need review"
+
+# User hold (only owner or admin can release)
+slurm-cli hold -u 12345
+slurm-cli hold --user 12345 -r "Review needed"
 
 # Hold using job filters
 slurm-cli hold user=john
@@ -681,13 +686,13 @@ Job control commands support the following filters:
 | `account=` | `account=research` | Jobs charged to account |
 | `partition=` | `partition=gpu` | Jobs in partition |
 | `state=` | `state=pending` | Jobs with state |
-| `name=` | `name=myjob` | Jobs matching name pattern |
+| `name=` | `name=myjob` | Jobs matching exact name |
+| `jobname=` | `jobname=test.*` | Jobs matching name regex (case-insensitive) |
 | `not:user=` | `not:user=admin` | Exclude jobs by user |
 | `not:account=` | `not:account=system` | Exclude jobs by account |
 | `not:partition=` | `not:partition=debug` | Exclude jobs in partition |
 | `not:state=` | `not:state=running` | Exclude jobs with state |
-| `state=` | `state=pending` | Jobs with state |
-| `name=` | `name=myjob` | Jobs matching name pattern |
+| `not:jobname=` | `not:jobname=test.*` | Exclude jobs matching name regex |
 
 ## Special Commands
 

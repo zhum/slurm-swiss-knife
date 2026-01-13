@@ -621,7 +621,11 @@ class Job(BaseSlurmResource):
 
     @classmethod
     def update(
-        cls, job_id: str, verbose: bool = False, **kwargs: Any
+        cls,
+        job_id: str,
+        verbose: bool = False,
+        dry_run: bool = False,
+        **kwargs: Any,
     ) -> None:
         """Update a job using scontrol."""
         if not job_id:
@@ -632,6 +636,10 @@ class Job(BaseSlurmResource):
         cmd = ["scontrol", "update", f"jobid={job_id}"]
         if options:
             cmd.append(options)
+
+        if dry_run:
+            console.print(f"[yellow]DRY RUN:[/yellow] {' '.join(cmd)}")
+            return
 
         try:
             result = subprocess.run(

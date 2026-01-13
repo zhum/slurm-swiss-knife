@@ -21,7 +21,7 @@ class TestResourceConstants:
 
     def test_cache_timeout_default(self):
         """Test default cache timeout."""
-        assert Resource.CACHE_TIMEOUT == 60
+        assert Resource.CACHE_TIMEOUT == 600
 
     def test_cache_dir(self):
         """Test cache directory."""
@@ -201,16 +201,16 @@ class TestGuessResourceType:
     @mock.patch.object(Resource, "cached_resource_list")
     @mock.patch.object(Resource, "cached_resource")
     def test_guess_associations(self, mock_cached, mock_list):
-        """Test guessing associations."""
+        """Test guessing associations (documents bug and username fallback)."""
         mock_list.return_value = []
         mock_cached.return_value = {}
-        # Note: The code has name[:4] == "assoc" which is buggy
-        # since name[:4] is 4 chars but "assoc" is 5 chars.
-        # This test documents the actual behavior (returns unknown).
-        # A fix would change it to name[:5] == "assoc"
+        # Note: The code has name[:4] == "assoc" which checks only 4 chars
+        # but "assoc" is 5 chars. So "assoctest" doesn't match "assoc".
+        # With username autodetection, "assoctest" looks like a username
+        # (starts with letter, alphanumeric), so it returns "users".
         result, data = Resource.guess_resource_type("assoctest")
-        # Due to the bug, this returns "unknown"
-        assert result == "unknown"
+        # Returns "users" due to username pattern fallback
+        assert result == "users"
 
     @mock.patch.object(Resource, "cached_resource_list")
     def test_guess_dump(self, mock_list):
@@ -290,9 +290,77 @@ class TestGuessResourceType:
     def test_guess_unknown(self, mock_list):
         """Test guessing unknown resource."""
         mock_list.return_value = []
-        result, data = Resource.guess_resource_type("xyzunknown")
+        # Use a string that doesn't match username pattern (has special chars)
+        result, data = Resource.guess_resource_type("xyz!unknown")
         assert result == "unknown"
         assert data is None
+
+    @mock.patch.object(Resource, "cached_resource_list")
+    @mock.patch.object(Resource, "cached_resource")
+    def test_guess_username_not_in_cache(self, mock_cached, mock_list):
+        """Test guessing 'users' for username-like string not in cache."""
+        # Username not in any cached list, but looks like a valid username
+        mock_list.return_value = []
+        mock_cached.return_value = {"testuser": {}}
+        result, data = Resource.guess_resource_type("testuser")
+        assert result == "users"
+
+    @mock.patch.object(Resource, "cached_resource_list")
+    @mock.patch.object(Resource, "cached_resource")
+    def test_guess_username_with_underscore(
+        self, mock_cached, mock_list
+    ):
+        """Test guessing 'users' for username with underscore."""
+        mock_list.return_value = []
+        mock_cached.return_value = {"test_user": {}}
+        result, data = Resource.guess_resource_type("test_user")
+        assert result == "users"
+
+    @mock.patch.object(Resource, "cached_resource_list")
+    @mock.patch.object(Resource, "cached_resource")
+    def test_guess_username_with_hyphen(self, mock_cached, mock_list):
+        """Test guessing 'users' for username with hyphen."""
+        mock_list.return_value = []
+        mock_cached.return_value = {"test-user": {}}
+        result, data = Resource.guess_resource_type("test-user")
+        assert result == "users"
+
+    @mock.patch.object(Resource, "cached_resource_list")
+    @mock.patch.object(Resource, "cached_resource")
+    def test_guess_username_mixed_case(self, mock_cached, mock_list):
+        """Test guessing 'users' for mixed case username."""
+        mock_list.return_value = []
+        mock_cached.return_value = {"TestUser": {}}
+        result, data = Resource.guess_resource_type("TestUser")
+        assert result == "users"
+
+    @mock.patch.object(Resource, "cached_resource_list")
+    @mock.patch.object(Resource, "cached_resource")
+    def test_guess_username_alphanumeric(self, mock_cached, mock_list):
+        """Test guessing 'users' for alphanumeric username."""
+        mock_list.return_value = []
+        mock_cached.return_value = {"user123": {}}
+        result, data = Resource.guess_resource_type("user123")
+        assert result == "users"
+
+    @mock.patch.object(Resource, "cached_resource_list")
+    def test_guess_non_username_pattern(self, mock_list):
+        """Test that strings not matching username pattern return unknown."""
+        mock_list.return_value = []
+        # Starts with number - not a valid username pattern, not pure digits
+        result, data = Resource.guess_resource_type("123abc")
+        # Doesn't match job pattern (has letters) or username pattern
+        # (starts with digit)
+        assert result == "unknown"
+
+    @mock.patch.object(Resource, "cached_resource_list")
+    def test_guess_special_chars_unknown(self, mock_list):
+        """Test that strings with special chars return unknown."""
+        mock_list.return_value = []
+        # Contains special characters - not a valid username
+        # Note: "user@domain" matches "user" prefix, so use something else
+        result, data = Resource.guess_resource_type("abc@domain")
+        assert result == "unknown"
 
 
 class TestUpdateCache:
@@ -593,7 +661,7 @@ class TestCachedResourceList:
                 list_file = f"{tmpdir}/nonexistent.list"
                 Resource.CACHE_LIST_FILES["qos"] = list_file
 
-                result = Resource.cached_resource_list("qos")
+                _ = Resource.cached_resource_list("qos")
 
                 # Should call cached_resource to update
                 mock_cached.assert_called_once_with("qos")

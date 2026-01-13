@@ -379,6 +379,7 @@ _slurm_cli_users_autocomplete() {{
         cls,
         name: str,
         verbose: bool = False,
+        dry_run: bool = False,
         where_conditions: Optional[List[str]] = None,
         set_values: Optional[List[str]] = None,
         **kwargs: Any,
@@ -393,6 +394,7 @@ _slurm_cli_users_autocomplete() {{
         Args:
             name: Username to update (for simple mode)
             verbose: Enable verbose output
+            dry_run: If True, print command without executing
             where_conditions: List of WHERE conditions (e.g., ["account=test"])
             set_values: List of SET values (e.g., ["adminlevel=admin"])
             **kwargs: SET options as keyword arguments
@@ -463,6 +465,10 @@ _slurm_cli_users_autocomplete() {{
                     )
 
                 args.append(f"{key_lower}={value}")
+
+        if dry_run:
+            console.print(f"[yellow]DRY RUN:[/yellow] {' '.join(args)}")
+            return
 
         if verbose:
             console.print(f"Running: {' '.join(args)}")

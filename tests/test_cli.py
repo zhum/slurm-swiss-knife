@@ -1798,6 +1798,49 @@ class TestListFields:
         # Check for common QoS fields
         assert "name" in result.output or "priority" in result.output
 
+    def test_list_fields_show_resource_level(self, runner):
+        """Test show <resource> --list-fields shows fields for that resource."""
+        result = runner.invoke(main, ["show", "jobs", "--list-fields"])
+        assert result.exit_code == 0
+        assert "Available fields for 'jobs'" in result.output
+        assert (
+            "job_id" in result.output
+            or "jobid" in result.output.lower()
+        )
+
+    def test_list_fields_show_resource_level_short(self, runner):
+        """Test show <resource> -L works with short flag."""
+        result = runner.invoke(main, ["show", "nodes", "-L"])
+        assert result.exit_code == 0
+        assert "Available fields for 'nodes'" in result.output
+        assert "state" in result.output
+
+    def test_list_fields_show_no_resource(self, runner):
+        """Test show --list-fields without resource shows all."""
+        result = runner.invoke(main, ["show", "--list-fields"])
+        assert result.exit_code == 0
+        # Should show fields for multiple resources
+        assert "[jobs]" in result.output
+        assert "[nodes]" in result.output
+
+    def test_list_fields_update_resource(self, runner):
+        """Test mod <resource> --list-fields shows fields."""
+        result = runner.invoke(main, ["mod", "part", "-L"])
+        assert result.exit_code == 0
+        assert "Available fields for 'partitions'" in result.output
+
+    def test_list_fields_create_resource(self, runner):
+        """Test add <resource> --list-fields shows fields."""
+        result = runner.invoke(main, ["add", "users", "--list-fields"])
+        assert result.exit_code == 0
+        assert "Available fields for 'users'" in result.output
+
+    def test_list_fields_delete_resource(self, runner):
+        """Test del <resource> -L shows fields."""
+        result = runner.invoke(main, ["del", "qos", "-L"])
+        assert result.exit_code == 0
+        assert "Available fields for 'qos'" in result.output
+
 
 class TestJobControlCommands:
     """Tests for job control commands: hold, release, top, requeue, suspend."""
@@ -1944,6 +1987,43 @@ class TestJobControlCommands:
             result = runner.invoke(main, ["hold", "12345", "-v"])
             assert result.exit_code == 0
             assert "Running:" in result.output
+
+    def test_hold_command_user_hold(self, runner):
+        """Test hold command with --user option uses uhold."""
+        from slurm_cli.cli import register_commands
+
+        register_commands()
+        with patch("subprocess.run") as mock_run:
+            mock_run.return_value = MagicMock(
+                returncode=0, stdout="", stderr=""
+            )
+            result = runner.invoke(main, ["hold", "-u", "12345"])
+            assert result.exit_code == 0
+            mock_run.assert_called()
+            call_args = mock_run.call_args[0][0]
+            assert "scontrol" in call_args
+            assert "uhold" in call_args
+            assert "12345" in call_args
+            assert "User held" in result.output
+
+    def test_hold_command_user_hold_with_reason(self, runner):
+        """Test hold command with --user and --reason options."""
+        from slurm_cli.cli import register_commands
+
+        register_commands()
+        with patch("subprocess.run") as mock_run:
+            mock_run.return_value = MagicMock(
+                returncode=0, stdout="", stderr=""
+            )
+            result = runner.invoke(
+                main, ["hold", "--user", "12345", "-r", "Review needed"]
+            )
+            assert result.exit_code == 0
+            mock_run.assert_called()
+            call_args = mock_run.call_args[0][0]
+            assert "scontrol" in call_args
+            assert "uhold" in call_args
+            assert "reason=Review needed" in call_args
 
     def test_job_commands_in_help(self, runner):
         """Test that job control commands appear in help."""
@@ -2272,26 +2352,29 @@ class TestResourceSpecificHelp:
         """Test add command shows available resources in help."""
         result = runner.invoke(main, ["add", "-h"])
         assert result.exit_code == 0
-        # Should list available resources
-        assert "coord" in result.output.lower()
+        # Should list available resources that support create action
         assert "users" in result.output.lower()
         assert "assoc" in result.output.lower()
+        assert "qos" in result.output.lower()
 
     def test_show_command_help(self, runner):
         """Test show command shows available resources in help."""
         result = runner.invoke(main, ["show", "-h"])
         assert result.exit_code == 0
-        # Should list available resources
-        assert "partitions" in result.output.lower()
-        assert "nodes" in result.output.lower()
+        # Should list available resources (may include aliases like 'part')
+        assert "part" in result.output.lower()
+        assert "node" in result.output.lower()
         assert "qos" in result.output.lower()
 
     def test_delete_command_help(self, runner):
         """Test delete command shows available resources in help."""
         result = runner.invoke(main, ["delete", "-h"])
         assert result.exit_code == 0
+        # Should list available resources that support delete action
         assert "users" in result.output.lower()
-        assert "assoc" in result.output.lower()
+        assert "qos" in result.output.lower()
+        # associations don't have delete action, so should not be listed
+        assert "assoc" not in result.output.lower()
 
     def test_modify_command_help(self, runner):
         """Test modify command shows available resources in help."""
@@ -2507,4 +2590,115 @@ class TestGuessResourceType:
                 return_value=[{"name": "alice"}],
             ):
                 resource_type, _ = Resource.guess_resource_type("alice")
+                assert resource_type == "users"
+
+
+class TestResourceTypeAutodetection:
+    """Tests for resource type autodetection in CLI commands."""
+
+    def test_show_job_by_numeric_id(self):
+        """Test 'slurm-cli show 62792' detects job by numeric ID."""
+        runner = CliRunner()
+        with patch("slurm_cli.cli.Job.show") as mock_show:
+            result = runner.invoke(main, ["show", "62792"])
+            # Should call Job.show with the job ID
+            mock_show.assert_called_once()
+            call_kwargs = mock_show.call_args[1]
+            assert call_kwargs["field"] == "62792"
+
+    def test_show_job_by_array_id(self):
+        """Test 'slurm-cli show 12345_1' detects array job ID."""
+        runner = CliRunner()
+        with patch("slurm_cli.cli.Job.show") as mock_show:
+            result = runner.invoke(main, ["show", "12345_1"])
+            mock_show.assert_called_once()
+            call_kwargs = mock_show.call_args[1]
+            assert call_kwargs["field"] == "12345_1"
+
+    def test_show_username_autodetection(self):
+        """Test 'slurm-cli show username' detects user."""
+        runner = CliRunner()
+        with patch("slurm_cli.cli.ensure_resource_name") as mock_ensure:
+            mock_ensure.return_value = ("users", "testuser", {})
+            with patch("slurm_cli.cli.User.show") as mock_show:
+                result = runner.invoke(main, ["show", "testuser"])
+                mock_ensure.assert_called()
+                # Verify it was called with the username
+                args = mock_ensure.call_args[0]
+                assert args[0] == "testuser"
+
+    def test_show_job_with_multiple_ids(self):
+        """Test showing multiple job IDs."""
+        runner = CliRunner()
+        with patch("slurm_cli.cli.Job.show") as mock_show:
+            result = runner.invoke(main, ["show", "jobs", "123", "456"])
+            # Should show jobs for each ID
+            assert mock_show.call_count >= 1
+
+    def test_show_explicit_resource_type(self):
+        """Test that explicit resource type still works."""
+        runner = CliRunner()
+        with patch("slurm_cli.cli.ensure_resource_name") as mock_ensure:
+            mock_ensure.return_value = ("jobs", None, None)
+            with patch("slurm_cli.cli.Job.show") as mock_show:
+                result = runner.invoke(main, ["show", "jobs"])
+                mock_ensure.assert_called()
+                args = mock_ensure.call_args[0]
+                assert args[0] == "jobs"
+
+    def test_show_nodes_still_works(self):
+        """Test that 'slurm-cli show nodes' still works."""
+        runner = CliRunner()
+        with patch("slurm_cli.cli.ensure_resource_name") as mock_ensure:
+            mock_ensure.return_value = ("nodes", (), {})
+            with patch("slurm_cli.cli.Node.show") as mock_show:
+                result = runner.invoke(main, ["show", "nodes"])
+                mock_ensure.assert_called()
+                args = mock_ensure.call_args[0]
+                assert args[0] == "nodes"
+
+    def test_guess_user_by_username_pattern(self):
+        """Test guessing 'users' for username-like string not in cache."""
+        from slurm_cli.utils.resources import Resource
+
+        with patch.object(
+            Resource, "cached_resource_list", return_value=[]
+        ):
+            with patch.object(
+                Resource, "cached_resource", return_value={"user1": {}}
+            ):
+                # Valid username pattern (letter + alphanumeric)
+                resource_type, _ = Resource.guess_resource_type(
+                    "szhumatiy"
+                )
+                assert resource_type == "users"
+
+    def test_guess_user_with_underscore(self):
+        """Test guessing 'users' for username with underscore."""
+        from slurm_cli.utils.resources import Resource
+
+        with patch.object(
+            Resource, "cached_resource_list", return_value=[]
+        ):
+            with patch.object(
+                Resource, "cached_resource", return_value={"user1": {}}
+            ):
+                resource_type, _ = Resource.guess_resource_type(
+                    "test_user"
+                )
+                assert resource_type == "users"
+
+    def test_guess_user_with_hyphen(self):
+        """Test guessing 'users' for username with hyphen."""
+        from slurm_cli.utils.resources import Resource
+
+        with patch.object(
+            Resource, "cached_resource_list", return_value=[]
+        ):
+            with patch.object(
+                Resource, "cached_resource", return_value={"user1": {}}
+            ):
+                resource_type, _ = Resource.guess_resource_type(
+                    "test-user"
+                )
                 assert resource_type == "users"

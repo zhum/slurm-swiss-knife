@@ -178,6 +178,7 @@ class Qos(BaseSlurmResource):
         cls,
         name: str,
         verbose: bool = False,
+        dry_run: bool = False,
         where_conditions: Optional[List[str]] = None,
         set_values: Optional[List[str]] = None,
         **kwargs: Any,
@@ -192,6 +193,7 @@ class Qos(BaseSlurmResource):
         Args:
             name: QoS name to update (for simple mode)
             verbose: Enable verbose output
+            dry_run: If True, print command without executing
             where_conditions: List of WHERE conditions (e.g., ["priority=100"])
             set_values: List of SET values (e.g., ["priority=200"])
             **kwargs: SET options as keyword arguments
@@ -250,6 +252,10 @@ class Qos(BaseSlurmResource):
                         return
 
                 args.append(f"{key_lower}={value}")
+
+        if dry_run:
+            console.print(f"[yellow]DRY RUN:[/yellow] {' '.join(args)}")
+            return
 
         if verbose:
             console.print(f"Running: {' '.join(args)}")

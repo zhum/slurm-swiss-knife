@@ -447,7 +447,7 @@ def _get_nodes_by_reason_text(
                 # Extract reason
                 idx = line.find("Reason=")
                 if idx >= 0:
-                    reason = line[idx + 7 :].strip()
+                    reason = line[idx + 7:].strip()
                     if pattern.search(reason):
                         node_set.add(current_node)
 

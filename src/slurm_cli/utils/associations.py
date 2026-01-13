@@ -759,6 +759,7 @@ _slurm_cli_associations_autocomplete() {{
         cls,
         name: str,
         verbose: bool = False,
+        dry_run: bool = False,
         where_conditions: Optional[List[str]] = None,
         set_values: Optional[List[str]] = None,
         **kwargs: Any,
@@ -770,6 +771,7 @@ _slurm_cli_associations_autocomplete() {{
         Args:
             name: Username for the association
             verbose: Enable verbose output
+            dry_run: If True, print command without executing
             where_conditions: List of WHERE conditions
             set_values: List of SET values
             **kwargs: Additional SET values
@@ -782,9 +784,11 @@ _slurm_cli_associations_autocomplete() {{
             args.append("set")
             if set_values:
                 args.extend(set_values)
-            console.print(
-                f"Updating user associations where {' '.join(where_conditions)}"
-            )
+            if not dry_run:
+                console.print(
+                    f"Updating user associations where "
+                    f"{' '.join(where_conditions)}"
+                )
         else:
             args.append("where")
             args.append(f"name={name}")
@@ -792,7 +796,12 @@ _slurm_cli_associations_autocomplete() {{
             for key, value in kwargs.items():
                 if value is not None:
                     args.append(f"{key}={value}")
-            console.print(f"Updating association for user: {name}")
+            if not dry_run:
+                console.print(f"Updating association for user: {name}")
+
+        if dry_run:
+            console.print(f"[yellow]DRY RUN:[/yellow] {' '.join(args)}")
+            return
 
         try:
             result = subprocess.run(

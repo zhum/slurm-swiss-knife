@@ -7,10 +7,49 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- **Resource Type Guessing**: `slurm-cli show 62792` now correctly shows job 62792
+  - Removed strict resource validation to allow job IDs and resource names directly
+  - Numeric values are automatically recognized as job IDs
+  - Usernames are automatically detected: `slurm-cli show username` shows user info
+
+- **Time Value Parsing**: Fixed parsing of time values like `1:00:00` in update commands
+  - Previously failed due to incorrect handling of optional regex groups
+
+- **List Value Validation**: Fixed validation of enum-style arguments (e.g., `state=drain`)
+  - Previously failed due to spaces in valid value lists not being stripped
+
+### Changed
+
+- **--dry-run Option**: All scontrol/sacctmgr commands now support the `--dry-run` flag
+  - Works with: `drain`, `undrain`, `reboot`, `cancel_reboot`, `hold`, `release`, `top`, `requeue`, `suspend`
+  - Also works with `update` command for all resources (partitions, nodes, jobs, users, qos, etc.)
+  - Shows the actual slurm command that would be executed
+  - Can be placed anywhere on command line: `slurm-cli update part batch state=drain --dry-run`
+  - Also works as global option: `slurm-cli --dry-run reboot partition=gpu`
+
+- **Improved Help Output**: Action commands now show cleaner resource lists
+  - Usage line shows `RESOURCE` metavar instead of long list of all choices
+  - Epilog lists available resources for each action with aliases
+  - Only resources supporting the action are shown (e.g., `delete -h` excludes associations)
+  - Added `--list-fields/-L` option to `show` command for resource-level field listing
+    - `slurm-cli show jobs --list-fields` - shows fields available for jobs
+    - `slurm-cli show --list-fields` - shows all available fields
+- **Refactored Prefix Matching**: Command and resource names now use dynamically computed shortest unique prefixes
+  - Created `prefix_utils.py` module with `PrefixMatcher` class and `compute_shortest_unique_prefixes` function
+  - Centralized command definitions in `COMMANDS` configuration with aliases and descriptions
+  - Centralized resource definitions in `RESOURCES` configuration with aliases, descriptions, and action help (syntax, examples, options)
+  - Merged `RESOURCE_HELP` from `cli.py` into `RESOURCES` in `prefix_utils.py` - single source of truth
+  - Added `get_resource_help()` and `get_resources_epilog()` functions to retrieve help info for resources and actions
+  - Bash autocomplete patterns are now generated from config instead of hardcoded
+  - CLI argument parsing uses the same prefix matching logic as autocomplete
+  - All prefixes computed to avoid conflicts (e.g., `undrain` doesn't match `update`)
+
 ### Added
 
 - **Control Commands**: Added scontrol commands with shortest unique prefix support
-  - `reconfigure` (aliases: reconf, rec) - Force slurmctld to re-read configuration
+  - `reconfigure` (aliases: reconf, confreload) - Force slurmctld to re-read configuration
   - `ping` (alias: pi) - Check if slurmctld is responding
   - `takeover` (alias: tak) - Cause backup slurmctld to take over as primary
   - `version` (alias: ver) - Show slurm-cli and Slurm version
@@ -21,13 +60,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - `reboot` (alias: reb) - Reboot nodes with optional asap, nextstate, and reason
   - `cancel_reboot` (alias: cancel_reb) - Cancel pending reboot on nodes
 - **Job Control Commands**: Added commands to manage job execution state
-  - `hold` (alias: hol) - Hold jobs with optional reason (-r, --reason, or reason=)
+  - `hold` (alias: hol) - Hold jobs with optional reason (-r, --reason, or reason=) and user hold (-u, --user for scontrol uhold)
   - `release` (alias: rel) - Release held jobs
   - `top` - Move jobs to top of queue
   - `requeue` (alias: req) - Requeue jobs (restart from beginning)
   - `suspend` (alias: sus) - Suspend running jobs
-  - All job control commands support job filters: user=, account=, partition=, state=, name=
-  - Exclusion filters: not:user=, not:account=, not:partition=, not:state=, not:name=
+  - All job control commands support job filters: user=, account=, partition=, state=, name=, jobname=
+  - `jobname=REGEX` - filter jobs by name using regex pattern (case-insensitive)
+  - Exclusion filters: not:user=, not:account=, not:partition=, not:state=, not:name=, not:jobname=
   - Example: `slurm-cli hold partition=gpu not:user=admin` holds all GPU jobs except admin's
 - **Node Filter Exclusions**: Prefix filters with `not:` to exclude nodes
   - `not:partition=gpu` - exclude nodes from GPU partition

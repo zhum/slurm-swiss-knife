@@ -305,7 +305,11 @@ _slurm_cli_nodes_autocomplete() {{
 
     @classmethod
     def update(
-        cls, name: str, verbose: bool = False, **kwargs: Any
+        cls,
+        name: str,
+        verbose: bool = False,
+        dry_run: bool = False,
+        **kwargs: Any,
     ) -> None:
         """Update a node.
 
@@ -354,6 +358,10 @@ _slurm_cli_nodes_autocomplete() {{
         for key, value in kwargs.items():
             if value is not None:
                 args.append(f"{key}={value}")
+
+        if dry_run:
+            console.print(f"[yellow]DRY RUN:[/yellow] {' '.join(args)}")
+            return
 
         if verbose:
             console.print(f"[dim]Running: {' '.join(args)}[/dim]")

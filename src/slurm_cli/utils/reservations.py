@@ -200,7 +200,11 @@ class Reservation(BaseSlurmResource):
 
     @classmethod
     def update(
-        cls, name: str, verbose: bool = False, **kwargs: Any
+        cls,
+        name: str,
+        verbose: bool = False,
+        dry_run: bool = False,
+        **kwargs: Any,
     ) -> None:
         """Update a reservation."""
         set = {}
@@ -227,6 +231,10 @@ class Reservation(BaseSlurmResource):
             f"reservationname={name}",
             options,
         ]
+
+        if dry_run:
+            console.print(f"[yellow]DRY RUN:[/yellow] {' '.join(args)}")
+            return
 
         try:
             result = subprocess.run(

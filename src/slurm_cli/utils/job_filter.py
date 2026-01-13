@@ -5,7 +5,8 @@ Supports filtering jobs by:
 - account=<account> - jobs charged to a specific account
 - partition=<name> - jobs in a specific partition
 - state=<state> - jobs with a specific state
-- name=<pattern> - jobs matching a name pattern
+- name=<pattern> - jobs matching exact name (squeue -n)
+- jobname=<regex> - jobs matching name by regex pattern
 - nodes=<nodelist> - jobs running on specific nodes
 - reservation=<name> - jobs using a specific reservation
 
@@ -14,14 +15,17 @@ Exclusion filters (prefix with not:):
 - not:account=<account> - exclude jobs by account
 - not:partition=<name> - exclude jobs in partition
 - not:state=<state> - exclude jobs with state
+- not:jobname=<regex> - exclude jobs matching name regex
 
 Filter syntax can be used in delete and update jobs commands:
 - slurm-cli delete jobs user=john
 - slurm-cli update jobs state=pending priority=100
 - slurm-cli hold partition=gpu not:user=admin
+- slurm-cli hold jobname=test.*
 """
 
 import json
+import re
 import subprocess
 from typing import List
 
@@ -34,6 +38,7 @@ JOB_FILTER_PREFIXES = [
     "partition=",
     "state=",
     "name=",
+    "jobname=",
     "nodes=",
     "reservation=",
 ]
@@ -102,6 +107,8 @@ def resolve_job_filter(
         return _get_jobs_by_state(filter_expr[6:], verbose)
     elif filter_lower.startswith("name="):
         return _get_jobs_by_name(filter_expr[5:], verbose)
+    elif filter_lower.startswith("jobname="):
+        return _get_jobs_by_name_regex(filter_expr[8:], verbose)
     elif filter_lower.startswith("nodes="):
         return _get_jobs_by_nodes(filter_expr[6:], verbose)
     elif filter_lower.startswith("reservation="):
@@ -272,6 +279,62 @@ def _get_jobs_by_name(name: str, verbose: bool = False) -> List[str]:
         if verbose:
             console.print(
                 f"[red]Failed to get jobs by name: {e.stderr}[/red]"
+            )
+        return []
+
+
+def _get_jobs_by_name_regex(
+    pattern: str, verbose: bool = False
+) -> List[str]:
+    """Get job IDs for jobs with name matching a regex pattern.
+
+    Args:
+        pattern: Regex pattern to match against job names
+        verbose: Print debug information
+
+    Returns:
+        List of job IDs with names matching the pattern
+    """
+    try:
+        # Compile regex pattern (case-insensitive)
+        try:
+            regex = re.compile(pattern, re.IGNORECASE)
+        except re.error as e:
+            if verbose:
+                console.print(
+                    f"[red]Invalid regex pattern '{pattern}': {e}[/red]"
+                )
+            return []
+
+        # Get all jobs with their names
+        result = subprocess.run(
+            ["squeue", "-h", "-o", "%i %j"],
+            capture_output=True,
+            text=True,
+            check=True,
+            errors="replace",
+        )
+
+        job_ids = []
+        for line in result.stdout.strip().split("\n"):
+            if not line.strip():
+                continue
+            parts = line.split(maxsplit=1)
+            if len(parts) >= 2:
+                job_id, job_name = parts[0], parts[1]
+                if regex.search(job_name):
+                    job_ids.append(job_id.strip())
+
+        if verbose:
+            console.print(
+                f"[dim]Jobs matching name pattern '{pattern}': "
+                f"{len(job_ids)} found[/dim]"
+            )
+        return job_ids
+    except subprocess.CalledProcessError as e:
+        if verbose:
+            console.print(
+                f"[red]Failed to get jobs by name regex: {e.stderr}[/red]"
             )
         return []
 

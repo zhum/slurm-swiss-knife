@@ -49,6 +49,12 @@ class TestIsJobFilter:
         assert is_job_filter("name=myjob")
         assert is_job_filter("NAME=test")
 
+    def test_jobname_filter(self):
+        """Test jobname= filter is recognized."""
+        assert is_job_filter("jobname=test.*")
+        assert is_job_filter("JOBNAME=^myjob$")
+        assert is_job_filter("jobname=foo|bar")
+
     def test_nodes_filter(self):
         """Test nodes= filter is recognized."""
         assert is_job_filter("nodes=node001")
@@ -630,6 +636,61 @@ class TestResolveJobFilterVerbose:
 
             assert result == ["12345"]
             mock_print.assert_called_once()
+
+    @mock.patch("slurm_cli.utils.job_filter.subprocess.run")
+    def test_jobname_filter_regex(self, mock_run):
+        """Test resolve_job_filter jobname filter with regex."""
+        mock_run.return_value = mock.Mock(
+            stdout="12345 test_job1\n12346 test_job2\n12347 other_job\n",
+            returncode=0,
+        )
+
+        result = resolve_job_filter("jobname=test_.*")
+        assert "12345" in result
+        assert "12346" in result
+        assert "12347" not in result
+
+    @mock.patch("slurm_cli.utils.job_filter.subprocess.run")
+    def test_jobname_filter_case_insensitive(self, mock_run):
+        """Test jobname filter is case-insensitive."""
+        mock_run.return_value = mock.Mock(
+            stdout="12345 TestJob\n12346 testjob\n12347 TESTJOB\n",
+            returncode=0,
+        )
+
+        result = resolve_job_filter("jobname=testjob")
+        assert "12345" in result
+        assert "12346" in result
+        assert "12347" in result
+
+    @mock.patch("slurm_cli.utils.job_filter.subprocess.run")
+    def test_jobname_filter_verbose(self, mock_run):
+        """Test jobname filter with verbose output."""
+        mock_run.return_value = mock.Mock(
+            stdout="12345 my_test\n12346 other\n", returncode=0
+        )
+
+        with mock.patch(
+            "slurm_cli.utils.job_filter.console.print"
+        ) as mock_print:
+            result = resolve_job_filter("jobname=my_.*", verbose=True)
+
+            assert result == ["12345"]
+            mock_print.assert_called_once()
+
+    @mock.patch("slurm_cli.utils.job_filter.subprocess.run")
+    def test_jobname_filter_invalid_regex(self, mock_run):
+        """Test jobname filter with invalid regex."""
+        with mock.patch(
+            "slurm_cli.utils.job_filter.console.print"
+        ) as mock_print:
+            result = resolve_job_filter(
+                "jobname=[invalid", verbose=True
+            )
+
+            assert result == []
+            mock_print.assert_called_once()
+            assert "Invalid regex" in str(mock_print.call_args)
 
     @mock.patch("slurm_cli.utils.job_filter.subprocess.run")
     def test_nodes_filter_verbose(self, mock_run):

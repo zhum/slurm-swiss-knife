@@ -53,6 +53,17 @@ from .utils.node_filter import (
 )
 from .utils.nodes import Node
 from .utils.partitions import Partition
+from .utils.prefix_utils import (  # get_all_resource_names,
+    COMMANDS,
+    RESOURCES,
+    generate_bash_command_case,
+    generate_bash_resource_case,
+    get_all_command_names,
+    get_cached_command_matcher,
+    get_cached_resource_matcher,
+    get_resource_help,
+    get_resources_epilog,
+)
 from .utils.profiles import (
     is_profile_help,
     show_all_profile_fields,
@@ -154,453 +165,73 @@ def resolve_node_filters_in_options(
     return options
 
 
-# Resource-specific help texts for each action
-RESOURCE_HELP = {
-    "coordinators": {
-        "description": "Manage Slurm account coordinators",
-        "create": {
-            "syntax": "slurm-cli add coord USER account=ACCOUNT",
-            "examples": [
-                "slurm-cli add coord john account=research",
-                "slurm-cli add coord user=jane account=engineering",
-            ],
-            "options": ["user", "name", "account"],
-        },
-        "delete": {
-            "syntax": "slurm-cli del coord user=USER account=ACCOUNT",
-            "examples": [
-                "slurm-cli del coord user=john account=research",
-                "slurm-cli del coord account=eng user=alice -y",
-            ],
-            "options": ["user", "name", "account"],
-        },
-        "show": {
-            "syntax": "slurm-cli show coord [account=ACCOUNT] [user=USER]",
-            "examples": [
-                "slurm-cli show coord",
-                "slurm-cli show coord account=research",
-                "slurm-cli show coord user=john",
-            ],
-            "options": ["account", "user", "name"],
-        },
-    },
-    "users": {
-        "description": "Manage Slurm user accounts",
-        "create": {
-            "syntax": "slurm-cli add users USERNAME [OPTIONS]",
-            "examples": [
-                "slurm-cli add users john account=research",
-                "slurm-cli add users name=jane account=eng defaultaccount=eng",
-            ],
-            "options": [
-                "name",
-                "account",
-                "adminlevel",
-                "cluster",
-                "defaultaccount",
-                "defaultwckey",
-                "partition",
-            ],
-        },
-        "delete": {
-            "syntax": "slurm-cli del users USERNAME",
-            "examples": [
-                "slurm-cli del users john",
-                "slurm-cli del users -y john",
-            ],
-            "options": ["name"],
-        },
-        "update": {
-            "syntax": "slurm-cli mod users USERNAME" " set KEY=VALUE",
-            "examples": [
-                "slurm-cli mod users john set adminlevel=operator",
-                "slurm-cli mod users defaultaccount=old set"
-                " defaultaccount=new",
-            ],
-            "options": [
-                "adminlevel",
-                "defaultaccount",
-                "defaultwckey",
-                "newname",
-                "partition",
-            ],
-        },
-        "show": {
-            "syntax": "slurm-cli show users [FILTER]",
-            "examples": [
-                "slurm-cli show users",
-                "slurm-cli show users adminlevel=Admin",
-            ],
-            "options": ["name", "account", "adminlevel", "cluster"],
-        },
-    },
-    "associations": {
-        "description": "Manage Slurm user-account associations",
-        "create": {
-            "syntax": "slurm-cli add assoc user=USERNAME account=ACCOUNT"
-            " [OPTIONS]",
-            "examples": [
-                "slurm-cli add assoc user=john account=research",
-                "slurm-cli add assoc name=jane account=eng qos=normal,high",
-            ],
-            "options": [
-                "name/user",
-                "account",
-                "cluster",
-                "partition",
-                "fairshare",
-                "qos",
-                "defaultqos",
-                "maxjobs",
-                "maxsubmit",
-            ],
-        },
-        "update": {
-            "syntax": "slurm-cli mod assoc user=USER account=ACCOUNT"
-            " set KEY=VALUE",
-            "examples": [
-                "slurm-cli mod assoc user=john account=research set"
-                " fairshare=100",
-                "slurm-cli mod assoc account=eng set defaultqos=normal",
-            ],
-            "options": [
-                "fairshare",
-                "qos",
-                "defaultqos",
-                "grpjobs",
-                "grpsubmit",
-                "maxjobs",
-                "maxsubmit",
-                "maxwall",
-            ],
-        },
-        "show": {
-            "syntax": "slurm-cli show assoc [FILTER] [--tree]",
-            "examples": [
-                "slurm-cli show assoc",
-                "slurm-cli show assoc user=john",
-                "slurm-cli show assoc account=research --tree",
-            ],
-            "options": [
-                "user",
-                "account",
-                "cluster",
-                "partition",
-                "--tree",
-                "--indent",
-            ],
-        },
-    },
-    "accounts": {
-        "description": "Manage Slurm accounts hierarchy",
-        "create": {
-            "syntax": "slurm-cli add accounts NAME [OPTIONS]",
-            "examples": [
-                "slurm-cli add accounts research organization=university",
-                "slurm-cli add accounts eng parent=root"
-                " description='Engineering'",
-            ],
-            "options": [
-                "name",
-                "organization",
-                "parent",
-                "description",
-                "defaultqos",
-            ],
-        },
-        "update": {
-            "syntax": "slurm-cli mod accounts NAME set KEY=VALUE",
-            "examples": [
-                "slurm-cli mod accounts research set description='New desc'",
-                "slurm-cli mod accounts parent=old set parent=new",
-            ],
-            "options": [
-                "description",
-                "organization",
-                "parent",
-                "defaultqos",
-            ],
-        },
-        "delete": {
-            "syntax": "slurm-cli del accounts NAME",
-            "examples": ["slurm-cli del accounts oldaccount"],
-            "options": ["name"],
-        },
-        "show": {
-            "syntax": "slurm-cli show accounts [FILTER]",
-            "examples": [
-                "slurm-cli show accounts",
-                "slurm-cli show accounts organization=nvidia",
-            ],
-            "options": [
-                "name",
-                "organization",
-                "parent",
-                "description",
-            ],
-        },
-    },
-    "qos": {
-        "description": "Manage Slurm Quality of Service settings",
-        "create": {
-            "syntax": "slurm-cli add qos NAME [OPTIONS]",
-            "examples": [
-                "slurm-cli add qos highprio priority=1000",
-                "slurm-cli add qos express maxwall=1:00:00 preemptmode=cancel",
-            ],
-            "options": [
-                "name",
-                "priority",
-                "maxwall",
-                "maxjobspu",
-                "grpjobs",
-                "preemptmode",
-                "flags",
-            ],
-        },
-        "update": {
-            "syntax": "slurm-cli mod qos NAME set KEY=VALUE",
-            "examples": [
-                "slurm-cli mod qos normal set priority=500",
-                "slurm-cli mod qos batch set maxjobspu=10 preemptmode=requeue",
-            ],
-            "options": [
-                "priority",
-                "maxwall",
-                "maxjobspu",
-                "grpjobs",
-                "preemptmode",
-            ],
-        },
-        "delete": {
-            "syntax": "slurm-cli del qos NAME",
-            "examples": ["slurm-cli del qos oldqos"],
-            "options": ["name"],
-        },
-        "show": {
-            "syntax": "slurm-cli show qos [NAME]",
-            "examples": [
-                "slurm-cli show qos",
-                "slurm-cli show qos normal",
-            ],
-            "options": ["name"],
-        },
-    },
-    "partitions": {
-        "description": "Manage Slurm partitions",
-        "create": {
-            "syntax": "slurm-cli add part NAME [OPTIONS]",
-            "examples": [
-                "slurm-cli add part batch nodes=node[01-10]",
-                "slurm-cli add part gpu nodes=gpu[01-04] state=up",
-            ],
-            "options": [
-                "name",
-                "nodes",
-                "state",
-                "maxtime",
-                "default",
-                "hidden",
-            ],
-        },
-        "update": {
-            "syntax": "slurm-cli mod part NAME set KEY=VALUE",
-            "examples": [
-                "slurm-cli mod part batch set state=drain",
-                "slurm-cli mod part gpu set maxtime=24:00:00",
-            ],
-            "options": [
-                "state",
-                "maxtime",
-                "nodes",
-                "default",
-                "hidden",
-            ],
-        },
-        "delete": {
-            "syntax": "slurm-cli del part NAME",
-            "examples": ["slurm-cli del part oldpartition"],
-            "options": ["name"],
-        },
-        "show": {
-            "syntax": "slurm-cli show part [NAME]",
-            "examples": [
-                "slurm-cli show part",
-                "slurm-cli show part batch",
-            ],
-            "options": ["name", "state"],
-        },
-    },
-    "nodes": {
-        "description": "Manage Slurm compute nodes",
-        "update": {
-            "syntax": "slurm-cli mod nodes NAME set KEY=VALUE",
-            "examples": [
-                "slurm-cli mod nodes node01 set state=drain"
-                " reason='Maintenance'",
-                "slurm-cli mod nodes gpu[01-04] set state=resume",
-            ],
-            "options": ["state", "reason", "weight", "features"],
-        },
-        "show": {
-            "syntax": "slurm-cli show nodes [NAME]",
-            "examples": [
-                "slurm-cli show nodes",
-                "slurm-cli show nodes node01",
-                "slurm-cli show nodes state=idle",
-            ],
-            "options": ["name", "state", "partition"],
-        },
-    },
-    "reservations": {
-        "description": "Manage Slurm reservations",
-        "create": {
-            "syntax": "slurm-cli add res NAME [OPTIONS]",
-            "examples": [
-                "slurm-cli add res maint starttime=now"
-                " duration=2:00:00 nodes=ALL",
-                "slurm-cli add res team users=john,jane nodes=node[01-04]",
-            ],
-            "options": [
-                "name",
-                "starttime",
-                "duration",
-                "endtime",
-                "nodes",
-                "users",
-                "accounts",
-            ],
-        },
-        "update": {
-            "syntax": "slurm-cli mod res NAME set KEY=VALUE",
-            "examples": [
-                "slurm-cli mod res maint set duration=4:00:00",
-                "slurm-cli mod res team set users+=newuser",
-            ],
-            "options": [
-                "duration",
-                "endtime",
-                "nodes",
-                "users",
-                "accounts",
-            ],
-        },
-        "delete": {
-            "syntax": "slurm-cli del res NAME",
-            "examples": ["slurm-cli del res oldreservation"],
-            "options": ["name"],
-        },
-        "show": {
-            "syntax": "slurm-cli show res [NAME]",
-            "examples": [
-                "slurm-cli show res",
-                "slurm-cli show res maint",
-            ],
-            "options": ["name"],
-        },
-    },
-}
-
-RESOURCES_ALIASES = {
-    "partitions": ["part", "parts"],
-    "nodes": ["node"],
-    "users": ["user"],
-    "qos": ["q"],
-    "accounts": ["acc", "account"],
-    "associations": ["assoc", "association"],
-    "reservations": ["res", "reservation"],
-    "coordinators": ["coord", "coordinator"],
-    "events": ["event", "ev"],
-    "jobs": ["job", "j"],
-}
+# Resource help now centralized in prefix_utils.RESOURCES
 
 
 def get_resource_choices() -> List[str]:
+    """Get all valid resource names including aliases."""
+    # matcher = get_cached_resource_matcher()
     routes = ROUTES["get-set"]
     if isinstance(routes, dict):
+        # Include canonical names from routes and all aliases
         choices = list(routes.keys())
-        # Add aliases
-        for resource, alias_list in RESOURCES_ALIASES.items():
-            if resource in choices:
-                choices.extend(alias_list)
-        return list(sorted(choices))
+        for res in routes.keys():
+            if res in RESOURCES:
+                choices.extend(RESOURCES[res]["aliases"])
+        return list(sorted(set(choices)))
     return []
 
 
 def get_show_resource_choices() -> List[str]:
+    """Get all valid resource names for show command."""
     ret = get_resource_choices()
-    ret.extend(
-        [
-            "conf[ig]",
-            "prob[lems]",
-            "stat[s]",
-            "assoc[iations]",
-            "dump[s]",
-            "ev[ents]",
-            "lic[enses]",
-            "reso[urces]",
-            "bad[s]",
-            "r[unawayjobs]",
-            "tra[nsactions]",
-            "tr[es]",
-            "ar[chive]",
-        ]
-    )
-    return ret
+    # Add additional show-only resources
+    additional = [
+        "config",
+        "problems",
+        "stats",
+        "associations",
+        "dumps",
+        "events",
+        "licenses",
+        "resources",
+        "bads",
+        "runawayjobs",
+        "transactions",
+        "tres",
+        "archive",
+    ]
+    ret.extend(additional)
+    # Also add aliases for additional resources
+    for res in additional:
+        if res in RESOURCES:
+            ret.extend(RESOURCES[res]["aliases"])
+    return list(sorted(set(ret)))
 
 
 def resolve_resource_alias(resource: str) -> str:
-    """Resolve resource alias to canonical name."""
-    # Check if resource is already a canonical name
-    if resource in RESOURCES_ALIASES:
-        return resource
-    # Check if resource is an alias
-    for canonical, alias_list in RESOURCES_ALIASES.items():
-        if resource in alias_list:
-            return canonical
-    return resource
+    """Resolve resource alias/prefix to canonical name."""
+    matcher = get_cached_resource_matcher()
+    canonical, _ = matcher.match(resource)
+    return canonical
 
 
 def resolve_command_alias(command: str) -> str:
-    """Resolve command alias to canonical name."""
-    # Try prefix matching on main commands only
-    main_commands = {
-        "show": ["show", "get"],
-        "create": ["new", "add", "create"],
-        "update": ["edit", "change", "modify", "update", "set"],
-        "delete": ["delete", "remove", "rm"],
-        "list-resources": ["ls", "list"],
-        "autocomplete": ["autocomplete"],
-        "help": ["help"],
-        "version": ["version"],
-        "reconfigure": ["reconfigure"],
-        "ping": ["ping"],
-        "takeover": ["takeover"],
-        "token": ["token"],
-        "drain": ["drain"],
-        "undrain": ["undrain", "resume"],
-        "reboot": ["reboot"],
-        "cancel_reboot": ["cancel_reboot"],
-        "hold": ["hold"],
-        "release": ["release"],
-        "top": ["top"],
-        "requeue": ["requeue"],
-        "suspend": ["suspend"],
-    }
-    matches = [
-        (cmd, alias)
-        for cmd, aliases in main_commands.items()
-        for alias in aliases
-        if alias.startswith(command)
-    ]
-
-    if len(matches) == 1:
-        return matches[0][0]
-    elif len(matches) > 1:
-        raise click.ClickException(
-            f"Ambiguous command: {command}. "
-            f"Could be: {', '.join([f'{alias}' for _, alias in matches])}"
-        )
+    """Resolve command alias/prefix to canonical name."""
+    matcher = get_cached_command_matcher()
+    canonical, exact = matcher.match(command)
+    if canonical == command and not exact:
+        # No match found - check for ambiguous prefix
+        all_names = matcher.get_all_names()
+        matches = [
+            n for n in all_names if n.startswith(command.lower())
+        ]
+        if len(matches) > 1:
+            raise click.ClickException(
+                f"Ambiguous command: {command}. "
+                f"Could be: {', '.join(matches)}"
+            )
+    return canonical
 
 
 def common_options(func):
@@ -764,14 +395,26 @@ ACTION_OPTIONS = {
         ("-v, --verbose", "Enable verbose output"),
         ("-y, --yes", "Skip confirmation prompts"),
         ("-f, --force", "Skip confirmation prompts"),
+        (
+            "-L, --list-fields",
+            "List available fields for this resource",
+        ),
     ],
     "update": [
         ("-v, --verbose", "Enable verbose output"),
+        (
+            "-L, --list-fields",
+            "List available fields for this resource",
+        ),
     ],
     "delete": [
         ("-v, --verbose", "Enable verbose output"),
         ("-y, --yes", "Skip confirmation prompts"),
         ("-f, --force", "Skip confirmation prompts"),
+        (
+            "-L, --list-fields",
+            "List available fields for this resource",
+        ),
     ],
     "show": [
         ("-j, --json", "Output in JSON format"),
@@ -780,6 +423,10 @@ ACTION_OPTIONS = {
         ("-z, --zebra", "Use zebra-striped rows"),
         ("-P, --profile NAME", "Use output profile"),
         ("-o, --format, --profile-str STR", "Inline profile string"),
+        (
+            "-L, --list-fields",
+            "List available fields for this resource",
+        ),
         ("-T, --tree", "Tree view (accounts, associations)"),
     ],
 }
@@ -802,16 +449,16 @@ def show_resource_help(action: str, resource: str) -> bool:
     Returns:
         True if help was shown, False if no help available
     """
-    # Resolve resource alias to canonical name
-    canonical = resolve_resource_alias(resource)
-
-    # Get help info for this resource
-    help_info = RESOURCE_HELP.get(canonical)
+    # Get help info for this resource (handles alias resolution)
+    help_info = get_resource_help(resource)
     if not help_info:
         return False
 
+    # Resolve canonical name for display
+    canonical = resolve_resource_alias(resource)
+
     # Get action-specific help
-    action_help = help_info.get(action)
+    action_help = get_resource_help(resource, action)
     if not action_help:
         # Show general resource description only
         console.print(
@@ -1185,8 +832,8 @@ def show_command_help_with_resources(
     "--cache-timeout",
     "-t",
     type=int,
-    default=60,
-    help="SLURM cache timeout in seconds (default: 60)",
+    default=Resource.CACHE_TIMEOUT,
+    help=f"SLURM cache timeout in seconds (default: {Resource.CACHE_TIMEOUT})",
 )
 @click.option(
     "--profile",
@@ -1281,55 +928,17 @@ class CustomGroup(click.Group):
     def format_commands(self, ctx, formatter):
         """Custom command formatter that filters out aliases."""
         commands = []
-        main_command_names = {
-            "show",
-            "get",
-            "update",
-            "edit",
-            "change",
-            "modify",
-            "create",
-            "new",
-            "add",
-            "delete",
-            "remove",
-            "rm",
-            "list-resources",
-            "ls",
-            "autocomplete",
-            "help",
-            "version",
-            "reconfigure",
-            "ping",
-            "takeover",
-            "token",
-            "drain",
-            "undrain",
-            "reboot",
-            "cancel_reboot",
-            "hold",
-            "release",
-            "top",
-            "requeue",
-            "suspend",
-        }
+        for name in sorted(COMMANDS.keys()):
+            if COMMANDS[name].get("aliases"):
+                aliases = f"({', '.join(COMMANDS[name]['aliases'])}) "
+            else:
+                aliases = ""
+            commands.append(
+                (name, f"{aliases}{COMMANDS[name]['description']}")
+            )
 
-        for subcommand in self.list_commands(ctx):
-            cmd = self.get_command(ctx, subcommand)
-            # Skip commands that are aliases (not main command names)
-            if cmd and subcommand not in main_command_names:
-                continue
-            elif cmd:
-                commands.append((subcommand, cmd))
-
-        if commands:
-            with formatter.section("Commands"):
-                formatter.write_dl(
-                    [
-                        (name, cmd.help or cmd.short_help or "")
-                        for name, cmd in commands
-                    ]
-                )
+        with formatter.section("Commands"):
+            formatter.write_dl(commands)
 
 
 # Change the main group to use our custom group class
@@ -1375,7 +984,9 @@ def register_commands() -> None:
     delete.help = "Delete Slurm resources (aliases: remove, rm)"
     list_resources.help = "List available Slurm resources (aliases: ls)"
     version.help = "Show slurm-cli and slurmctld version (aliases: ver)"
-    reconfigure.help = "Reconfigure slurmctld (aliases: reconf)"
+    reconfigure.help = (
+        "Reconfigure slurmctld (aliases: reconf, confreload)"
+    )
     ping.help = "Ping slurmctld"
     takeover.help = "Take over as primary slurmctld"
     token.help = "Generate JWT authentication token (aliases: tok)"
@@ -1396,11 +1007,14 @@ def register_commands() -> None:
 
 
 # Show command
-@click.command(context_settings=CONTEXT_SETTINGS_NO_HELP)
+@click.command(
+    context_settings=CONTEXT_SETTINGS_NO_HELP,
+    epilog=get_resources_epilog("show"),
+)
 @click.argument(
     "resource",
-    type=click.Choice(get_show_resource_choices()),
     required=False,
+    metavar="RESOURCE",
 )
 @click.argument("field", required=False, nargs=-1)
 @click.option(
@@ -1425,6 +1039,12 @@ def register_commands() -> None:
     callback=show_command_help,
     help="Show this message and exit.",
 )
+@click.option(
+    "--list-fields",
+    "-L",
+    is_flag=True,
+    help="List available profile fields for the resource",
+)
 @common_options
 @click.pass_context
 def show(
@@ -1434,6 +1054,7 @@ def show(
     verbose: bool,
     tree: bool = False,
     indent: str = "  ",
+    list_fields: bool = False,
     style: Optional[str] = None,
     pretty: bool = False,
     json: bool = False,
@@ -1445,6 +1066,15 @@ def show(
     **kwargs,
 ) -> None:
     """Show information about Slurm resources (aliases: sh, s)."""
+    # Handle --list-fields option
+    if list_fields:
+        if resource:
+            canonical = resolve_resource_alias(resource)
+            show_profile_help(canonical)
+        else:
+            show_all_profile_fields()
+        return
+
     # Convert tuple to first element for backward compatibility
     # (for resources that expect a single field)
     first_field = field[0] if field else None
@@ -1470,6 +1100,12 @@ def show(
     canonical_resource, field, data = ensure_resource_name(
         resource, field, force_update
     )
+
+    # Normalize field to tuple and recompute first_field
+    # (ensure_resource_name may return a string when guessing resource type)
+    if isinstance(field, str):
+        field = (field,)
+    first_field = field[0] if field else None
 
     # Check for --profile-str=help
     if is_profile_help(profile_str):
@@ -1760,11 +1396,15 @@ def show(
 
 
 # Update command
-@click.command(context_settings=CONTEXT_SETTINGS_NO_HELP)
+@click.command(
+    context_settings=CONTEXT_SETTINGS_NO_HELP,
+    epilog=get_resources_epilog("update"),
+)
 @click.argument(
     "resource",
-    type=click.Choice(get_resource_choices()),
+    type=click.Choice(get_resource_choices(), case_sensitive=False),
     required=False,
+    metavar="RESOURCE",
 )
 @click.argument("field", required=False)
 @click.argument("value", required=False)
@@ -1784,6 +1424,12 @@ def show(
     help="Show what would be updated without making changes",
 )
 @click.option(
+    "--list-fields",
+    "-L",
+    is_flag=True,
+    help="List available fields for the resource",
+)
+@click.option(
     "--help",
     "-h",
     is_flag=True,
@@ -1801,16 +1447,26 @@ def update(
     verbose: bool,
     yes: bool,
     dry_run: bool,
+    list_fields: bool = False,
     **kwargs,
 ) -> None:
     """Update Slurm resource fields (aliases: u, edit, mod, modify)."""
+    # Handle --list-fields option
+    if list_fields:
+        if resource:
+            canonical = resolve_resource_alias(resource)
+            show_profile_help(canonical)
+        else:
+            show_all_profile_fields()
+        return
+
     # Combine local and global dry-run settings
     dry_run = get_dry_run(ctx, dry_run)
 
     # Combine local and global --yes options
-    skip_confirm = get_skip_confirm(
-        ctx, yes
-    )  # noqa: F841 - for future use
+    # skip_confirm = get_skip_confirm(
+    #     ctx, yes
+    # )  # noqa: F841 - for future use
 
     # Show help if no resource, field, or value is provided
     if not resource or not field or not value:
@@ -1884,162 +1540,53 @@ def update(
             )
             return
 
-        if dry_run:
-            console.print(
-                f"[yellow]DRY RUN:[/yellow] Would update {canonical_resource} "
-                f"where {' '.join(where_conditions)} "
-                f"set {' '.join(set_values)}"
+        if canonical_resource[:5] == "assoc":
+            Association.update(
+                "",
+                verbose,
+                dry_run=dry_run,
+                where_conditions=where_conditions,
+                set_values=set_values,
+            )
+        elif canonical_resource[:4] == "user":
+            User.update(
+                "",
+                verbose,
+                dry_run=dry_run,
+                where_conditions=where_conditions,
+                set_values=set_values,
+            )
+        elif canonical_resource[:3] == "qos":
+            Qos.update(
+                "",
+                verbose,
+                dry_run=dry_run,
+                where_conditions=where_conditions,
+                set_values=set_values,
             )
         else:
-            if canonical_resource[:5] == "assoc":
-                Association.update(
-                    "",
-                    verbose,
-                    where_conditions=where_conditions,
-                    set_values=set_values,
-                )
-            elif canonical_resource[:4] == "user":
-                User.update(
-                    "",
-                    verbose,
-                    where_conditions=where_conditions,
-                    set_values=set_values,
-                )
-            elif canonical_resource[:3] == "qos":
-                Qos.update(
-                    "",
-                    verbose,
-                    where_conditions=where_conditions,
-                    set_values=set_values,
-                )
-            else:
-                Account.update(
-                    "",
-                    verbose,
-                    where_conditions=where_conditions,
-                    set_values=set_values,
-                )
+            Account.update(
+                "",
+                verbose,
+                dry_run=dry_run,
+                where_conditions=where_conditions,
+                set_values=set_values,
+            )
         return
 
     # Build the update message
     if names:
         additional_args = " ".join(f"'{arg}'" for arg in names)
-        if dry_run:
+        if verbose and not dry_run:
             console.print(
-                f"[yellow]DRY RUN:[/yellow] Would update "
-                f"{canonical_resource} {field} '{value}' {additional_args}"
+                f"Updating {canonical_resource} {field} '{value}' "
+                f"{additional_args}"
             )
-        else:
-            if verbose:
-                console.print(
-                    f"Updating {canonical_resource} {field} '{value}' "
-                    f"{additional_args}"
-                )
 
-            if canonical_resource[:4] == "part":
-                Partition.update(field, verbose, **update_options)
-            elif canonical_resource[:4] == "node":
-                # Resolve node filter if field is a filter expression
-                if is_node_filter(field):
-                    resolved = resolve_nodes_value(field, verbose)
-                    if not resolved:
-                        console.print(
-                            f"[red]Error: Node filter '{field}' "
-                            f"matched no nodes. Aborting.[/red]"
-                        )
-                        return
-                    field = resolved
-                Node.update(field, verbose, **update_options)
-            elif canonical_resource[:4] == "user":
-                User.update(field, verbose, **update_options)
-            elif canonical_resource[:3] == "qos":
-                Qos.update(field, verbose, **update_options)
-            elif canonical_resource[:3] == "acc":
-                Account.update(field, verbose, **update_options)
-            elif canonical_resource[:5] == "assoc":
-                Association.update(field, verbose, **update_options)
-            elif canonical_resource[:3] == "res":
-                Reservation.update(field, verbose, **update_options)
-            elif canonical_resource[:5] == "coord":
-                Coordinator.update(field, verbose, **update_options)
-            elif canonical_resource[:4] == "conf":
-                Config.update(field, verbose, **update_options)
-            elif canonical_resource[:3] == "job":
-                # Resolve job filter if field is a filter expression
-                if is_job_filter(field):
-                    job_ids, _ = resolve_job_ids([field], verbose)
-                    if not job_ids:
-                        console.print(
-                            f"[red]Error: Job filter '{field}' "
-                            f"matched no jobs. Aborting.[/red]"
-                        )
-                        return
-                    for job_id in job_ids:
-                        Job.update(job_id, verbose, **update_options)
-                else:
-                    Job.update(field, verbose, **update_options)
-            else:
-                console.print(
-                    f"[red]Resource '{canonical_resource}' not found.[/red]"
-                )
-    else:
-        # Simple mode: modify accounts/associations NAME key=value
-        if canonical_resource[:3] == "acc":
-            if dry_run:
-                console.print(
-                    f"[yellow]DRY RUN:[/yellow] Would update "
-                    f"account {field} set {value}"
-                )
-            else:
-                Account.update(
-                    field,
-                    verbose,
-                    **{value.split("=")[0]: value.split("=")[1]}
-                    if "=" in value
-                    else {},
-                )
-        elif canonical_resource[:5] == "assoc":
-            if dry_run:
-                console.print(
-                    f"[yellow]DRY RUN:[/yellow] Would update "
-                    f"association account={field} set {value}"
-                )
-            else:
-                Association.update(
-                    field,
-                    verbose,
-                    **{value.split("=")[0]: value.split("=")[1]}
-                    if "=" in value
-                    else {},
-                )
-        elif canonical_resource[:3] == "qos":
-            if dry_run:
-                console.print(
-                    f"[yellow]DRY RUN:[/yellow] Would update "
-                    f"qos {field} set {value}"
-                )
-            else:
-                Qos.update(
-                    field,
-                    verbose,
-                    **{value.split("=")[0]: value.split("=")[1]}
-                    if "=" in value
-                    else {},
-                )
-        elif canonical_resource[:4] == "user":
-            if dry_run:
-                console.print(
-                    f"[yellow]DRY RUN:[/yellow] Would update "
-                    f"user {field} set {value}"
-                )
-            else:
-                User.update(
-                    field,
-                    verbose,
-                    **{value.split("=")[0]: value.split("=")[1]}
-                    if "=" in value
-                    else {},
-                )
+        if canonical_resource[:4] == "part":
+            Partition.update(
+                field, verbose, dry_run=dry_run, **update_options
+            )
         elif canonical_resource[:4] == "node":
             # Resolve node filter if field is a filter expression
             if is_node_filter(field):
@@ -2051,29 +1598,37 @@ def update(
                     )
                     return
                 field = resolved
-            if dry_run:
-                console.print(
-                    f"[yellow]DRY RUN:[/yellow] Would update "
-                    f"node {field} set {update_options}"
-                )
-            else:
-                Node.update(field, verbose, **update_options)
-        elif canonical_resource[:4] == "part":
-            if dry_run:
-                console.print(
-                    f"[yellow]DRY RUN:[/yellow] Would update "
-                    f"partition {field} set {update_options}"
-                )
-            else:
-                Partition.update(field, verbose, **update_options)
+            Node.update(
+                field, verbose, dry_run=dry_run, **update_options
+            )
+        elif canonical_resource[:4] == "user":
+            User.update(
+                field, verbose, dry_run=dry_run, **update_options
+            )
+        elif canonical_resource[:3] == "qos":
+            Qos.update(
+                field, verbose, dry_run=dry_run, **update_options
+            )
+        elif canonical_resource[:3] == "acc":
+            Account.update(
+                field, verbose, dry_run=dry_run, **update_options
+            )
+        elif canonical_resource[:5] == "assoc":
+            Association.update(
+                field, verbose, dry_run=dry_run, **update_options
+            )
         elif canonical_resource[:3] == "res":
-            if dry_run:
-                console.print(
-                    f"[yellow]DRY RUN:[/yellow] Would update "
-                    f"reservation {field} set {update_options}"
-                )
-            else:
-                Reservation.update(field, verbose, **update_options)
+            Reservation.update(
+                field, verbose, dry_run=dry_run, **update_options
+            )
+        elif canonical_resource[:5] == "coord":
+            Coordinator.update(
+                field, verbose, dry_run=dry_run, **update_options
+            )
+        elif canonical_resource[:4] == "conf":
+            Config.update(
+                field, verbose, dry_run=dry_run, **update_options
+            )
         elif canonical_resource[:3] == "job":
             # Resolve job filter if field is a filter expression
             if is_job_filter(field):
@@ -2084,22 +1639,102 @@ def update(
                         f"matched no jobs. Aborting.[/red]"
                     )
                     return
-                if dry_run:
-                    console.print(
-                        f"[yellow]DRY RUN:[/yellow] Would update "
-                        f"{len(job_ids)} job(s) set {update_options}"
+                for job_id in job_ids:
+                    Job.update(
+                        job_id,
+                        verbose,
+                        dry_run=dry_run,
+                        **update_options,
                     )
-                else:
-                    for job_id in job_ids:
-                        Job.update(job_id, verbose, **update_options)
             else:
-                if dry_run:
+                Job.update(
+                    field, verbose, dry_run=dry_run, **update_options
+                )
+        else:
+            console.print(
+                f"[red]Resource '{canonical_resource}' not found.[/red]"
+            )
+    else:
+        # Simple mode: modify accounts/associations NAME key=value
+        if canonical_resource[:3] == "acc":
+            Account.update(
+                field,
+                verbose,
+                dry_run=dry_run,
+                **{value.split("=")[0]: value.split("=")[1]}
+                if "=" in value
+                else {},
+            )
+        elif canonical_resource[:5] == "assoc":
+            Association.update(
+                field,
+                verbose,
+                dry_run=dry_run,
+                **{value.split("=")[0]: value.split("=")[1]}
+                if "=" in value
+                else {},
+            )
+        elif canonical_resource[:3] == "qos":
+            Qos.update(
+                field,
+                verbose,
+                dry_run=dry_run,
+                **{value.split("=")[0]: value.split("=")[1]}
+                if "=" in value
+                else {},
+            )
+        elif canonical_resource[:4] == "user":
+            User.update(
+                field,
+                verbose,
+                dry_run=dry_run,
+                **{value.split("=")[0]: value.split("=")[1]}
+                if "=" in value
+                else {},
+            )
+        elif canonical_resource[:4] == "node":
+            # Resolve node filter if field is a filter expression
+            if is_node_filter(field):
+                resolved = resolve_nodes_value(field, verbose)
+                if not resolved:
                     console.print(
-                        f"[yellow]DRY RUN:[/yellow] Would update "
-                        f"job {field} set {update_options}"
+                        f"[red]Error: Node filter '{field}' "
+                        f"matched no nodes. Aborting.[/red]"
                     )
-                else:
-                    Job.update(field, verbose, **update_options)
+                    return
+                field = resolved
+            Node.update(
+                field, verbose, dry_run=dry_run, **update_options
+            )
+        elif canonical_resource[:4] == "part":
+            Partition.update(
+                field, verbose, dry_run=dry_run, **update_options
+            )
+        elif canonical_resource[:3] == "res":
+            Reservation.update(
+                field, verbose, dry_run=dry_run, **update_options
+            )
+        elif canonical_resource[:3] == "job":
+            # Resolve job filter if field is a filter expression
+            if is_job_filter(field):
+                job_ids, _ = resolve_job_ids([field], verbose)
+                if not job_ids:
+                    console.print(
+                        f"[red]Error: Job filter '{field}' "
+                        f"matched no jobs. Aborting.[/red]"
+                    )
+                    return
+                for job_id in job_ids:
+                    Job.update(
+                        job_id,
+                        verbose,
+                        dry_run=dry_run,
+                        **update_options,
+                    )
+            else:
+                Job.update(
+                    field, verbose, dry_run=dry_run, **update_options
+                )
         else:
             # If no additional arguments, show general update message
             if dry_run:
@@ -2113,12 +1748,16 @@ def update(
                 )
 
 
-# Create command group with resource subcommands
-@click.command(context_settings=CONTEXT_SETTINGS_NO_HELP)
+# Create command
+@click.command(
+    context_settings=CONTEXT_SETTINGS_NO_HELP,
+    epilog=get_resources_epilog("create"),
+)
 @click.argument(
     "resource",
-    type=click.Choice(get_resource_choices()),
+    type=click.Choice(get_resource_choices(), case_sensitive=False),
     required=False,
+    metavar="RESOURCE",
 )
 @click.argument("field", required=False)
 # @click.argument("value", required=False)
@@ -2126,7 +1765,7 @@ def update(
 @click.option(
     "--dry-run",
     is_flag=True,
-    help="Show what would be created without making changes",
+    help="Show what would be updated without making changes",
 )
 @click.option(
     "--verbose", "-v", is_flag=True, help="Enable verbose output"
@@ -2142,6 +1781,12 @@ def update(
     "-y",
     is_flag=True,
     help="Skip confirmation prompts (alias for --force)",
+)
+@click.option(
+    "--list-fields",
+    "-L",
+    is_flag=True,
+    help="List available fields for the resource",
 )
 @click.option(
     "--help",
@@ -2162,9 +1807,19 @@ def create(
     dry_run: bool,
     force: bool,
     yes: bool,
+    list_fields: bool = False,
     **kwargs,
 ) -> None:
     """Create Slurm resource fields (aliases: c, new, add)."""
+    # Handle --list-fields option
+    if list_fields:
+        if resource:
+            canonical = resolve_resource_alias(resource)
+            show_profile_help(canonical)
+        else:
+            show_all_profile_fields()
+        return
+
     # Show help if no resource, field, or value is provided
     if not resource or not field:
         # or not value:
@@ -2315,11 +1970,15 @@ def create(
 
 
 # delete command
-@click.command(context_settings=CONTEXT_SETTINGS_NO_HELP)
+@click.command(
+    context_settings=CONTEXT_SETTINGS_NO_HELP,
+    epilog=get_resources_epilog("delete"),
+)
 @click.argument(
     "resource",
-    type=click.Choice(get_resource_choices()),
+    type=click.Choice(get_resource_choices(), case_sensitive=False),
     required=False,
+    metavar="RESOURCE",
 )
 @click.argument("names", nargs=-1, required=False)
 @click.option(
@@ -2348,6 +2007,12 @@ def create(
     "--verbose", "-v", is_flag=True, help="Enable verbose output"
 )
 @click.option(
+    "--list-fields",
+    "-L",
+    is_flag=True,
+    help="List available fields for the resource",
+)
+@click.option(
     "--help",
     "-h",
     is_flag=True,
@@ -2365,9 +2030,19 @@ def delete(
     yes: bool,
     dry_run: bool,
     verbose: bool,
+    list_fields: bool = False,
     **kwargs,
 ) -> None:  # noqa: E501
     """Delete Slurm resources (aliases: del, d, remove, rem, rm)."""
+    # Handle --list-fields option
+    if list_fields:
+        if resource:
+            canonical = resolve_resource_alias(resource)
+            show_profile_help(canonical)
+        else:
+            show_all_profile_fields()
+        return
+
     # Resolve resource alias to canonical name
     if not resource:
         show_command_help(ctx, None, True)
@@ -2640,6 +2315,14 @@ def autocomplete(word: str, max_cost: int, size: int) -> None:
     # Generate the handler switch case
     handlers_str = "\n".join(option_handlers)
 
+    # Generate command case patterns from COMMANDS config
+    command_case_patterns = generate_bash_command_case()
+    all_commands_str = get_all_command_names()
+
+    # Generate resource case patterns from RESOURCES config
+    resource_case_patterns = generate_bash_resource_case()
+    # all_resources_str = get_all_resource_names()
+
     # Print the script with proper escaping for bash variables
     print(
         f"""
@@ -2694,109 +2377,10 @@ _slurm_cli_initialize_autocomplete() {{
     local cur="${{COMP_WORDS[COMP_CWORD]}}"
     local prev="${{COMP_WORDS[COMP_CWORD-1]}}"
 
-    # Guess the command by prefix, using the same commands as in get_command
+    # Guess the command by prefix - generated from COMMANDS config
     local guessed="no"
     case "$cmd" in
-        se*)
-            guessed="set"
-            cmd="update"
-            ;;
-        sh*|s)
-            guessed="show"
-            cmd="show"
-            ;;
-        g*)
-            guessed="get"
-            cmd="show"
-            ;;
-        cr*)
-            guessed="create"
-            cmd="create"
-            ;;
-        ne*)
-            guessed="new"
-            cmd="create"
-            ;;
-        ad*)
-            guessed="add"
-            cmd="create"
-            ;;
-        up*)
-            guessed="update"
-            cmd="update"
-            ;;
-        e*)
-            guessed="edit"
-            cmd="update"
-            ;;
-        ch*)
-            guessed="change"
-            cmd="update"
-            ;;
-        m*)
-            guessed="modify"
-            cmd="update"
-            ;;
-        de*)
-            guessed="delete"
-            cmd="delete"
-            ;;
-        rem*)
-            guessed="remove"
-            cmd="delete"
-            ;;
-        rm*)
-            guessed="rm"
-            cmd="delete"
-            ;;
-        l*)
-            guessed="list-resources"
-            cmd="list-resources"
-            ;;
-        au*)
-            guessed="autocomplete"
-            cmd="autocomplete"
-            ;;
-        h*)
-            guessed="help"
-            cmd="help"
-            ;;
-        v*)
-            guessed="version"
-            cmd="version"
-            ;;
-        rec*)
-            guessed="reconfigure"
-            cmd="reconfigure"
-            ;;
-        pi*)
-            guessed="ping"
-            cmd="ping"
-            ;;
-        ta*)
-            guessed="takeover"
-            cmd="takeover"
-            ;;
-        to*)
-            guessed="token"
-            cmd="token"
-            ;;
-        dr*)
-            guessed="drain"
-            cmd="drain"
-            ;;
-        undr*|resu*)
-            guessed="undrain"
-            cmd="undrain"
-            ;;
-        reb*)
-            guessed="reboot"
-            cmd="reboot"
-            ;;
-        cancel_reb*|cancel_r*)
-            guessed="cancel_reboot"
-            cmd="cancel_reboot"
-            ;;
+{command_case_patterns}
         *)
             ;;
     esac
@@ -2805,9 +2389,7 @@ _slurm_cli_initialize_autocomplete() {{
             COMPREPLY=($(compgen -W "$guessed" -- "$cur"))
             return
         else
-            COMPREPLY=($(compgen -W "show get create add new update edit \\
-                change modify delete remove rm list-resources autocomplete \\
-                help version reconfigure ping takeover token drain undrain resume reboot cancel_reboot {all_opts_str}" -- "$cur"))
+            COMPREPLY=($(compgen -W "{all_commands_str} {all_opts_str}" -- "$cur"))
             return
         fi
     fi
@@ -2842,8 +2424,6 @@ _slurm_cli_initialize_autocomplete() {{
         drain)
             # Drain command takes nodes, filters (with optional - prefix for exclusion),
             # and optional --reason/-r or reason=
-            local cached_nodes="$(_slurm_cache_nodes)"
-            local cached_partitions="$(_slurm_cache_partitions)"
             local node_filters="partition= state= user= reservation= drainreason="
             local neg_filters="not:partition= not:state= not:user= not:reservation= not:drainreason="
             local node_states="idle alloc drain down mixed comp"
@@ -2859,6 +2439,7 @@ _slurm_cli_initialize_autocomplete() {{
             elif [[ "$cur" == not:partition=* ]] || [[ "$prev" == "=" && "${{COMP_WORDS[COMP_CWORD-2]}}" == "not:partition" ]]; then
                 local val="${{cur#not:partition=}}"
                 [[ "$prev" == "=" ]] && val="$cur"
+                local cached_partitions="$(_slurm_cache_partitions)"
                 COMPREPLY=($(compgen -W "$cached_partitions" -- "$val"))
                 [[ ${{#COMPREPLY[@]}} -gt 0 ]] && COMPREPLY=("${{COMPREPLY[@]/#/not:partition=}}")
             elif [[ "$cur" == not:state=* ]] || [[ "$prev" == "=" && "${{COMP_WORDS[COMP_CWORD-2]}}" == "not:state" ]]; then
@@ -2882,6 +2463,7 @@ _slurm_cli_initialize_autocomplete() {{
             elif [[ "$cur" == partition=* ]] || [[ "$prev" == "=" && "${{COMP_WORDS[COMP_CWORD-2]}}" == "partition" ]]; then
                 local val="${{cur#partition=}}"
                 [[ "$prev" == "=" ]] && val="$cur"
+                local cached_partitions="$(_slurm_cache_partitions)"
                 COMPREPLY=($(compgen -W "$cached_partitions" -- "$val"))
                 [[ ${{#COMPREPLY[@]}} -gt 0 && "$cur" == *=* ]] && COMPREPLY=("${{COMPREPLY[@]/#/partition=}}")
             elif [[ "$cur" == state=* ]] || [[ "$prev" == "=" && "${{COMP_WORDS[COMP_CWORD-2]}}" == "state" ]]; then
@@ -2902,14 +2484,13 @@ _slurm_cli_initialize_autocomplete() {{
                 COMPREPLY=($(compgen -W "$reservations" -- "$val"))
                 [[ ${{#COMPREPLY[@]}} -gt 0 && "$cur" == *=* ]] && COMPREPLY=("${{COMPREPLY[@]/#/reservation=}}")
             else
-                COMPREPLY=($(compgen -W "$cached_nodes $node_filters $neg_filters reason= -r --reason -v --verbose -h --help" -- "$cur"))
+                local cached_nodes="$(_slurm_cache_nodes)"
+                COMPREPLY=($(compgen -W "$node_filters $neg_filters reason= -r --reason -v --verbose -h --help $cached_nodes" -- "$cur"))
             fi
             return
             ;;
         undrain)
             # Undrain command takes nodes and filters (with optional - prefix for exclusion)
-            local cached_nodes="$(_slurm_cache_nodes)"
-            local cached_partitions="$(_slurm_cache_partitions)"
             local node_filters="partition= state= user= reservation= drainreason="
             local neg_filters="not:partition= not:state= not:user= not:reservation= not:drainreason="
             local node_states="idle alloc drain down mixed comp"
@@ -2919,6 +2500,7 @@ _slurm_cli_initialize_autocomplete() {{
             elif [[ "$cur" == not:partition=* ]] || [[ "$prev" == "=" && "${{COMP_WORDS[COMP_CWORD-2]}}" == "not:partition" ]]; then
                 local val="${{cur#not:partition=}}"
                 [[ "$prev" == "=" ]] && val="$cur"
+                local cached_partitions="$(_slurm_cache_partitions)"
                 COMPREPLY=($(compgen -W "$cached_partitions" -- "$val"))
                 [[ ${{#COMPREPLY[@]}} -gt 0 ]] && COMPREPLY=("${{COMPREPLY[@]/#/not:partition=}}")
             elif [[ "$cur" == not:state=* ]] || [[ "$prev" == "=" && "${{COMP_WORDS[COMP_CWORD-2]}}" == "not:state" ]]; then
@@ -2942,6 +2524,7 @@ _slurm_cli_initialize_autocomplete() {{
             elif [[ "$cur" == partition=* ]] || [[ "$prev" == "=" && "${{COMP_WORDS[COMP_CWORD-2]}}" == "partition" ]]; then
                 local val="${{cur#partition=}}"
                 [[ "$prev" == "=" ]] && val="$cur"
+                local cached_partitions="$(_slurm_cache_partitions)"
                 COMPREPLY=($(compgen -W "$cached_partitions" -- "$val"))
                 [[ ${{#COMPREPLY[@]}} -gt 0 && "$cur" == *=* ]] && COMPREPLY=("${{COMPREPLY[@]/#/partition=}}")
             elif [[ "$cur" == state=* ]] || [[ "$prev" == "=" && "${{COMP_WORDS[COMP_CWORD-2]}}" == "state" ]]; then
@@ -2962,14 +2545,13 @@ _slurm_cli_initialize_autocomplete() {{
                 COMPREPLY=($(compgen -W "$reservations" -- "$val"))
                 [[ ${{#COMPREPLY[@]}} -gt 0 && "$cur" == *=* ]] && COMPREPLY=("${{COMPREPLY[@]/#/reservation=}}")
             else
-                COMPREPLY=($(compgen -W "$cached_nodes $node_filters $neg_filters -v --verbose -h --help" -- "$cur"))
+                local cached_nodes="$(_slurm_cache_nodes)"
+                COMPREPLY=($(compgen -W "$node_filters $neg_filters -v --verbose -h --help $cached_nodes" -- "$cur"))
             fi
             return
             ;;
         reboot)
             # Reboot command takes nodes, filters, asap, nextstate=, reason=
-            local cached_nodes="$(_slurm_cache_nodes)"
-            local cached_partitions="$(_slurm_cache_partitions)"
             local node_filters="partition= state= user= reservation= drainreason="
             local neg_filters="not:partition= not:state= not:user= not:reservation= not:drainreason="
             local node_states="idle alloc drain down mixed comp"
@@ -2988,6 +2570,7 @@ _slurm_cli_initialize_autocomplete() {{
             elif [[ "$cur" == not:partition=* ]] || [[ "$prev" == "=" && "${{COMP_WORDS[COMP_CWORD-2]}}" == "not:partition" ]]; then
                 local val="${{cur#not:partition=}}"
                 [[ "$prev" == "=" ]] && val="$cur"
+                local cached_partitions="$(_slurm_cache_partitions)"
                 COMPREPLY=($(compgen -W "$cached_partitions" -- "$val"))
                 [[ ${{#COMPREPLY[@]}} -gt 0 ]] && COMPREPLY=("${{COMPREPLY[@]/#/not:partition=}}")
             elif [[ "$cur" == not:state=* ]] || [[ "$prev" == "=" && "${{COMP_WORDS[COMP_CWORD-2]}}" == "not:state" ]]; then
@@ -3011,6 +2594,7 @@ _slurm_cli_initialize_autocomplete() {{
             elif [[ "$cur" == partition=* ]] || [[ "$prev" == "=" && "${{COMP_WORDS[COMP_CWORD-2]}}" == "partition" ]]; then
                 local val="${{cur#partition=}}"
                 [[ "$prev" == "=" ]] && val="$cur"
+                local cached_partitions="$(_slurm_cache_partitions)"
                 COMPREPLY=($(compgen -W "$cached_partitions" -- "$val"))
                 [[ ${{#COMPREPLY[@]}} -gt 0 && "$cur" == *=* ]] && COMPREPLY=("${{COMPREPLY[@]/#/partition=}}")
             elif [[ "$cur" == state=* ]] || [[ "$prev" == "=" && "${{COMP_WORDS[COMP_CWORD-2]}}" == "state" ]]; then
@@ -3031,14 +2615,13 @@ _slurm_cli_initialize_autocomplete() {{
                 COMPREPLY=($(compgen -W "$reservations" -- "$val"))
                 [[ ${{#COMPREPLY[@]}} -gt 0 && "$cur" == *=* ]] && COMPREPLY=("${{COMPREPLY[@]/#/reservation=}}")
             else
-                COMPREPLY=($(compgen -W "ALL asap nextstate= reason= $cached_nodes $node_filters $neg_filters -v --verbose -h --help" -- "$cur"))
+                local cached_nodes="$(_slurm_cache_nodes)"
+                COMPREPLY=($(compgen -W "ALL asap nextstate= reason= $node_filters $neg_filters -v --verbose -h --help $cached_nodes" -- "$cur"))
             fi
             return
             ;;
         cancel_reboot)
             # Cancel reboot command takes nodes and filters
-            local cached_nodes="$(_slurm_cache_nodes)"
-            local cached_partitions="$(_slurm_cache_partitions)"
             local node_filters="partition= state= user= reservation= drainreason="
             local neg_filters="not:partition= not:state= not:user= not:reservation= not:drainreason="
             local node_states="idle alloc drain down mixed comp"
@@ -3048,6 +2631,7 @@ _slurm_cli_initialize_autocomplete() {{
             elif [[ "$cur" == not:partition=* ]] || [[ "$prev" == "=" && "${{COMP_WORDS[COMP_CWORD-2]}}" == "not:partition" ]]; then
                 local val="${{cur#not:partition=}}"
                 [[ "$prev" == "=" ]] && val="$cur"
+                local cached_partitions="$(_slurm_cache_partitions)"
                 COMPREPLY=($(compgen -W "$cached_partitions" -- "$val"))
                 [[ ${{#COMPREPLY[@]}} -gt 0 ]] && COMPREPLY=("${{COMPREPLY[@]/#/not:partition=}}")
             elif [[ "$cur" == not:state=* ]] || [[ "$prev" == "=" && "${{COMP_WORDS[COMP_CWORD-2]}}" == "not:state" ]]; then
@@ -3071,6 +2655,7 @@ _slurm_cli_initialize_autocomplete() {{
             elif [[ "$cur" == partition=* ]] || [[ "$prev" == "=" && "${{COMP_WORDS[COMP_CWORD-2]}}" == "partition" ]]; then
                 local val="${{cur#partition=}}"
                 [[ "$prev" == "=" ]] && val="$cur"
+                local cached_partitions="$(_slurm_cache_partitions)"
                 COMPREPLY=($(compgen -W "$cached_partitions" -- "$val"))
                 [[ ${{#COMPREPLY[@]}} -gt 0 && "$cur" == *=* ]] && COMPREPLY=("${{COMPREPLY[@]/#/partition=}}")
             elif [[ "$cur" == state=* ]] || [[ "$prev" == "=" && "${{COMP_WORDS[COMP_CWORD-2]}}" == "state" ]]; then
@@ -3091,23 +2676,20 @@ _slurm_cli_initialize_autocomplete() {{
                 COMPREPLY=($(compgen -W "$reservations" -- "$val"))
                 [[ ${{#COMPREPLY[@]}} -gt 0 && "$cur" == *=* ]] && COMPREPLY=("${{COMPREPLY[@]/#/reservation=}}")
             else
-                COMPREPLY=($(compgen -W "$cached_nodes $node_filters $neg_filters -v --verbose -h --help" -- "$cur"))
+                local cached_nodes="$(_slurm_cache_nodes)"
+                COMPREPLY=($(compgen -W "$node_filters $neg_filters -v --verbose -h --help $cached_nodes" -- "$cur"))
             fi
             return
             ;;
         hold)
             # Hold command takes job IDs and job filters, with optional reason
-            local cached_jobs="$(_slurm_cache_jobs)"
-            local cached_users="$(_slurm_cache_users)"
-            local cached_partitions="$(_slurm_cache_partitions)"
-            local cached_accounts="$(_slurm_cache_accounts)"
             local job_filters="user= account= partition= state= name="
             local neg_job_filters="not:user= not:account= not:partition= not:state= not:name="
             local job_states="pending running suspended"
             if [[ "$cur" == --* ]]; then
-                COMPREPLY=($(compgen -W "--reason --verbose --help" -- "$cur"))
+                COMPREPLY=($(compgen -W "--user --reason --verbose --help" -- "$cur"))
             elif [[ "$cur" == -* && "${{#cur}}" -eq 2 ]]; then
-                COMPREPLY=($(compgen -W "-r -v -h" -- "$cur"))
+                COMPREPLY=($(compgen -W "-u -r -v -h" -- "$cur"))
             elif [[ "$cur" == reason=* ]] || [[ "$prev" == "reason" && "${{COMP_WORDS[COMP_CWORD-1]}}" == "=" ]]; then
                 # reason= value - no completion
                 return
@@ -3115,16 +2697,19 @@ _slurm_cli_initialize_autocomplete() {{
             elif [[ "$cur" == not:user=* ]] || [[ "$prev" == "=" && "${{COMP_WORDS[COMP_CWORD-2]}}" == "not:user" ]]; then
                 local val="${{cur#not:user=}}"
                 [[ "$prev" == "=" ]] && val="$cur"
+                local cached_users="$(_slurm_cache_users)"
                 COMPREPLY=($(compgen -W "$cached_users" -- "$val"))
                 [[ ${{#COMPREPLY[@]}} -gt 0 ]] && COMPREPLY=("${{COMPREPLY[@]/#/not:user=}}")
             elif [[ "$cur" == not:account=* ]] || [[ "$prev" == "=" && "${{COMP_WORDS[COMP_CWORD-2]}}" == "not:account" ]]; then
                 local val="${{cur#not:account=}}"
                 [[ "$prev" == "=" ]] && val="$cur"
+                local cached_accounts="$(_slurm_cache_accounts)"
                 COMPREPLY=($(compgen -W "$cached_accounts" -- "$val"))
                 [[ ${{#COMPREPLY[@]}} -gt 0 ]] && COMPREPLY=("${{COMPREPLY[@]/#/not:account=}}")
             elif [[ "$cur" == not:partition=* ]] || [[ "$prev" == "=" && "${{COMP_WORDS[COMP_CWORD-2]}}" == "not:partition" ]]; then
                 local val="${{cur#not:partition=}}"
                 [[ "$prev" == "=" ]] && val="$cur"
+                local cached_partitions="$(_slurm_cache_partitions)"
                 COMPREPLY=($(compgen -W "$cached_partitions" -- "$val"))
                 [[ ${{#COMPREPLY[@]}} -gt 0 ]] && COMPREPLY=("${{COMPREPLY[@]/#/not:partition=}}")
             elif [[ "$cur" == not:state=* ]] || [[ "$prev" == "=" && "${{COMP_WORDS[COMP_CWORD-2]}}" == "not:state" ]]; then
@@ -3136,16 +2721,19 @@ _slurm_cli_initialize_autocomplete() {{
             elif [[ "$cur" == user=* ]] || [[ "$prev" == "=" && "${{COMP_WORDS[COMP_CWORD-2]}}" == "user" ]]; then
                 local val="${{cur#user=}}"
                 [[ "$prev" == "=" ]] && val="$cur"
+                local cached_users="$(_slurm_cache_users)"
                 COMPREPLY=($(compgen -W "$cached_users" -- "$val"))
                 [[ ${{#COMPREPLY[@]}} -gt 0 && "$cur" == *=* ]] && COMPREPLY=("${{COMPREPLY[@]/#/user=}}")
             elif [[ "$cur" == account=* ]] || [[ "$prev" == "=" && "${{COMP_WORDS[COMP_CWORD-2]}}" == "account" ]]; then
                 local val="${{cur#account=}}"
                 [[ "$prev" == "=" ]] && val="$cur"
+                local cached_accounts="$(_slurm_cache_accounts)"
                 COMPREPLY=($(compgen -W "$cached_accounts" -- "$val"))
                 [[ ${{#COMPREPLY[@]}} -gt 0 && "$cur" == *=* ]] && COMPREPLY=("${{COMPREPLY[@]/#/account=}}")
             elif [[ "$cur" == partition=* ]] || [[ "$prev" == "=" && "${{COMP_WORDS[COMP_CWORD-2]}}" == "partition" ]]; then
                 local val="${{cur#partition=}}"
                 [[ "$prev" == "=" ]] && val="$cur"
+                local cached_partitions="$(_slurm_cache_partitions)"
                 COMPREPLY=($(compgen -W "$cached_partitions" -- "$val"))
                 [[ ${{#COMPREPLY[@]}} -gt 0 && "$cur" == *=* ]] && COMPREPLY=("${{COMPREPLY[@]/#/partition=}}")
             elif [[ "$cur" == state=* ]] || [[ "$prev" == "=" && "${{COMP_WORDS[COMP_CWORD-2]}}" == "state" ]]; then
@@ -3154,16 +2742,13 @@ _slurm_cli_initialize_autocomplete() {{
                 COMPREPLY=($(compgen -W "$job_states" -- "$val"))
                 [[ ${{#COMPREPLY[@]}} -gt 0 && "$cur" == *=* ]] && COMPREPLY=("${{COMPREPLY[@]/#/state=}}")
             else
-                COMPREPLY=($(compgen -W "$cached_jobs $job_filters $neg_job_filters reason= -r --reason -v --verbose -h --help" -- "$cur"))
+                local cached_jobs="$(_slurm_cache_jobs)"
+                COMPREPLY=($(compgen -W "$job_filters $neg_job_filters reason= -r --reason -v --verbose -h --help $cached_jobs" -- "$cur"))
             fi
             return
             ;;
         release|top|requeue|suspend)
             # Job control commands take job IDs and job filters
-            local cached_jobs="$(_slurm_cache_jobs)"
-            local cached_users="$(_slurm_cache_users)"
-            local cached_partitions="$(_slurm_cache_partitions)"
-            local cached_accounts="$(_slurm_cache_accounts)"
             local job_filters="user= account= partition= state= name="
             local neg_job_filters="not:user= not:account= not:partition= not:state= not:name="
             local job_states="pending running suspended"
@@ -3173,16 +2758,19 @@ _slurm_cli_initialize_autocomplete() {{
             elif [[ "$cur" == not:user=* ]] || [[ "$prev" == "=" && "${{COMP_WORDS[COMP_CWORD-2]}}" == "not:user" ]]; then
                 local val="${{cur#not:user=}}"
                 [[ "$prev" == "=" ]] && val="$cur"
+                local cached_users="$(_slurm_cache_users)"
                 COMPREPLY=($(compgen -W "$cached_users" -- "$val"))
                 [[ ${{#COMPREPLY[@]}} -gt 0 ]] && COMPREPLY=("${{COMPREPLY[@]/#/not:user=}}")
             elif [[ "$cur" == not:account=* ]] || [[ "$prev" == "=" && "${{COMP_WORDS[COMP_CWORD-2]}}" == "not:account" ]]; then
                 local val="${{cur#not:account=}}"
                 [[ "$prev" == "=" ]] && val="$cur"
+                local cached_accounts="$(_slurm_cache_accounts)"
                 COMPREPLY=($(compgen -W "$cached_accounts" -- "$val"))
                 [[ ${{#COMPREPLY[@]}} -gt 0 ]] && COMPREPLY=("${{COMPREPLY[@]/#/not:account=}}")
             elif [[ "$cur" == not:partition=* ]] || [[ "$prev" == "=" && "${{COMP_WORDS[COMP_CWORD-2]}}" == "not:partition" ]]; then
                 local val="${{cur#not:partition=}}"
                 [[ "$prev" == "=" ]] && val="$cur"
+                local cached_partitions="$(_slurm_cache_partitions)"
                 COMPREPLY=($(compgen -W "$cached_partitions" -- "$val"))
                 [[ ${{#COMPREPLY[@]}} -gt 0 ]] && COMPREPLY=("${{COMPREPLY[@]/#/not:partition=}}")
             elif [[ "$cur" == not:state=* ]] || [[ "$prev" == "=" && "${{COMP_WORDS[COMP_CWORD-2]}}" == "not:state" ]]; then
@@ -3194,16 +2782,19 @@ _slurm_cli_initialize_autocomplete() {{
             elif [[ "$cur" == user=* ]] || [[ "$prev" == "=" && "${{COMP_WORDS[COMP_CWORD-2]}}" == "user" ]]; then
                 local val="${{cur#user=}}"
                 [[ "$prev" == "=" ]] && val="$cur"
+                local cached_users="$(_slurm_cache_users)"
                 COMPREPLY=($(compgen -W "$cached_users" -- "$val"))
                 [[ ${{#COMPREPLY[@]}} -gt 0 && "$cur" == *=* ]] && COMPREPLY=("${{COMPREPLY[@]/#/user=}}")
             elif [[ "$cur" == account=* ]] || [[ "$prev" == "=" && "${{COMP_WORDS[COMP_CWORD-2]}}" == "account" ]]; then
                 local val="${{cur#account=}}"
                 [[ "$prev" == "=" ]] && val="$cur"
+                local cached_accounts="$(_slurm_cache_accounts)"
                 COMPREPLY=($(compgen -W "$cached_accounts" -- "$val"))
                 [[ ${{#COMPREPLY[@]}} -gt 0 && "$cur" == *=* ]] && COMPREPLY=("${{COMPREPLY[@]/#/account=}}")
             elif [[ "$cur" == partition=* ]] || [[ "$prev" == "=" && "${{COMP_WORDS[COMP_CWORD-2]}}" == "partition" ]]; then
                 local val="${{cur#partition=}}"
                 [[ "$prev" == "=" ]] && val="$cur"
+                local cached_partitions="$(_slurm_cache_partitions)"
                 COMPREPLY=($(compgen -W "$cached_partitions" -- "$val"))
                 [[ ${{#COMPREPLY[@]}} -gt 0 && "$cur" == *=* ]] && COMPREPLY=("${{COMPREPLY[@]/#/partition=}}")
             elif [[ "$cur" == state=* ]] || [[ "$prev" == "=" && "${{COMP_WORDS[COMP_CWORD-2]}}" == "state" ]]; then
@@ -3212,7 +2803,8 @@ _slurm_cli_initialize_autocomplete() {{
                 COMPREPLY=($(compgen -W "$job_states" -- "$val"))
                 [[ ${{#COMPREPLY[@]}} -gt 0 && "$cur" == *=* ]] && COMPREPLY=("${{COMPREPLY[@]/#/state=}}")
             else
-                COMPREPLY=($(compgen -W "$cached_jobs $job_filters $neg_job_filters -v --verbose -h --help" -- "$cur"))
+                local cached_jobs="$(_slurm_cache_jobs)"
+                COMPREPLY=($(compgen -W "$job_filters $neg_job_filters -v --verbose -h --help $cached_jobs" -- "$cur"))
             fi
             return
             ;;
@@ -3225,79 +2817,9 @@ _slurm_cli_initialize_autocomplete() {{
 
     i=$((i+1))
     guessed="no"
+    # Resource matching - generated from RESOURCES config
     case "$resource" in
-        lic*)
-            guessed="licenses"
-            ;;
-        reso*)
-            guessed="resources"
-            # _slurm_cli_license_autocomplete "$cmd" "$cur" "$prev"
-            ;;
-        res*)
-            guessed="reservations"
-            # _slurm_cli_reservation_autocomplete "$cmd" "$cur" "$prev"
-            ;;
-        no*)
-            guessed="nodes"
-            # _slurm_cli_node_autocomplete "$cmd" "$cur" "$prev"
-            ;;
-        part*)
-            guessed="partitions"
-            # _slurm_cli_partition_autocomplete "$cmd" "$cur" "$prev"
-            ;;
-        acc*)
-            guessed="accounts"
-            # _slurm_cli_account_autocomplete "$cmd" "$cur" "$prev"
-            ;;
-        qos*)
-            guessed="qos"
-            # _slurm_cli_qos_autocomplete "$cmd" "$cur" "$prev"
-            ;;
-        us*)
-            guessed="users"
-            # _slurm_cli_user_autocomplete "$cmd" "$cur" "$prev"
-            ;;
-        pr*)
-            guessed="problems"
-            # _slurm_cli_problem_autocomplete "$cmd" "$cur" "$prev"
-            ;;
-        st*)
-            guessed="stats"
-            # _slurm_cli_stat_autocomplete "$cmd" "$cur" "$prev"
-            ;;
-        as*)
-            guessed="associations"
-            # _slurm_cli_association_autocomplete "$cmd" "$cur" "$prev"
-            ;;
-        du*)
-            guessed="dumps"
-            # _slurm_cli_dump_autocomplete "$cmd" "$cur" "$prev"
-            ;;
-        ev*)
-            guessed="events"
-            ;;
-        j*)
-            guessed="jobs"
-            ;;
-        b*)
-            guessed="bad"
-            # _slurm_cli_runawayjob_autocomplete "$cmd" "$cur" "$prev"
-            ;;
-        runa*)
-            guessed="runawayjobs"
-            # _slurm_cli_runawayjob_autocomplete "$cmd" "$cur" "$prev"
-            ;;
-        tr*)
-            guessed="tres"
-            # _slurm_cli_tres_autocomplete "$cmd" "$cur" "$prev"
-            ;;
-        ar*)
-            guessed="archive"
-            # _slurm_cli_archive_autocomplete "$cmd" "$cur" "$prev"
-            ;;
-        co*)
-            guessed="coordinators"
-            ;;
+{resource_case_patterns}
     esac
 
     # echo "i=$i j=$j COMP_CWORD=$COMP_CWORD \\
@@ -3556,7 +3078,7 @@ def version(verbose: bool = False) -> None:
     "--verbose", "-v", is_flag=True, help="Enable verbose output"
 )
 def reconfigure(verbose: bool = False) -> None:
-    """Reconfigure slurmctld (aliases: reconf).
+    """Reconfigure slurmctld (aliases: reconf, confreload).
 
     Forces slurmctld to re-read its configuration file.
     """
@@ -3779,11 +3301,19 @@ def token(options: Tuple[str, ...], verbose: bool = False) -> None:
     "--reason", "-r", default=None, help="Reason for draining nodes"
 )
 @click.option(
+    "--dry-run",
+    is_flag=True,
+    help="Show what would be done without making changes",
+)
+@click.option(
     "--verbose", "-v", is_flag=True, help="Enable verbose output"
 )
+@click.pass_context
 def drain(
+    ctx: click.Context,
     nodes: Tuple[str, ...],
     reason: Optional[str] = None,
+    dry_run: bool = False,
     verbose: bool = False,
 ) -> None:
     """Drain nodes (set state to drain). Reason: --reason, -r, or reason=VALUE.
@@ -3807,6 +3337,7 @@ def drain(
       slurm-cli drain state=idle not:user=admin \
           reason="Idle nodes except admin's"
     """
+    dry_run = get_dry_run(ctx, dry_run)
     # Parse reason= from positional arguments
     args_list = list(nodes)
     inline_reason = None
@@ -3841,6 +3372,10 @@ def drain(
     if final_reason:
         args.append(f"reason={final_reason}")
 
+    if dry_run:
+        console.print(f"[yellow]DRY RUN:[/yellow] {' '.join(args)}")
+        return
+
     if verbose:
         console.print(f"[dim]Running: {' '.join(args)}[/dim]")
 
@@ -3863,9 +3398,20 @@ def drain(
 @click.command(context_settings=CONTEXT_SETTINGS)
 @click.argument("nodes", nargs=-1, required=True)
 @click.option(
+    "--dry-run",
+    is_flag=True,
+    help="Show what would be done without making changes",
+)
+@click.option(
     "--verbose", "-v", is_flag=True, help="Enable verbose output"
 )
-def undrain(nodes: Tuple[str, ...], verbose: bool = False) -> None:
+@click.pass_context
+def undrain(
+    ctx: click.Context,
+    nodes: Tuple[str, ...],
+    dry_run: bool = False,
+    verbose: bool = False,
+) -> None:
     """Undrain nodes (set state to resume).
 
     Supports node filters with optional exclusion (prefix with not:):
@@ -3883,6 +3429,7 @@ def undrain(nodes: Tuple[str, ...], verbose: bool = False) -> None:
       slurm-cli undrain state=drain
       slurm-cli undrain state=drain not:reservation=maint
     """
+    dry_run = get_dry_run(ctx, dry_run)
     # Resolve node filters with exclusions
     resolved_nodes, other_args = resolve_node_filters(
         list(nodes), verbose
@@ -3906,6 +3453,10 @@ def undrain(nodes: Tuple[str, ...], verbose: bool = False) -> None:
         "state=resume",
     ]
 
+    if dry_run:
+        console.print(f"[yellow]DRY RUN:[/yellow] {' '.join(args)}")
+        return
+
     if verbose:
         console.print(f"[dim]Running: {' '.join(args)}[/dim]")
 
@@ -3928,9 +3479,20 @@ def undrain(nodes: Tuple[str, ...], verbose: bool = False) -> None:
 @click.command(context_settings=CONTEXT_SETTINGS)
 @click.argument("nodes", nargs=-1, required=True)
 @click.option(
+    "--dry-run",
+    is_flag=True,
+    help="Show what would be done without making changes",
+)
+@click.option(
     "--verbose", "-v", is_flag=True, help="Enable verbose output"
 )
-def reboot(nodes: Tuple[str, ...], verbose: bool = False) -> None:
+@click.pass_context
+def reboot(
+    ctx: click.Context,
+    nodes: Tuple[str, ...],
+    dry_run: bool = False,
+    verbose: bool = False,
+) -> None:
     """Reboot nodes.
 
     Supports optional flags and node filters with exclusions:
@@ -3951,6 +3513,7 @@ def reboot(nodes: Tuple[str, ...], verbose: bool = False) -> None:
       slurm-cli reboot ALL
       slurm-cli reboot partition=gpu not:reservation=maint
     """
+    dry_run = get_dry_run(ctx, dry_run)
     args_list = list(nodes)
     asap_flag = False
     nextstate = None
@@ -4008,6 +3571,10 @@ def reboot(nodes: Tuple[str, ...], verbose: bool = False) -> None:
 
     args.append(nodelist)
 
+    if dry_run:
+        console.print(f"[yellow]DRY RUN:[/yellow] {' '.join(args)}")
+        return
+
     if verbose:
         console.print(f"[dim]Running: {' '.join(args)}[/dim]")
 
@@ -4030,10 +3597,19 @@ def reboot(nodes: Tuple[str, ...], verbose: bool = False) -> None:
 @click.command(context_settings=CONTEXT_SETTINGS)
 @click.argument("nodes", nargs=-1, required=True)
 @click.option(
+    "--dry-run",
+    is_flag=True,
+    help="Show what would be done without making changes",
+)
+@click.option(
     "--verbose", "-v", is_flag=True, help="Enable verbose output"
 )
+@click.pass_context
 def cancel_reboot(
-    nodes: Tuple[str, ...], verbose: bool = False
+    ctx: click.Context,
+    nodes: Tuple[str, ...],
+    dry_run: bool = False,
+    verbose: bool = False,
 ) -> None:
     """Cancel pending reboot on nodes.
 
@@ -4050,6 +3626,7 @@ def cancel_reboot(
       slurm-cli cancel_reboot partition=gpu
       slurm-cli cancel_reboot partition=gpu not:reservation=maint
     """
+    dry_run = get_dry_run(ctx, dry_run)
     # Resolve node filters with exclusions
     resolved_nodes, other_args = resolve_node_filters(
         list(nodes), verbose
@@ -4066,6 +3643,10 @@ def cancel_reboot(
     nodelist = ",".join(actual_nodes)
 
     args = ["scontrol", "cancel_reboot", nodelist]
+
+    if dry_run:
+        console.print(f"[yellow]DRY RUN:[/yellow] {' '.join(args)}")
+        return
 
     if verbose:
         console.print(f"[dim]Running: {' '.join(args)}[/dim]")
@@ -4094,14 +3675,32 @@ def cancel_reboot(
     "--reason", "-r", default=None, help="Reason for holding jobs"
 )
 @click.option(
+    "--user",
+    "-u",
+    is_flag=True,
+    help="Use user hold (uhold) - only job owner or admin can release",
+)
+@click.option(
+    "--dry-run",
+    is_flag=True,
+    help="Show what would be done without making changes",
+)
+@click.option(
     "--verbose", "-v", is_flag=True, help="Enable verbose output"
 )
+@click.pass_context
 def hold(
+    ctx: click.Context,
     jobs: Tuple[str, ...],
     reason: Optional[str] = None,
+    user: bool = False,
+    dry_run: bool = False,
     verbose: bool = False,
 ) -> None:
     """Hold jobs (prevent them from starting).
+
+    Use --user/-u for user hold (scontrol uhold) which can only be
+    released by the job owner or an administrator.
 
     Supports job filters with optional exclusion (prefix with not:):
     - user=USER, not:user=USER
@@ -4119,7 +3718,10 @@ def hold(
       slurm-cli hold 12345 -r "Waiting for data"
       slurm-cli hold 12345 reason="Need review"
       slurm-cli hold partition=gpu not:user=admin
+      slurm-cli hold -u 12345              # user hold
+      slurm-cli hold --user 12345 -r "Review needed"
     """
+    dry_run = get_dry_run(ctx, dry_run)
     args_list = list(jobs)
     inline_reason = None
     job_args = []
@@ -4141,12 +3743,17 @@ def hold(
     # Use --reason option if provided, otherwise use inline reason=
     final_reason = reason if reason is not None else inline_reason
 
-    # Build scontrol hold command
+    # Build scontrol hold/uhold command
+    hold_cmd = "uhold" if user else "hold"
     for job_id in job_ids:
-        args = ["scontrol", "hold"]
+        args = ["scontrol", hold_cmd]
         if final_reason:
             args.append(f"reason={final_reason}")
         args.append(job_id)
+
+        if dry_run:
+            console.print(f"[yellow]DRY RUN:[/yellow] {' '.join(args)}")
+            continue
 
         if verbose:
             console.print(f"[dim]Running: {' '.join(args)}[/dim]")
@@ -4169,18 +3776,30 @@ def hold(
             console.print("[red]Error: scontrol not found[/red]")
             return
 
-    if job_ids:
+    if job_ids and not dry_run:
+        hold_type = "User held" if user else "Held"
         console.print(
-            f"[green]Held job(s): {', '.join(job_ids)}[/green]"
+            f"[green]{hold_type} job(s): {', '.join(job_ids)}[/green]"
         )
 
 
 @click.command(context_settings=CONTEXT_SETTINGS)
 @click.argument("jobs", nargs=-1, required=True)
 @click.option(
+    "--dry-run",
+    is_flag=True,
+    help="Show what would be done without making changes",
+)
+@click.option(
     "--verbose", "-v", is_flag=True, help="Enable verbose output"
 )
-def release(jobs: Tuple[str, ...], verbose: bool = False) -> None:
+@click.pass_context
+def release(
+    ctx: click.Context,
+    jobs: Tuple[str, ...],
+    dry_run: bool = False,
+    verbose: bool = False,
+) -> None:
     """Release held jobs (allow them to start).
 
     Supports job filters with optional exclusion (prefix with not:):
@@ -4198,6 +3817,7 @@ def release(jobs: Tuple[str, ...], verbose: bool = False) -> None:
       slurm-cli release state=pending
       slurm-cli release partition=gpu not:user=admin
     """
+    dry_run = get_dry_run(ctx, dry_run)
     # Resolve job filters with exclusion support
     job_ids_set, other_args = resolve_job_filters(list(jobs), verbose)
     job_ids = list(job_ids_set)
@@ -4208,6 +3828,10 @@ def release(jobs: Tuple[str, ...], verbose: bool = False) -> None:
 
     for job_id in job_ids:
         args = ["scontrol", "release", job_id]
+
+        if dry_run:
+            console.print(f"[yellow]DRY RUN:[/yellow] {' '.join(args)}")
+            continue
 
         if verbose:
             console.print(f"[dim]Running: {' '.join(args)}[/dim]")
@@ -4230,7 +3854,7 @@ def release(jobs: Tuple[str, ...], verbose: bool = False) -> None:
             console.print("[red]Error: scontrol not found[/red]")
             return
 
-    if job_ids:
+    if job_ids and not dry_run:
         console.print(
             f"[green]Released job(s): {', '.join(job_ids)}[/green]"
         )
@@ -4239,9 +3863,20 @@ def release(jobs: Tuple[str, ...], verbose: bool = False) -> None:
 @click.command(context_settings=CONTEXT_SETTINGS)
 @click.argument("jobs", nargs=-1, required=True)
 @click.option(
+    "--dry-run",
+    is_flag=True,
+    help="Show what would be done without making changes",
+)
+@click.option(
     "--verbose", "-v", is_flag=True, help="Enable verbose output"
 )
-def top(jobs: Tuple[str, ...], verbose: bool = False) -> None:
+@click.pass_context
+def top(
+    ctx: click.Context,
+    jobs: Tuple[str, ...],
+    dry_run: bool = False,
+    verbose: bool = False,
+) -> None:
     """Move jobs to the top of the queue.
 
     Supports job filters with optional exclusion (prefix with not:):
@@ -4258,6 +3893,7 @@ def top(jobs: Tuple[str, ...], verbose: bool = False) -> None:
       slurm-cli top user=john
       slurm-cli top partition=gpu not:user=admin
     """
+    dry_run = get_dry_run(ctx, dry_run)
     # Resolve job filters with exclusion support
     job_ids_set, other_args = resolve_job_filters(list(jobs), verbose)
     job_ids = list(job_ids_set)
@@ -4269,6 +3905,10 @@ def top(jobs: Tuple[str, ...], verbose: bool = False) -> None:
     # scontrol top takes comma-separated job list
     job_list = ",".join(job_ids)
     args = ["scontrol", "top", job_list]
+
+    if dry_run:
+        console.print(f"[yellow]DRY RUN:[/yellow] {' '.join(args)}")
+        return
 
     if verbose:
         console.print(f"[dim]Running: {' '.join(args)}[/dim]")
@@ -4292,9 +3932,20 @@ def top(jobs: Tuple[str, ...], verbose: bool = False) -> None:
 @click.command(context_settings=CONTEXT_SETTINGS)
 @click.argument("jobs", nargs=-1, required=True)
 @click.option(
+    "--dry-run",
+    is_flag=True,
+    help="Show what would be done without making changes",
+)
+@click.option(
     "--verbose", "-v", is_flag=True, help="Enable verbose output"
 )
-def requeue(jobs: Tuple[str, ...], verbose: bool = False) -> None:
+@click.pass_context
+def requeue(
+    ctx: click.Context,
+    jobs: Tuple[str, ...],
+    dry_run: bool = False,
+    verbose: bool = False,
+) -> None:
     """Requeue jobs (restart from beginning).
 
     Supports job filters with optional exclusion (prefix with not:):
@@ -4312,6 +3963,7 @@ def requeue(jobs: Tuple[str, ...], verbose: bool = False) -> None:
       slurm-cli requeue state=failed
       slurm-cli requeue partition=gpu not:state=running
     """
+    dry_run = get_dry_run(ctx, dry_run)
     # Resolve job filters with exclusion support
     job_ids_set, other_args = resolve_job_filters(list(jobs), verbose)
     job_ids = list(job_ids_set)
@@ -4322,6 +3974,10 @@ def requeue(jobs: Tuple[str, ...], verbose: bool = False) -> None:
 
     for job_id in job_ids:
         args = ["scontrol", "requeue", job_id]
+
+        if dry_run:
+            console.print(f"[yellow]DRY RUN:[/yellow] {' '.join(args)}")
+            continue
 
         if verbose:
             console.print(f"[dim]Running: {' '.join(args)}[/dim]")
@@ -4344,7 +4000,7 @@ def requeue(jobs: Tuple[str, ...], verbose: bool = False) -> None:
             console.print("[red]Error: scontrol not found[/red]")
             return
 
-    if job_ids:
+    if job_ids and not dry_run:
         console.print(
             f"[green]Requeued job(s): {', '.join(job_ids)}[/green]"
         )
@@ -4353,9 +4009,20 @@ def requeue(jobs: Tuple[str, ...], verbose: bool = False) -> None:
 @click.command(context_settings=CONTEXT_SETTINGS)
 @click.argument("jobs", nargs=-1, required=True)
 @click.option(
+    "--dry-run",
+    is_flag=True,
+    help="Show what would be done without making changes",
+)
+@click.option(
     "--verbose", "-v", is_flag=True, help="Enable verbose output"
 )
-def suspend(jobs: Tuple[str, ...], verbose: bool = False) -> None:
+@click.pass_context
+def suspend(
+    ctx: click.Context,
+    jobs: Tuple[str, ...],
+    dry_run: bool = False,
+    verbose: bool = False,
+) -> None:
     """Suspend running jobs.
 
     Supports job filters with optional exclusion (prefix with not:):
@@ -4373,6 +4040,7 @@ def suspend(jobs: Tuple[str, ...], verbose: bool = False) -> None:
       slurm-cli suspend partition=gpu
       slurm-cli suspend partition=gpu not:user=admin
     """
+    dry_run = get_dry_run(ctx, dry_run)
     # Resolve job filters with exclusion support
     job_ids_set, other_args = resolve_job_filters(list(jobs), verbose)
     job_ids = list(job_ids_set)
@@ -4383,6 +4051,10 @@ def suspend(jobs: Tuple[str, ...], verbose: bool = False) -> None:
 
     for job_id in job_ids:
         args = ["scontrol", "suspend", job_id]
+
+        if dry_run:
+            console.print(f"[yellow]DRY RUN:[/yellow] {' '.join(args)}")
+            continue
 
         if verbose:
             console.print(f"[dim]Running: {' '.join(args)}[/dim]")
@@ -4405,7 +4077,7 @@ def suspend(jobs: Tuple[str, ...], verbose: bool = False) -> None:
             console.print("[red]Error: scontrol not found[/red]")
             return
 
-    if job_ids:
+    if job_ids and not dry_run:
         console.print(
             f"[green]Suspended job(s): {', '.join(job_ids)}[/green]"
         )
