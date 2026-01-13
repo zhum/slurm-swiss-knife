@@ -24,6 +24,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - **--dry-run Option**: All scontrol/sacctmgr commands now support the `--dry-run` flag
   - Works with: `drain`, `undrain`, `reboot`, `cancel_reboot`, `hold`, `release`, `top`, `requeue`, `suspend`
+  - Also works with: `reconfigure` (confreload), `ping`, `takeover`, `token`
   - Also works with `update` command for all resources (partitions, nodes, jobs, users, qos, etc.)
   - Shows the actual slurm command that would be executed
   - Can be placed anywhere on command line: `slurm-cli update part batch state=drain --dry-run`

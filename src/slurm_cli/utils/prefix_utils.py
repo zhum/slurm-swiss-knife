@@ -62,7 +62,7 @@ def compute_prefix_conflicts(items: List[str]) -> Dict[str, Set[str]]:
     conflicts: Dict[str, Set[str]] = {item: set() for item in items}
 
     for i, item1 in enumerate(items):
-        for item2 in items[i + 1:]:
+        for item2 in items[i + 1 :]:
             # Check if one is a prefix of the other
             if item1.startswith(item2) or item2.startswith(item1):
                 conflicts[item1].add(item2)

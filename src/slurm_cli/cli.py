@@ -3077,12 +3077,25 @@ def version(verbose: bool = False) -> None:
 @click.option(
     "--verbose", "-v", is_flag=True, help="Enable verbose output"
 )
-def reconfigure(verbose: bool = False) -> None:
+@click.option(
+    "--dry-run",
+    is_flag=True,
+    help="Show command without executing",
+)
+@click.pass_context
+def reconfigure(
+    ctx: click.Context, verbose: bool = False, dry_run: bool = False
+) -> None:
     """Reconfigure slurmctld (aliases: reconf, confreload).
 
     Forces slurmctld to re-read its configuration file.
     """
+    dry_run = get_dry_run(ctx) or dry_run
     args = ["scontrol", "reconfigure"]
+
+    if dry_run:
+        console.print(f"[yellow]DRY RUN:[/yellow] {' '.join(args)}")
+        return
 
     if verbose:
         console.print(f"[dim]Running: {' '.join(args)}[/dim]")
@@ -3109,12 +3122,25 @@ def reconfigure(verbose: bool = False) -> None:
 @click.option(
     "--verbose", "-v", is_flag=True, help="Enable verbose output"
 )
-def ping(verbose: bool = False) -> None:
+@click.option(
+    "--dry-run",
+    is_flag=True,
+    help="Show command without executing",
+)
+@click.pass_context
+def ping(
+    ctx: click.Context, verbose: bool = False, dry_run: bool = False
+) -> None:
     """Ping slurmctld.
 
     Checks if the Slurm controller is responding.
     """
+    dry_run = get_dry_run(ctx) or dry_run
     args = ["scontrol", "ping"]
+
+    if dry_run:
+        console.print(f"[yellow]DRY RUN:[/yellow] {' '.join(args)}")
+        return
 
     if verbose:
         console.print(f"[dim]Running: {' '.join(args)}[/dim]")
@@ -3138,13 +3164,26 @@ def ping(verbose: bool = False) -> None:
 @click.option(
     "--verbose", "-v", is_flag=True, help="Enable verbose output"
 )
-def takeover(verbose: bool = False) -> None:
+@click.option(
+    "--dry-run",
+    is_flag=True,
+    help="Show command without executing",
+)
+@click.pass_context
+def takeover(
+    ctx: click.Context, verbose: bool = False, dry_run: bool = False
+) -> None:
     """Take over as primary slurmctld.
 
     Causes the backup slurmctld to take over as the primary controller.
     This command should only be run on a backup controller.
     """
+    dry_run = get_dry_run(ctx) or dry_run
     args = ["scontrol", "takeover"]
+
+    if dry_run:
+        console.print(f"[yellow]DRY RUN:[/yellow] {' '.join(args)}")
+        return
 
     if verbose:
         console.print(f"[dim]Running: {' '.join(args)}[/dim]")
@@ -3233,7 +3272,18 @@ def parse_time_to_seconds(time_str: str) -> Optional[int]:
 @click.option(
     "--verbose", "-v", is_flag=True, help="Enable verbose output"
 )
-def token(options: Tuple[str, ...], verbose: bool = False) -> None:
+@click.option(
+    "--dry-run",
+    is_flag=True,
+    help="Show command without executing",
+)
+@click.pass_context
+def token(
+    ctx: click.Context,
+    options: Tuple[str, ...],
+    verbose: bool = False,
+    dry_run: bool = False,
+) -> None:
     """Generate JWT authentication token.
 
     Options can be specified as key=value pairs:
@@ -3246,6 +3296,7 @@ def token(options: Tuple[str, ...], verbose: bool = False) -> None:
       slurm-cli token lifespan=30m username=john
       slurm-cli token lifespan=infinite
     """
+    dry_run = get_dry_run(ctx) or dry_run
     args = ["scontrol", "token"]
 
     # Parse options
@@ -3276,6 +3327,10 @@ def token(options: Tuple[str, ...], verbose: bool = False) -> None:
                 f"[yellow]Warning: Unknown option: {key}[/yellow]"
             )
             args.append(f"{key}={value}")
+
+    if dry_run:
+        console.print(f"[yellow]DRY RUN:[/yellow] {' '.join(args)}")
+        return
 
     if verbose:
         console.print(f"[dim]Running: {' '.join(args)}[/dim]")
