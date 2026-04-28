@@ -2137,8 +2137,10 @@ def delete(
 
     # Special handling for jobs - collect all job IDs first
     if canonical_resource[:3] == "job":
-        if not resource_names:
-            resource_names = [None]
+        if not resource_names or resource_names == [None]:
+            # No job IDs or filters specified - show help
+            show_resource_help("delete", "jobs")
+            return
 
         # Use job_filter to resolve all arguments to job IDs
         args = [n for n in resource_names if n]
@@ -2148,6 +2150,13 @@ def delete(
         sorted_job_ids = sorted(
             job_ids, key=lambda x: int(x.split("_")[0])
         )
+
+        # Check if any jobs were found
+        if not sorted_job_ids and not user_filters:
+            console.print(
+                "[yellow]No jobs found matching the specified filter(s).[/yellow]"
+            )
+            return
 
         if dry_run:
             for user in user_filters:

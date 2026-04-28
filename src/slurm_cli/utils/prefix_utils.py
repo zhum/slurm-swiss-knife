@@ -379,6 +379,23 @@ RESOURCES = {
                 ],
                 "options": ["user", "account", "partition", "state"],
             },
+            "delete": {
+                "syntax": "slurm-cli del jobs JOBID [JOBID...] [FILTER]",
+                "examples": [
+                    "slurm-cli del jobs 12345",
+                    "slurm-cli del jobs 12345 12346 12347",
+                    "slurm-cli del jobs user=john",
+                    "slurm-cli del jobs state=pending partition=batch",
+                ],
+                "options": [
+                    "user",
+                    "account",
+                    "partition",
+                    "state",
+                    "name",
+                    "jobname",
+                ],
+            },
         },
     },
     "users": {

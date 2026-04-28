@@ -25,7 +25,7 @@ test_completion() {
 }
 
 # Test cases
-test_completion "update accounts <TAB>" "./slurm-cli" "update" "accounts" ""
+test_completion "update accounts <TAB>" "./slurm-cli" "$@" ""
 # test_completion "update acc<TAB>" "./slurm-cli" "update" "acc"
 # test_completion "show accounts <TAB>" "./slurm-cli" "show" "accounts" ""
 # test_completion "update <TAB>" "./slurm-cli" "update" ""

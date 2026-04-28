@@ -195,11 +195,13 @@ class BaseSlurmResource:
         if not m:
             raise ValueError("Invalid time format")
 
-        date = m.group("date") if m.group("date") else None
-        days = int(m.group("days")) if m.group("days") else 0
-        hh = int(m.group("h")) if m.group("h") else 0
-        mm = int(m.group("m")) if m.group("m") else 0
-        ss = int(m.group("s")) if m.group("s") else 0
+        # Use groupdict to safely access optional groups
+        groups = m.groupdict()
+        date = groups.get("date")
+        days = int(groups["days"]) if groups.get("days") else 0
+        hh = int(groups["h"]) if groups.get("h") else 0
+        mm = int(groups["m"]) if groups.get("m") else 0
+        ss = int(groups["s"]) if groups.get("s") else 0
 
         total_seconds = days * 86400 + hh * 3600 + mm * 60 + ss
 

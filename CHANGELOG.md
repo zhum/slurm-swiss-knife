@@ -9,6 +9,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- **Delete Jobs Without Arguments**: `slurm-cli delete jobs` now shows help instead of silently exiting
+  - Displays syntax, examples, and available filter options
+  - Added `delete` action to jobs resource definition
+  - Shows "No jobs found" message when filter matches no jobs
+
 - **Resource Type Guessing**: `slurm-cli show 62792` now correctly shows job 62792
   - Removed strict resource validation to allow job IDs and resource names directly
   - Numeric values are automatically recognized as job IDs

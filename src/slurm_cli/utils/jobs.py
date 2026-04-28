@@ -786,6 +786,12 @@ _slurm_cli_jobs_autocomplete() {{
     local filter_options="{filter_opts}"
     local update_options="{update_opts_str}"
 
+    # Check if 'set' keyword has been typed (for update command)
+    local found_set=0
+    for word in "${{COMP_WORDS[@]}}"; do
+        [[ "$word" == "set" ]] && found_set=1 && break
+    done
+
     # Handle key=value completion
     if _slurm_parse_keyval "$cur" "$prev"; then
         case "$_key" in
@@ -834,7 +840,14 @@ _slurm_cli_jobs_autocomplete() {{
         delete|del|cancel)
             _slurm_complete "$filter_options $cached_jobs" "$cur" ;;
         update|modify|set)
-            _slurm_complete "$update_options $filter_options $cached_jobs" "$cur" ;;
+            # After 'set' keyword, only show update options
+            if [[ $found_set -eq 1 ]]; then
+                _slurm_complete "$update_options" "$cur"
+            else
+                # Before 'set': show job IDs, filter options, and 'set' keyword
+                _slurm_complete "$cached_jobs $filter_options set" "$cur"
+            fi
+            ;;
     esac
 }}
 """  # noqa: E501

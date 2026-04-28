@@ -158,7 +158,7 @@
 
 ### Advanced Features
 
-- [ ] **Job Management**: Implement comprehensive job management features (show, update, cancel jobs)
+- [ ] **Job Management**: Implement comprehensive job management features (+show, update, +cancel jobs)
 - [x] **JSON**: Add json output format (--json or --style json)
 - [ ] **Backup/Restore**: Add slurm config backup and restore capabilities
 
