@@ -200,3 +200,5 @@ DEL/slurm_swiss_knife/utils/config.py
 .cursorrules
 site/
 tmp
+# Added by code-review-graph
+.code-review-graph/

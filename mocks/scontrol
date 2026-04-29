@@ -129,6 +129,13 @@ elif [ "$1" = "takeover" ]; then
     # Mock takeover command
     echo "MOCK: scontrol takeover"
     exit 0
+elif [ "$1" = "write_config" ]; then
+    # Mock write_config command
+    echo "MOCK: scontrol $*"
+    if [ -n "$3" ]; then
+        echo "Output file: $3"
+    fi
+    exit 0
 elif [ "$1" = "version" ]; then
     # Mock version command
     echo "slurm 23.11.4"
@@ -210,7 +217,7 @@ elif [ "$1" = "uhold" ]; then
 else
     # For other arguments, show usage or error
     echo "Usage: $0 show {nodes|partitions|reservations|config} [--json]" >&2
-    echo "       $0 {reconfigure|ping|takeover|version|token|assoc_mgr}" >&2
+    echo "       $0 {reconfigure|ping|takeover|write_config|version|token|assoc_mgr}" >&2
     echo "This is a mock scontrol script for testing purposes." >&2
     echo "Arguments received: $*" >&2
     exit 1

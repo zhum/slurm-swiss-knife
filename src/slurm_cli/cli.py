@@ -964,6 +964,7 @@ def register_commands() -> None:
     main.add_command(reconfigure, name="reconfigure")
     main.add_command(ping, name="ping")
     main.add_command(takeover, name="takeover")
+    main.add_command(write_config, name="write_config")
     main.add_command(token, name="token")
     main.add_command(assoc_mgr, name="assoc_mgr")
     main.add_command(drain, name="drain")
@@ -991,6 +992,9 @@ def register_commands() -> None:
     )
     ping.help = "Ping slurmctld"
     takeover.help = "Take over as primary slurmctld"
+    write_config.help = (
+        "Write Slurm configuration file (aliases: wconf)"
+    )
     token.help = "Generate JWT authentication token (aliases: tok)"
     drain.help = (
         "Drain nodes (aliases: dr). Reason: -r, --reason, or reason="
@@ -3249,6 +3253,59 @@ def takeover(
             console.print(result.stdout.strip())
         console.print(
             "[green]Takeover command sent successfully[/green]"
+        )
+    except subprocess.CalledProcessError as e:
+        console.print(f"[red]Error: {e.stderr.strip() or e}[/red]")
+    except FileNotFoundError:
+        console.print("[red]Error: scontrol not found[/red]")
+
+
+@click.command(context_settings=CONTEXT_SETTINGS)
+@click.option(
+    "--verbose", "-v", is_flag=True, help="Enable verbose output"
+)
+@click.option(
+    "--dry-run",
+    is_flag=True,
+    help="Show command without executing",
+)
+@click.argument("filename", required=False, default=None)
+@click.pass_context
+def write_config(
+    ctx: click.Context, verbose: bool = False, dry_run: bool = False, filename: Optional[str] = None
+) -> None:
+    """Write Slurm configuration file.
+
+    Generates a new configuration file from the current cluster state.
+    The generated file can be reviewed before applying it with scontrol update_config.
+
+    Args:
+        filename: Output file path (default: /var/lib/slurmd/cluster.conf)
+    """
+    dry_run = get_dry_run(ctx) or dry_run
+    args = ["scontrol", "write_config"]
+
+    if filename:
+        args.append(filename)
+
+    if dry_run:
+        console.print(f"[yellow]DRY RUN:[/yellow] {' '.join(args)}")
+        return
+
+    if verbose:
+        console.print(f"[dim]Running: {' '.join(args)}[/dim]")
+
+    try:
+        result = subprocess.run(
+            args,
+            capture_output=True,
+            text=True,
+            check=True,
+        )
+        if result.stdout:
+            console.print(result.stdout.strip())
+        console.print(
+            "[green]Write config command sent successfully[/green]"
         )
     except subprocess.CalledProcessError as e:
         console.print(f"[red]Error: {e.stderr.strip() or e}[/red]")

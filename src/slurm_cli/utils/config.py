@@ -5,6 +5,7 @@ VERBS = {
     "update": ["set", "modify", "edit"],
     "create": ["add", "create", "new"],
     "delete": ["remove", "delete", "rm"],
+    "write_config": ["wconf"],
 }
 
 ROUTES = {
