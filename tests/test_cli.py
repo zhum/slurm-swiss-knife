@@ -778,8 +778,241 @@ def test_resolve_command_alias_new_commands():
     assert resolve_command_alias("undrain") == "undrain"
     assert resolve_command_alias("undr") == "undrain"
 
+    # Test write_config - prefix matching (NEW)
+    assert resolve_command_alias("write_config") == "write_config"
+    assert resolve_command_alias("wconf") == "write_config"
 
-def test_token_command(runner):
+
+def test_write_config_command(runner):
+    """Test the write_config command."""
+    from slurm_cli.cli import register_commands
+
+    register_commands()
+
+    with patch("subprocess.run") as mock_run:
+        mock_run.return_value.stdout = ""
+        mock_run.return_value.returncode = 0
+        result = runner.invoke(main, ["write_config"])
+        assert result.exit_code == 0
+        assert "Write config command sent successfully" in result.output
+        mock_run.assert_called_once()
+        call_args = mock_run.call_args[0][0]
+        assert call_args == ["scontrol", "write_config"]
+
+
+def test_write_config_command_alias(runner):
+    """Test the write_config command with alias 'wconf'."""
+    from slurm_cli.cli import register_commands
+
+    register_commands()
+
+    with patch("subprocess.run") as mock_run:
+        mock_run.return_value.stdout = ""
+        mock_run.return_value.returncode = 0
+        result = runner.invoke(main, ["wconf"])
+        assert result.exit_code == 0
+        assert "Write config command sent successfully" in result.output
+
+
+def test_write_config_command_custom_filename(runner):
+    """Test the write_config command with custom filename."""
+    from slurm_cli.cli import register_commands
+
+    register_commands()
+
+    with patch("subprocess.run") as mock_run:
+        mock_run.return_value.stdout = ""
+        mock_run.return_value.returncode = 0
+        result = runner.invoke(
+            main, ["write_config", "/tmp/cluster.conf"]
+        )
+        assert result.exit_code == 0
+        assert "Write config command sent successfully" in result.output
+        call_args = mock_run.call_args[0][0]
+        # Custom filename should be appended to args
+        assert "/tmp/cluster.conf" in call_args
+
+
+def test_write_config_command_dry_run(runner):
+    """Test the write_config command with dry-run."""
+    from slurm_cli.cli import register_commands
+
+    register_commands()
+
+    result = runner.invoke(
+        main, ["write_config", "--dry-run"]
+    )
+    assert result.exit_code == 0
+    assert "DRY RUN" in result.output
+    # Should show the command that would be run
+    assert "scontrol write_config" in result.output
+
+
+def test_write_config_command_verbose(runner):
+    """Test the write_config command with verbose flag."""
+    from slurm_cli.cli import register_commands
+
+    register_commands()
+
+    with patch("subprocess.run") as mock_run:
+        mock_run.return_value.stdout = ""
+        mock_run.return_value.returncode = 0
+        result = runner.invoke(main, ["write_config", "-v"])
+        assert result.exit_code == 0
+        # Verbose mode should show the command being run
+        assert "Running:" in result.output
+
+
+def test_register_commands_includes_write_config():
+    """Test that register_commands properly includes write_config."""
+    from slurm_cli.cli import main, register_commands
+
+    # Clear existing commands to start fresh
+    main.commands.clear()
+
+    register_commands()
+
+    # Check that write_config is registered
+    assert "write-config" in [cmd.name for cmd in main.commands.values()]
+
+
+def test_register_commands_includes_takeover():
+    """Test that register_commands properly includes takeover."""
+    from slurm_cli.cli import main, register_commands
+
+    # Clear existing commands to start fresh
+    main.commands.clear()
+
+    register_commands()
+
+    # Check that takeover is registered
+    assert "takeover" in [cmd.name for cmd in main.commands.values()]
+
+
+def test_register_commands_includes_all_scontrol_commands():
+    """Test that register_commands includes all expected scontrol commands."""
+    from slurm_cli.cli import main, register_commands
+
+    # Expected scontrol-related commands
+    expected_commands = {
+        "reconfigure",
+        "ping",
+        "takeover",
+        "write_config",  # New command we added
+        "token",
+        "assoc_mgr",
+    }
+
+    # Clear existing commands to start fresh
+    main.commands.clear()
+
+    register_commands()
+
+    # Check that all expected commands are registered
+    registered = {cmd.name for cmd in main.commands.values()}
+    missing = expected_commands - registered
+
+    assert not missing, f"Missing commands: {missing}"
+
+
+# =============================================================================
+# Integration Tests - Command Registration
+# =============================================================================
+
+def test_register_commands_includes_write_config():
+    """Test that register_commands properly includes write_config."""
+    from slurm_cli.cli import main, register_commands
+
+    # Clear existing commands to start fresh
+    main.commands.clear()
+
+    register_commands()
+
+    # Check that write_config is registered
+    assert "write-config" in [cmd.name for cmd in main.commands.values()]
+
+
+def test_register_commands_includes_takeover():
+    """Test that register_commands properly includes takeover."""
+    from slurm_cli.cli import main, register_commands
+
+    # Clear existing commands to start fresh
+    main.commands.clear()
+
+    register_commands()
+
+    # Check that takeover is registered
+    assert "takeover" in [cmd.name for cmd in main.commands.values()]
+
+
+def test_register_commands_includes_all_scontrol_commands():
+    """Test that register_commands includes all expected scontrol commands."""
+    from slurm_cli.cli import main, register_commands
+
+    # Expected scontrol-related commands
+    expected_commands = {
+        "reconfigure",
+        "ping",
+        "takeover",
+        "write_config",  # New command we added
+        "token",
+        "assoc_mgr",
+    }
+
+    # Clear existing commands to start fresh
+    main.commands.clear()
+
+    register_commands()
+
+    # Check that all expected commands are registered
+    registered = {cmd.name for cmd in main.commands.values()}
+    missing = expected_commands - registered
+
+    assert not missing, f"Missing commands: {missing}"
+
+
+# =============================================================================
+# Regression Tests - Ensure Existing Behavior Still Works
+# =============================================================================
+
+def test_reconfigure_still_works_after_write_config_addition(runner):
+    """Regression: ensure reconfigure still works after adding write_config."""
+    from slurm_cli.cli import register_commands
+
+    register_commands()
+
+    with patch("subprocess.run") as mock_run:
+        mock_run.return_value.stdout = ""
+        result = runner.invoke(main, ["reconfigure"])
+        assert result.exit_code == 0
+        assert "Reconfigure command sent successfully" in result.output
+
+
+def test_takeover_still_works_after_write_config_addition(runner):
+    """Regression: ensure takeover still works after adding write_config."""
+    from slurm_cli.cli import register_commands
+
+    register_commands()
+
+    with patch("subprocess.run") as mock_run:
+        mock_run.return_value.stdout = ""
+        result = runner.invoke(main, ["takeover"])
+        assert result.exit_code == 0
+        assert "Takeover command sent successfully" in result.output
+
+
+def test_ping_still_works_after_write_config_addition(runner):
+    """Regression: ensure ping still works after adding write_config."""
+    from slurm_cli.cli import register_commands
+
+    register_commands()
+
+    with patch("subprocess.run") as mock_run:
+        mock_run.return_value.stdout = "Slurmctld(primary) at localhost is UP"
+        result = runner.invoke(main, ["ping"])
+        assert result.exit_code == 0
+        assert "Slurmctld" in result.output
+
     """Test the token command."""
     from slurm_cli.cli import register_commands
 

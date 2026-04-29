@@ -268,7 +268,7 @@ COMMANDS = {
         "description": "Takeover as primary controller",
     },
     "write_config": {
-        "aliases": ["wconf"],
+        "aliases": ["wconf", "w_conf"],  # Include both hyphen and underscore variants
         "description": "Write Slurm configuration file",
     },
     "token": {"aliases": [], "description": "Generate auth token"},
