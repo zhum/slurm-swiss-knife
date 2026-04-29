@@ -267,6 +267,10 @@ COMMANDS = {
         "aliases": [],
         "description": "Takeover as primary controller",
     },
+    "write_config": {
+        "aliases": ["wconf"],
+        "description": "Write Slurm configuration file",
+    },
     "token": {"aliases": [], "description": "Generate auth token"},
     "assoc_mgr": {
         "aliases": [],
