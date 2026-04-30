@@ -4064,12 +4064,12 @@ def cancel_reboot(
 
     args = ["scontrol", "cancel_reboot", nodelist]
 
+    if verbose:
+        console.print(f"[dim]Running: {' '.join(args)}[/dim]")
+
     if dry_run:
         console.print(f"[yellow]DRY RUN:[/yellow] {' '.join(args)}")
         return
-
-    if verbose:
-        console.print(f"[dim]Running: {' '.join(args)}[/dim]")
 
     try:
         result = subprocess.run(
