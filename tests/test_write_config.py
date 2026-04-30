@@ -1,4 +1,4 @@
-"""Tests for the write_config command."""
+"""Tests for the write-config command."""
 
 import json
 from unittest.mock import patch
@@ -16,83 +16,26 @@ def runner():
 
 
 # =============================================================================
-# Basic Command Functionality Tests
-# =============================================================================
-
-def test_write_config_basic(runner):
-    """Test the basic write_config command."""
-    from slurm_cli.cli import register_commands
-
-    register_commands()
-
-    with patch("subprocess.run") as mock_run:
-        mock_run.return_value.stdout = ""
-        mock_run.return_value.returncode = 0
-        result = runner.invoke(main, ["write_config"])
-        assert result.exit_code == 0
-        assert "Write config command sent successfully" in result.output
-        mock_run.assert_called_once()
-        call_args = mock_run.call_args[0][0]
-        assert call_args == ["scontrol", "write_config"]
-
-
-def test_write_config_with_custom_filename(runner):
-    """Test write_config with custom output filename."""
-    from slurm_cli.cli import register_commands
-
-    register_commands()
-
-    with patch("subprocess.run") as mock_run:
-        mock_run.return_value.stdout = ""
-        mock_run.return_value.returncode = 0
-        result = runner.invoke(
-            main, ["write_config", "/tmp/cluster.conf"]
-        )
-        assert result.exit_code == 0
-        assert "Write config command sent successfully" in result.output
-        mock_run.assert_called_once()
-        call_args = mock_run.call_args[0][0]
-        # Custom filename should be appended to args
-        assert "/tmp/cluster.conf" in call_args
-
-
-def test_write_config_default_filename(runner):
-    """Test write_config with default filename (no custom path provided)."""
-    from slurm_cli.cli import register_commands
-
-    register_commands()
-
-    with patch("subprocess.run") as mock_run:
-        mock_run.return_value.stdout = ""
-        mock_run.return_value.returncode = 0
-        result = runner.invoke(main, ["write_config"])
-        assert result.exit_code == 0
-        # Default filename should not be in args (scontrol uses its own default)
-        call_args = mock_run.call_args[0][0]
-        assert call_args == ["scontrol", "write_config"]
-
-
-# =============================================================================
 # Flag and Option Tests
 # =============================================================================
 
 def test_write_config_dry_run(runner):
-    """Test write_config with --dry-run flag."""
+    """Test write-config with --dry-run flag."""
     from slurm_cli.cli import register_commands
 
     register_commands()
 
     result = runner.invoke(
-        main, ["write_config", "--dry-run"]
+        main, ["write-config", "--dry-run"]
     )
     assert result.exit_code == 0
     assert "DRY RUN" in result.output
     # Should show the command that would be run
-    assert "scontrol write_config" in result.output
+    assert "scontrol write config" in result.output
 
 
 def test_write_config_verbose(runner):
-    """Test write_config with --verbose flag."""
+    """Test write-config with --verbose flag."""
     from slurm_cli.cli import register_commands
 
     register_commands()
@@ -100,20 +43,20 @@ def test_write_config_verbose(runner):
     with patch("subprocess.run") as mock_run:
         mock_run.return_value.stdout = ""
         mock_run.return_value.returncode = 0
-        result = runner.invoke(main, ["write_config", "-v"])
+        result = runner.invoke(main, ["write-config", "-v"])
         assert result.exit_code == 0
         # Verbose mode should show the command being run
         assert "Running:" in result.output
 
 
 def test_write_config_dry_run_and_verbose(runner):
-    """Test write_config with both --dry-run and --verbose flags."""
+    """Test write-config with both --dry-run and --verbose flags."""
     from slurm_cli.cli import register_commands
 
     register_commands()
 
     result = runner.invoke(
-        main, ["write_config", "--dry-run", "-v"]
+        main, ["write-config", "--dry-run", "-v"]
     )
     assert result.exit_code == 0
     # Both dry-run output and verbose output should be present
@@ -122,7 +65,7 @@ def test_write_config_dry_run_and_verbose(runner):
 
 
 def test_write_config_short_flags(runner):
-    """Test write_config with short flags (-v, -d)."""
+    """Test write-config with short flags (-v, -d)."""
     from slurm_cli.cli import register_commands
 
     register_commands()
@@ -130,7 +73,7 @@ def test_write_config_short_flags(runner):
     # Test -v (verbose)
     with patch("subprocess.run") as mock_run:
         mock_run.return_value.stdout = ""
-        result = runner.invoke(main, ["write_config", "-v"])
+        result = runner.invoke(main, ["write-config", "-v"])
         assert result.exit_code == 0
         assert "Running:" in result.output
 
@@ -140,7 +83,7 @@ def test_write_config_short_flags(runner):
 # =============================================================================
 
 def test_write_config_alias_wconf(runner):
-    """Test write_config with 'wconf' alias."""
+    """Test write-config with 'wconf' alias."""
     from slurm_cli.cli import register_commands
 
     register_commands()
@@ -148,32 +91,6 @@ def test_write_config_alias_wconf(runner):
     with patch("subprocess.run") as mock_run:
         mock_run.return_value.stdout = ""
         result = runner.invoke(main, ["wconf"])
-        assert result.exit_code == 0
-        assert "Write config command sent successfully" in result.output
-
-
-def test_write_config_alias_wconf(runner):
-    """Test write_config with 'wconf' alias (hyphen)."""
-    from slurm_cli.cli import register_commands
-
-    register_commands()
-
-    with patch("subprocess.run") as mock_run:
-        mock_run.return_value.stdout = ""
-        result = runner.invoke(main, ["wconf"])
-        assert result.exit_code == 0
-        assert "Write config command sent successfully" in result.output
-
-
-def test_write_config_alias_w_conf(runner):
-    """Test write_config with 'w_conf' alias (with underscore)."""
-    from slurm_cli.cli import register_commands
-
-    register_commands()
-
-    with patch("subprocess.run") as mock_run:
-        mock_run.return_value.stdout = ""
-        result = runner.invoke(main, ["w_conf"])
         assert result.exit_code == 0
         assert "Write config command sent successfully" in result.output
 
@@ -183,7 +100,7 @@ def test_write_config_alias_w_conf(runner):
 # =============================================================================
 
 def test_write_config_error_handling(runner):
-    """Test write_config error handling when scontrol fails."""
+    """Test write-config error handling when scontrol fails."""
     import subprocess as sp
 
     from slurm_cli.cli import register_commands
@@ -195,20 +112,20 @@ def test_write_config_error_handling(runner):
         mock_run.side_effect = sp.CalledProcessError(
             1, "scontrol", stderr="Permission denied"
         )
-        result = runner.invoke(main, ["write_config"])
+        result = runner.invoke(main, ["write-config"])
         assert result.exit_code == 0
         assert "Error" in result.output
 
 
 def test_write_config_not_found(runner):
-    """Test write_config when scontrol is not found."""
+    """Test write-config when scontrol is not found."""
     from slurm_cli.cli import register_commands
 
     register_commands()
 
     with patch("subprocess.run") as mock_run:
         mock_run.side_effect = FileNotFoundError()
-        result = runner.invoke(main, ["write_config"])
+        result = runner.invoke(main, ["write-config"])
         assert result.exit_code == 0
         assert "scontrol not found" in result.output
 
@@ -218,7 +135,7 @@ def test_write_config_not_found(runner):
 # =============================================================================
 
 def test_write_config_in_help(runner):
-    """Test that write_config appears in main help."""
+    """Test that write-config appears in main help."""
     from slurm_cli.cli import register_commands
 
     register_commands()
@@ -233,14 +150,14 @@ def test_write_config_in_help(runner):
 
 
 def test_write_config_help_text(runner):
-    """Test that write_config has proper help text."""
+    """Test that write-config has proper help text."""
     from slurm_cli.cli import register_commands
 
     register_commands()
 
     # Check the command object's help attribute
     assert hasattr(main, "help")
-    # The help should mention write_config somewhere in the output
+    # The help should mention write-config somewhere in the output
 
 
 # =============================================================================
@@ -248,7 +165,7 @@ def test_write_config_help_text(runner):
 # =============================================================================
 
 def test_register_commands_includes_write_config():
-    """Test that register_commands properly includes write_config."""
+    """Test that register_commands properly includes write-config."""
     from slurm_cli.cli import main, register_commands
 
     # Clear existing commands to start fresh
@@ -256,7 +173,7 @@ def test_register_commands_includes_write_config():
 
     register_commands()
 
-    # Check that write_config is registered
+    # Check that write-config is registered
     assert "write-config" in [cmd.name for cmd in main.commands.values()]
 
 
@@ -282,9 +199,9 @@ def test_register_commands_includes_all_scontrol_commands():
         "reconfigure",
         "ping",
         "takeover",
-        "write_config",  # New command we added
+        "write-config",  # New command we added
         "token",
-        "assoc_mgr",
+        "assoc-mgr",
     }
 
     # Clear existing commands to start fresh
@@ -304,14 +221,14 @@ def test_register_commands_includes_all_scontrol_commands():
 # =============================================================================
 
 def test_write_config_prefix_matching():
-    """Test that write_config responds to common prefixes."""
+    """Test that write-config responds to common prefixes."""
     from slurm_cli.cli import resolve_command_alias
 
     # Test exact match
-    assert resolve_command_alias("write_config") == "write_config"
+    assert resolve_command_alias("write-config") == "write-config"
 
     # Test prefix matching (shorter forms)
-    assert resolve_command_alias("wconf") == "write_config"
+    assert resolve_command_alias("wconf") == "write-config"
 
 
 def test_takeover_prefix_matching():
@@ -330,7 +247,7 @@ def test_takeover_prefix_matching():
 # =============================================================================
 
 def test_reconfigure_still_works_after_write_config_addition(runner):
-    """Regression: ensure reconfigure still works after adding write_config."""
+    """Regression: ensure reconfigure still works after adding write-config."""
     from slurm_cli.cli import register_commands
 
     register_commands()
@@ -343,7 +260,7 @@ def test_reconfigure_still_works_after_write_config_addition(runner):
 
 
 def test_takeover_still_works_after_write_config_addition(runner):
-    """Regression: ensure takeover still works after adding write_config."""
+    """Regression: ensure takeover still works after adding write-config."""
     from slurm_cli.cli import register_commands
 
     register_commands()
@@ -356,7 +273,7 @@ def test_takeover_still_works_after_write_config_addition(runner):
 
 
 def test_ping_still_works_after_write_config_addition(runner):
-    """Regression: ensure ping still works after adding write_config."""
+    """Regression: ensure ping still works after adding write-config."""
     from slurm_cli.cli import register_commands
 
     register_commands()
@@ -367,61 +284,3 @@ def test_ping_still_works_after_write_config_addition(runner):
         assert result.exit_code == 0
         assert "Slurmctld" in result.output
 
-
-# =============================================================================
-# Integration Tests - Command Registration
-# =============================================================================
-
-def test_register_commands_includes_write_config():
-    """Test that register_commands properly includes write_config."""
-    from slurm_cli.cli import main, register_commands
-
-    # Clear existing commands to start fresh
-    main.commands.clear()
-
-    register_commands()
-
-    # Check that write_config is registered
-    assert "write-config" in [cmd.name for cmd in main.commands.values()]
-
-
-def test_register_commands_includes_takeover():
-    """Test that register_commands properly includes takeover."""
-    from slurm_cli.cli import main, register_commands
-
-    # Clear existing commands to start fresh
-    main.commands.clear()
-
-    register_commands()
-
-    # Check that takeover is registered
-    assert "takeover" in [cmd.name for cmd in main.commands.values()]
-
-
-def test_register_commands_includes_all_scontrol_commands():
-    """Test that register_commands includes all expected scontrol commands."""
-    from slurm_cli.cli import main, register_commands
-
-    # Expected scontrol-related commands
-    expected_commands = {
-        "reconfigure",
-        "ping",
-        "takeover",
-        "write_config",  # New command we added
-        "token",
-        "assoc_mgr",
-    }
-
-    # Clear existing commands to start fresh
-    main.commands.clear()
-
-    register_commands()
-
-    # Check that all expected commands are registered
-    registered = {cmd.name for cmd in main.commands.values()}
-    missing = expected_commands - registered
-
-    assert not missing, f"Missing commands: {missing}"
-
-
-# =============================================================================

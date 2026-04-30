@@ -778,103 +778,9 @@ def test_resolve_command_alias_new_commands():
     assert resolve_command_alias("undrain") == "undrain"
     assert resolve_command_alias("undr") == "undrain"
 
-    # Test write_config - prefix matching (NEW)
-    assert resolve_command_alias("write_config") == "write_config"
-    assert resolve_command_alias("wconf") == "write_config"
-
-
-def test_write_config_command(runner):
-    """Test the write_config command."""
-    from slurm_cli.cli import register_commands
-
-    register_commands()
-
-    with patch("subprocess.run") as mock_run:
-        mock_run.return_value.stdout = ""
-        mock_run.return_value.returncode = 0
-        result = runner.invoke(main, ["write_config"])
-        assert result.exit_code == 0
-        assert "Write config command sent successfully" in result.output
-        mock_run.assert_called_once()
-        call_args = mock_run.call_args[0][0]
-        # Actual scontrol command is "scontrol write config"
-        assert call_args == ["scontrol", "write", "config"]
-
-
-def test_write_config_command_alias(runner):
-    """Test the write_config command with alias 'wconf'."""
-    from slurm_cli.cli import register_commands
-
-    register_commands()
-
-    with patch("subprocess.run") as mock_run:
-        mock_run.return_value.stdout = ""
-        mock_run.return_value.returncode = 0
-        result = runner.invoke(main, ["wconf"])
-        assert result.exit_code == 0
-        assert "Write config command sent successfully" in result.output
-
-
-def test_write_config_command_custom_filename(runner):
-    """Test the write_config command with custom filename."""
-    from slurm_cli.cli import register_commands
-
-    register_commands()
-
-    with patch("subprocess.run") as mock_run:
-        mock_run.return_value.stdout = ""
-        mock_run.return_value.returncode = 0
-        result = runner.invoke(
-            main, ["write_config", "/tmp/cluster.conf"]
-        )
-        assert result.exit_code == 0
-        assert "Write config command sent successfully" in result.output
-        call_args = mock_run.call_args[0][0]
-        # Custom filename should be appended to args
-        assert "/tmp/cluster.conf" in call_args
-
-
-def test_write_config_command_dry_run(runner):
-    """Test the write_config command with dry-run."""
-    from slurm_cli.cli import register_commands
-
-    register_commands()
-
-    result = runner.invoke(
-        main, ["write_config", "--dry-run"]
-    )
-    assert result.exit_code == 0
-    assert "DRY RUN" in result.output
-    # Should show the command that would be run
-    assert "scontrol write config" in result.output
-
-
-def test_write_config_command_verbose(runner):
-    """Test the write_config command with verbose flag."""
-    from slurm_cli.cli import register_commands
-
-    register_commands()
-
-    with patch("subprocess.run") as mock_run:
-        mock_run.return_value.stdout = ""
-        mock_run.return_value.returncode = 0
-        result = runner.invoke(main, ["write_config", "-v"])
-        assert result.exit_code == 0
-        # Verbose mode should show the command being run
-        assert "Running:" in result.output
-
-
-def test_register_commands_includes_write_config():
-    """Test that register_commands properly includes write_config."""
-    from slurm_cli.cli import main, register_commands
-
-    # Clear existing commands to start fresh
-    main.commands.clear()
-
-    register_commands()
-
-    # Check that write_config is registered
-    assert "write-config" in [cmd.name for cmd in main.commands.values()]
+    # Test write-config - prefix matching (NEW)
+    assert resolve_command_alias("write-config") == "write-config"
+    assert resolve_command_alias("wconf") == "write-config"
 
 
 def test_register_commands_includes_takeover():
@@ -921,7 +827,7 @@ def test_register_commands_includes_all_scontrol_commands():
 # =============================================================================
 
 def test_register_commands_includes_write_config():
-    """Test that register_commands properly includes write_config."""
+    """Test that register_commands properly includes write-config."""
     from slurm_cli.cli import main, register_commands
 
     # Clear existing commands to start fresh
@@ -929,47 +835,8 @@ def test_register_commands_includes_write_config():
 
     register_commands()
 
-    # Check that write_config is registered (note: name uses hyphen)
+    # Check that write-config is registered (note: name uses hyphen)
     assert "write-config" in [cmd.name for cmd in main.commands.values()]
-
-
-def test_register_commands_includes_takeover():
-    """Test that register_commands properly includes takeover."""
-    from slurm_cli.cli import main, register_commands
-
-    # Clear existing commands to start fresh
-    main.commands.clear()
-
-    register_commands()
-
-    # Check that takeover is registered
-    assert "takeover" in [cmd.name for cmd in main.commands.values()]
-
-
-def test_register_commands_includes_all_scontrol_commands():
-    """Test that register_commands includes all expected scontrol commands."""
-    from slurm_cli.cli import main, register_commands
-
-    # Expected scontrol-related commands (note: command names use hyphens)
-    expected_commands = {
-        "reconfigure",
-        "ping",
-        "takeover",
-        "write-config",  # Fixed: uses hyphen not underscore
-        "token",
-        "assoc-mgr",  # Fixed: uses hyphen not underscore
-    }
-
-    # Clear existing commands to start fresh
-    main.commands.clear()
-
-    register_commands()
-
-    # Check that all expected commands are registered
-    registered = {cmd.name for cmd in main.commands.values()}
-    missing = expected_commands - registered
-
-    assert not missing, f"Missing commands: {missing}"
 
 
 # =============================================================================
@@ -977,7 +844,7 @@ def test_register_commands_includes_all_scontrol_commands():
 # =============================================================================
 
 def test_reconfigure_still_works_after_write_config_addition(runner):
-    """Regression: ensure reconfigure still works after adding write_config."""
+    """Regression: ensure reconfigure still works after adding write-config."""
     from slurm_cli.cli import register_commands
 
     register_commands()
@@ -990,7 +857,7 @@ def test_reconfigure_still_works_after_write_config_addition(runner):
 
 
 def test_takeover_still_works_after_write_config_addition(runner):
-    """Regression: ensure takeover still works after adding write_config."""
+    """Regression: ensure takeover still works after adding write-config."""
     from slurm_cli.cli import register_commands
 
     register_commands()
@@ -1003,7 +870,7 @@ def test_takeover_still_works_after_write_config_addition(runner):
 
 
 def test_ping_still_works_after_write_config_addition(runner):
-    """Regression: ensure ping still works after adding write_config."""
+    """Regression: ensure ping still works after adding write-config."""
     from slurm_cli.cli import register_commands
 
     register_commands()
@@ -1650,7 +1517,7 @@ def test_reboot_command_with_filter(runner):
 
 
 def test_cancel_reboot_command(runner):
-    """Test the cancel_reboot command."""
+    """Test the cancel-reboot command."""
     from slurm_cli.cli import register_commands
 
     register_commands()
@@ -1658,7 +1525,7 @@ def test_cancel_reboot_command(runner):
     with patch("subprocess.run") as mock_run:
         mock_run.return_value.stdout = ""
         mock_run.return_value.returncode = 0
-        result = runner.invoke(main, ["cancel_reboot", "node001"])
+        result = runner.invoke(main, ["cancel-reboot", "node001"])
         assert result.exit_code == 0
         assert "Cancelled reboot" in result.output
         call_args = mock_run.call_args[0][0]
@@ -1668,7 +1535,7 @@ def test_cancel_reboot_command(runner):
 
 
 def test_cancel_reboot_command_multiple_nodes(runner):
-    """Test the cancel_reboot command with multiple nodes."""
+    """Test the cancel-reboot command with multiple nodes."""
     from slurm_cli.cli import register_commands
 
     register_commands()
@@ -1677,7 +1544,7 @@ def test_cancel_reboot_command_multiple_nodes(runner):
         mock_run.return_value.stdout = ""
         mock_run.return_value.returncode = 0
         result = runner.invoke(
-            main, ["cancel_reboot", "node001", "node002", "node003"]
+            main, ["cancel-reboot", "node001", "node002", "node003"]
         )
         assert result.exit_code == 0
         assert "Cancelled reboot" in result.output
@@ -1686,7 +1553,7 @@ def test_cancel_reboot_command_multiple_nodes(runner):
 
 
 def test_cancel_reboot_command_alias(runner):
-    """Test the cancel_reboot command with alias 'cancel_reb'."""
+    """Test the cancel-reboot command with alias 'cancel-reb'."""
     from slurm_cli.cli import register_commands
 
     register_commands()
@@ -1694,13 +1561,13 @@ def test_cancel_reboot_command_alias(runner):
     with patch("subprocess.run") as mock_run:
         mock_run.return_value.stdout = ""
         mock_run.return_value.returncode = 0
-        result = runner.invoke(main, ["cancel_reb", "node001"])
+        result = runner.invoke(main, ["cancel-reb", "node001"])
         assert result.exit_code == 0
         assert "Cancelled reboot" in result.output
 
 
 def test_cancel_reboot_command_with_filter(runner):
-    """Test the cancel_reboot command with partition filter."""
+    """Test the cancel-reboot command with partition filter."""
     from slurm_cli.cli import register_commands
 
     register_commands()
@@ -1716,7 +1583,7 @@ def test_cancel_reboot_command_with_filter(runner):
                 [],
             )
             result = runner.invoke(
-                main, ["cancel_reboot", "partition=gpu"]
+                main, ["cancel-reboot", "partition=gpu"]
             )
             assert result.exit_code == 0
             mock_resolve.assert_called_once()
@@ -1818,7 +1685,7 @@ def test_autocomplete_reboot_options(runner):
 
 
 def test_autocomplete_cancel_reboot_options(runner):
-    """Test that autocomplete includes options for cancel_reboot command."""
+    """Test that autocomplete includes options for cancel-reboot command."""
     from slurm_cli.cli import register_commands
 
     register_commands()
@@ -1826,8 +1693,8 @@ def test_autocomplete_cancel_reboot_options(runner):
     result = runner.invoke(main, ["autocomplete"])
     assert result.exit_code == 0
 
-    # Check cancel_reboot command options
-    assert "cancel_reboot)" in result.output
+    # Check cancel-reboot command options
+    assert "cancel-reboot)" in result.output
     # Should have node filters
     assert "partition=" in result.output
 
@@ -2939,12 +2806,12 @@ class TestResourceTypeAutodetection:
 
 
 # ============================================================================
-# batch_script Command Tests
+# batch-script Command Tests
 # ============================================================================
 
 
 def test_batch_script_command(runner):
-    """Test the batch_script command."""
+    """Test the batch-script command."""
     from slurm_cli.cli import register_commands
 
     register_commands()
@@ -2952,7 +2819,7 @@ def test_batch_script_command(runner):
     with patch("subprocess.run") as mock_run:
         mock_run.return_value.stdout = ""
         mock_run.return_value.returncode = 0
-        result = runner.invoke(main, ["batch_script", "12345", "script.sh"])
+        result = runner.invoke(main, ["batch-script", "12345", "script.sh"])
         assert result.exit_code == 0
         assert "Batch script command sent successfully" in result.output
         mock_run.assert_called_once()
@@ -2960,49 +2827,8 @@ def test_batch_script_command(runner):
         assert call_args == ["scontrol", "write", "batch_script", "12345", "script.sh"]
 
 
-def test_batch_script_command_dry_run(runner):
-    """Test the batch_script command with dry-run."""
-    from slurm_cli.cli import register_commands
-
-    register_commands()
-
-    # Without job_id, should show error first
-    result = runner.invoke(main, ["batch_script", "--dry-run"])
-    assert result.exit_code == 0
-    assert "Job ID is required" in result.output
-    assert "Usage: slurm-cli batch_script JOB_ID [FILENAME]" in result.output
-
-    # With job_id and dry-run, should show DRY RUN output
-    result = runner.invoke(main, ["batch_script", "12345", "--dry-run"])
-    assert result.exit_code == 0
-    assert "DRY RUN" in result.output
-    # Should show the command that would be run
-    assert "scontrol write batch_script" in result.output
-
-
-def test_batch_script_command_verbose(runner):
-    """Test the batch_script command with verbose flag."""
-    from slurm_cli.cli import register_commands
-
-    register_commands()
-
-    # Without job_id, should show error first
-    result = runner.invoke(main, ["batch_script", "-v"])
-    assert result.exit_code == 0
-    assert "Job ID is required" in result.output
-
-    # With job_id and verbose, should show the command being run
-    with patch("subprocess.run") as mock_run:
-        mock_run.return_value.stdout = ""
-        mock_run.return_value.returncode = 0
-        result = runner.invoke(main, ["batch_script", "12345", "-v"])
-        assert result.exit_code == 0
-        # Verbose mode should show the command being run
-        assert "Running:" in result.output
-
-
 def test_batch_script_command_with_job_id_only(runner):
-    """Test the batch_script command with only job_id."""
+    """Test the batch-script command with only job_id."""
     from slurm_cli.cli import register_commands
 
     register_commands()
@@ -3010,7 +2836,7 @@ def test_batch_script_command_with_job_id_only(runner):
     with patch("subprocess.run") as mock_run:
         mock_run.return_value.stdout = ""
         mock_run.return_value.returncode = 0
-        result = runner.invoke(main, ["batch_script", "99999"])
+        result = runner.invoke(main, ["batch-script", "99999"])
         assert result.exit_code == 0
         call_args = mock_run.call_args[0][0]
         # Should include job_id in args
@@ -3018,7 +2844,7 @@ def test_batch_script_command_with_job_id_only(runner):
 
 
 def test_batch_script_command_with_filename_only_and_mock(runner):
-    """Test the batch_script command with only filename and mock."""
+    """Test the batch-script command with only filename and mock."""
     from slurm_cli.cli import register_commands
 
     register_commands()
@@ -3026,7 +2852,7 @@ def test_batch_script_command_with_filename_only_and_mock(runner):
     with patch("subprocess.run") as mock_run:
         mock_run.return_value.stdout = ""
         mock_run.return_value.returncode = 0
-        result = runner.invoke(main, ["batch_script", "99999", "readfile.sh"])
+        result = runner.invoke(main, ["batch-script", "99999", "readfile.sh"])
         assert result.exit_code == 0
         call_args = mock_run.call_args[0][0]
         # Should include filename in args
@@ -3034,7 +2860,7 @@ def test_batch_script_command_with_filename_only_and_mock(runner):
 
 
 def test_batch_script_command_error_handling(runner):
-    """Test error handling for batch_script command."""
+    """Test error handling for batch-script command."""
     import subprocess as sp
 
     from slurm_cli.cli import register_commands
@@ -3046,7 +2872,7 @@ def test_batch_script_command_error_handling(runner):
         mock_run.side_effect = sp.CalledProcessError(
             1, "scontrol", stderr="Permission denied"
         )
-        result = runner.invoke(main, ["batch_script", "12345"])
+        result = runner.invoke(main, ["batch-script", "12345"])
         assert result.exit_code == 0
         assert "Error" in result.output
 
@@ -3059,13 +2885,13 @@ def test_batch_script_command_not_found(runner):
 
     with patch("subprocess.run") as mock_run:
         mock_run.side_effect = FileNotFoundError()
-        result = runner.invoke(main, ["batch_script", "12345"])
+        result = runner.invoke(main, ["batch-script", "12345"])
         assert result.exit_code == 0
         assert "scontrol not found" in result.output
 
 
 def test_register_commands_includes_batch_script():
-    """Test that register_commands properly includes batch_script."""
+    """Test that register_commands properly includes batch-script."""
     from slurm_cli.cli import main, register_commands
 
     # Clear existing commands to start fresh
@@ -3073,17 +2899,17 @@ def test_register_commands_includes_batch_script():
 
     register_commands()
 
-    # Check that batch_script is registered
+    # Check that batch-script is registered
     assert "batch-script" in [cmd.name for cmd in main.commands.values()]
 
 
 def test_resolve_command_alias_batch_script():
-    """Test resolve_command_alias for batch_script."""
+    """Test resolve_command_alias for batch-script."""
     from slurm_cli.cli import resolve_command_alias
 
-    # Test batch_script - prefix matching (NEW)
-    assert resolve_command_alias("batch_script") == "batch_script"
-    assert resolve_command_alias("bscript") == "batch_script"
+    # Test batch-script - prefix matching (NEW)
+    assert resolve_command_alias("batch-script") == "batch-script"
+    assert resolve_command_alias("bscript") == "batch-script"
 
 
 # ============================================================================
