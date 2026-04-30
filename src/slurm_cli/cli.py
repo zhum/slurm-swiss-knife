@@ -964,13 +964,14 @@ def register_commands() -> None:
     main.add_command(reconfigure, name="reconfigure")
     main.add_command(ping, name="ping")
     main.add_command(takeover, name="takeover")
-    main.add_command(write_config, name="write_config")
+    main.add_command(write_config, name="write-config")
+    main.add_command(batch_script, name="batch-script")
     main.add_command(token, name="token")
     main.add_command(assoc_mgr, name="assoc_mgr")
     main.add_command(drain, name="drain")
     main.add_command(undrain, name="undrain")
     main.add_command(reboot, name="reboot")
-    main.add_command(cancel_reboot, name="cancel_reboot")
+    main.add_command(cancel_reboot, name="cancel-reboot")
     main.add_command(hold, name="hold")
     main.add_command(release, name="release")
     main.add_command(top, name="top")
@@ -995,13 +996,16 @@ def register_commands() -> None:
     write_config.help = (
         "Write Slurm configuration file (aliases: wconf)"
     )
+    batch_script.help = (
+        "Run scontrol write batch_script for a job (aliases: bscript)"
+    )
     token.help = "Generate JWT authentication token (aliases: tok)"
     drain.help = (
         "Drain nodes (aliases: dr). Reason: -r, --reason, or reason="
     )
     undrain.help = "Undrain/resume nodes (aliases: undr, resume)"
     reboot.help = "Reboot nodes (aliases: reb)"
-    cancel_reboot.help = "Cancel pending reboot (aliases: cancel_reb)"
+    cancel_reboot.help = "Cancel pending reboot (aliases: cancel-reb)"
     hold.help = (
         "Hold jobs (aliases: hol). Reason: -r, --reason, or reason="
     )
@@ -2674,7 +2678,7 @@ _slurm_cli_initialize_autocomplete() {{
             fi
             return
             ;;
-        cancel_reboot)
+        cancel-reboot)
             # Cancel reboot command takes nodes and filters
             local node_filters="partition= state= user= reservation= drainreason="
             local neg_filters="not:partition= not:state= not:user= not:reservation= not:drainreason="
@@ -3283,7 +3287,7 @@ def write_config(
         filename: Output file path (default: /var/lib/slurmd/cluster.conf)
     """
     dry_run = get_dry_run(ctx) or dry_run
-    args = ["scontrol", "write_config"]
+    args = ["scontrol", "write", "config"]
 
     if filename:
         args.append(filename)
@@ -3306,6 +3310,73 @@ def write_config(
             console.print(result.stdout.strip())
         console.print(
             "[green]Write config command sent successfully[/green]"
+        )
+    except subprocess.CalledProcessError as e:
+        console.print(f"[red]Error: {e.stderr.strip() or e}[/red]")
+    except FileNotFoundError:
+        console.print("[red]Error: scontrol not found[/red]")
+
+
+@click.command(context_settings=CONTEXT_SETTINGS)
+@click.option(
+    "--verbose", "-v", is_flag=True, help="Enable verbose output"
+)
+@click.option(
+    "--dry-run",
+    is_flag=True,
+    help="Show command without executing",
+)
+@click.argument("job_id", required=True, default=None)
+@click.argument("filename", required=False, default=None)
+@click.pass_context
+def batch_script(
+    ctx: click.Context, verbose: bool = False, dry_run: bool = False, job_id: Optional[str] = None, filename: Optional[str] = None
+) -> None:
+    """Run scontrol write batch_script for a job.
+
+    Submits the contents of a file as a batch script to the specified job.
+
+    Args:
+        job_id: Job ID (required - must be provided)
+        filename: Script file path (optional - if not provided, reads from stdin)
+    """
+    dry_run = get_dry_run(ctx) or dry_run
+
+    ## Check that job_id is required
+    #if job_id is None:
+    #    console.print("[red]Error: Job ID is required.[/red]")
+    #    console.print(
+    #        "[yellow]Usage: slurm-cli batch_script JOB_ID [FILENAME][/yellow]"
+    #    )
+    #    return
+
+    # Build command arguments
+    args = ["scontrol", "write", "batch_script"]
+
+    if job_id is not None:
+        args.append(str(job_id))
+
+    if filename:
+        args.append(filename)
+
+    if dry_run:
+        console.print(f"[yellow]DRY RUN:[/yellow] {' '.join(args)}")
+        return
+
+    if verbose:
+        console.print(f"[dim]Running: {' '.join(args)}[/dim]")
+
+    try:
+        result = subprocess.run(
+            args,
+            capture_output=True,
+            text=True,
+            check=True,
+        )
+        if result.stdout:
+            console.print(result.stdout.strip())
+        console.print(
+            "[green]Batch script command sent successfully[/green]"
         )
     except subprocess.CalledProcessError as e:
         console.print(f"[red]Error: {e.stderr.strip() or e}[/red]")
@@ -3970,10 +4041,10 @@ def cancel_reboot(
 
     \b
     Examples:
-      slurm-cli cancel_reboot node001
-      slurm-cli cancel_reboot node[001-010]
-      slurm-cli cancel_reboot partition=gpu
-      slurm-cli cancel_reboot partition=gpu not:reservation=maint
+      slurm-cli cancel-reboot node001
+      slurm-cli cancel-reboot node[001-010]
+      slurm-cli cancel-reboot partition=gpu
+      slurm-cli cancel-reboot partition=gpu not:reservation=maint
     """
     dry_run = get_dry_run(ctx, dry_run)
     # Resolve node filters with exclusions

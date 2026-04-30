@@ -267,9 +267,13 @@ COMMANDS = {
         "aliases": [],
         "description": "Takeover as primary controller",
     },
-    "write_config": {
-        "aliases": ["wconf", "w_conf"],  # Include both hyphen and underscore variants
+    "write-config": {
+        "aliases": ["wconf", "w-conf"],  # Include both hyphen and underscore variants
         "description": "Write Slurm configuration file",
+    },
+    "batch-script": {
+        "aliases": ["bscript"],
+        "description": "Run scontrol write batch_script for a job",
     },
     "token": {"aliases": [], "description": "Generate auth token"},
     "assoc_mgr": {
@@ -282,7 +286,7 @@ COMMANDS = {
         "description": "Undrain/resume nodes",
     },
     "reboot": {"aliases": [], "description": "Reboot nodes"},
-    "cancel_reboot": {
+    "cancel-reboot": {
         "aliases": [],
         "description": "Cancel node reboot",
     },

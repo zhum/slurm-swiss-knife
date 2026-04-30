@@ -129,11 +129,27 @@ elif [ "$1" = "takeover" ]; then
     # Mock takeover command
     echo "MOCK: scontrol takeover"
     exit 0
-elif [ "$1" = "write_config" ]; then
-    # Mock write_config command
-    echo "MOCK: scontrol $*"
-    if [ -n "$3" ]; then
-        echo "Output file: $3"
+elif [ "$1" = "write" ]; then
+    if [ "${2:-none}" = "config" ]; then
+        # Mock write config command
+        echo "MOCK: scontrol $*"
+        if [ -n "$3" ]; then
+            echo "Output file: $3"
+        fi
+    elif [ "${2:-none}" = "batch_script" ]; then
+        # Mock write batch_script command
+        echo "MOCK: scontrol $*"
+        if [ -n "$3" ] && [ -f "$3" ]; then
+            echo "Script file: $3 (exists)"
+        elif [ -n "$3" ]; then
+            echo "Script file: $3"
+        else
+            echo "MOCK: Not implemented scontrol $*"
+            exit 1
+        fi
+    else
+        echo "MOCK: Not implemented scontrol $*"
+        exit 1
     fi
     exit 0
 elif [ "$1" = "version" ]; then
@@ -217,7 +233,7 @@ elif [ "$1" = "uhold" ]; then
 else
     # For other arguments, show usage or error
     echo "Usage: $0 show {nodes|partitions|reservations|config} [--json]" >&2
-    echo "       $0 {reconfigure|ping|takeover|write_config|version|token|assoc_mgr}" >&2
+    echo "       $0 {reconfigure|ping|takeover|write config|write batch_script|version|token|assoc_mgr}" >&2
     echo "This is a mock scontrol script for testing purposes." >&2
     echo "Arguments received: $*" >&2
     exit 1

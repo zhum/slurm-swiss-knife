@@ -797,7 +797,8 @@ def test_write_config_command(runner):
         assert "Write config command sent successfully" in result.output
         mock_run.assert_called_once()
         call_args = mock_run.call_args[0][0]
-        assert call_args == ["scontrol", "write_config"]
+        # Actual scontrol command is "scontrol write config"
+        assert call_args == ["scontrol", "write", "config"]
 
 
 def test_write_config_command_alias(runner):
@@ -845,7 +846,7 @@ def test_write_config_command_dry_run(runner):
     assert result.exit_code == 0
     assert "DRY RUN" in result.output
     # Should show the command that would be run
-    assert "scontrol write_config" in result.output
+    assert "scontrol write config" in result.output
 
 
 def test_write_config_command_verbose(runner):
@@ -893,14 +894,14 @@ def test_register_commands_includes_all_scontrol_commands():
     """Test that register_commands includes all expected scontrol commands."""
     from slurm_cli.cli import main, register_commands
 
-    # Expected scontrol-related commands
+    # Expected scontrol-related commands (note: command names use hyphens)
     expected_commands = {
         "reconfigure",
         "ping",
         "takeover",
-        "write_config",  # New command we added
+        "write-config",  # Fixed: uses hyphen not underscore
         "token",
-        "assoc_mgr",
+        "assoc-mgr",  # Fixed: uses hyphen not underscore
     }
 
     # Clear existing commands to start fresh
@@ -928,7 +929,7 @@ def test_register_commands_includes_write_config():
 
     register_commands()
 
-    # Check that write_config is registered
+    # Check that write_config is registered (note: name uses hyphen)
     assert "write-config" in [cmd.name for cmd in main.commands.values()]
 
 
@@ -949,14 +950,14 @@ def test_register_commands_includes_all_scontrol_commands():
     """Test that register_commands includes all expected scontrol commands."""
     from slurm_cli.cli import main, register_commands
 
-    # Expected scontrol-related commands
+    # Expected scontrol-related commands (note: command names use hyphens)
     expected_commands = {
         "reconfigure",
         "ping",
         "takeover",
-        "write_config",  # New command we added
+        "write-config",  # Fixed: uses hyphen not underscore
         "token",
-        "assoc_mgr",
+        "assoc-mgr",  # Fixed: uses hyphen not underscore
     }
 
     # Clear existing commands to start fresh
@@ -2935,6 +2936,154 @@ class TestResourceTypeAutodetection:
                     "test-user"
                 )
                 assert resource_type == "users"
+
+
+# ============================================================================
+# batch_script Command Tests
+# ============================================================================
+
+
+def test_batch_script_command(runner):
+    """Test the batch_script command."""
+    from slurm_cli.cli import register_commands
+
+    register_commands()
+
+    with patch("subprocess.run") as mock_run:
+        mock_run.return_value.stdout = ""
+        mock_run.return_value.returncode = 0
+        result = runner.invoke(main, ["batch_script", "12345", "script.sh"])
+        assert result.exit_code == 0
+        assert "Batch script command sent successfully" in result.output
+        mock_run.assert_called_once()
+        call_args = mock_run.call_args[0][0]
+        assert call_args == ["scontrol", "write", "batch_script", "12345", "script.sh"]
+
+
+def test_batch_script_command_dry_run(runner):
+    """Test the batch_script command with dry-run."""
+    from slurm_cli.cli import register_commands
+
+    register_commands()
+
+    # Without job_id, should show error first
+    result = runner.invoke(main, ["batch_script", "--dry-run"])
+    assert result.exit_code == 0
+    assert "Job ID is required" in result.output
+    assert "Usage: slurm-cli batch_script JOB_ID [FILENAME]" in result.output
+
+    # With job_id and dry-run, should show DRY RUN output
+    result = runner.invoke(main, ["batch_script", "12345", "--dry-run"])
+    assert result.exit_code == 0
+    assert "DRY RUN" in result.output
+    # Should show the command that would be run
+    assert "scontrol write batch_script" in result.output
+
+
+def test_batch_script_command_verbose(runner):
+    """Test the batch_script command with verbose flag."""
+    from slurm_cli.cli import register_commands
+
+    register_commands()
+
+    # Without job_id, should show error first
+    result = runner.invoke(main, ["batch_script", "-v"])
+    assert result.exit_code == 0
+    assert "Job ID is required" in result.output
+
+    # With job_id and verbose, should show the command being run
+    with patch("subprocess.run") as mock_run:
+        mock_run.return_value.stdout = ""
+        mock_run.return_value.returncode = 0
+        result = runner.invoke(main, ["batch_script", "12345", "-v"])
+        assert result.exit_code == 0
+        # Verbose mode should show the command being run
+        assert "Running:" in result.output
+
+
+def test_batch_script_command_with_job_id_only(runner):
+    """Test the batch_script command with only job_id."""
+    from slurm_cli.cli import register_commands
+
+    register_commands()
+
+    with patch("subprocess.run") as mock_run:
+        mock_run.return_value.stdout = ""
+        mock_run.return_value.returncode = 0
+        result = runner.invoke(main, ["batch_script", "99999"])
+        assert result.exit_code == 0
+        call_args = mock_run.call_args[0][0]
+        # Should include job_id in args
+        assert "99999" in call_args
+
+
+def test_batch_script_command_with_filename_only_and_mock(runner):
+    """Test the batch_script command with only filename and mock."""
+    from slurm_cli.cli import register_commands
+
+    register_commands()
+
+    with patch("subprocess.run") as mock_run:
+        mock_run.return_value.stdout = ""
+        mock_run.return_value.returncode = 0
+        result = runner.invoke(main, ["batch_script", "99999", "readfile.sh"])
+        assert result.exit_code == 0
+        call_args = mock_run.call_args[0][0]
+        # Should include filename in args
+        assert "readfile.sh" in call_args
+
+
+def test_batch_script_command_error_handling(runner):
+    """Test error handling for batch_script command."""
+    import subprocess as sp
+
+    from slurm_cli.cli import register_commands
+
+    register_commands()
+
+    # Test with CalledProcessError
+    with patch("subprocess.run") as mock_run:
+        mock_run.side_effect = sp.CalledProcessError(
+            1, "scontrol", stderr="Permission denied"
+        )
+        result = runner.invoke(main, ["batch_script", "12345"])
+        assert result.exit_code == 0
+        assert "Error" in result.output
+
+
+def test_batch_script_command_not_found(runner):
+    """Test handling when scontrol is not found."""
+    from slurm_cli.cli import register_commands
+
+    register_commands()
+
+    with patch("subprocess.run") as mock_run:
+        mock_run.side_effect = FileNotFoundError()
+        result = runner.invoke(main, ["batch_script", "12345"])
+        assert result.exit_code == 0
+        assert "scontrol not found" in result.output
+
+
+def test_register_commands_includes_batch_script():
+    """Test that register_commands properly includes batch_script."""
+    from slurm_cli.cli import main, register_commands
+
+    # Clear existing commands to start fresh
+    main.commands.clear()
+
+    register_commands()
+
+    # Check that batch_script is registered
+    assert "batch-script" in [cmd.name for cmd in main.commands.values()]
+
+
+def test_resolve_command_alias_batch_script():
+    """Test resolve_command_alias for batch_script."""
+    from slurm_cli.cli import resolve_command_alias
+
+    # Test batch_script - prefix matching (NEW)
+    assert resolve_command_alias("batch_script") == "batch_script"
+    assert resolve_command_alias("bscript") == "batch_script"
 
 
 # ============================================================================

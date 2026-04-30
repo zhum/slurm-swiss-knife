@@ -73,7 +73,7 @@
 - [x] **version**
 - [x] **confreload** = reconfigure alias
 - [x] **assoc_mgr** users=..., accounts=..., qos=..., flags={users|assoc|qos}
-- [ ] **batch_script job_id [filename]**
+- [x] **batch_script job_id [filename]**
 - [x] **write_config [filename]**
 - [ ] **new resources (r/o)** bbstat, burstbuffer, daemons, dwstat, topology
 - [ ] **schedloglevel** 0, 1, yes, no, on, off
