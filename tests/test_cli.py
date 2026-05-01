@@ -3093,3 +3093,303 @@ def test_assoc_mgr_command_invalid_format(runner):
 
     result = runner.invoke(main, ["assoc_mgr", "invalid_option"])
     assert "Error: Invalid option format" in result.output
+
+
+# Tests for schedloglevel command
+
+
+def test_schedloglevel_command_basic(runner):
+    """Test the basic schedloglevel command."""
+    from slurm_cli.cli import register_commands
+
+    register_commands()
+
+    with patch("subprocess.run") as mock_run:
+        mock_run.return_value.stdout = ""
+        mock_run.return_value.returncode = 0
+        result = runner.invoke(main, ["schedloglevel"])
+        assert result.exit_code == 0
+        assert "Scheduler log level command sent successfully" in result.output
+        mock_run.assert_called_once()
+        call_args = mock_run.call_args[0][0]
+        assert call_args == ["scontrol", "schedloglevel"]
+
+
+def test_schedloglevel_command_with_level(runner):
+    """Test the schedloglevel command with a level argument."""
+    from slurm_cli.cli import register_commands
+
+    register_commands()
+
+    with patch("subprocess.run") as mock_run:
+        mock_run.return_value.stdout = ""
+        mock_run.return_value.returncode = 0
+        result = runner.invoke(main, ["schedloglevel", "1"])
+        assert result.exit_code == 0
+        call_args = mock_run.call_args[0][0]
+        assert call_args == ["scontrol", "schedloglevel", "1"]
+
+
+def test_schedloglevel_command_with_yes_level(runner):
+    """Test the schedloglevel command with 'yes' level."""
+    from slurm_cli.cli import register_commands
+
+    register_commands()
+
+    with patch("subprocess.run") as mock_run:
+        mock_run.return_value.stdout = ""
+        mock_run.return_value.returncode = 0
+        result = runner.invoke(main, ["schedloglevel", "yes"])
+        assert result.exit_code == 0
+        call_args = mock_run.call_args[0][0]
+        assert call_args == ["scontrol", "schedloglevel", "yes"]
+
+
+def test_schedloglevel_command_with_no_level(runner):
+    """Test the schedloglevel command with 'no' level."""
+    from slurm_cli.cli import register_commands
+
+    register_commands()
+
+    with patch("subprocess.run") as mock_run:
+        mock_run.return_value.stdout = ""
+        mock_run.return_value.returncode = 0
+        result = runner.invoke(main, ["schedloglevel", "no"])
+        assert result.exit_code == 0
+        call_args = mock_run.call_args[0][0]
+        assert call_args == ["scontrol", "schedloglevel", "no"]
+
+
+def test_schedloglevel_command_with_0_level(runner):
+    """Test the schedloglevel command with '0' level."""
+    from slurm_cli.cli import register_commands
+
+    register_commands()
+
+    with patch("subprocess.run") as mock_run:
+        mock_run.return_value.stdout = ""
+        mock_run.return_value.returncode = 0
+        result = runner.invoke(main, ["schedloglevel", "0"])
+        assert result.exit_code == 0
+        call_args = mock_run.call_args[0][0]
+        assert call_args == ["scontrol", "schedloglevel", "0"]
+
+
+def test_schedloglevel_command_with_n_level(runner):
+    """Test the schedloglevel command with 'n' level."""
+    from slurm_cli.cli import register_commands
+
+    register_commands()
+
+    with patch("subprocess.run") as mock_run:
+        mock_run.return_value.stdout = ""
+        mock_run.return_value.returncode = 0
+        result = runner.invoke(main, ["schedloglevel", "n"])
+        assert result.exit_code == 0
+        call_args = mock_run.call_args[0][0]
+        assert call_args == ["scontrol", "schedloglevel", "n"]
+
+
+def test_schedloglevel_command_with_off_level(runner):
+    """Test the schedloglevel command with 'off' level."""
+    from slurm_cli.cli import register_commands
+
+    register_commands()
+
+    with patch("subprocess.run") as mock_run:
+        mock_run.return_value.stdout = ""
+        mock_run.return_value.returncode = 0
+        result = runner.invoke(main, ["schedloglevel", "off"])
+        assert result.exit_code == 0
+        call_args = mock_run.call_args[0][0]
+        assert call_args == ["scontrol", "schedloglevel", "off"]
+
+
+def test_schedloglevel_command_with_output(runner):
+    """Test the schedloglevel command with stdout output."""
+    from slurm_cli.cli import register_commands
+
+    register_commands()
+
+    with patch("subprocess.run") as mock_run:
+        mock_run.return_value.stdout = "Log level set to 1\n"
+        mock_run.return_value.returncode = 0
+        result = runner.invoke(main, ["schedloglevel", "1"])
+        assert result.exit_code == 0
+        # The output should be stripped and printed
+        assert "Log level set to 1" in result.output
+
+
+def test_schedloglevel_command_verbose(runner):
+    """Test the schedloglevel command with verbose flag."""
+    from slurm_cli.cli import register_commands
+
+    register_commands()
+
+    with patch("subprocess.run") as mock_run:
+        mock_run.return_value.stdout = ""
+        mock_run.return_value.returncode = 0
+        result = runner.invoke(main, ["schedloglevel", "-v"])
+        assert result.exit_code == 0
+        assert "Running: scontrol schedloglevel" in result.output
+
+
+def test_schedloglevel_command_verbose_with_level(runner):
+    """Test the schedloglevel command with verbose and level flags."""
+    from slurm_cli.cli import register_commands
+
+    register_commands()
+
+    with patch("subprocess.run") as mock_run:
+        mock_run.return_value.stdout = ""
+        mock_run.return_value.returncode = 0
+        result = runner.invoke(main, ["schedloglevel", "1", "-v"])
+        assert result.exit_code == 0
+        assert "Running: scontrol schedloglevel 1" in result.output
+
+
+def test_schedloglevel_command_dry_run(runner):
+    """Test the schedloglevel command with dry-run."""
+    from slurm_cli.cli import register_commands
+
+    register_commands()
+
+    result = runner.invoke(
+        main,
+        ["schedloglevel", "1", "--dry-run"],
+    )
+    assert result.exit_code == 0
+    assert "DRY RUN" in result.output
+    # The command should be printed but not executed
+    assert "scontrol schedloglevel 1" in result.output
+
+
+def test_schedloglevel_command_dry_run_with_verbose(runner):
+    """Test the schedloglevel command with dry-run and verbose."""
+    from slurm_cli.cli import register_commands
+
+    register_commands()
+
+    result = runner.invoke(
+        main,
+        ["schedloglevel", "1", "-v", "--dry-run"],
+    )
+    assert result.exit_code == 0
+    # With --dry-run, the output is just the DRY RUN line (verbose doesn't add extra)
+    assert "DRY RUN: scontrol schedloglevel 1" in result.output
+
+
+def test_schedloglevel_command_error_handling(runner):
+    """Test error handling for schedloglevel command."""
+    import subprocess as sp
+
+    from slurm_cli.cli import register_commands
+
+    register_commands()
+
+    # Test CalledProcessError with stderr
+    with patch("subprocess.run") as mock_run:
+        mock_run.side_effect = sp.CalledProcessError(
+            1, "scontrol", stderr="Permission denied"
+        )
+        result = runner.invoke(main, ["schedloglevel"])
+        assert result.exit_code == 0
+        assert "Error" in result.output
+
+
+def test_schedloglevel_command_not_found(runner):
+    """Test handling when scontrol is not found."""
+    from slurm_cli.cli import register_commands
+
+    register_commands()
+
+    with patch("subprocess.run") as mock_run:
+        mock_run.side_effect = FileNotFoundError()
+        result = runner.invoke(main, ["schedloglevel"])
+        assert result.exit_code == 0
+        assert "scontrol not found" in result.output
+
+
+def test_schedloglevel_command_with_output_and_error(runner):
+    """Test schedloglevel with both stdout and stderr output."""
+    from slurm_cli.cli import register_commands
+
+    register_commands()
+
+    with patch("subprocess.run") as mock_run:
+        mock_run.return_value.stdout = "Log level set to 1\n"
+        mock_run.return_value.stderr = "Warning: old log buffer cleared\n"
+        mock_run.return_value.returncode = 0
+        result = runner.invoke(main, ["schedloglevel", "1"])
+        assert result.exit_code == 0
+        # stdout should be printed first
+        assert "Log level set to 1" in result.output
+        # stderr is not currently captured/printed by the implementation
+
+
+def test_schedloglevel_command_multiple_executions(runner):
+    """Test that schedloglevel can be called multiple times."""
+    from slurm_cli.cli import register_commands
+
+    register_commands()
+
+    # Use a single shared mock across both invocations
+    with patch("subprocess.run") as mock_run:
+        mock_run.return_value.stdout = ""
+        mock_run.return_value.returncode = 0
+
+        result1 = runner.invoke(main, ["schedloglevel", "1"])
+        assert result1.exit_code == 0
+
+        result2 = runner.invoke(main, ["schedloglevel", "0"])
+        assert result2.exit_code == 0
+
+    # Verify both calls were made (each creates a new subprocess.run call)
+    assert mock_run.call_count == 2
+
+
+def test_schedloglevel_command_with_stdout_only(runner):
+    """Test schedloglevel with only stdout (no stderr)."""
+    from slurm_cli.cli import register_commands
+
+    register_commands()
+
+    with patch("subprocess.run") as mock_run:
+        mock_run.return_value.stdout = "Success\n"
+        mock_run.return_value.stderr = ""
+        mock_run.return_value.returncode = 0
+        result = runner.invoke(main, ["schedloglevel", "1"])
+        assert result.exit_code == 0
+        assert "Scheduler log level command sent successfully" in result.output
+
+
+def test_schedloglevel_command_with_empty_stdout(runner):
+    """Test schedloglevel with empty stdout."""
+    from slurm_cli.cli import register_commands
+
+    register_commands()
+
+    with patch("subprocess.run") as mock_run:
+        mock_run.return_value.stdout = ""
+        mock_run.return_value.stderr = ""
+        mock_run.return_value.returncode = 0
+        result = runner.invoke(main, ["schedloglevel", "1"])
+        assert result.exit_code == 0
+        # Should still show success message even with empty output
+        assert "Scheduler log level command sent successfully" in result.output
+
+
+def test_schedloglevel_command_with_non_zero_returncode(runner):
+    """Test schedloglevel with non-zero return code."""
+    from slurm_cli.cli import register_commands
+
+    register_commands()
+
+    with patch("subprocess.run") as mock_run:
+        mock_run.return_value.stdout = ""
+        mock_run.return_value.stderr = "Some warning\n"
+        mock_run.return_value.returncode = 1
+        result = runner.invoke(main, ["schedloglevel", "1"])
+        # Command should still complete with exit code 0 (the click command)
+        assert result.exit_code == 0
+        # stderr content might be shown
