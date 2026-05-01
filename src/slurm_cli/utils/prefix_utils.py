@@ -294,6 +294,10 @@ COMMANDS = {
     "release": {"aliases": [], "description": "Release held jobs"},
     "top": {"aliases": [], "description": "Move jobs to top of queue"},
     "requeue": {"aliases": [], "description": "Requeue jobs"},
+    "schedloglevel": {
+        "aliases": ["sll"],
+        "description": "Set scheduler log level",
+    },
     "suspend": {"aliases": [], "description": "Suspend jobs"},
 }
 
