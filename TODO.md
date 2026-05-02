@@ -76,7 +76,7 @@
 - [x] **batch_script job_id [filename]**
 - [x] **write_config [filename]**
 - [ ] **new resources (r/o)** bbstat, burstbuffer, daemons, dwstat, topology
-- [ ] **schedloglevel** 0, 1, yes, no, on, off
+- [x] **schedloglevel** 0, 1, yes, no, on, off
 - [ ] **setdebug** "quiet", "fatal", "error", "info", "verbose", "debug", "debug2", "debug3", "debug4", "debug5" [nodes=...]
 - [ ] **setdebugflags** {+|-}\<FLAG\> [{+|-}\<FLAG\>] [nodes=\<NODES\>]
   - Accrue           Accrue counters accounting details

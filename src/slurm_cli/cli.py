@@ -2867,6 +2867,11 @@ _slurm_cli_initialize_autocomplete() {{
             fi
             return
             ;;
+        schedloglevel)
+            # schedloglevel takes an optional level value
+            COMPREPLY=($(compgen -W "0 1 yes no y n on off --dry-run -v --verbose -h --help" -- "$cur"))
+            return
+            ;;
         autocomplete|help|list-resources)
             # These commands take -h/--help option
             COMPREPLY=($(compgen -W "-h --help" -- "$cur"))
@@ -3327,7 +3332,16 @@ def write_config(
     is_flag=True,
     help="Show command without executing",
 )
-@click.argument("level", required=False, default=None)
+@click.argument(
+    "level",
+    required=False,
+    default=None,
+    shell_complete=lambda ctx, param, incomplete: [
+        click.shell_completion.CompletionItem(v)
+        for v in ["0", "1", "yes", "no", "y", "n", "on", "off"]
+        if v.startswith(incomplete)
+    ],
+)
 @click.pass_context
 def schedloglevel(
     ctx: click.Context, verbose: bool = False, dry_run: bool = False, level: Optional[str] = None
