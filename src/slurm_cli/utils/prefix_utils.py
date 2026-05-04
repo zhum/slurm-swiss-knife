@@ -309,6 +309,22 @@ COMMANDS = {
         "aliases": ["bbs"],
         "description": "Show burst buffer status",
     },
+    "burstbuffer": {
+        "aliases": [],
+        "description": "Show burst buffer information",
+    },
+    "daemons": {
+        "aliases": [],
+        "description": "Show running Slurm daemons",
+    },
+    "dwstat": {
+        "aliases": [],
+        "description": "Show DataWarp/burst buffer status",
+    },
+    "topology": {
+        "aliases": [],
+        "description": "Show network topology information",
+    },
     "suspend": {"aliases": [], "description": "Suspend jobs"},
 }
 

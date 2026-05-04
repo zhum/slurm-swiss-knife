@@ -259,11 +259,30 @@ elif [ "$1" = "setdebug" ]; then
         echo "Debug level set to $LEVEL"
     fi
     exit 0
+elif [ "$1" = "burstbuffer" ]; then
+    echo "MOCK: scontrol burstbuffer"
+    echo "Name=lustreFS1 Granularity=1GiB TotalSpace=1000GiB UsedSpace=200GiB"
+    exit 0
+elif [ "$1" = "daemons" ]; then
+    echo "MOCK: scontrol daemons"
+    echo "slurmctld slurmd"
+    exit 0
+elif [ "$1" = "dwstat" ]; then
+    echo "MOCK: scontrol dwstat"
+    echo "pool:   id: 1  units: GiB  granularity: 1  quantity: 1000  free: 800"
+    exit 0
+elif [ "$1" = "topology" ]; then
+    echo "MOCK: scontrol topology"
+    echo "SwitchName=s0 Switches=s1,s2"
+    echo "SwitchName=s1 Nodes=node[001-004]"
+    echo "SwitchName=s2 Nodes=node[005-008]"
+    exit 0
 else
     # For other arguments, show usage or error
     echo "Usage: $0 show {nodes|partitions|reservations|config} [--json]" >&2
     echo "       $0 {reconfigure|ping|takeover|write config|write batch_script|version|token|assoc_mgr}" >&2
     echo "       $0 setdebug {quiet|fatal|error|info|verbose|debug|debug2|debug3|debug4|debug5} [nodes=nodelist]" >&2
+    echo "       $0 {burstbuffer|daemons|dwstat|topology}" >&2
     echo "This is a mock scontrol script for testing purposes." >&2
     echo "Arguments received: $*" >&2
     exit 1

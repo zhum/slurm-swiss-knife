@@ -77,7 +77,7 @@
 - [x] **write_config [filename]**
 - [ ] **new resources (r/o)** bbstat, burstbuffer, daemons, dwstat, topology
 - [x] **schedloglevel** 0, 1, yes, no, on, off
-- [ ] **setdebug** "quiet", "fatal", "error", "info", "verbose", "debug", "debug2", "debug3", "debug4", "debug5" [nodes=...]
+- [x] **setdebug** "quiet", "fatal", "error", "info", "verbose", "debug", "debug2", "debug3", "debug4", "debug5" [nodes=...]
 - [ ] **setdebugflags** {+|-}\<FLAG\> [{+|-}\<FLAG\>] [nodes=\<NODES\>]
   - Accrue           Accrue counters accounting details
   - Agent            RPC agents (outgoing RPCs from Slurm daemons)

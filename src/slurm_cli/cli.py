@@ -968,6 +968,10 @@ def register_commands() -> None:
     main.add_command(schedloglevel, name="schedloglevel")
     main.add_command(setdebug, name="setdebug")
     main.add_command(bbstat, name="bbstat")
+    main.add_command(burstbuffer, name="burstbuffer")
+    main.add_command(daemons, name="daemons")
+    main.add_command(dwstat, name="dwstat")
+    main.add_command(topology, name="topology")
     main.add_command(batch_script, name="batch-script")
     main.add_command(token, name="token")
     main.add_command(assoc_mgr, name="assoc_mgr")
@@ -1017,6 +1021,10 @@ def register_commands() -> None:
     requeue.help = "Requeue jobs (aliases: req)"
     setdebug.help = "Set slurmctld/slurmd debug level (aliases: sd)"
     bbstat.help = "Show burst buffer status (aliases: bbs)"
+    burstbuffer.help = "Show burst buffer information"
+    daemons.help = "Show running Slurm daemons"
+    dwstat.help = "Show DataWarp/burst buffer status"
+    topology.help = "Show network topology information"
     suspend.help = "Suspend running jobs (aliases: sus)"
     help.help = "Show help information"
 
@@ -2903,7 +2911,7 @@ _slurm_cli_initialize_autocomplete() {{
             fi
             return
             ;;
-        bbstat)
+        bbstat|burstbuffer|daemons|dwstat|topology)
             COMPREPLY=($(compgen -W "--dry-run -v --verbose -h --help" -- "$cur"))
             return
             ;;
@@ -3608,6 +3616,90 @@ def bbstat(
         console.print(f"[red]Error: {e.stderr.strip() or e}[/red]")
     except FileNotFoundError:
         console.print("[red]Error: scontrol not found[/red]")
+
+
+def _scontrol_simple(
+    cmd_name: str, verbose: bool, dry_run: bool
+) -> None:
+    """Run a simple scontrol subcommand with no extra arguments."""
+    args = ["scontrol", cmd_name]
+    if dry_run:
+        console.print(f"[yellow]DRY RUN:[/yellow] {' '.join(args)}")
+        return
+    if verbose:
+        console.print(f"[dim]Running: {' '.join(args)}[/dim]")
+    try:
+        result = subprocess.run(
+            args, capture_output=True, text=True, check=True
+        )
+        if result.stdout:
+            console.print(result.stdout.strip())
+    except subprocess.CalledProcessError as e:
+        console.print(f"[red]Error: {e.stderr.strip() or e}[/red]")
+    except FileNotFoundError:
+        console.print("[red]Error: scontrol not found[/red]")
+
+
+@click.command(context_settings=CONTEXT_SETTINGS)
+@click.option(
+    "--verbose", "-v", is_flag=True, help="Enable verbose output"
+)
+@click.option(
+    "--dry-run", is_flag=True, help="Show command without executing"
+)
+@click.pass_context
+def burstbuffer(
+    ctx: click.Context, verbose: bool = False, dry_run: bool = False
+) -> None:
+    """Show burst buffer information."""
+    _scontrol_simple(
+        "burstbuffer", verbose, get_dry_run(ctx) or dry_run
+    )
+
+
+@click.command(context_settings=CONTEXT_SETTINGS)
+@click.option(
+    "--verbose", "-v", is_flag=True, help="Enable verbose output"
+)
+@click.option(
+    "--dry-run", is_flag=True, help="Show command without executing"
+)
+@click.pass_context
+def daemons(
+    ctx: click.Context, verbose: bool = False, dry_run: bool = False
+) -> None:
+    """Show running Slurm daemons."""
+    _scontrol_simple("daemons", verbose, get_dry_run(ctx) or dry_run)
+
+
+@click.command(context_settings=CONTEXT_SETTINGS)
+@click.option(
+    "--verbose", "-v", is_flag=True, help="Enable verbose output"
+)
+@click.option(
+    "--dry-run", is_flag=True, help="Show command without executing"
+)
+@click.pass_context
+def dwstat(
+    ctx: click.Context, verbose: bool = False, dry_run: bool = False
+) -> None:
+    """Show DataWarp/burst buffer status."""
+    _scontrol_simple("dwstat", verbose, get_dry_run(ctx) or dry_run)
+
+
+@click.command(context_settings=CONTEXT_SETTINGS)
+@click.option(
+    "--verbose", "-v", is_flag=True, help="Enable verbose output"
+)
+@click.option(
+    "--dry-run", is_flag=True, help="Show command without executing"
+)
+@click.pass_context
+def topology(
+    ctx: click.Context, verbose: bool = False, dry_run: bool = False
+) -> None:
+    """Show network topology information."""
+    _scontrol_simple("topology", verbose, get_dry_run(ctx) or dry_run)
 
 
 @click.command(context_settings=CONTEXT_SETTINGS)
