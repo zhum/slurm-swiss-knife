@@ -82,6 +82,10 @@ _CLICK_COMPLETE=bash_source slurm-cli > \
 
 ## Development
 
+### Autocomplete
+
+  See [AUTOCOMPLETE.md](AUTOCOMPLETE.md) for implementation and development details.
+
 ### Running Tests
 
 ```bash
