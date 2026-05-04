@@ -9,6 +9,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **`burstbuffer` command** — Show burst buffer configuration via `scontrol burstbuffer`
+- **`daemons` command** — Show running Slurm daemons via `scontrol daemons`
+- **`dwstat` command** — Show DataWarp burst buffer status via `scontrol dwstat`
+- **`topology` command** — Show network topology via `scontrol topology`
+- **`setdebugflags` command** (alias: `sdf`) — Enable/disable slurmctld/slurmd debug flag categories with `+FLAG`/`-FLAG` syntax; supports `nodes=` with node filter expressions
+- **`schedloglevel` command** (alias: `sll`) — Set scheduler log verbosity level with autocomplete for valid values
+- **`drain=REGEXP` node filter** — Short alias for `drainreason=REGEXP`; filters nodes by drain reason matching a case-insensitive regular expression; supported everywhere node filters are accepted (drain, undrain, reboot, cancel-reboot, setdebug, setdebugflags)
+- **Autocomplete: command prefix disambiguation** — When a command name is itself a prefix of another command (e.g., `setdebug` vs `setdebugflags`), typing the exact shorter name now shows both as completions instead of prematurely completing to the shorter one
+- **Autocomplete: `nodes=` sub-filter for `drain=`** — Typing `nodes=drain=<TAB>` shows `nodes=drain=REGEXP` as a hint in setdebug/setdebugflags completion
+
+### Fixed
+
+- **Autocomplete cache with `./slurm-cli`** — `_slurm_ensure_cache` now tries `${COMP_WORDS[0]}` (the invoked binary) before falling back to `slurm-cli` in PATH, so cache population works when invoking via a local path
+
 - **User Update Implementation**: Full `User.update()` method with:
   - Simple mode: `modify users NAME set key=value`
   - WHERE/SET mode: `modify users key=value set newkey=newvalue`

@@ -20,6 +20,8 @@ Slurm CLI (`slurm-cli`) is a modern, user-friendly wrapper around Slurm's native
 | **Smart Autocomplete** | Context-aware tab completion with fuzzy matching |
 | **Customizable Output** | Profile-based output formatting with Rich markup support |
 | **Powerful Filtering** | Filter resources by any field with key=value syntax |
+| **Node Control** | Drain, reboot, hold, and resume nodes with rich filter expressions |
+| **Cluster Diagnostics** | Set debug levels, debug flags, burst buffer info, and topology inspection |
 
 ## Quick Example
 
@@ -54,6 +56,34 @@ slurm-cli show accounts organization=nvidia
 | `coordinators` | show, create, delete | Account coordinators |
 | `events` | show | Cluster events |
 | `config` | show | Slurm configuration |
+
+## Cluster Control Commands
+
+| Command | Aliases | Description |
+|---------|---------|-------------|
+| `drain` | `dr` | Drain nodes with node filter support |
+| `undrain` | `undr`, `resume` | Undrain/resume nodes |
+| `reboot` | `reb` | Reboot nodes |
+| `cancel-reboot` | `cancel-reb` | Cancel pending reboot |
+| `hold` | `hol` | Hold jobs |
+| `release` | `rel` | Release held jobs |
+| `requeue` | `req` | Requeue jobs |
+| `top` | | Move jobs to top of queue |
+| `suspend` | `sus` | Suspend running jobs |
+| `setdebug` | `sd` | Set slurmctld/slurmd debug level |
+| `setdebugflags` | `sdf` | Enable/disable debug flag categories |
+| `schedloglevel` | `sll` | Set scheduler log verbosity |
+| `bbstat` | `bbs` | Show burst buffer status |
+| `burstbuffer` | | Show burst buffer configuration |
+| `daemons` | | Show running Slurm daemons |
+| `dwstat` | | Show DataWarp burst buffer status |
+| `topology` | | Show network topology |
+| `reconfigure` | `reconf` | Force slurmctld to re-read config |
+| `ping` | | Ping slurmctld |
+| `takeover` | | Trigger backup controller takeover |
+| `token` | `tok` | Generate JWT authentication token |
+| `write-config` | `wconf` | Write Slurm configuration to file |
+| `batch-script` | `bscript` | Show job batch script |
 
 ## Getting Started
 

@@ -90,6 +90,30 @@ slurm-cli show users defaultaccount=<TAB>
 # Shows: account1 account2 ...
 ```
 
+### Node Filter Completion
+
+Node filter arguments complete with known values where possible, or show a hint for free-text fields:
+
+```bash
+slurm-cli drain <TAB>
+# Shows: partition= state= user= reservation= drain= not:partition= ...
+
+slurm-cli drain partition=<TAB>
+# Shows: gpu cpu highmem ...
+
+slurm-cli drain state=<TAB>
+# Shows: idle alloc drain down mixed comp
+
+slurm-cli drain drain=<TAB>
+# Shows: drain=REGEXP  (type your own regex pattern)
+
+slurm-cli setdebug error nodes=<TAB>
+# Shows: partition= state= user= reservation= drain= node001 node002 ...
+
+slurm-cli setdebug error nodes=partition=<TAB>
+# Shows: gpu cpu ...
+```
+
 ## Cache Locations
 
 Completion data is cached in `/tmp/`:
@@ -109,7 +133,7 @@ Completion data is cached in `/tmp/`:
 The autocomplete system automatically updates cache when:
 
 1. Cache file is missing
-1. Cache file is older than 60 seconds
+1. Cache file is older than 600 seconds (10 minutes)
 
 This ensures completions always show current data without manual refresh.
 
@@ -122,6 +146,10 @@ export SLURM_CLI_NO_CACHE_UPDATE=1
 ```
 
 Accepted values: `1`, `y`, `yes`, `true`
+
+### Local Binary Invocation
+
+When you invoke `./slurm-cli` directly (without it being on PATH), the cache updater automatically uses `COMP_WORDS[0]` (the actual binary path) to refresh cache, so completion works correctly without `slurm-cli` being in PATH.
 
 ### Force Cache Refresh
 

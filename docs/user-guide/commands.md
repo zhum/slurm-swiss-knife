@@ -206,7 +206,8 @@ When specifying nodes in commands (e.g., for partitions or reservations), you ca
 | `state=STATE` | All nodes with the specified state (idle, alloc, drain, etc.) |
 | `user=USERNAME` | All nodes running jobs by the specified user |
 | `reservation=NAME` | All nodes in the specified reservation |
-| `drainreason=REGEX` | All nodes with drain reason matching regex pattern (case-insensitive) |
+| `drain=REGEXP` | All nodes whose drain reason matches REGEXP (case-insensitive) |
+| `drainreason=REGEXP` | Alias for `drain=` |
 
 ### Examples
 
@@ -248,7 +249,7 @@ slurm-cli drain state=idle 'not:reservation=maint' reason="Taking offline"
 slurm-cli undrain drainreason="scheduled.*maintenance"
 
 # Cancel reboot for nodes except those in maintenance
-slurm-cli cancel_reboot partition=gpu 'not:reservation=maint'
+slurm-cli cancel-reboot partition=gpu 'not:reservation=maint'
 
 # Complex filter: drained GPU nodes, exclude hardware checks, exclude reserved
 slurm-cli show nodes partition=gpu state=drain 'not:drainreason=HC.*' 'not:reservation=maint'
@@ -256,7 +257,7 @@ slurm-cli show nodes partition=gpu state=drain 'not:drainreason=HC.*' 'not:reser
 
 The node filter is resolved at command execution time, so it always uses the current state of the cluster.
 
-All commands that accept node lists support the full set of node filters: `show nodes`, `show events`, `drain`, `undrain`/`resume`, `reboot`, and `cancel_reboot`.
+All commands that accept node lists support the full set of node filters: `show nodes`, `show events`, `drain`, `undrain`/`resume`, `reboot`, and `cancel-reboot`.
 
 ## Global Options
 
@@ -508,7 +509,8 @@ slurm-cli drain partition=batch not:state=drain reason="Batch nodes not already 
 | `state=` | `state=idle` | Nodes with specific state |
 | `user=` | `user=john` | Nodes running user's jobs |
 | `reservation=` | `reservation=maint` | Nodes in a reservation |
-| `drainreason=` | `drainreason="Not responding"` | Nodes matching drain reason regex |
+| `drain=` | `drain="Not responding"` | Nodes whose drain reason matches regex |
+| `drainreason=` | `drainreason="Not responding"` | Alias for `drain=` |
 
 **Exclusion filters (prefix with not:):**
 
@@ -518,7 +520,8 @@ slurm-cli drain partition=batch not:state=drain reason="Batch nodes not already 
 | `not:state=` | `not:state=drain` | Exclude nodes with state |
 | `not:user=` | `not:user=admin` | Exclude nodes running user's jobs |
 | `not:reservation=` | `not:reservation=maint` | Exclude nodes in reservation |
-| `not:drainreason=` | `not:drainreason="maint"` | Exclude nodes matching drain reason |
+| `not:drain=` | `not:drain="maint"` | Exclude nodes matching drain reason |
+| `not:drainreason=` | `not:drainreason="maint"` | Alias for `not:drain=` |
 
 ### Undrain
 
@@ -594,21 +597,177 @@ slurm-cli reboot ALL
 
 Cancel pending reboot on nodes.
 
-**Aliases:** `cancel_reboot`, `cancel_reb`
+**Aliases:** `cancel-reboot`, `cancel-reb`
 
 ```bash
 # Cancel reboot on a single node
-slurm-cli cancel_reboot node001
+slurm-cli cancel-reboot node001
 
 # Cancel reboot on multiple nodes
-slurm-cli cancel_reboot node001 node002 node003
+slurm-cli cancel-reboot node001 node002 node003
 
 # Cancel reboot with Slurm hostlist range
-slurm-cli cancel_reboot node[001-010]
+slurm-cli cancel-reboot node[001-010]
 
 # Cancel reboot using node filters
-slurm-cli cancel_reboot partition=gpu
-slurm-cli cancel_reboot partition=gpu not:reservation=maint
+slurm-cli cancel-reboot partition=gpu
+slurm-cli cancel-reboot partition=gpu not:reservation=maint
+```
+
+## Cluster Diagnostics Commands
+
+These commands query or change internal Slurm controller settings.
+
+### Scheduler Log Level
+
+Set the scheduler log verbosity level.
+
+**Aliases:** `schedloglevel`, `sll`
+
+```bash
+# Show current level
+slurm-cli schedloglevel
+
+# Set level (0 = off, 1 = backfill, etc.)
+slurm-cli schedloglevel 1
+slurm-cli schedloglevel yes   # enable
+slurm-cli schedloglevel 0     # disable
+slurm-cli schedloglevel --dry-run 1
+```
+
+### Set Debug Level
+
+Set the debug logging level for slurmctld or individual slurmd daemons.
+
+**Aliases:** `setdebug`, `sd`
+
+Levels: `quiet`, `fatal`, `error`, `info`, `verbose`, `debug`, `debug2`, `debug3`, `debug4`, `debug5`
+
+```bash
+# Set global debug level
+slurm-cli setdebug debug
+
+# Set level only for specific nodes
+slurm-cli setdebug verbose nodes=node001
+slurm-cli setdebug debug2 nodes=partition=gpu
+slurm-cli setdebug error nodes=state=drain
+
+# Dry run
+slurm-cli setdebug debug --dry-run
+```
+
+### Set Debug Flags
+
+Enable or disable individual debug flag categories in slurmctld/slurmd.
+
+**Aliases:** `setdebugflags`, `sdf`
+
+Each flag is prefixed with `+` (enable) or `-` (disable). Multiple flags may be given in a single call.
+
+```bash
+# Enable a flag
+slurm-cli setdebugflags +Backfill
+
+# Disable a flag
+slurm-cli setdebugflags -Gang
+
+# Mix enable and disable
+slurm-cli setdebugflags +Backfill +Agent -Gang
+
+# Target specific nodes
+slurm-cli setdebugflags +Backfill nodes=node001
+slurm-cli setdebugflags +Backfill nodes=partition=gpu
+
+# Dry run
+slurm-cli setdebugflags --dry-run +Backfill
+```
+
+Available flags: `Accrue`, `Agent`, `AuditRPCs`, `Backfill`, `BackfillMap`, `BurstBuffer`,
+`Cgroup`, `CPU_Bind`, `CpuFrequency`, `Data`, `DBD_Agent`, `Dependency`,
+`Elasticsearch`, `Energy`, `Federation`, `FrontEnd`, `Gang`, `Gres`,
+`GLOB_SILENCE`, `Hetjob`, `JobAccountGather`, `JobComp`, `JobContainer`,
+`License`, `Network`, `NetworkRaw`, `NO_CONF_HASH`, `NodeFeatures`,
+`Power`, `Priority`, `Profile`, `Protocol`, `Reservation`, `Route`,
+`Script`, `SelectType`, `Steps`, `Switch`, `TLS`, `TraceJobs`,
+`Triggers`, `WorkQueue`
+
+### Burst Buffer Status
+
+Show burst buffer status (short form via `scontrol show bbstat`).
+
+**Aliases:** `bbstat`, `bbs`
+
+```bash
+slurm-cli bbstat
+slurm-cli bbs
+```
+
+### Burst Buffer Information
+
+Show full burst buffer configuration and pool information.
+
+**Aliases:** `burstbuffer`
+
+```bash
+slurm-cli burstbuffer
+```
+
+### Running Daemons
+
+Show which Slurm daemons are currently running on the controller.
+
+**Aliases:** `daemons`
+
+```bash
+slurm-cli daemons
+```
+
+### DataWarp / Burst Buffer Status
+
+Show DataWarp burst buffer pool status (via `scontrol dwstat`).
+
+**Aliases:** `dwstat`
+
+```bash
+slurm-cli dwstat
+```
+
+### Network Topology
+
+Show the cluster network topology (switches and node assignments).
+
+**Aliases:** `topology`
+
+```bash
+slurm-cli topology
+```
+
+### Write Configuration
+
+Write the current Slurm configuration to a file.
+
+**Aliases:** `write-config`, `wconf`, `w-conf`
+
+```bash
+# Write to default location
+slurm-cli write-config
+
+# Write to specific file
+slurm-cli write-config /tmp/slurm.conf
+
+# Dry run
+slurm-cli wconf --dry-run
+```
+
+### Batch Script
+
+Retrieve and display the batch script for a submitted job.
+
+**Aliases:** `batch-script`, `bscript`
+
+```bash
+slurm-cli batch-script 12345
+slurm-cli bscript 12345
 ```
 
 ## Job Control Commands

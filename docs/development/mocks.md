@@ -54,18 +54,35 @@ sacctmgr -i delete user name=test
 
 ### scontrol
 
-Handles cluster control:
+Handles cluster control. Supported subcommands:
 
-```bash
-# Show commands
-scontrol show partitions --json
-scontrol show nodes --json
-scontrol show reservations --json
-
-# Modify commands
-scontrol update partitionname=gpu state=UP
-scontrol create reservation ...
-```
+| Subcommand | Description |
+|---|---|
+| `show nodes [--json]` | Node information |
+| `show partitions [--json]` | Partition information |
+| `show reservations [--json]` | Reservation information |
+| `show config` | Slurm configuration |
+| `show jobs [--json]` | Job information |
+| `show bbstat` | Burst buffer status |
+| `create` / `update` / `delete` | Print mock output and exit 0 |
+| `reconfigure` | Mock reconfigure |
+| `ping` | Returns "Slurmctld(primary) at localhost is UP" |
+| `takeover` | Mock takeover |
+| `write config [FILE]` | Mock write config |
+| `write batch_script JOB` | Mock batch script retrieval |
+| `version` | Returns "slurm 23.11.4" |
+| `token [...]` | Returns a mock JWT |
+| `reboot [...]` | Mock reboot |
+| `cancel_reboot [...]` | Mock cancel-reboot |
+| `hold` / `release` / `top` / `requeue` / `suspend` / `uhold` | Mock job control |
+| `assoc_mgr [flags=...]` | Mock association manager (flags: users, assoc, qos) |
+| `setdebug LEVEL [nodes=...]` | Validates level; supports nodes= argument |
+| `setdebugflags +FLAG/-FLAG [nodes=...]` | Mock setdebugflags |
+| `schedloglevel [LEVEL]` | Mock schedloglevel |
+| `burstbuffer` | Returns mock burst buffer config |
+| `daemons` | Returns "slurmctld slurmd" |
+| `dwstat` | Returns mock DataWarp pool info |
+| `topology` | Returns mock switch topology |
 
 ### squeue
 
