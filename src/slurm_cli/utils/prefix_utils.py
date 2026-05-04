@@ -913,7 +913,9 @@ def generate_bash_command_case() -> str:
         lines.append(f"        {pattern})")
         if cmd in cmd_extends:
             siblings = " ".join(cmd_extends[cmd])
-            lines.append(f'            if [[ "$cur" == "{cmd}" ]]; then')
+            lines.append(
+                f'            if [[ "$cur" == "{cmd}" ]]; then'
+            )
             lines.append(f'                guessed="{cmd} {siblings}"')
             lines.append(f"            else")
             lines.append(f'                guessed="{cmd}"')

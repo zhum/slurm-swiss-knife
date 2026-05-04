@@ -555,11 +555,12 @@ class TestNodeFilterPrefixes:
         assert "state=" in NODE_FILTER_PREFIXES
         assert "user=" in NODE_FILTER_PREFIXES
         assert "reservation=" in NODE_FILTER_PREFIXES
+        assert "drain=" in NODE_FILTER_PREFIXES
         assert "drainreason=" in NODE_FILTER_PREFIXES
 
     def test_prefixes_count(self):
         """Test that NODE_FILTER_PREFIXES has expected count."""
-        assert len(NODE_FILTER_PREFIXES) == 5
+        assert len(NODE_FILTER_PREFIXES) == 6
 
 
 class TestGetNodesByStateText:

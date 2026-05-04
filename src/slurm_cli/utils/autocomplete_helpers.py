@@ -212,7 +212,7 @@ _slurm_cache_jobs() {{
 
 # Node filter prefixes for nodes= parameter
 # Supports: ALL, partition=, state=, user=, reservation=
-_slurm_node_filter_prefixes="ALL partition= state= user= reservation="
+_slurm_node_filter_prefixes="ALL partition= state= user= reservation= drain="
 
 # Complete nodes= value with either direct nodes or filter prefixes
 # Usage: _slurm_complete_nodes_value "$_val" "$cur" ["$_key"]
@@ -254,6 +254,9 @@ _slurm_complete_nodes_value() {{
         local reservations="$(_slurm_cache_reservations)"
         COMPREPLY=($(compgen -W "$reservations" -- "$filter_val"))
         [[ -n "$prefix" && ${{#COMPREPLY[@]}} -gt 0 ]] && COMPREPLY=("${{COMPREPLY[@]/#/${{prefix}}reservation=}}")
+    elif [[ "$val" == drain=* ]]; then
+        COMPREPLY=("REGEXP")
+        [[ -n "$prefix" ]] && COMPREPLY=("${{prefix}}drain=REGEXP")
     else
         # Not a filter prefix, show filter prefixes and cached nodes
         COMPREPLY=($(compgen -W "$_slurm_node_filter_prefixes $cached_nodes" -- "$val"))

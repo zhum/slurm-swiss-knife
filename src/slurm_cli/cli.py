@@ -2499,8 +2499,8 @@ _slurm_cli_initialize_autocomplete() {{
         drain)
             # Drain command takes nodes, filters (with optional - prefix for exclusion),
             # and optional --reason/-r or reason=
-            local node_filters="partition= state= user= reservation= drainreason="
-            local neg_filters="not:partition= not:state= not:user= not:reservation= not:drainreason="
+            local node_filters="partition= state= user= reservation= drain= drainreason="
+            local neg_filters="not:partition= not:state= not:user= not:reservation= not:drain= not:drainreason="
             local node_states="idle alloc drain down mixed comp"
             if [[ "$cur" == --* ]]; then
                 COMPREPLY=($(compgen -W "--reason --verbose --help" -- "$cur"))
@@ -2534,6 +2534,8 @@ _slurm_cli_initialize_autocomplete() {{
                 local reservations="$(_slurm_cache_reservations)"
                 COMPREPLY=($(compgen -W "$reservations" -- "$val"))
                 [[ ${{#COMPREPLY[@]}} -gt 0 ]] && COMPREPLY=("${{COMPREPLY[@]/#/not:reservation=}}")
+            elif [[ "$cur" == not:drain=* ]]; then
+                COMPREPLY=("not:drain=REGEXP")
             # Positive filters
             elif [[ "$cur" == partition=* ]] || [[ "$prev" == "=" && "${{COMP_WORDS[COMP_CWORD-2]}}" == "partition" ]]; then
                 local val="${{cur#partition=}}"
@@ -2558,6 +2560,8 @@ _slurm_cli_initialize_autocomplete() {{
                 local reservations="$(_slurm_cache_reservations)"
                 COMPREPLY=($(compgen -W "$reservations" -- "$val"))
                 [[ ${{#COMPREPLY[@]}} -gt 0 && "$cur" == *=* ]] && COMPREPLY=("${{COMPREPLY[@]/#/reservation=}}")
+            elif [[ "$cur" == drain=* ]]; then
+                COMPREPLY=("drain=REGEXP")
             else
                 local cached_nodes="$(_slurm_cache_nodes)"
                 COMPREPLY=($(compgen -W "$node_filters $neg_filters reason= -r --reason -v --verbose -h --help $cached_nodes" -- "$cur"))
@@ -2566,8 +2570,8 @@ _slurm_cli_initialize_autocomplete() {{
             ;;
         undrain)
             # Undrain command takes nodes and filters (with optional - prefix for exclusion)
-            local node_filters="partition= state= user= reservation= drainreason="
-            local neg_filters="not:partition= not:state= not:user= not:reservation= not:drainreason="
+            local node_filters="partition= state= user= reservation= drain= drainreason="
+            local neg_filters="not:partition= not:state= not:user= not:reservation= not:drain= not:drainreason="
             local node_states="idle alloc drain down mixed comp"
             if [[ "$cur" == --* ]]; then
                 COMPREPLY=($(compgen -W "--verbose --help" -- "$cur"))
@@ -2595,6 +2599,8 @@ _slurm_cli_initialize_autocomplete() {{
                 local reservations="$(_slurm_cache_reservations)"
                 COMPREPLY=($(compgen -W "$reservations" -- "$val"))
                 [[ ${{#COMPREPLY[@]}} -gt 0 ]] && COMPREPLY=("${{COMPREPLY[@]/#/not:reservation=}}")
+            elif [[ "$cur" == not:drain=* ]]; then
+                COMPREPLY=("not:drain=REGEXP")
             # Positive filters
             elif [[ "$cur" == partition=* ]] || [[ "$prev" == "=" && "${{COMP_WORDS[COMP_CWORD-2]}}" == "partition" ]]; then
                 local val="${{cur#partition=}}"
@@ -2619,6 +2625,8 @@ _slurm_cli_initialize_autocomplete() {{
                 local reservations="$(_slurm_cache_reservations)"
                 COMPREPLY=($(compgen -W "$reservations" -- "$val"))
                 [[ ${{#COMPREPLY[@]}} -gt 0 && "$cur" == *=* ]] && COMPREPLY=("${{COMPREPLY[@]/#/reservation=}}")
+            elif [[ "$cur" == drain=* ]]; then
+                COMPREPLY=("drain=REGEXP")
             else
                 local cached_nodes="$(_slurm_cache_nodes)"
                 COMPREPLY=($(compgen -W "$node_filters $neg_filters -v --verbose -h --help $cached_nodes" -- "$cur"))
@@ -2627,8 +2635,8 @@ _slurm_cli_initialize_autocomplete() {{
             ;;
         reboot)
             # Reboot command takes nodes, filters, asap, nextstate=, reason=
-            local node_filters="partition= state= user= reservation= drainreason="
-            local neg_filters="not:partition= not:state= not:user= not:reservation= not:drainreason="
+            local node_filters="partition= state= user= reservation= drain= drainreason="
+            local neg_filters="not:partition= not:state= not:user= not:reservation= not:drain= not:drainreason="
             local node_states="idle alloc drain down mixed comp"
             local nextstates="RESUME DOWN"
             if [[ "$cur" == --* ]]; then
@@ -2665,6 +2673,8 @@ _slurm_cli_initialize_autocomplete() {{
                 local reservations="$(_slurm_cache_reservations)"
                 COMPREPLY=($(compgen -W "$reservations" -- "$val"))
                 [[ ${{#COMPREPLY[@]}} -gt 0 ]] && COMPREPLY=("${{COMPREPLY[@]/#/not:reservation=}}")
+            elif [[ "$cur" == not:drain=* ]]; then
+                COMPREPLY=("not:drain=REGEXP")
             # Positive filters
             elif [[ "$cur" == partition=* ]] || [[ "$prev" == "=" && "${{COMP_WORDS[COMP_CWORD-2]}}" == "partition" ]]; then
                 local val="${{cur#partition=}}"
@@ -2689,6 +2699,8 @@ _slurm_cli_initialize_autocomplete() {{
                 local reservations="$(_slurm_cache_reservations)"
                 COMPREPLY=($(compgen -W "$reservations" -- "$val"))
                 [[ ${{#COMPREPLY[@]}} -gt 0 && "$cur" == *=* ]] && COMPREPLY=("${{COMPREPLY[@]/#/reservation=}}")
+            elif [[ "$cur" == drain=* ]]; then
+                COMPREPLY=("drain=REGEXP")
             else
                 local cached_nodes="$(_slurm_cache_nodes)"
                 COMPREPLY=($(compgen -W "ALL asap nextstate= reason= $node_filters $neg_filters -v --verbose -h --help $cached_nodes" -- "$cur"))
@@ -2697,8 +2709,8 @@ _slurm_cli_initialize_autocomplete() {{
             ;;
         cancel-reboot)
             # Cancel reboot command takes nodes and filters
-            local node_filters="partition= state= user= reservation= drainreason="
-            local neg_filters="not:partition= not:state= not:user= not:reservation= not:drainreason="
+            local node_filters="partition= state= user= reservation= drain= drainreason="
+            local neg_filters="not:partition= not:state= not:user= not:reservation= not:drain= not:drainreason="
             local node_states="idle alloc drain down mixed comp"
             if [[ "$cur" == --* ]]; then
                 COMPREPLY=($(compgen -W "--verbose --help" -- "$cur"))
@@ -2726,6 +2738,8 @@ _slurm_cli_initialize_autocomplete() {{
                 local reservations="$(_slurm_cache_reservations)"
                 COMPREPLY=($(compgen -W "$reservations" -- "$val"))
                 [[ ${{#COMPREPLY[@]}} -gt 0 ]] && COMPREPLY=("${{COMPREPLY[@]/#/not:reservation=}}")
+            elif [[ "$cur" == not:drain=* ]]; then
+                COMPREPLY=("not:drain=REGEXP")
             # Positive filters
             elif [[ "$cur" == partition=* ]] || [[ "$prev" == "=" && "${{COMP_WORDS[COMP_CWORD-2]}}" == "partition" ]]; then
                 local val="${{cur#partition=}}"
@@ -2750,6 +2764,8 @@ _slurm_cli_initialize_autocomplete() {{
                 local reservations="$(_slurm_cache_reservations)"
                 COMPREPLY=($(compgen -W "$reservations" -- "$val"))
                 [[ ${{#COMPREPLY[@]}} -gt 0 && "$cur" == *=* ]] && COMPREPLY=("${{COMPREPLY[@]/#/reservation=}}")
+            elif [[ "$cur" == drain=* ]]; then
+                COMPREPLY=("drain=REGEXP")
             else
                 local cached_nodes="$(_slurm_cache_nodes)"
                 COMPREPLY=($(compgen -W "$node_filters $neg_filters -v --verbose -h --help $cached_nodes" -- "$cur"))
@@ -2904,7 +2920,7 @@ _slurm_cli_initialize_autocomplete() {{
                 case "$_key" in
                     nodes)
                         _slurm_complete_nodes_value "$_val" "$cur" "$_key" ;;
-                    state|partition|user|reservation)
+                    state|partition|user|reservation|drain)
                         if [[ "${{COMP_WORDS[COMP_CWORD-4]}}" == "nodes" ]] || \\
                            [[ "$cur" == "=" && "${{COMP_WORDS[COMP_CWORD-3]}}" == "nodes" ]]; then
                             _slurm_complete_nodes_value "$_key=$_val" "" "nodes"
@@ -2930,7 +2946,7 @@ _slurm_cli_initialize_autocomplete() {{
                 case "$_key" in
                     nodes)
                         _slurm_complete_nodes_value "$_val" "$cur" "$_key" ;;
-                    state|partition|user|reservation)
+                    state|partition|user|reservation|drain)
                         if [[ "${{COMP_WORDS[COMP_CWORD-4]}}" == "nodes" ]] || \\
                            [[ "$cur" == "=" && "${{COMP_WORDS[COMP_CWORD-3]}}" == "nodes" ]]; then
                             _slurm_complete_nodes_value "$_key=$_val" "" "nodes"

@@ -34,6 +34,7 @@ NODE_FILTER_PREFIXES = [
     "state=",
     "user=",
     "reservation=",
+    "drain=",
     "drainreason=",
 ]
 
@@ -100,6 +101,8 @@ def resolve_node_filter(
         return _get_nodes_by_user(filter_expr[5:], verbose)
     elif filter_lower.startswith("reservation="):
         return _get_nodes_by_reservation(filter_expr[12:], verbose)
+    elif filter_lower.startswith("drain="):
+        return _get_nodes_by_reason(filter_expr[6:], verbose)
     elif filter_lower.startswith("drainreason="):
         return _get_nodes_by_reason(filter_expr[12:], verbose)
     else:
@@ -727,8 +730,11 @@ _slurm_complete_node_filter() {{
         COMPREPLY=($(compgen -W "$reservations" -- "$val"))
         [[ ${{#COMPREPLY[@]}} -gt 0 ]] && COMPREPLY=("${{COMPREPLY[@]/#/not:reservation=}}")
         return 0
+    elif [[ "$cur" == not:drain=* ]]; then
+        COMPREPLY=("not:drain=REGEXP")
+        return 0
     elif [[ "$cur" == not:drainreason=* ]]; then
-        # drainreason takes a regex pattern, no value completion
+        COMPREPLY=("not:drainreason=REGEXP")
         return 0
     # Handle positive filters
     elif [[ "$cur" == partition=* ]] || [[ "$prev" == "=" && "${{COMP_WORDS[COMP_CWORD-2]}}" == "partition" ]]; then
@@ -757,8 +763,11 @@ _slurm_complete_node_filter() {{
         COMPREPLY=($(compgen -W "$reservations" -- "$val"))
         [[ ${{#COMPREPLY[@]}} -gt 0 && "$cur" == *=* ]] && COMPREPLY=("${{COMPREPLY[@]/#/reservation=}}")
         return 0
+    elif [[ "$cur" == drain=* ]]; then
+        COMPREPLY=("drain=REGEXP")
+        return 0
     elif [[ "$cur" == drainreason=* ]]; then
-        # drainreason takes a regex pattern, no value completion
+        COMPREPLY=("drainreason=REGEXP")
         return 0
     fi
 
