@@ -54,7 +54,10 @@ _slurm_ensure_cache() {{
 
     if [[ $needs_update -eq 1 ]]; then
         # Update cache silently in foreground (need results immediately)
-        slurm-cli show "$resource" --style=json >/dev/null 2>&1
+        # Try the invoked binary first (handles ./slurm-cli), then fall back to PATH
+        local _cli="${{COMP_WORDS[0]:-slurm-cli}}"
+        "$_cli" show "$resource" --style=json >/dev/null 2>&1 || \
+            slurm-cli show "$resource" --style=json >/dev/null 2>&1
     fi
 }}
 
@@ -226,7 +229,7 @@ _slurm_complete_nodes_value() {{
     local prefix=""
     if [[ "$cur" == *=* && -n "$val" ]]; then
         prefix="${{cur%"$val"}}"
-    elif [[ "$cur" == *=* ]]; then
+    elif [[ "$cur" == *=* && "$cur" != "=" ]]; then
         prefix="$cur"
     fi
 

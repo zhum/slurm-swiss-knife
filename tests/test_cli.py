@@ -3393,3 +3393,286 @@ def test_schedloglevel_command_with_non_zero_returncode(runner):
         # Command should still complete with exit code 0 (the click command)
         assert result.exit_code == 0
         # stderr content might be shown
+
+
+# Tests for setdebug command
+
+
+def test_setdebug_command_basic(runner):
+    """Test setdebug with a valid level."""
+    from slurm_cli.cli import register_commands
+
+    register_commands()
+
+    with patch("subprocess.run") as mock_run:
+        mock_run.return_value.stdout = ""
+        mock_run.return_value.returncode = 0
+        result = runner.invoke(main, ["setdebug", "debug"])
+        assert result.exit_code == 0
+        assert "Debug level set successfully" in result.output
+        call_args = mock_run.call_args[0][0]
+        assert call_args == ["scontrol", "setdebug", "debug"]
+
+
+def test_setdebug_command_all_levels(runner):
+    """Test setdebug with each valid level."""
+    from slurm_cli.cli import register_commands
+
+    register_commands()
+
+    levels = ["quiet", "fatal", "error", "info", "verbose",
+              "debug", "debug2", "debug3", "debug4", "debug5"]
+    for level in levels:
+        with patch("subprocess.run") as mock_run:
+            mock_run.return_value.stdout = ""
+            mock_run.return_value.returncode = 0
+            result = runner.invoke(main, ["setdebug", level])
+            assert result.exit_code == 0, f"Failed for level {level}"
+            call_args = mock_run.call_args[0][0]
+            assert call_args == ["scontrol", "setdebug", level]
+
+
+def test_setdebug_command_invalid_level(runner):
+    """Test setdebug rejects invalid level."""
+    from slurm_cli.cli import register_commands
+
+    register_commands()
+
+    with patch("subprocess.run") as mock_run:
+        result = runner.invoke(main, ["setdebug", "superverbose"])
+        assert result.exit_code == 0
+        assert "Invalid level" in result.output
+        mock_run.assert_not_called()
+
+
+def test_setdebug_command_with_nodes(runner):
+    """Test setdebug with nodes= nodelist."""
+    from slurm_cli.cli import register_commands
+
+    register_commands()
+
+    with patch("subprocess.run") as mock_run:
+        mock_run.return_value.stdout = ""
+        mock_run.return_value.returncode = 0
+        result = runner.invoke(main, ["setdebug", "info", "nodes=node001"])
+        assert result.exit_code == 0
+        call_args = mock_run.call_args[0][0]
+        assert call_args == ["scontrol", "setdebug", "info", "nodes=node001"]
+
+
+def test_setdebug_command_dry_run(runner):
+    """Test setdebug --dry-run does not call scontrol."""
+    from slurm_cli.cli import register_commands
+
+    register_commands()
+
+    with patch("subprocess.run") as mock_run:
+        result = runner.invoke(main, ["setdebug", "verbose", "--dry-run"])
+        assert result.exit_code == 0
+        assert "DRY RUN" in result.output
+        assert "scontrol setdebug verbose" in result.output
+        mock_run.assert_not_called()
+
+
+def test_setdebug_command_dry_run_with_nodes(runner):
+    """Test setdebug --dry-run with nodes= shows full command."""
+    from slurm_cli.cli import register_commands
+
+    register_commands()
+
+    with patch("subprocess.run") as mock_run:
+        result = runner.invoke(
+            main, ["setdebug", "debug", "nodes=node001", "--dry-run"]
+        )
+        assert result.exit_code == 0
+        assert "DRY RUN" in result.output
+        assert "nodes=node001" in result.output
+        mock_run.assert_not_called()
+
+
+def test_setdebug_command_verbose(runner):
+    """Test setdebug --verbose prints the command."""
+    from slurm_cli.cli import register_commands
+
+    register_commands()
+
+    with patch("subprocess.run") as mock_run:
+        mock_run.return_value.stdout = ""
+        mock_run.return_value.returncode = 0
+        result = runner.invoke(main, ["setdebug", "error", "--verbose"])
+        assert result.exit_code == 0
+        assert "Running:" in result.output
+
+
+def test_setdebug_command_error_handling(runner):
+    """Test setdebug handles CalledProcessError."""
+    import subprocess as sp
+
+    from slurm_cli.cli import register_commands
+
+    register_commands()
+
+    with patch("subprocess.run") as mock_run:
+        mock_run.side_effect = sp.CalledProcessError(
+            1, "scontrol", stderr="Permission denied"
+        )
+        result = runner.invoke(main, ["setdebug", "debug"])
+        assert result.exit_code == 0
+        assert "Error" in result.output
+
+
+def test_setdebug_command_not_found(runner):
+    """Test setdebug handles missing scontrol."""
+    from slurm_cli.cli import register_commands
+
+    register_commands()
+
+    with patch("subprocess.run") as mock_run:
+        mock_run.side_effect = FileNotFoundError()
+        result = runner.invoke(main, ["setdebug", "info"])
+        assert result.exit_code == 0
+        assert "scontrol not found" in result.output
+
+
+# Tests for bbstat command
+
+
+def test_bbstat_command_basic(runner):
+    """Test the basic bbstat command."""
+    from slurm_cli.cli import register_commands
+
+    register_commands()
+
+    with patch("subprocess.run") as mock_run:
+        mock_run.return_value.stdout = "BurstBuffer info here\n"
+        mock_run.return_value.returncode = 0
+        result = runner.invoke(main, ["bbstat"])
+        assert result.exit_code == 0
+        assert "BurstBuffer info here" in result.output
+        mock_run.assert_called_once()
+        call_args = mock_run.call_args[0][0]
+        assert call_args == ["scontrol", "show", "bbstat"]
+
+
+def test_bbstat_command_alias(runner):
+    """Test the bbstat command with alias 'bbs'."""
+    from slurm_cli.cli import register_commands
+
+    register_commands()
+
+    with patch("subprocess.run") as mock_run:
+        mock_run.return_value.stdout = ""
+        mock_run.return_value.returncode = 0
+        result = runner.invoke(main, ["bbs"])
+        assert result.exit_code == 0
+        call_args = mock_run.call_args[0][0]
+        assert call_args == ["scontrol", "show", "bbstat"]
+
+
+def test_bbstat_command_verbose(runner):
+    """Test the bbstat command with verbose flag."""
+    from slurm_cli.cli import register_commands
+
+    register_commands()
+
+    with patch("subprocess.run") as mock_run:
+        mock_run.return_value.stdout = ""
+        mock_run.return_value.returncode = 0
+        result = runner.invoke(main, ["bbstat", "-v"])
+        assert result.exit_code == 0
+        assert "Running: scontrol show bbstat" in result.output
+
+
+def test_bbstat_command_empty_output(runner):
+    """Test bbstat with empty stdout."""
+    from slurm_cli.cli import register_commands
+
+    register_commands()
+
+    with patch("subprocess.run") as mock_run:
+        mock_run.return_value.stdout = ""
+        mock_run.return_value.returncode = 0
+        result = runner.invoke(main, ["bbstat"])
+        assert result.exit_code == 0
+
+
+def test_bbstat_command_error_handling(runner):
+    """Test error handling for bbstat command."""
+    import subprocess as sp
+
+    from slurm_cli.cli import register_commands
+
+    register_commands()
+
+    with patch("subprocess.run") as mock_run:
+        mock_run.side_effect = sp.CalledProcessError(
+            1, "scontrol", stderr="Permission denied"
+        )
+        result = runner.invoke(main, ["bbstat"])
+        assert result.exit_code == 0
+        assert "Error" in result.output
+
+
+def test_bbstat_command_not_found(runner):
+    """Test handling when scontrol is not found."""
+    from slurm_cli.cli import register_commands
+
+    register_commands()
+
+    with patch("subprocess.run") as mock_run:
+        mock_run.side_effect = FileNotFoundError()
+        result = runner.invoke(main, ["bbstat"])
+        assert result.exit_code == 0
+        assert "scontrol not found" in result.output
+
+
+def test_bbstat_command_dry_run(runner):
+    """Test the bbstat command with --dry-run flag."""
+    from slurm_cli.cli import register_commands
+
+    register_commands()
+
+    result = runner.invoke(main, ["bbstat", "--dry-run"])
+    assert result.exit_code == 0
+    assert "DRY RUN" in result.output
+    assert "scontrol show bbstat" in result.output
+
+
+def test_bbstat_command_dry_run_no_execution(runner):
+    """Test that --dry-run does not execute the command."""
+    from slurm_cli.cli import register_commands
+
+    register_commands()
+
+    with patch("subprocess.run") as mock_run:
+        result = runner.invoke(main, ["bbstat", "--dry-run"])
+        assert result.exit_code == 0
+        mock_run.assert_not_called()
+
+
+def test_bbstat_command_global_dry_run(runner):
+    """Test bbstat respects the global --dry-run flag."""
+    from slurm_cli.cli import register_commands
+
+    register_commands()
+
+    with patch("subprocess.run") as mock_run:
+        result = runner.invoke(main, ["--dry-run", "bbstat"])
+        assert result.exit_code == 0
+        assert "DRY RUN" in result.output
+        mock_run.assert_not_called()
+
+
+def test_bbstat_command_no_dry_run_overrides_global(runner):
+    """Test bbstat --no-dry-run overrides global --dry-run."""
+    from slurm_cli.cli import register_commands
+
+    register_commands()
+
+    with patch("subprocess.run") as mock_run:
+        mock_run.return_value.stdout = ""
+        mock_run.return_value.returncode = 0
+        result = runner.invoke(main, ["--dry-run", "--no-dry-run", "bbstat"])
+        assert result.exit_code == 0
+        assert "DRY RUN" not in result.output
+        mock_run.assert_called_once()

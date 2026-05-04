@@ -268,7 +268,10 @@ COMMANDS = {
         "description": "Takeover as primary controller",
     },
     "write-config": {
-        "aliases": ["wconf", "w-conf"],  # Include both hyphen and underscore variants
+        "aliases": [
+            "wconf",
+            "w-conf",
+        ],  # Include both hyphen and underscore variants
         "description": "Write Slurm configuration file",
     },
     "batch-script": {
@@ -297,6 +300,14 @@ COMMANDS = {
     "schedloglevel": {
         "aliases": ["sll"],
         "description": "Set scheduler log level",
+    },
+    "setdebug": {
+        "aliases": ["sd"],
+        "description": "Set slurmctld/slurmd debug level",
+    },
+    "bbstat": {
+        "aliases": ["bbs"],
+        "description": "Show burst buffer status",
     },
     "suspend": {"aliases": [], "description": "Suspend jobs"},
 }

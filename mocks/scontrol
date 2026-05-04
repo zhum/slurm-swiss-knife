@@ -230,10 +230,40 @@ elif [ "$1" = "uhold" ]; then
     # Mock uhold command (user hold)
     echo "MOCK: scontrol $*"
     exit 0
+elif [ "$1" = "setdebug" ]; then
+    # Mock setdebug command: setdebug LEVEL [nodes=nodelist]
+    LEVEL="${2:-}"
+    VALID_LEVELS="quiet fatal error info verbose debug debug2 debug3 debug4 debug5"
+    if [ -z "$LEVEL" ]; then
+        echo "error: setdebug requires a debug level" >&2
+        exit 1
+    fi
+    if ! echo "$VALID_LEVELS" | grep -qw "$LEVEL"; then
+        echo "error: Invalid debug level '$LEVEL'. Valid levels: $VALID_LEVELS" >&2
+        exit 1
+    fi
+    # Optional nodes= argument (nodelist only, not filter expressions)
+    NODES_ARG="${3:-}"
+    if [ -n "$NODES_ARG" ]; then
+        if [[ "$NODES_ARG" != nodes=* ]]; then
+            echo "error: unexpected argument '$NODES_ARG'" >&2
+            exit 1
+        fi
+        NODELIST="${NODES_ARG#nodes=}"
+        if [ -z "$NODELIST" ]; then
+            echo "error: nodes= requires a nodelist" >&2
+            exit 1
+        fi
+        echo "Debug level set to $LEVEL for nodes: $NODELIST"
+    else
+        echo "Debug level set to $LEVEL"
+    fi
+    exit 0
 else
     # For other arguments, show usage or error
     echo "Usage: $0 show {nodes|partitions|reservations|config} [--json]" >&2
     echo "       $0 {reconfigure|ping|takeover|write config|write batch_script|version|token|assoc_mgr}" >&2
+    echo "       $0 setdebug {quiet|fatal|error|info|verbose|debug|debug2|debug3|debug4|debug5} [nodes=nodelist]" >&2
     echo "This is a mock scontrol script for testing purposes." >&2
     echo "Arguments received: $*" >&2
     exit 1

@@ -966,6 +966,8 @@ def register_commands() -> None:
     main.add_command(takeover, name="takeover")
     main.add_command(write_config, name="write-config")
     main.add_command(schedloglevel, name="schedloglevel")
+    main.add_command(setdebug, name="setdebug")
+    main.add_command(bbstat, name="bbstat")
     main.add_command(batch_script, name="batch-script")
     main.add_command(token, name="token")
     main.add_command(assoc_mgr, name="assoc_mgr")
@@ -1013,6 +1015,8 @@ def register_commands() -> None:
     release.help = "Release held jobs (aliases: rel)"
     top.help = "Move jobs to top of queue"
     requeue.help = "Requeue jobs (aliases: req)"
+    setdebug.help = "Set slurmctld/slurmd debug level (aliases: sd)"
+    bbstat.help = "Show burst buffer status (aliases: bbs)"
     suspend.help = "Suspend running jobs (aliases: sus)"
     help.help = "Show help information"
 
@@ -2352,6 +2356,8 @@ _slurm_cli_initialize_autocomplete() {{
     # Check for optional CLI options and print their values for debugging
     local -A opts=()
     local i=1
+    local cur="${{COMP_WORDS[COMP_CWORD]}}"
+    local prev="${{COMP_WORDS[COMP_CWORD-1]}}"
 
     while [[ $i -lt ${{COMP_CWORD}} ]]; do
         arg="${{COMP_WORDS[$i]}}"
@@ -2393,9 +2399,6 @@ _slurm_cli_initialize_autocomplete() {{
     # echo -e "\\nCOMP_CWORD=$COMP_CWORD; i=$i j=$j \\
     # COMP_WORDS=${{COMP_WORDS[@]}} \\
     # Current=${{COMP_WORDS[COMP_CWORD]}} cmd=$cmd resource=$resource"
-
-    local cur="${{COMP_WORDS[COMP_CWORD]}}"
-    local prev="${{COMP_WORDS[COMP_CWORD-1]}}"
 
     # Guess the command by prefix - generated from COMMANDS config
     local guessed="no"
@@ -2872,6 +2875,38 @@ _slurm_cli_initialize_autocomplete() {{
             COMPREPLY=($(compgen -W "0 1 yes no y n on off --dry-run -v --verbose -h --help" -- "$cur"))
             return
             ;;
+        setdebug|sd)
+            local debug_levels="quiet fatal error info verbose debug debug2 debug3 debug4 debug5"
+            local level_set="no"
+            for ((k=2; k<COMP_CWORD; k++)); do
+                local w="${{COMP_WORDS[k]}}"
+                case "$w" in
+                    quiet|fatal|error|info|verbose|debug|debug2|debug3|debug4|debug5)
+                        level_set="yes" ;;
+                esac
+            done
+            if [[ "$level_set" == "no" ]]; then
+                COMPREPLY=($(compgen -W "$debug_levels --dry-run -v --verbose -h --help" -- "$cur"))
+            elif _slurm_parse_keyval "$cur" "$prev"; then
+                case "$_key" in
+                    nodes)
+                        _slurm_complete_nodes_value "$_val" "$cur" "$_key" ;;
+                    state|partition|user|reservation)
+                        if [[ "${{COMP_WORDS[COMP_CWORD-4]}}" == "nodes" ]] || \\
+                           [[ "$cur" == "=" && "${{COMP_WORDS[COMP_CWORD-3]}}" == "nodes" ]]; then
+                            _slurm_complete_nodes_value "$_key=$_val" "" "nodes"
+                        fi ;;
+                esac
+            else
+                COMPREPLY=($(compgen -W "nodes= --dry-run -v --verbose -h --help" -- "$cur"))
+                compopt -o nospace 2>/dev/null
+            fi
+            return
+            ;;
+        bbstat)
+            COMPREPLY=($(compgen -W "--dry-run -v --verbose -h --help" -- "$cur"))
+            return
+            ;;
         autocomplete|help|list-resources)
             # These commands take -h/--help option
             COMPREPLY=($(compgen -W "-h --help" -- "$cur"))
@@ -3282,7 +3317,10 @@ def takeover(
 @click.argument("filename", required=False, default=None)
 @click.pass_context
 def write_config(
-    ctx: click.Context, verbose: bool = False, dry_run: bool = False, filename: Optional[str] = None
+    ctx: click.Context,
+    verbose: bool = False,
+    dry_run: bool = False,
+    filename: Optional[str] = None,
 ) -> None:
     """Write Slurm configuration file.
 
@@ -3344,7 +3382,10 @@ def write_config(
 )
 @click.pass_context
 def schedloglevel(
-    ctx: click.Context, verbose: bool = False, dry_run: bool = False, level: Optional[str] = None
+    ctx: click.Context,
+    verbose: bool = False,
+    dry_run: bool = False,
+    level: Optional[str] = None,
 ) -> None:
     """Set scheduler log level.
 
@@ -3401,13 +3442,192 @@ def schedloglevel(
 @click.option(
     "--dry-run",
     is_flag=True,
+    help="Show what would be done without making changes",
+)
+@click.argument(
+    "level",
+    required=True,
+    shell_complete=lambda ctx, param, incomplete: [
+        click.shell_completion.CompletionItem(v)
+        for v in [
+            "quiet",
+            "fatal",
+            "error",
+            "info",
+            "verbose",
+            "debug",
+            "debug2",
+            "debug3",
+            "debug4",
+            "debug5",
+        ]
+        if v.startswith(incomplete)
+    ],
+)
+@click.argument("nodes", nargs=-1, required=False)
+@click.pass_context
+def setdebug(
+    ctx: click.Context,
+    level: str,
+    nodes: Tuple[str, ...] = (),
+    verbose: bool = False,
+    dry_run: bool = False,
+) -> None:
+    """Set slurmctld/slurmd debug level (aliases: sd).
+
+    Sets the debug log level for slurmctld or individual slurmd daemons.
+
+    \b
+    Allowed levels: quiet fatal error info verbose debug debug2 debug3 debug4 debug5
+
+    \b
+    The optional nodes argument accepts a nodelist or node filters:
+      nodes=node001          - specific node(s)
+      nodes=partition=gpu    - all nodes in partition gpu
+      nodes=state=idle       - all idle nodes
+
+    \b
+    Examples:
+      slurm-cli setdebug debug
+      slurm-cli setdebug info nodes=node001
+      slurm-cli setdebug verbose nodes=partition=gpu
+      slurm-cli setdebug debug --dry-run
+    """
+    dry_run = get_dry_run(ctx, dry_run)
+
+    valid_levels = {
+        "quiet",
+        "fatal",
+        "error",
+        "info",
+        "verbose",
+        "debug",
+        "debug2",
+        "debug3",
+        "debug4",
+        "debug5",
+    }
+    if level.lower() not in valid_levels:
+        console.print(
+            f"[red]Error: Invalid level '{level}'. "
+            f"Allowed: {', '.join(sorted(valid_levels))}[/red]"
+        )
+        return
+
+    # Build base command
+    args = ["scontrol", "setdebug", level.lower()]
+
+    # Parse optional nodes= argument
+    nodes_list = list(nodes)
+    nodes_value = None
+    for arg in nodes_list:
+        if arg.lower().startswith("nodes="):
+            nodes_value = arg.split("=", 1)[1]
+            break
+
+    if nodes_value:
+        # Resolve filter expressions to actual nodelist if needed
+        if is_node_filter(nodes_value):
+            resolved_nodes, _ = resolve_node_filters(
+                [nodes_value], verbose
+            )
+            if not resolved_nodes:
+                console.print(
+                    f"[red]Error: Node filter '{nodes_value}' "
+                    f"matched no nodes[/red]"
+                )
+                return
+            nodelist = ",".join(sorted(resolved_nodes))
+        else:
+            nodelist = nodes_value
+        args.append(f"nodes={nodelist}")
+
+    if dry_run:
+        console.print(f"[yellow]DRY RUN:[/yellow] {' '.join(args)}")
+        return
+
+    if verbose:
+        console.print(f"[dim]Running: {' '.join(args)}[/dim]")
+
+    try:
+        result = subprocess.run(
+            args,
+            capture_output=True,
+            text=True,
+            check=True,
+        )
+        if result.stdout:
+            console.print(result.stdout.strip())
+        console.print("[green]Debug level set successfully[/green]")
+    except subprocess.CalledProcessError as e:
+        console.print(f"[red]Error: {e.stderr.strip() or e}[/red]")
+    except FileNotFoundError:
+        console.print("[red]Error: scontrol not found[/red]")
+
+
+@click.command(context_settings=CONTEXT_SETTINGS)
+@click.option(
+    "--verbose", "-v", is_flag=True, help="Enable verbose output"
+)
+@click.option(
+    "--dry-run",
+    is_flag=True,
+    help="Show command without executing",
+)
+@click.pass_context
+def bbstat(
+    ctx: click.Context, verbose: bool = False, dry_run: bool = False
+) -> None:
+    """Show burst buffer status (aliases: bbs).
+
+    Displays current burst buffer status from slurmctld.
+
+    Examples:
+      slurm-cli bbstat
+    """
+    dry_run = get_dry_run(ctx) or dry_run
+    args = ["scontrol", "show", "bbstat"]
+
+    if dry_run:
+        console.print(f"[yellow]DRY RUN:[/yellow] {' '.join(args)}")
+        return
+
+    if verbose:
+        console.print(f"[dim]Running: {' '.join(args)}[/dim]")
+
+    try:
+        result = subprocess.run(
+            args,
+            capture_output=True,
+            text=True,
+            check=True,
+        )
+        if result.stdout:
+            console.print(result.stdout.strip())
+    except subprocess.CalledProcessError as e:
+        console.print(f"[red]Error: {e.stderr.strip() or e}[/red]")
+    except FileNotFoundError:
+        console.print("[red]Error: scontrol not found[/red]")
+
+
+@click.command(context_settings=CONTEXT_SETTINGS)
+@click.option(
+    "--verbose", "-v", is_flag=True, help="Enable verbose output"
+)
+@click.option(
+    "--dry-run",
+    is_flag=True,
     help="Show command without executing",
 )
 @click.argument("job_id", required=True, default=None)
 @click.argument("filename", required=False, default=None)
 @click.pass_context
 def batch_script(
-    ctx: click.Context, verbose: bool = False, dry_run: bool = False, job_id: Optional[str] = None, filename: Optional[str] = None
+    ctx: click.Context,
+    verbose: bool = False,
+    dry_run: bool = False,
+    job_id: Optional[str] = None,
+    filename: Optional[str] = None,
 ) -> None:
     """Run scontrol write batch_script for a job.
 
@@ -3420,7 +3640,7 @@ def batch_script(
     dry_run = get_dry_run(ctx) or dry_run
 
     ## Check that job_id is required
-    #if job_id is None:
+    # if job_id is None:
     #    console.print("[red]Error: Job ID is required.[/red]")
     #    console.print(
     #        "[yellow]Usage: slurm-cli batch_script JOB_ID [FILENAME][/yellow]"
