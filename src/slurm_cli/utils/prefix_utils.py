@@ -305,6 +305,10 @@ COMMANDS = {
         "aliases": ["sd"],
         "description": "Set slurmctld/slurmd debug level",
     },
+    "setdebugflags": {
+        "aliases": ["sdf"],
+        "description": "Set slurmctld/slurmd debug flags",
+    },
     "bbstat": {
         "aliases": ["bbs"],
         "description": "Show burst buffer status",
@@ -893,12 +897,29 @@ def generate_bash_command_case() -> str:
         else:
             cmd_patterns[canonical].append(f"{prefix}*")
 
+    # Detect commands whose full name is a prefix of another command's name.
+    # When the user types exactly that name, both should appear as completions.
+    all_cmd_names = list(COMMANDS.keys())
+    cmd_extends: Dict[str, List[str]] = {}
+    for cmd in all_cmd_names:
+        for other in all_cmd_names:
+            if other != cmd and other.startswith(cmd):
+                cmd_extends.setdefault(cmd, []).append(other)
+
     for cmd, patterns in cmd_patterns.items():
         if not patterns:
             continue
         pattern = "|".join(patterns)
         lines.append(f"        {pattern})")
-        lines.append(f'            guessed="{cmd}"')
+        if cmd in cmd_extends:
+            siblings = " ".join(cmd_extends[cmd])
+            lines.append(f'            if [[ "$cur" == "{cmd}" ]]; then')
+            lines.append(f'                guessed="{cmd} {siblings}"')
+            lines.append(f"            else")
+            lines.append(f'                guessed="{cmd}"')
+            lines.append(f"            fi")
+        else:
+            lines.append(f'            guessed="{cmd}"')
         lines.append(f'            cmd="{cmd}"')
         lines.append("            ;;")
 

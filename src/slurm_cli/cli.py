@@ -967,6 +967,8 @@ def register_commands() -> None:
     main.add_command(write_config, name="write-config")
     main.add_command(schedloglevel, name="schedloglevel")
     main.add_command(setdebug, name="setdebug")
+    main.add_command(setdebugflags, name="setdebugflags")
+    main.add_command(setdebugflags, name="sdf")
     main.add_command(bbstat, name="bbstat")
     main.add_command(burstbuffer, name="burstbuffer")
     main.add_command(daemons, name="daemons")
@@ -1020,6 +1022,9 @@ def register_commands() -> None:
     top.help = "Move jobs to top of queue"
     requeue.help = "Requeue jobs (aliases: req)"
     setdebug.help = "Set slurmctld/slurmd debug level (aliases: sd)"
+    setdebugflags.help = (
+        "Set slurmctld/slurmd debug flags (aliases: sdf)"
+    )
     bbstat.help = "Show burst buffer status (aliases: bbs)"
     burstbuffer.help = "Show burst buffer information"
     daemons.help = "Show running Slurm daemons"
@@ -2911,6 +2916,32 @@ _slurm_cli_initialize_autocomplete() {{
             fi
             return
             ;;
+        setdebugflags|sdf)
+            local debug_flags="Accrue Agent AuditRPCs Backfill BackfillMap BurstBuffer Cgroup CPU_Bind CpuFrequency Data DBD_Agent Dependency Elasticsearch Energy Federation FrontEnd Gang Gres GLOB_SILENCE Hetjob JobAccountGather JobComp JobContainer License Network NetworkRaw NO_CONF_HASH NodeFeatures Power Priority Profile Protocol Reservation Route Script SelectType Steps Switch TLS TraceJobs Triggers WorkQueue"
+            if [[ "$cur" == +* ]]; then
+                local partial="${{cur:1}}"
+                COMPREPLY=($(compgen -W "$debug_flags" -- "$partial"))
+                [[ ${{#COMPREPLY[@]}} -gt 0 ]] && COMPREPLY=("${{COMPREPLY[@]/#/+}}")
+            elif [[ "$cur" =~ ^-[A-Z] ]] || [[ "$cur" == "-" ]]; then
+                local partial="${{cur:1}}"
+                COMPREPLY=($(compgen -W "$debug_flags" -- "$partial"))
+                [[ ${{#COMPREPLY[@]}} -gt 0 ]] && COMPREPLY=("${{COMPREPLY[@]/#/-}}")
+            elif _slurm_parse_keyval "$cur" "$prev"; then
+                case "$_key" in
+                    nodes)
+                        _slurm_complete_nodes_value "$_val" "$cur" "$_key" ;;
+                    state|partition|user|reservation)
+                        if [[ "${{COMP_WORDS[COMP_CWORD-4]}}" == "nodes" ]] || \\
+                           [[ "$cur" == "=" && "${{COMP_WORDS[COMP_CWORD-3]}}" == "nodes" ]]; then
+                            _slurm_complete_nodes_value "$_key=$_val" "" "nodes"
+                        fi ;;
+                esac
+            else
+                COMPREPLY=($(compgen -W "nodes= --dry-run -v --verbose -h --help" -- "$cur"))
+                compopt -o nospace 2>/dev/null
+            fi
+            return
+            ;;
         bbstat|burstbuffer|daemons|dwstat|topology)
             COMPREPLY=($(compgen -W "--dry-run -v --verbose -h --help" -- "$cur"))
             return
@@ -3609,6 +3640,146 @@ def bbstat(
             capture_output=True,
             text=True,
             check=True,
+        )
+        if result.stdout:
+            console.print(result.stdout.strip())
+    except subprocess.CalledProcessError as e:
+        console.print(f"[red]Error: {e.stderr.strip() or e}[/red]")
+    except FileNotFoundError:
+        console.print("[red]Error: scontrol not found[/red]")
+
+
+SETDEBUGFLAGS_FLAGS = [
+    "Accrue",
+    "Agent",
+    "AuditRPCs",
+    "Backfill",
+    "BackfillMap",
+    "BurstBuffer",
+    "Cgroup",
+    "CPU_Bind",
+    "CpuFrequency",
+    "Data",
+    "DBD_Agent",
+    "Dependency",
+    "Elasticsearch",
+    "Energy",
+    "Federation",
+    "FrontEnd",
+    "Gang",
+    "Gres",
+    "GLOB_SILENCE",
+    "Hetjob",
+    "JobAccountGather",
+    "JobComp",
+    "JobContainer",
+    "License",
+    "Network",
+    "NetworkRaw",
+    "NO_CONF_HASH",
+    "NodeFeatures",
+    "Power",
+    "Priority",
+    "Profile",
+    "Protocol",
+    "Reservation",
+    "Route",
+    "Script",
+    "SelectType",
+    "Steps",
+    "Switch",
+    "TLS",
+    "TraceJobs",
+    "Triggers",
+    "WorkQueue",
+]
+_SETDEBUGFLAGS_LOWER = {f.lower(): f for f in SETDEBUGFLAGS_FLAGS}
+
+
+@click.command(
+    context_settings={
+        **CONTEXT_SETTINGS,
+        "ignore_unknown_options": True,
+    }
+)
+@click.option(
+    "--verbose", "-v", is_flag=True, help="Enable verbose output"
+)
+@click.option(
+    "--dry-run",
+    is_flag=True,
+    help="Show what would be done without making changes",
+)
+@click.argument("flags", nargs=-1, type=click.UNPROCESSED)
+@click.pass_context
+def setdebugflags(
+    ctx: click.Context,
+    flags: Tuple[str, ...] = (),
+    verbose: bool = False,
+    dry_run: bool = False,
+) -> None:
+    """Set slurmctld/slurmd debug flags (aliases: sdf).
+
+    Each flag must be prefixed with '+' (enable) or '-' (disable).
+    The optional nodes argument accepts a nodelist or node filter.
+
+    \b
+    Examples:
+      slurm-cli setdebugflags +Backfill +Agent
+      slurm-cli setdebugflags -Backfill +Agent nodes=node001
+      slurm-cli setdebugflags +Backfill nodes=partition=gpu
+    """
+    dry_run = get_dry_run(ctx, dry_run)
+
+    args = ["scontrol", "setdebugflags"]
+    nodes_value = None
+
+    for arg in flags:
+        if arg.lower().startswith("nodes="):
+            nodes_value = arg.split("=", 1)[1]
+        elif arg.startswith("+") or arg.startswith("-"):
+            prefix = arg[0]
+            flag_name = arg[1:]
+            canonical = _SETDEBUGFLAGS_LOWER.get(flag_name.lower())
+            if canonical is None:
+                console.print(
+                    f"[red]Error: Unknown flag '{flag_name}'. "
+                    f"Valid flags: {', '.join(SETDEBUGFLAGS_FLAGS)}[/red]"
+                )
+                return
+            args.append(f"{prefix}{canonical}")
+        else:
+            console.print(
+                f"[red]Error: '{arg}' must start with '+' or '-', "
+                f"or be 'nodes=...'[/red]"
+            )
+            return
+
+    if nodes_value is not None:
+        if is_node_filter(nodes_value):
+            resolved_nodes, _ = resolve_node_filters(
+                [nodes_value], verbose
+            )
+            if not resolved_nodes:
+                console.print(
+                    f"[red]Error: Node filter '{nodes_value}' matched no nodes[/red]"
+                )
+                return
+            nodelist = ",".join(sorted(resolved_nodes))
+        else:
+            nodelist = nodes_value
+        args.append(f"nodes={nodelist}")
+
+    if dry_run:
+        console.print(f"[yellow]DRY RUN:[/yellow] {' '.join(args)}")
+        return
+
+    if verbose:
+        console.print(f"[dim]Running: {' '.join(args)}[/dim]")
+
+    try:
+        result = subprocess.run(
+            args, capture_output=True, text=True, check=True
         )
         if result.stdout:
             console.print(result.stdout.strip())

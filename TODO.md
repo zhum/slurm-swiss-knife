@@ -75,10 +75,10 @@
 - [x] **assoc_mgr** users=..., accounts=..., qos=..., flags={users|assoc|qos}
 - [x] **batch_script job_id [filename]**
 - [x] **write_config [filename]**
-- [ ] **new resources (r/o)** bbstat, burstbuffer, daemons, dwstat, topology
+- [x] **new resources (r/o)** bbstat, burstbuffer, daemons, dwstat, topology
 - [x] **schedloglevel** 0, 1, yes, no, on, off
 - [x] **setdebug** "quiet", "fatal", "error", "info", "verbose", "debug", "debug2", "debug3", "debug4", "debug5" [nodes=...]
-- [ ] **setdebugflags** {+|-}\<FLAG\> [{+|-}\<FLAG\>] [nodes=\<NODES\>]
+- [x] **setdebugflags** {+|-}\<FLAG\> [{+|-}\<FLAG\>] [nodes=\<NODES\>]
   - Accrue           Accrue counters accounting details
   - Agent            RPC agents (outgoing RPCs from Slurm daemons)
   - AuditRPCs        For all inbound RPCs to slurmctld, print the originating address, authenticated user,
@@ -136,7 +136,6 @@
 ### Documentation & Help
 
 - [ ] **Complete Documentation**: Create comprehensive Sphinx documentation
-- [ ] **API Documentation**: Add detailed API documentation for all commands
 - [ ] **Examples & Tutorials**: Add usage examples and tutorials
 - [ ] **Man Pages**: Generate man pages for the CLI tool
 - [ ] **Video Tutorials**: Create video demonstrations of key features

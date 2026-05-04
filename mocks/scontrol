@@ -277,6 +277,22 @@ elif [ "$1" = "topology" ]; then
     echo "SwitchName=s1 Nodes=node[001-004]"
     echo "SwitchName=s2 Nodes=node[005-008]"
     exit 0
+elif [ "$1" = "setdebugflags" ]; then
+    # Mock setdebugflags: accepts +FLAG/-FLAG [nodes=NODELIST]
+    shift
+    for arg in "$@"; do
+        case "$arg" in
+            nodes=*)
+                echo "Debug flags set for nodes: ${arg#nodes=}" ;;
+            +*|-*)
+                : ;;  # valid flag, no output needed
+            *)
+                echo "error: invalid argument '$arg'" >&2
+                exit 1 ;;
+        esac
+    done
+    echo "MOCK: scontrol setdebugflags $*"
+    exit 0
 else
     # For other arguments, show usage or error
     echo "Usage: $0 show {nodes|partitions|reservations|config} [--json]" >&2
