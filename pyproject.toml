@@ -34,7 +34,7 @@ click = "^8.1.0"
 click-aliases = "^1.0.1"
 rich = "^13.0.0"
 rapidfuzz = "^3.13.0"
-setuptools = "^82.0.1"
+setuptools = ">=40.0,<72"
 fast-autocomplete = "^0.9.0"
 
 [tool.poetry.group.dev.dependencies]
