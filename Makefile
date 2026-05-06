@@ -1,4 +1,4 @@
-.PHONY: help install install-dev test lint format clean build docs
+.PHONY: help install install-dev test lint format clean build docs docs-serve docs-deploy
 
 help: ## Show this help message
 	@echo "Available commands:"
@@ -45,13 +45,13 @@ clean: ## Clean build artifacts
 build: ## Build the package
 	poetry build
 
-docs: ## Build documentation
+docs: install-docs ## Build documentation
 	poetry run mkdocs build
 
-docs-serve: ## Serve documentation locally
+docs-serve: install-docs ## Serve documentation locally
 	poetry run mkdocs serve -a 0.0.0.0:$(if $(DOCS_PORT),$(DOCS_PORT),8080)
 
-docs-deploy: ## Deploy documentation to GitHub Pages
+docs-deploy: install-docs ## Deploy documentation to GitHub Pages
 	poetry run mkdocs gh-deploy
 
 demo: ## Run the CLI tool

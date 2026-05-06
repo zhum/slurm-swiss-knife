@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.0.0] - 2026-05-05
+
 ### Fixed
 
 - **Delete Jobs Without Arguments**: `slurm-cli delete jobs` now shows help instead of silently exiting
@@ -54,6 +56,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Diagnostics Commands**: Added scontrol informational commands
+  - `burstbuffer` (alias: `bb`) - Show burst buffer information
+  - `daemons` (alias: `dae`) - Show running Slurm daemon names
+  - `dwstat` - Show DataWarp status
+  - `topology` (alias: `top`) - Show network topology
+  - `batch-script` (alias: `bscript`) - Show batch script for a job
+  - `write_config` (alias: `wconf`) - Write current configuration to file with autocomplete for path
+- **Debug Commands**: Control Slurm debug output at runtime
+  - `setdebug` (alias: `sdbg`) - Set debug level for slurmctld/slurmd
+  - `setdebugflags` (alias: `sdbgf`) - Set/clear debug flags for slurmctld
+  - `schedloglevel` (alias: `slog`) - Get or set scheduler log level with autocomplete for valid values
 - **Control Commands**: Added scontrol commands with shortest unique prefix support
   - `reconfigure` (aliases: reconf, confreload) - Force slurmctld to re-read configuration
   - `ping` (alias: pi) - Check if slurmctld is responding
@@ -186,6 +199,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- **Dependency compatibility**: Pinned `setuptools<72` to restore `pkg_resources` support required by `fast-autocomplete`
+- **Documentation build**: Updated `mkdocstrings` to `^0.29.0` and pinned `griffe<2.0` to fix deprecation warnings from mismatched API versions
 - Fixed `resolve_resource_alias()` not actually resolving aliases
 - Fixed `Qos.create()`, `Account.create()`, `Node.create()`, `User.create()` missing `verbose` parameter
 - Fixed autocomplete registration for `./slurm-cli` invocation

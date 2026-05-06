@@ -5,37 +5,10 @@ site_url: https://zhum.github.io/slurm-cli/
 
 repo_name: zhum/slurm-cli
 repo_url: https://github.com/zhum/slurm-cli
+edit_uri: ""
 
 theme:
-  name: material
-  palette:
-    # Light mode
-    - media: "(prefers-color-scheme: light)"
-      scheme: default
-      primary: indigo
-      accent: indigo
-      toggle:
-        icon: material/brightness-7
-        name: Switch to dark mode
-    # Dark mode
-    - media: "(prefers-color-scheme: dark)"
-      scheme: slate
-      primary: indigo
-      accent: indigo
-      toggle:
-        icon: material/brightness-4
-        name: Switch to light mode
-  features:
-    - navigation.instant
-    - navigation.tracking
-    - navigation.tabs
-    - navigation.sections
-    - navigation.expand
-    - navigation.top
-    - search.suggest
-    - search.highlight
-    - content.code.copy
-    - content.code.annotate
+  name: darkly
   icon:
     repo: fontawesome/brands/github
     logo: material/console
@@ -77,6 +50,7 @@ nav:
   - User Guide:
     - Commands Overview: user-guide/commands.md
     - Managing Resources:
+      - Jobs: user-guide/resources/jobs.md
       - Partitions: user-guide/resources/partitions.md
       - Nodes: user-guide/resources/nodes.md
       - Users: user-guide/resources/users.md
