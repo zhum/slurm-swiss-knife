@@ -36,9 +36,8 @@
 #
 # Usage:
 #   slurm-cli --profile compact show accounts
-#   slurm-cli --profile-str "accounts.template=[cyan]{name}[/]" show acc
 #
-# Simplified --profile-str (template auto-applied to current resource):
+# Using --profile-str (template auto-applied to current resource):
 #   slurm-cli --profile-str "[cyan]{name}[/] - {description}" show acc
 #   slurm-cli --profile-str "{name} | {start_time}{?users  👥{users}}" show res
 #

@@ -1,4 +1,4 @@
-.PHONY: help install install-dev test lint format clean build docs docs-serve docs-deploy
+.PHONY: help install install-dev test lint format clean build docs docs-serve docs-deploy man install-man
 
 help: ## Show this help message
 	@echo "Available commands:"
@@ -53,6 +53,14 @@ docs-serve: install-docs ## Serve documentation locally
 
 docs-deploy: install-docs ## Deploy documentation to GitHub Pages
 	poetry run mkdocs gh-deploy
+
+man: ## View the man page
+	man man/man1/slurm-cli.1
+
+install-man: ## Install man page to /usr/local/share/man/man1/
+	install -d /usr/local/share/man/man1
+	install -m 644 man/man1/slurm-cli.1 /usr/local/share/man/man1/
+	mandb -q 2>/dev/null || true
 
 demo: ## Run the CLI tool
 	poetry run slurm-cli --help

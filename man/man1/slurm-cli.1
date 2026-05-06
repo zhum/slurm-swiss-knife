@@ -1,0 +1,504 @@
+.TH SLURM\-CLI 1 "2026-05-05" "slurm-cli 1.0.0" "User Commands"
+.
+.SH NAME
+slurm\-cli \- unified CLI for Slurm cluster management
+.
+.SH SYNOPSIS
+.B slurm\-cli
+[\fIGLOBAL OPTIONS\fR]
+.I COMMAND
+[\fICOMMAND OPTIONS\fR]
+[\fIARGS\fR]
+.
+.SH DESCRIPTION
+.B slurm\-cli
+wraps SLURM commands (\fBscontrol\fR, \fBsacctmgr\fR, \fBsqueue\fR, \fBsinfo\fR)
+into a single interface with intelligent tab completion, filter expressions,
+multiple output formats, and dry-run support.
+.br
+Original SLURM commands output is cached by default. Commands and resource names support shortest-unique-prefix abbreviation, e.g.
+.B sho par
+expands to
+.BR "show partitions" .
+.
+.SH AUTO COMPLETION
+.B slurm\-cli 
+can generate a Bash completion function with the
+.B autocomplete
+command.  Source the output in your shell rc file to enable it. E.g.
+.br
+.EX
+eval "$(slurm\-cli autocomplete)"
+.EE
+
+.SH GLOBAL OPTIONS
+.TP
+.B \-\-version
+Print version and exit.
+.TP
+.BR \-\-style " [" pretty | json | csv ]
+Output style.  Default: \fBpretty\fR (Rich table).
+.TP
+.BR \-p ", " \-\-pretty
+Shorthand for \fB\-\-style pretty\fR.
+.TP
+.BR \-j ", " \-\-json
+Shorthand for \fB\-\-style json\fR.
+.TP
+.B \-\-csv
+Shorthand for \fB\-\-style csv\fR.
+.TP
+.BR \-d ", " \-\-delimiter " " \fISTR\fR
+Field delimiter for CSV output (default: \fB;\fR).
+.TP
+.BR \-z ", " \-\-zebra
+Zebra-striped rows in table output.
+.TP
+.BR \-f ", " \-\-force\-update
+Bypass the command-output cache and fetch fresh data.
+.TP
+.BR \-y ", " \-\-yes
+Skip all confirmation prompts.
+.TP
+.B \-\-dry\-run
+Print the Slurm command that would be executed without running it.
+Also enabled by setting \fBSLURM_CLI_DRYRUN=y\fR.
+.TP
+.B \-\-no\-dry\-run
+Override \fBSLURM_CLI_DRYRUN\fR and disable dry-run.
+.TP
+.BR \-t ", " \-\-cache\-timeout " " \fISECS\fR
+Cache lifetime in seconds (default: 600).
+.TP
+.BR \-P ", " \-\-profile " " \fINAME\fR
+Named output profile loaded from the profiles file (default: \fBdefault\fR).
+.TP
+.BR \-o ", " \-\-format " " \fISTR\fR
+Inline profile string.  Overrides \fB\-\-profile\fR.
+Format: \fIresource\fR\fB.columns=\fR\fIcol1\fR,\fIcol2\fR
+.TP
+.BI \-\-list\-fields[= RESOURCE ]
+List available profile fields for all resources, or for \fIRESOURCE\fR only.
+.
+.SH COMMANDS
+.SS Resource commands
+.TP
+.B show
+.RI ( get )
+List or inspect resources.
+.br
+Usage: \fBslurm\-cli show\fR \fIRESOURCE\fR [\fIFILTERS\fR] [\fIOPTIONS\fR]
+.br
+Options: \fB\-v\fR (verbose), \fB\-T\fR (tree view), \fB\-L\fR (list fields),
+\fB\-\-indent\fR \fISTR\fR.
+.TP
+.B update
+.RI ( edit ", " change ", " modify ", " set )
+Modify a resource field.
+.br
+Usage: \fBslurm\-cli update\fR \fIRESOURCE\fR \fINAME\fR \fIkey\fR=\fIvalue\fR \&...
+.TP
+.B create
+.RI ( new ", " add )
+Create a resource.
+.br
+Usage: \fBslurm\-cli create\fR \fIRESOURCE\fR \fINAME\fR [\fIkey\fR=\fIvalue\fR \&...]
+.TP
+.B delete
+.RI ( remove ", " rm )
+Delete a resource.
+.br
+Usage: \fBslurm\-cli delete\fR \fIRESOURCE\fR \fINAME\fR [\fINAME\fR \&...]
+.SS Node commands
+.TP
+.B drain
+.RI ( dr )
+Drain nodes.  Accepts node filters or an explicit node list.
+.br
+Options: \fB\-r\fR/\fB\-\-reason\fR \fISTR\fR, \fB\-\-dry\-run\fR, \fB\-v\fR.
+.TP
+.B undrain
+.RI ( resume )
+Undrain / resume nodes.
+.TP
+.B reboot
+.RI ( reb )
+Reboot nodes.  Options: \fB\-\-asap\fR, \fB\-\-nextstate\fR, \fB\-\-reason\fR.
+.TP
+.B cancel\-reboot
+Cancel a pending node reboot.
+.SS Job commands
+.TP
+.B hold
+.RI ( hol )
+Hold jobs (pause scheduling).  Accepts job IDs or filter expressions.
+.br
+Options: \fB\-r\fR/\fB\-\-reason\fR \fISTR\fR, \fB\-u\fR/\fB\-\-user\fR (user hold).
+.TP
+.B release
+.RI ( rel )
+Release held jobs.
+.TP
+.B top
+Move jobs to the front of the queue.
+.TP
+.B requeue
+.RI ( req )
+Requeue jobs (restart from beginning).
+.TP
+.B suspend
+.RI ( sus )
+Suspend running jobs.
+.SS Controller commands
+.TP
+.B reconfigure
+.RI ( confreload )
+Force \fBslurmctld\fR to re-read its configuration.
+.TP
+.B ping
+.RI ( pi )
+Check whether \fBslurmctld\fR is responding.
+.TP
+.B takeover
+.RI ( tak )
+Cause the backup controller to take over as primary.
+.TP
+.B token
+.RI ( tok )
+Generate a JWT authentication token.
+.br
+Options: \fBlifespan=\fR\fITIME\fR, \fBusername=\fR\fINAME\fR.
+.TP
+.B assoc_mgr
+Display \fBslurmctld\fR internal cache for associations, users, and QOS.
+.br
+Options: \fBusers=\fR, \fBaccounts=\fR, \fBqos=\fR, \fBflags=\fR{users|assoc|qos}.
+.SS Debug commands
+.TP
+.B setdebug
+.RI ( sd )
+Set the debug level for \fBslurmctld\fR or \fBslurmd\fR.
+.TP
+.B setdebugflags
+.RI ( sdf )
+Set or clear debug flags for \fBslurmctld\fR or \fBslurmd\fR.
+Each flag must be prefixed with \fB+\fR (enable) or \fB\-\fR (disable).
+The optional \fBnodes=\fR argument restricts the change to specific nodes
+(nodelist or node filter expression).
+See
+.B DEBUG FLAGS
+below for the list of valid flag names.
+.TP
+.B schedloglevel
+.RI ( sll )
+Get or set the scheduler log level.
+.SS Informational commands
+.TP
+.B version
+.RI ( ver )
+Show the \fBslurm\-cli\fR version and the underlying Slurm version.
+.TP
+.B topology
+Show network topology.
+.TP
+.B daemons
+.RI ( dae )
+Show the names of running Slurm daemons.
+.TP
+.B burstbuffer
+.RI ( bb )
+Show burst buffer information.
+.TP
+.B dwstat
+Show DataWarp / burst buffer status.
+.TP
+.B bbstat
+.RI ( bbs )
+Show burst buffer status.
+.TP
+.B batch\-script
+.RI ( bscript )
+Print the batch script for a job.
+.br
+Usage: \fBslurm\-cli batch\-script\fR \fIJOBID\fR
+.TP
+.B write\-config
+.RI ( wconf )
+Write the current Slurm configuration to a file.
+.SS Utility commands
+.TP
+.B autocomplete
+Print the Bash autocomplete function (source in your shell rc).
+.TP
+.B list\-resources
+.RI ( ls ", " list )
+List all available resource types.
+.TP
+.B help
+Show command help.
+.
+.SH RESOURCES
+Resources are the Slurm object types operated on by \fBshow\fR, \fBupdate\fR,
+\fBcreate\fR, and \fBdelete\fR.  Each name supports prefix abbreviation and has
+aliases in parentheses.
+.PP
+.TS
+l l.
+Resource	Aliases
+_
+accounts	acc, account
+associations	assoc
+coordinators	coord
+events	event, ev
+jobs	job, j
+nodes	node
+partitions	part, parts
+qos	q
+reservations	reservation
+users	user
+.TE
+.
+.SH FILTERING
+Most commands accept filter expressions to select objects instead of providing
+explicit names.
+.SS Node filters
+.TP
+.BI partition= NAME
+Nodes in the named partition.
+.TP
+.BI state= STATE
+Nodes with the given state (idle, alloc, drain, \&...).
+.TP
+.BI user= NAME
+Nodes running jobs belonging to user \fINAME\fR.
+.TP
+.BI reservation= NAME
+Nodes assigned to the named reservation.
+.TP
+.BI drainreason= REGEX
+Nodes whose drain reason matches \fIREGEX\fR (case-insensitive).
+.PP
+Prefix any filter with \fBnot:\fR to invert it:
+.RS
+.B not:state=drain
+\(em exclude drained nodes.
+.RE
+Multiple filters are combined with AND (intersection).
+.SS Job filters
+.TP
+.BI user= NAME ", " account= NAME ", " partition= NAME ", " state= STATE
+Standard job attributes.
+.TP
+.BI name= PAT " / " jobname= REGEX
+Job name (literal pattern / case-insensitive regex).
+.TP
+.BI nodes= NODELIST
+Jobs running on the specified nodes.
+.TP
+.BI reservation= NAME
+Jobs using the named reservation.
+.PP
+Prefix any filter with \fBnot:\fR to exclude matching jobs.
+.
+.SH OUTPUT FORMATS
+.TP
+.B pretty
+Rich-formatted table (default).
+.TP
+.B json
+JSON array of objects, one per resource.
+.TP
+.B csv
+Delimited values; delimiter set with \fB\-d\fR (default \fB;\fR).
+.
+.SS Profiles
+Profiles define custom output templates for different resource types.
+They can be loaded from:
+.br
+  - /etc/slurm/cli.profiles (system-wide)
+.br
+  - ~/.config/slurm-cli.profiles (user-specific)
+.br
+  - CLI option --profile-str (inline)
+.br
+  - CLI option --profile (named profile from file)
+.br
+Profile file format:
+.EX
+[profile:NAME]
+# Column-based format (table output)
+# Define which fields to show and their sort order (append + or - for ascending/descending)
+RESOURCE.columns = col1[+|\-],col2[+|\-],...
+RESOURCE.styles.col1 = COLOR STYLE
+RESOURCE.styles.col2 = COLOR STYLE
+...
+
+# Template-based format (free-form output)
+# Use {field} for field values, Rich markup for colors, \\n for newlines
+# Use {?field STRING} to conditionally include text only if field is non-empty
+RESOURCE.template = TEMPLATE_STRING
+.EE
+
+Available colors: black, red, green, yellow, blue, magenta, cyan, white,
+bright_black, bright_red, bright_green, bright_yellow, bright_blue, bright_magenta, bright_cyan, bright_white.
+If terminal supports 24-bit color, use hex codes: #RRGGBB (e.g. #ff0000 for red).
+Available styles: bold, dim, italic, underline, reverse, and combinations (e.g. bold underline).
+To set background color, append '\fB on COLOR\fR' (e.g. '\fBred on white\fR').
+.P
+Example profile file:
+.EX
+------------------------------------
+[profile:compact]
+# Column-based format (table output)
+accounts.columns = name,description
+accounts.styles.name = cyan bold
+
+# Template-based format (free-form output)
+accounts.template = [cyan]{name}[/cyan] - {description}
+qos.template = [bold]{name}[/bold] Priority: [green]{priority}[/green]
+reservations.template = [cyan bold]{name}[/cyan bold]\\n\
+    Time: {start_time} -> {end_time}\\n\
+    Users: [hot_pink]{users}[/hot_pink]
+
+[profile:emoji]
+reservations.template = 📅 [cyan]{name}[/cyan] | {start_time} - {end_time}{?users  | 👥 [hot_pink]{users}[/hot_pink]}{?accounts  | 🏢 {accounts}}
+------------------------------------
+.EE
+
+.P
+Template syntax:
+.EX
+  - {field_name} - replaced with field value
+  - [color]text[/color] - Rich markup for styling
+  - \\n - newline (separates records visually)
+.EE
+.P
+Profiles control which columns appear and how they are styled in
+\fBpretty\fR output.  Profile files are loaded from
+.B /etc/slurm/cli.profiles
+or
+.BR ~/.config/slurm\-cli.profiles .
+Use \fB\-P\fR to select a named profile or \fB\-o\fR for an inline spec.
+.PP
+Column sort order: append \fB+\fR (ascending) or \fB\-\fR (descending) to a
+field name:
+.RS
+.B slurm\-cli show jobs \-o 'job_id\-,user_name,job_state'
+.RE
+.
+.SH ENVIRONMENT
+.TP
+.B SLURM_CLI_DRYRUN
+Set to \fBy\fR to enable dry-run mode globally.  Override with
+\fB\-\-no\-dry\-run\fR.
+.TP
+.B SLURM_CLI_NO_CACHE_UPDATE
+Set to \fB1\fR to disable automatic cache refresh.
+.
+.SH FILES
+.TP
+.B /etc/slurm/cli.profiles
+System-wide output profiles.
+.TP
+.B ~/.config/slurm\-cli.profiles
+Per-user output profiles (takes precedence over system file).
+.TP
+.B slurm\-cli.profiles.example
+Example profile file included in the distribution.
+.
+.SH EXAMPLES
+Show all partitions:
+.RS
+.B slurm\-cli show partitions
+.RE
+.PP
+Show jobs for a user in JSON:
+.RS
+.B slurm\-cli \-j show jobs user=alice
+.RE
+.PP
+Drain all GPU nodes with a reason (dry-run first):
+.RS
+.B slurm\-cli \-\-dry\-run drain partition=gpu \-r "maintenance"
+.br
+.B slurm\-cli drain partition=gpu \-r "maintenance"
+.RE
+.PP
+Undrain nodes whose reason matches a pattern:
+.RS
+.B slurm\-cli undrain drainreason="temp.*"
+.RE
+.PP
+Hold all pending jobs except the admin's:
+.RS
+.B slurm\-cli hold state=pending not:user=admin
+.RE
+.PP
+Cancel all pending jobs for a user:
+.RS
+.B slurm\-cli delete jobs user=bob state=pending
+.RE
+.PP
+Update a partition's max wall time:
+.RS
+.B slurm\-cli update partitions gpu maxtime=24:00:00
+.RE
+.PP
+Add nodes to a partition:
+.RS
+.B slurm\-cli update partitions gpu nodes+=node[001\-004]
+.RE
+.PP
+Create a user with account and QoS:
+.RS
+.B slurm\-cli create users alice account=research qos=normal
+.RE
+.PP
+Enable tab completion in Bash:
+.RS
+.B source <(slurm\-cli autocomplete)
+.RE
+.PP
+List available fields for jobs:
+.RS
+.B slurm\-cli \-\-list\-fields=jobs
+.RE
+.
+.SH DEBUG FLAGS
+Valid flag names for the
+.B setdebugflags
+command.  Prefix each with \fB+\fR to enable or \fB\-\fR to disable.
+.PP
+.TS
+l l l l.
+Accrue	Agent	AuditRPCs	Backfill
+BackfillMap	BurstBuffer	Cgroup	CPU_Bind
+CpuFrequency	Data	DBD_Agent	Dependency
+Elasticsearch	Energy	Federation	FrontEnd
+Gang	GLOB_SILENCE	Gres	Hetjob
+JobAccountGather	JobComp	JobContainer	License
+Network	NetworkRaw	NO_CONF_HASH	NodeFeatures
+Power	Priority	Profile	Protocol
+Reservation	Route	Script	SelectType
+Steps	Switch	TLS	TraceJobs
+Triggers	WorkQueue
+.TE
+.PP
+Example \(em enable Backfill and Agent tracing on all nodes:
+.RS
+.B slurm\-cli setdebugflags +Backfill +Agent
+.RE
+Example \(em disable Backfill on GPU nodes only:
+.RS
+.B slurm\-cli setdebugflags \-Backfill nodes=partition=gpu
+.RE
+.
+.SH SEE ALSO
+.BR scontrol (1),
+.BR sacctmgr (1),
+.BR squeue (1),
+.BR sinfo (1),
+.BR scancel (1)
+.
+.SH AUTHORS
+Sergey Zhumatiy <szhumatiy@gmail.com>

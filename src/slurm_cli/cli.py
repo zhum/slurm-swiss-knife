@@ -1022,9 +1022,6 @@ def register_commands() -> None:
     top.help = "Move jobs to top of queue"
     requeue.help = "Requeue jobs (aliases: req)"
     setdebug.help = "Set slurmctld/slurmd debug level (aliases: sd)"
-    setdebugflags.help = (
-        "Set slurmctld/slurmd debug flags (aliases: sdf)"
-    )
     bbstat.help = "Show burst buffer status (aliases: bbs)"
     burstbuffer.help = "Show burst buffer information"
     daemons.help = "Show running Slurm daemons"
@@ -3737,7 +3734,18 @@ def setdebugflags(
     """Set slurmctld/slurmd debug flags (aliases: sdf).
 
     Each flag must be prefixed with '+' (enable) or '-' (disable).
-    The optional nodes argument accepts a nodelist or node filter.
+    The optional nodes= argument restricts the change to specific nodes
+    (accepts a nodelist or a node filter expression).
+
+    \b
+    Available flags:
+      Accrue, Agent, AuditRPCs, Backfill, BackfillMap, BurstBuffer,
+      Cgroup, CPU_Bind, CpuFrequency, Data, DBD_Agent, Dependency,
+      Elasticsearch, Energy, Federation, FrontEnd, Gang, GLOB_SILENCE,
+      Gres, Hetjob, JobAccountGather, JobComp, JobContainer, License,
+      Network, NetworkRaw, NO_CONF_HASH, NodeFeatures, Power, Priority,
+      Profile, Protocol, Reservation, Route, Script, SelectType, Steps,
+      Switch, TLS, TraceJobs, Triggers, WorkQueue
 
     \b
     Examples:
