@@ -185,18 +185,18 @@ class TestGuessResourceType:
     @mock.patch.object(Resource, "cached_resource_list")
     def test_guess_problems(self, mock_list):
         """Test guessing problems."""
-        mock_list.return_value = []
+        mock_list.return_value = {}
         result, data = Resource.guess_resource_type("problems")
         assert result == "problems"
-        assert data == []
+        assert data == {}
 
     @mock.patch.object(Resource, "cached_resource_list")
     def test_guess_stats(self, mock_list):
         """Test guessing stats."""
-        mock_list.return_value = []
+        mock_list.return_value = {}
         result, data = Resource.guess_resource_type("stats")
         assert result == "stats"
-        assert data == []
+        assert data == {}
 
     @mock.patch.object(Resource, "cached_resource_list")
     @mock.patch.object(Resource, "cached_resource")
@@ -509,7 +509,7 @@ class TestUpdateCache:
 
         result = Resource.update_cache("qos")
 
-        assert result is None
+        assert result == {}
 
 
 class TestCachedResource:

@@ -3,7 +3,7 @@
 import json
 import subprocess
 from datetime import datetime
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Union
 
 from rich.box import SIMPLE_HEAVY
 from rich.table import Table
@@ -276,7 +276,7 @@ class Job(BaseSlurmResource):
         "singleton",
     ]
 
-    def __init__(self, job_id: str = None, **kwargs: Any):
+    def __init__(self, job_id: Union[str, None] = None, **kwargs: Any):
         self.job_id = job_id
         self.kwargs = kwargs
 
@@ -329,7 +329,7 @@ class Job(BaseSlurmResource):
         """Normalize job data for display."""
 
         # Handle nested structures
-        def get_value(obj, key, default=""):
+        def get_value(obj, key, default=None):
             val = obj.get(key, default)
             if isinstance(val, dict):
                 if "number" in val:
@@ -491,7 +491,7 @@ class Job(BaseSlurmResource):
     @classmethod
     def show(
         cls,
-        field: str = None,
+        field: Union[str, None] = None,
         style: str = "pretty",
         force_cache_update: bool = False,
         delimiter: str = ";",
@@ -676,7 +676,7 @@ class Job(BaseSlurmResource):
             # Parse as filter
             key, value = job_id.split("=", 1)
             kwargs[key] = value
-            job_id = None
+            job_id = value
 
         # If we have filters, fetch and filter jobs first
         if kwargs:

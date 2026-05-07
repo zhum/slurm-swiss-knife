@@ -3,7 +3,7 @@
 import json
 import subprocess
 from datetime import datetime
-from typing import Any, Optional
+from typing import Any, Optional, Union, Dict
 
 from rich.markup import escape
 
@@ -286,8 +286,8 @@ class Reservation(BaseSlurmResource):
     @classmethod
     def show(
         cls,
-        name: str = None,
-        data: dict = None,
+        name: Union[str, None] = None,
+        data: Union[Dict[str, Any], None] = None,
         style: str = "pretty",
         delimiter: str = ";",
         zebra: bool = False,
@@ -319,6 +319,8 @@ class Reservation(BaseSlurmResource):
                 else:
                     console.print_json(json.dumps(data, indent=2))
             elif style == "csv":
+                if name:
+                    data = {name: data[name]}
                 cls._show_csv(data, name, delimiter)
             elif template:
                 # Use template-based output
@@ -365,7 +367,7 @@ class Reservation(BaseSlurmResource):
         result["end_time"] = cls.tm2str(end_time) if end_time else "-"
 
         # Calculate deltas
-        now = datetime.now().timestamp()
+        now = int(datetime.now().timestamp())
         if start_time > now:
             result[
                 "time_status"
@@ -393,7 +395,7 @@ class Reservation(BaseSlurmResource):
     def _show_csv(
         cls,
         data: dict,
-        name: str = None,
+        name: Union[str, None] = None,
         delimiter: str = ";",
     ) -> None:
         """Show reservations in CSV format."""
@@ -460,13 +462,13 @@ class Reservation(BaseSlurmResource):
             return f"{minutes}m"
 
     @classmethod
-    def _get_timestamp(cls, value: Any) -> float:
+    def _get_timestamp(cls, value: Any) -> int:
         """Extract timestamp from value (handles dict with set/number)."""
         if isinstance(value, dict):
             if value.get("set"):
-                return float(value.get("number", 0))
-            return 0.0
-        return float(value) if value else 0.0
+                return int(value.get("number", 0))
+            return 0
+        return int(value) if value else 0
 
     @classmethod
     def print_one_pretty(cls, name: str, data: dict) -> None:
@@ -476,8 +478,8 @@ class Reservation(BaseSlurmResource):
             return
         end_time = cls._get_timestamp(data["end_time"])
         start_time = cls._get_timestamp(data["start_time"])
-        end_delta = end_time - datetime.now().timestamp()
-        start_delta = start_time - datetime.now().timestamp()
+        end_delta = end_time - int(datetime.now().timestamp())
+        start_delta = start_time - int(datetime.now().timestamp())
         if start_delta > 0:
             start_str = f"(in [time]{cls.delta2str(start_delta)}[/])"
             end_str = ""

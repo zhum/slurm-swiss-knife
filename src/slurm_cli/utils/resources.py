@@ -5,7 +5,7 @@ import subprocess
 import time
 
 # from enum import Enum
-from typing import Any, Dict, List, Tuple
+from typing import Any, Dict, List, Tuple, Union
 
 from .utils import console
 
@@ -63,7 +63,7 @@ class Resource:
     @classmethod
     def guess_resource_type(
         cls, name: str, force_update: bool = False
-    ) -> Tuple[str, dict]:
+    ) -> Tuple[str, Union[Dict[str, Any], None]]:
         """Guess the resource type from the resource name."""
         if name[:1] == "j" or re.match(r"^[0-9_]+$", name):
             return "jobs", None
@@ -101,25 +101,25 @@ class Resource:
                 "coordinators", force_update
             )
         if name[:4] == "prob":
-            return "problems", []
+            return "problems", {}
         elif name[:4] == "stat":
-            return "stats", []
+            return "stats", {}
         elif name[:4] == "assoc":
-            return "associations", []
+            return "associations", {}
         elif name[:4] == "dump":
-            return "dump", []
+            return "dump", {}
         elif name[:2] == "ev":
-            return "events", []
+            return "events", {}
         elif name[:3] == "lic" or name[:4] == "reso":
-            return "licenses", []
+            return "licenses", {}
         elif name[:3] == "bad" or name[:3] == "runa":
-            return "runawayjobs", []
+            return "runawayjobs", {}
         elif name[:3] == "tra":
-            return "transactions", []
+            return "transactions", {}
         elif name[:2] == "tr":
-            return "tres", []
+            return "tres", {}
         elif name[:2] == "ar":
-            return "archive", []
+            return "archive", {}
 
         # If name looks like a username (alphanumeric with
         # underscores/hyphens), assume it's a user - this handles cases
@@ -136,20 +136,35 @@ class Resource:
         list_data = None  # For the list file (names/IDs)
         if name == "partitions":
             raw_data = cls.run_cmd(cls.CACHE_CMD[name])
-            raw_data = cls.partitions2json(raw_data)
+            if raw_data:
+                raw_data = cls.partitions2json(raw_data)
+            else:
+                raw_data = {}
+                console.print(f"[red]Failed to fetch partitions data.[/red]")
         elif name == "reservations":
             raw_data = cls.run_cmd_json(cls.CACHE_CMD[name])
-            raw_data = {
-                hash.pop("name"): hash
-                for hash in raw_data["reservations"]
-            }
+            if raw_data:
+                raw_data = {
+                    hash.pop("name"): hash
+                    for hash in raw_data["reservations"]
+                }
+            else:
+                raw_data = {}
+                console.print(f"[red]Failed to fetch reservations data.[/red]")
         elif name == "nodes":
             raw_data = cls.run_cmd_json(cls.CACHE_CMD[name])
-            raw_data = {
-                hash.pop("name"): hash for hash in raw_data["nodes"]
-            }
+            if raw_data:
+                raw_data = {
+                    hash.pop("name"): hash for hash in raw_data["nodes"]
+                }
+            else:
+                raw_data = {}
+                console.print(f"[red]Failed to fetch nodes data.[/red]")
         elif name == "jobs":
             raw_data = cls.run_cmd_json(cls.CACHE_CMD[name])
+            if not raw_data:
+                raw_data = {}
+                console.print(f"[red]Failed to fetch jobs data.[/red]")
             # Jobs are stored as {"jobs": [...]} for jq compatibility
             # List file needs job IDs, not dict keys
             if raw_data and "jobs" in raw_data:
@@ -170,6 +185,9 @@ class Resource:
                 else:
                     json.dump(list(raw_data.keys()), f)
                 os.chmod(cls.CACHE_LIST_FILES[name], 0o600)
+        else:
+            console.print(f"[red]Failed to fetch {name} data.[/red]")
+            raw_data = {}
         return raw_data
 
     @classmethod
@@ -177,7 +195,7 @@ class Resource:
         cls,
         name: str,
         force_update: bool = False,
-    ) -> bool:  # noqa: E501
+    ) -> Union[Dict[str, Any], None]:
         """Check if the resource is a cached resource."""
         file = cls.CACHE_FILES.get(name)
         if not file:
@@ -223,7 +241,7 @@ class Resource:
         return []
 
     @classmethod
-    def run_cmd_json(cls, cmd: [str]) -> Dict[str, Any] | None:
+    def run_cmd_json(cls, cmd: List[str]) -> Dict[str, Any] | None:
         """Run a command and return the JSON output."""
         result = None
         try:
@@ -252,9 +270,12 @@ class Resource:
         return None
 
     @classmethod
-    def run_cmd(cls, cmd: str) -> str:
+    def run_cmd(cls, cmd: Union[str, List[str]]) -> Union[str, None]:
         """Run a command and return the output."""
         result = None
+        if not isinstance(cmd, List):
+            # cmd = " ".join(cmd)
+            cmd = [cmd]
         try:
             result = subprocess.run(
                 cmd,
@@ -267,9 +288,9 @@ class Resource:
             console.print(
                 f"[red]Failed to run command '{cmd}':[/red]" f" {e}"
             )
-            if result.stderr:
+            if result and result.stderr:
                 console.print(result.stderr)
-            if result.stdout:
+            if result and result.stdout:
                 console.print(result.stdout)
         return None
 

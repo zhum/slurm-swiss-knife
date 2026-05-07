@@ -23,6 +23,7 @@ which is available in Click 8.0+.
 
 import json
 import os
+import sys
 import subprocess
 from typing import Any, Dict, List, Optional, Tuple, Union
 
@@ -294,7 +295,7 @@ def common_options(func):
 
 
 def get_output_style(
-    ctx: click.Context, style_override: str = None
+    ctx: click.Context, style_override: Union[None, str] = None
 ) -> str:
     """Get the output style from context or override."""
     if style_override:
@@ -303,7 +304,7 @@ def get_output_style(
 
 
 def get_delimiter(
-    ctx: click.Context, delimiter_override: str = None
+    ctx: click.Context, delimiter_override: Union[None, str] = None
 ) -> str:
     """Get the CSV delimiter from context or override."""
     if delimiter_override:
@@ -311,7 +312,7 @@ def get_delimiter(
     return ctx.obj.get("delimiter", ";")
 
 
-def get_zebra(ctx: click.Context, zebra_override: bool = None) -> bool:
+def get_zebra(ctx: click.Context, zebra_override: Union[None, bool] = None) -> bool:
     """Get the zebra striping flag from context or override."""
     if zebra_override is not None:
         return zebra_override
@@ -331,7 +332,7 @@ def get_force_update(ctx: click.Context) -> bool:
 
 
 def get_dry_run(
-    ctx: click.Context, dry_run_override: bool = None
+    ctx: click.Context, dry_run_override: bool = False
 ) -> bool:
     """Get the dry-run flag from context or override.
 
@@ -373,7 +374,7 @@ def get_skip_confirm(
 
 
 def get_profile(
-    ctx: click.Context, profile_override: str = None
+    ctx: click.Context, profile_override: Union[None, str] = None
 ) -> str:
     """Get the profile name from context or override."""
     if profile_override:
@@ -382,7 +383,7 @@ def get_profile(
 
 
 def get_profile_str(
-    ctx: click.Context, profile_str_override: str = None
+    ctx: click.Context, profile_str_override: Union[None, str] = None
 ) -> str:
     """Get the profile string from context or override."""
     if profile_str_override:
@@ -537,92 +538,92 @@ def create_autocomplete() -> AutoComplete:
 
 def ensure_resource_name(
     resource: str,
-    field: Union[str, Tuple[str, ...]] = None,
+    field: Union[str, Tuple[str, ...]] = "",
     force_update: bool = False,
-) -> Tuple[str, Union[str, Tuple[str, ...]], dict]:
+) -> Tuple[Union[str, None], Union[str, Tuple[str, ...]], dict]:
     """
     Ensure the resource name is a valid resource name.
     Return the resource type, field (may be tuple), and cached resource data.
     """
     if resource[:4] == "prob":
-        return "problems", field, []
+        return "problems", field, {}
     elif resource[:4] == "stat":
-        return "stats", field, []
+        return "stats", field, {}
     elif resource[:5] == "assoc":
-        return "associations", field, []
+        return "associations", field, {}
     elif resource[:4] == "dump":
-        return "dump", field, []
+        return "dump", field, {}
     elif resource[:2] == "ev":
-        return "events", field, []
+        return "events", field, {}
     elif resource[:3] == "lic" or resource[:4] == "reso":
-        return "`licens`es", field, []
+        return "`licens`es", field, {}
     elif resource[:3] == "bad" or resource[:3] == "runa":
-        return "runawayjobs", field, []
+        return "runawayjobs", field, {}
     elif resource[:3] == "tra":
-        return "transactions", field, []
+        return "transactions", field, {}
     elif resource[:2] == "tr":
-        return "tres", field, []
+        return "tres", field, {}
     elif resource[:2] == "ar":
-        return "archive", field, []
+        return "archive", field, {}
     elif resource[:5] == "coord":  # !
-        return "coordinators", field, []
+        return "coordinators", field, {}
     elif resource[:1] == "j":
         # Jobs are fetched directly, not cached
-        return "jobs", field, None
+        return "jobs", field, {}
     elif resource[:4] == "node":
         data = Resource.cached_resource(
             "nodes",
             force_update,
-        )
+        ) or {}
         return resource, field, data
     elif resource[:4] == "part":
         data = Resource.cached_resource(
             "partitions",
             force_update,
-        )
+        ) or {}
         return resource, field, data
     elif resource[:4] == "user":
         data = Resource.cached_resource(
             "users",
             force_update,
-        )
+        ) or {}
         return resource, field, data
     elif resource[:3] == "qos":
         data = Resource.cached_resource(
             "qos",
             force_update,
-        )
+        ) or {}
         return resource, field, data
     elif resource[:3] == "acc":
         data = Resource.cached_resource(
             "accounts",
             force_update,
-        )
+        ) or {}
         return resource, field, data
     elif resource[:3] == "res":
         data = Resource.cached_resource(
             "reservations",
             force_update,
-        )
+        ) or {}
         return resource, field, data
     elif resource[:4] == "conf":
         data = Resource.cached_resource(
             "config",
             force_update,
-        )
+        ) or {}
         return resource, field, data
     else:
         resource_type, data = Resource.guess_resource_type(
             resource, force_update
         )
-        if resource_type:
-            return resource_type, resource, data
+        if resource_type and resource_type != "unknown":
+            return resource_type, resource, (data or {})
         else:
-            return None, resource, data
+            return None, resource, (data or {})
 
 
 def show_command_help(
-    ctx: click.Context, param: click.Parameter, value: bool
+    ctx: click.Context, param: Optional[click.Parameter], value: bool
 ) -> None:
     """Custom help callback that shows command help plus resource list."""
     if not value or ctx.resilient_parsing:
@@ -630,8 +631,6 @@ def show_command_help(
 
     # Check if we have a resource argument to show resource-specific help
     # Parse the raw arguments to find the resource
-    import sys
-
     args = sys.argv[1:]
 
     # Find the action (command name from context)
@@ -1122,16 +1121,26 @@ def show(
     force_update = get_force_update(ctx)
     profile = get_profile(ctx, profile)
     profile_str = get_profile_str(ctx, profile_str)
-    canonical_resource, field, data = ensure_resource_name(
+    if isinstance(field, str):
+        field = (field,)
+    canonical_resource, field_result, data = ensure_resource_name(
         resource, field, force_update
     )
 
     # Normalize field to tuple and recompute first_field
     # (ensure_resource_name may return a string when guessing resource type)
-    if isinstance(field, str):
-        field = (field,)
+    if isinstance(field_result, str):
+        field = (field_result,)
+    else:
+        field = field_result
     first_field = field[0] if field else None
 
+    if not canonical_resource:
+        console.print(
+            f"[red]Unknown resource: {resource}[/red]\n"
+            "Use 'slurm-cli list-resources' to see available resources."
+        )
+        return
     # Check for --profile-str=help
     if is_profile_help(profile_str):
         show_profile_help(canonical_resource)
@@ -1681,42 +1690,17 @@ def update(
             )
     else:
         # Simple mode: modify accounts/associations NAME key=value
+        extra_kwargs: Dict[str, Any] = (
+            {value.split("=")[0]: value.split("=")[1]} if "=" in value else {}
+        )
         if canonical_resource[:3] == "acc":
-            Account.update(
-                field,
-                verbose,
-                dry_run=dry_run,
-                **{value.split("=")[0]: value.split("=")[1]}
-                if "=" in value
-                else {},
-            )
+            Account.update(field, verbose, dry_run=dry_run, **extra_kwargs)
         elif canonical_resource[:5] == "assoc":
-            Association.update(
-                field,
-                verbose,
-                dry_run=dry_run,
-                **{value.split("=")[0]: value.split("=")[1]}
-                if "=" in value
-                else {},
-            )
+            Association.update(field, verbose, dry_run=dry_run, **extra_kwargs)
         elif canonical_resource[:3] == "qos":
-            Qos.update(
-                field,
-                verbose,
-                dry_run=dry_run,
-                **{value.split("=")[0]: value.split("=")[1]}
-                if "=" in value
-                else {},
-            )
+            Qos.update(field, verbose, dry_run=dry_run, **extra_kwargs)
         elif canonical_resource[:4] == "user":
-            User.update(
-                field,
-                verbose,
-                dry_run=dry_run,
-                **{value.split("=")[0]: value.split("=")[1]}
-                if "=" in value
-                else {},
-            )
+            User.update(field, verbose, dry_run=dry_run, **extra_kwargs)
         elif canonical_resource[:4] == "node":
             # Resolve node filter if field is a filter expression
             if is_node_filter(field):
@@ -2230,48 +2214,35 @@ def delete(
     if not resource_names:
         resource_names = [None]
 
-    for resource_name in resource_names:
-        if dry_run:
-            if resource_name:
-                console.print(
-                    "[yellow]DRY RUN:[/yellow] "
-                    f"Would delete {canonical_resource} '{resource_name}'"
-                )
-            else:
-                console.print(
-                    "[yellow]DRY RUN:[/yellow] "
-                    f"Would delete {canonical_resource}"
-                )
-    else:
-        if not skip_confirm and not confirm_single_key(
-            f"Are you sure you want to delete {canonical_resource}"
-            + (f" '{resource_name}'" if resource_name else "")
-            + "?"
-        ):
-            console.print("[red]Operation cancelled.[/red]")
-            raise click.Abort()
+    if dry_run:
+        for rname in resource_names:
+            console.print(
+                "[yellow]DRY RUN:[/yellow] "
+                f"Would delete {canonical_resource} '{rname}'"
+            )
+        return
 
-        if resource_name:
-            # Call the appropriate resource delete method
-            if canonical_resource[:3] == "qos":
-                Qos.delete(resource_name, verbose=verbose)
-            elif canonical_resource[:4] == "user":
-                User.delete(resource_name, verbose=verbose)
-            elif canonical_resource[:3] == "acc":
-                Account.delete(resource_name)
-            elif canonical_resource[:3] == "res":
-                Reservation.delete(resource_name)
-            elif canonical_resource[:4] == "part":
-                Partition.delete(resource_name)
-            elif canonical_resource[:4] == "node":
-                Node.delete(resource_name, verbose=verbose)
-            # Note: coordinators handled above with special logic
-            else:
-                console.print(
-                    f"Deleting {canonical_resource} '{resource_name}'"
-                )
+    if not skip_confirm and not confirm_single_key(
+        f"Are you sure you want to delete {canonical_resource}?"
+    ):
+        console.print("[red]Operation cancelled.[/red]")
+        raise click.Abort()
+
+    for rname in resource_names:
+        if canonical_resource[:3] == "qos":
+            Qos.delete(rname, verbose=verbose)
+        elif canonical_resource[:4] == "user":
+            User.delete(rname, verbose=verbose)
+        elif canonical_resource[:3] == "acc":
+            Account.delete(rname)
+        elif canonical_resource[:3] == "res":
+            Reservation.delete(rname)
+        elif canonical_resource[:4] == "part":
+            Partition.delete(rname)
+        elif canonical_resource[:4] == "node":
+            Node.delete(rname, verbose=verbose)
         else:
-            console.print(f"Deleting {canonical_resource}")
+            console.print(f"Deleting {canonical_resource} '{rname}'")
 
 
 # autocomplete command
@@ -3426,11 +3397,6 @@ def write_config(
     "level",
     required=False,
     default=None,
-    shell_complete=lambda ctx, param, incomplete: [
-        click.shell_completion.CompletionItem(v)
-        for v in ["0", "1", "yes", "no", "y", "n", "on", "off"]
-        if v.startswith(incomplete)
-    ],
 )
 @click.pass_context
 def schedloglevel(
@@ -3499,22 +3465,6 @@ def schedloglevel(
 @click.argument(
     "level",
     required=True,
-    shell_complete=lambda ctx, param, incomplete: [
-        click.shell_completion.CompletionItem(v)
-        for v in [
-            "quiet",
-            "fatal",
-            "error",
-            "info",
-            "verbose",
-            "debug",
-            "debug2",
-            "debug3",
-            "debug4",
-            "debug5",
-        ]
-        if v.startswith(incomplete)
-    ],
 )
 @click.argument("nodes", nargs=-1, required=False)
 @click.pass_context
@@ -5105,7 +5055,7 @@ def help(
     **kwargs,
 ) -> None:
     """Show FULL help information and available resources."""
-    if subcommand:
+    if subcommand and word:
         word = resolve_command_alias(word)
         print_help(f"{word} {subcommand}", ctx)
         return

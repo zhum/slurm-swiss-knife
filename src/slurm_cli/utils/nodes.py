@@ -2,7 +2,7 @@
 
 import json
 import subprocess
-from typing import Any, Optional
+from typing import Any, Dict, Optional, Union, List
 
 from rich.box import SIMPLE_HEAVY
 from rich.markup import escape
@@ -421,8 +421,8 @@ _slurm_cli_nodes_autocomplete() {{
     @classmethod
     def show(
         cls,
-        name: str = None,
-        data: dict = None,
+        name: Optional[str] = None,
+        data: Optional[Dict[str, Any]] = None,
         style: str = "pretty",
         verbose: bool = False,
         force_cache_update: bool = False,
@@ -458,7 +458,7 @@ _slurm_cli_nodes_autocomplete() {{
                     console.print_json(json.dumps(data, indent=4))
             elif style == "csv":
                 cls.show_csv(
-                    name, data, delimiter, verbose, columns_cfg
+                    name, data, delimiter, verbose, columns_cfg # type: ignore
                 )
             elif template_cfg and style == "pretty":
                 # Use template-based output (e.g., oneline profile)
@@ -481,7 +481,7 @@ _slurm_cli_nodes_autocomplete() {{
             ):
                 # Use column-based table output (e.g., compact, minimal)
                 cls.show_columns(
-                    name, data, columns_cfg, styles_cfg, zebra
+                    name, data, columns_cfg, styles_cfg, zebra # type: ignore
                 )
             else:  # Default pretty style
                 if name:
@@ -497,10 +497,10 @@ _slurm_cli_nodes_autocomplete() {{
     @classmethod
     def show_columns(
         cls,
-        name: str = None,
-        nodes: dict = None,
-        columns: list = None,
-        styles: dict = None,
+        name: Optional[str] = None,
+        nodes: Optional[Dict[str, Any]] = None,
+        columns: Optional[List[str]] = None,
+        styles: Optional[Dict[str, str]] = None,
         zebra: bool = False,
     ) -> None:
         """Show nodes in a column-based table."""
@@ -565,11 +565,11 @@ _slurm_cli_nodes_autocomplete() {{
     @classmethod
     def show_csv(
         cls,
-        name: str = None,
-        nodes: dict = None,
+        name: Optional[str] = None,
+        nodes: Optional[Dict[str, Any]] = None,
         delimiter: str = ";",
         verbose: bool = False,
-        columns: list = None,
+        columns: Optional[List[str]] = None,
     ) -> None:
         """Show node information in CSV format."""
         if not nodes:
@@ -699,7 +699,7 @@ _slurm_cli_nodes_autocomplete() {{
     def show_one_pretty(
         cls,
         name: str,
-        data: list[dict],
+        data: dict,
         verbose: bool = False,
     ) -> None:
         """Show one node information."""

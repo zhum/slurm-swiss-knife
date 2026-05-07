@@ -261,13 +261,10 @@ class TestJobApplyFilters:
 class TestJobShow:
     """Tests for Job.show."""
 
-    @mock.patch("slurm_cli.utils.jobs.subprocess.run")
-    def test_show_all_jobs(self, mock_run, capsys):
+    @mock.patch.object(Job, "_fetch_jobs")
+    def test_show_all_jobs(self, mock_fetch, capsys):
         """Test showing all jobs."""
-        mock_run.return_value = mock.Mock(
-            stdout=json.dumps(create_sample_job_data()),
-            returncode=0,
-        )
+        mock_fetch.return_value = create_sample_job_data()["jobs"]
 
         Job.show(style="csv")
 
@@ -276,13 +273,10 @@ class TestJobShow:
         assert "12346" in captured.out
         assert "testuser" in captured.out
 
-    @mock.patch("slurm_cli.utils.jobs.subprocess.run")
-    def test_show_filtered_jobs(self, mock_run, capsys):
+    @mock.patch.object(Job, "_fetch_jobs")
+    def test_show_filtered_jobs(self, mock_fetch, capsys):
         """Test showing filtered jobs."""
-        mock_run.return_value = mock.Mock(
-            stdout=json.dumps(create_sample_job_data()),
-            returncode=0,
-        )
+        mock_fetch.return_value = create_sample_job_data()["jobs"]
 
         Job.show(field="user=testuser", style="csv")
 

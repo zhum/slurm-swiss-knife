@@ -2,7 +2,7 @@
 
 import json
 import subprocess
-from typing import Any, Optional
+from typing import Any, Optional, Union, Dict
 
 from rich.box import SIMPLE_HEAVY
 from rich.markup import escape
@@ -157,8 +157,7 @@ class Partition(BaseSlurmResource):
         },
         "maxtime": {
             "type": "time",
-            "help": "Set the maximum time limit for all jobs in"
-            " this partition",
+            "help": "Set the maximum time limit for all jobs in" " this partition",
         },
         "minnodes": {
             "type": "int",
@@ -167,8 +166,7 @@ class Partition(BaseSlurmResource):
         },
         "nodes": {
             "type": "nodes",
-            "help": "Identify the node(s) to be associated with this"
-            " partition",
+            "help": "Identify the node(s) to be associated with this" " partition",
         },
         "oversubscribe": {
             "type": "[yes, no, y, n, 1, 0]",
@@ -187,8 +185,7 @@ class Partition(BaseSlurmResource):
         },
         "preemptmode": {
             "type": "[off, cancel, requeue, suspend]",
-            "help": "Reset the mechanism used to preempt jobs in this"
-            " partition",
+            "help": "Reset the mechanism used to preempt jobs in this" " partition",
         },
         "priority": {
             "type": "int",
@@ -284,18 +281,14 @@ class Partition(BaseSlurmResource):
         return cls._WIDTH
 
     @classmethod
-    def create(
-        cls, name: str, verbose: bool = False, **kwargs: Any
-    ) -> None:
+    def create(cls, name: str, verbose: bool = False, **kwargs: Any) -> None:
         """Create a new partition."""
         set = {}
         add = {}
         delete = {}
         if not cls._check_args(kwargs, set, add, delete):
             return
-        options = " ".join(
-            [f"{key}={value}" for key, value in set.items()]
-        )
+        options = " ".join([f"{key}={value}" for key, value in set.items()])
         if len(add) > 0:
             console.print(
                 "[yellow]Warning: Adding options is not supported"
@@ -308,9 +301,7 @@ class Partition(BaseSlurmResource):
             )
         if len(set) > 0:
             options += " "
-            options += " ".join(
-                [f"{key}-={value}" for key, value in delete.items()]
-            )
+            options += " ".join([f"{key}-={value}" for key, value in delete.items()])
         args = [
             "scontrol",
             "create",
@@ -335,8 +326,7 @@ class Partition(BaseSlurmResource):
 
         except subprocess.CalledProcessError as e:
             console.print(
-                f"[red]Failed to create partition '{name}':[/red]"
-                f" {e.stderr or e}"
+                f"[red]Failed to create partition '{name}':[/red]" f" {e.stderr or e}"
             )
 
     @classmethod
@@ -353,19 +343,13 @@ class Partition(BaseSlurmResource):
         delete = {}
         if not cls._check_args(kwargs, set, add, delete):
             return
-        options = " ".join(
-            [f"{key}={value}" for key, value in set.items()]
-        )
+        options = " ".join([f"{key}={value}" for key, value in set.items()])
         if len(add) > 0:
             options += " "
-            options += " ".join(
-                [f"{key}+={value}" for key, value in add.items()]
-            )
+            options += " ".join([f"{key}+={value}" for key, value in add.items()])
         if len(delete) > 0:
             options += " "
-            options += " ".join(
-                [f"{key}-={value}" for key, value in delete.items()]
-            )
+            options += " ".join([f"{key}-={value}" for key, value in delete.items()])
         # console.print(
         #     f"Updating partition: {name} with options: {options}"
         # )
@@ -395,8 +379,7 @@ class Partition(BaseSlurmResource):
                 )
         except subprocess.CalledProcessError as e:
             console.print(
-                f"[red]Failed to update partition '{name}':[/red]"
-                f" {e.stderr or e}"
+                f"[red]Failed to update partition '{name}':[/red]" f" {e.stderr or e}"
             )
 
     @classmethod
@@ -418,21 +401,17 @@ class Partition(BaseSlurmResource):
             )
             if result.stdout:
                 console.print(result.stdout)
-            console.print(
-                f"[green]Partition '{name}' "
-                "deleted successfully.[/green]"
-            )
+            console.print(f"[green]Partition '{name}' " "deleted successfully.[/green]")
         except subprocess.CalledProcessError as e:
             console.print(
-                f"[red]Failed to delete partition '{name}':[/red]"
-                f" {e.stderr or e}"
+                f"[red]Failed to delete partition '{name}':[/red]" f" {e.stderr or e}"
             )
 
     @classmethod
     def show(
         cls,
-        name: str = None,
-        data: dict = None,
+        name: Optional[str] = None,
+        data: Optional[Dict[str, Any]] = None,
         style: str = "pretty",
         force_cache_update: bool = False,
         delimiter: str = ";",
@@ -449,6 +428,10 @@ class Partition(BaseSlurmResource):
             sort_field,
             sort_asc,
         ) = get_profile_config(profile, "partitions", profile_str)
+
+        if not data:
+            console.print("[red]No partitions found.[/red]")
+            return
 
         # Convert dict to sorted list if sorting is needed
         if sort_field and data and not name:
@@ -473,12 +456,8 @@ class Partition(BaseSlurmResource):
                 )
         elif template_cfg and style == "pretty":
             # Use template-based output (e.g., oneline profile)
-            partitions_to_show = (
-                {name: data[name]} if name and name in data else data
-            )
-            for part_name, part_data in sorted(
-                partitions_to_show.items()
-            ):
+            partitions_to_show = {name: data[name]} if name and name in data else data
+            for part_name, part_data in sorted(partitions_to_show.items()):
                 # Prepare data with PartitionName included
                 prepared = {"PartitionName": part_name, **part_data}
                 output = format_with_template(
@@ -487,7 +466,7 @@ class Partition(BaseSlurmResource):
                 console.print(output)
         elif columns_cfg and columns_cfg != "*" and style == "pretty":
             # Use column-based table output (e.g., compact, minimal)
-            cls.show_columns(name, data, columns_cfg, styles_cfg, zebra)
+            cls.show_columns(name, data, columns_cfg, styles_cfg, zebra)  # type: ignore
         elif style == "pretty":
             # Default pretty output
             cls.show_pretty(name, data)
@@ -499,10 +478,10 @@ class Partition(BaseSlurmResource):
     @classmethod
     def show_columns(
         cls,
-        name: str = None,
-        partitions: dict = None,
-        columns: list = None,
-        styles: dict = None,
+        name: Optional[str] = None,
+        partitions: Optional[dict] = None,
+        columns: Optional[Union[list[str], str]] = None,
+        styles: Optional[dict] = None,
         zebra: bool = False,
     ) -> None:
         """Show partitions in a column-based table."""
@@ -511,10 +490,16 @@ class Partition(BaseSlurmResource):
             return
 
         partitions_to_show = (
-            {name: partitions[name]}
-            if name and name in partitions
-            else partitions
+            {name: partitions[name]} if name and name in partitions else partitions
         )
+
+        if isinstance(columns, str):
+            columns_list = [col.strip() for col in columns.split(",") if col.strip()]
+        elif isinstance(columns, list):
+            columns_list = columns
+        else:
+            console.print("[red]Invalid columns format.[/red]")
+            return
 
         # Create table
         row_styles = ["", "dim"] if zebra else None
@@ -527,7 +512,7 @@ class Partition(BaseSlurmResource):
 
         # Normalize column names - handle both lowercase and original case
         normalized_columns = []
-        for col in columns:
+        for col in columns_list:
             col_lower = col.lower()
             if col_lower in ["name", "partitionname"]:
                 normalized_columns.append("PartitionName")
@@ -545,9 +530,7 @@ class Partition(BaseSlurmResource):
                 normalized_columns.append("DefaultTime")
             else:
                 # Try to find matching field (case-insensitive)
-                for key in next(
-                    iter(partitions_to_show.values()), {}
-                ).keys():
+                for key in next(iter(partitions_to_show.values()), {}).keys():
                     if key.lower() == col_lower:
                         normalized_columns.append(key)
                         break
@@ -576,10 +559,10 @@ class Partition(BaseSlurmResource):
     @classmethod
     def show_csv(
         cls,
-        name: str = None,
-        partitions: dict = None,
+        name: Optional[str] = None,
+        partitions: Optional[dict] = None,
         delimiter: str = ";",
-        columns: list = None,
+        columns: Optional[Union[list[str], str]] = None,
     ) -> None:
         """Show partition information in CSV format."""
         if not partitions:
@@ -587,9 +570,7 @@ class Partition(BaseSlurmResource):
             return
 
         partitions_to_show = (
-            {name: partitions[name]}
-            if name and name in partitions
-            else partitions
+            {name: partitions[name]} if name and name in partitions else partitions
         )
 
         if columns and columns != "*":
@@ -614,9 +595,7 @@ class Partition(BaseSlurmResource):
                     normalized_columns.append("DefaultTime")
                 else:
                     # Try to find matching field
-                    for key in next(
-                        iter(partitions_to_show.values()), {}
-                    ).keys():
+                    for key in next(iter(partitions_to_show.values()), {}).keys():
                         if key.lower() == col_lower:
                             normalized_columns.append(key)
                             break
@@ -650,9 +629,7 @@ class Partition(BaseSlurmResource):
                 "MaxTime",
                 "DefaultTime",
             ]
-            sorted_fields = [
-                f for f in priority_fields if f in all_fields
-            ] + sorted(
+            sorted_fields = [f for f in priority_fields if f in all_fields] + sorted(
                 [f for f in all_fields if f not in priority_fields]
             )
 
@@ -670,7 +647,7 @@ class Partition(BaseSlurmResource):
 
     @classmethod
     def show_pretty(
-        cls, name: str = None, partitions: dict = None
+        cls, name: Optional[str] = None, partitions: Optional[dict] = None
     ) -> None:
         if not partitions:
             console.print("[red]No partitions found.[/red]")
@@ -679,9 +656,7 @@ class Partition(BaseSlurmResource):
             Partition.show_one_pretty(name, partitions[name])
         else:
             for partition in sorted(partitions.keys()):
-                Partition.show_one_pretty(
-                    partition, partitions[partition]
-                )
+                Partition.show_one_pretty(partition, partitions[partition])
 
     # @classmethod
     # def show_one(cls, name: str, partitions: dict) -> None:
@@ -696,7 +671,7 @@ class Partition(BaseSlurmResource):
     #             Partition.show_one(partition, partitions[partition])
 
     @classmethod
-    def show_one_pretty(cls, name: str, data: list[dict]) -> None:
+    def show_one_pretty(cls, name: str, data: dict[str, Any]) -> None:
         """Show one partition information."""
         states = {
             "UP": "[green]UP [/green]",
@@ -710,9 +685,7 @@ class Partition(BaseSlurmResource):
         def_time = data.pop("DefaultTime")
         total_nodes = data.pop("TotalNodes")
         total_cpus = data.pop("TotalCPUs")
-        second_line_len = len(
-            f"Nodes/CPUs: {total_nodes}/{total_cpus} "
-        )
+        second_line_len = len(f"Nodes/CPUs: {total_nodes}/{total_cpus} ")
         nodes = (
             data["Nodes"]
             if len(data["Nodes"]) < width - second_line_len - 3
@@ -751,9 +724,7 @@ class Partition(BaseSlurmResource):
             for key, value in data.items()
             if not extended_value_types[key.lower()]["flag"]
         }
-        flag_was_printed = cls.print_dict_pretty_flags_def(
-            flags, extended_value_types
-        )
+        flag_was_printed = cls.print_dict_pretty_flags_def(flags, extended_value_types)
         if flag_was_printed:
             console.print("  ", end="")
         cls.print_dict_pretty_def(not_flags, extended_value_types)
@@ -773,9 +744,7 @@ class Partition(BaseSlurmResource):
         # Add nodes+= and nodes-= for adding/removing nodes
         options += " nodes+= nodes-="
         state_values = "up down drain inactive UP DOWN DRAIN INACTIVE"
-        preempt_values = (
-            "off cancel requeue suspend OFF CANCEL REQUEUE SUSPEND"
-        )
+        preempt_values = "off cancel requeue suspend OFF CANCEL REQUEUE SUSPEND"
         yesno_values = "yes no YES NO"
         cpubind_values = "none socket ldom core thread off"
         yesno_keys = (

@@ -153,7 +153,7 @@ class TestPartitionCreate:
         mock_run.return_value = mock.Mock(stdout="", returncode=0)
 
         # Use += syntax to trigger add warning
-        Partition.create("test-partition", **{"nodes+": "node001"})
+        Partition.create("test-partition", verbose=True, **{"nodes+": "node001"})
 
         # Should have warning about adding
         call_args = [str(c) for c in mock_print.call_args_list]
@@ -166,7 +166,7 @@ class TestPartitionCreate:
         mock_run.return_value = mock.Mock(stdout="", returncode=0)
 
         # Use -= syntax to trigger delete warning
-        Partition.create("test-partition", **{"nodes-": "node001"})
+        Partition.create("test-partition", verbose=True, **{"nodes-": "node001"})
 
         # Should have warning about deleting
         call_args = [str(c) for c in mock_print.call_args_list]
@@ -225,7 +225,10 @@ class TestPartitionUpdate:
         """Test update with add operations."""
         mock_run.return_value = mock.Mock(stdout="", returncode=0)
 
-        Partition.update("test-partition", **{"nodes+": "node100"})
+        Partition.update("test-partition",
+                         verbose=True,
+                         dry_run=False,
+                         **{"nodes+": "node100"})
 
         mock_run.assert_called_once()
 
@@ -235,7 +238,10 @@ class TestPartitionUpdate:
         """Test update with delete operations."""
         mock_run.return_value = mock.Mock(stdout="", returncode=0)
 
-        Partition.update("test-partition", **{"nodes-": "node001"})
+        Partition.update("test-partition",
+                         verbose=True,
+                         dry_run=False,
+                         **{"nodes-": "node001"})
 
         mock_run.assert_called_once()
 

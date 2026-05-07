@@ -2,7 +2,7 @@
 
 import json
 import subprocess
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Union
 
 from rich.box import SIMPLE_HEAVY
 from rich.table import Table
@@ -120,9 +120,9 @@ _slurm_cli_coordinators_autocomplete() {
     @classmethod
     def create(
         cls,
-        user_name: str = None,
+        user_name: Union[str, None] = None,
         verbose: bool = False,
-        account: str = None,
+        account: Union[str, None] = None,
         **kwargs,
     ) -> None:
         """Create a new coordinator.
@@ -183,10 +183,10 @@ _slurm_cli_coordinators_autocomplete() {
     @classmethod
     def update(
         cls,
-        account: str = None,
+        account: Union[str, None] = None,
         verbose: bool = False,
-        where_conditions: List[str] = None,
-        set_values: List[str] = None,
+        where_conditions: Union[List[str], None] = None,
+        set_values: Union[List[str], None] = None,
         **kwargs: Any,
     ) -> None:
         """Update operation is not supported for coordinators.
@@ -202,8 +202,8 @@ _slurm_cli_coordinators_autocomplete() {
     @classmethod
     def delete(
         cls,
-        account: str,
-        names: List[str] = None,
+        account: Union[str, None] = None,
+        names: Union[List[str], None] = None,
         verbose: bool = False,
     ) -> None:
         """Delete coordinators from an account.
@@ -285,7 +285,7 @@ _slurm_cli_coordinators_autocomplete() {
     @classmethod
     def show(
         cls,
-        field: str = None,
+        field: Union[str, None] = None,
         style: str = "pretty",
         force_cache_update: bool = False,
         delimiter: str = ";",

@@ -351,7 +351,7 @@ class TestEnsureResourceName:
         """Test problems resource mapping."""
         result, field, data = ensure_resource_name("problems")
         assert result == "problems"
-        assert data == []
+        assert data == {}
 
     def test_stats_resource(self):
         """Test stats resource mapping."""

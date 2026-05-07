@@ -2,7 +2,7 @@
 
 import json
 import subprocess
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Union
 
 from rich.box import SIMPLE_HEAVY
 from rich.table import Table
@@ -185,6 +185,9 @@ class User(BaseSlurmResource):
             if account and wckey:
                 return f"{account} ({wckey})"
             return account or wckey or "-"
+        # Unwrap single-element list fields
+        if column == "administrator_level" and isinstance(value, list):
+            return value[0] if value else "-"
         # Handle array fields
         if column in (
             "coordinators",
@@ -523,8 +526,8 @@ _slurm_cli_users_autocomplete() {{
     @classmethod
     def show(
         cls,
-        name: str = None,
-        data: dict = None,
+        name: Union[None, str] = None,
+        data: dict = {},
         style: str = "pretty",
         force_cache_update: bool = False,
         delimiter: str = ";",

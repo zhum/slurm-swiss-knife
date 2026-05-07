@@ -2,7 +2,7 @@
 
 import json
 import subprocess
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Union
 
 from rich.box import SIMPLE_HEAVY
 from rich.table import Table
@@ -379,7 +379,7 @@ _slurm_cli_accounts_autocomplete() {{
     @classmethod
     def show(
         cls,
-        field: str = None,
+        field: Union[str, None] = None,
         style: str = "pretty",
         force_cache_update: bool = False,
         delimiter: str = ";",

@@ -6,7 +6,7 @@ for each string in a collection, which is useful for:
 2. Bash autocompletion pattern generation
 """
 
-from typing import Dict, List, Optional, Set, Tuple
+from typing import Dict, List, Optional, Set, Tuple, Union
 
 
 def compute_shortest_unique_prefixes(
@@ -94,7 +94,7 @@ def generate_bash_prefix_pattern(prefix: str, full_name: str) -> str:
 
 def generate_bash_case_patterns(
     items_with_prefixes: Dict[str, str],
-    aliases: Dict[str, List[str]] = None,
+    aliases: Union[Dict[str, List[str]], None] = None,
 ) -> Dict[str, str]:
     """Generate bash case patterns for all items.
 
@@ -141,7 +141,7 @@ class PrefixMatcher:
     def __init__(
         self,
         items: List[str],
-        aliases: Dict[str, List[str]] = None,
+        aliases: Union[Dict[str, List[str]], None] = None,
         min_prefix_length: int = 1,
     ):
         """Initialize the prefix matcher.
@@ -804,7 +804,7 @@ RESOURCES = {
 
 
 def get_resource_help(
-    resource: str, action: str = None
+    resource: str, action: Union[str, None] = None
 ) -> Optional[Dict]:
     """Get help info for a resource and optionally a specific action.
 
@@ -847,8 +847,8 @@ def get_resource_matcher() -> PrefixMatcher:
 
 
 # Singleton instances for reuse
-_command_matcher: PrefixMatcher = None
-_resource_matcher: PrefixMatcher = None
+_command_matcher: Union[PrefixMatcher, None] = None
+_resource_matcher: Union[PrefixMatcher, None] = None
 
 
 def get_cached_command_matcher() -> PrefixMatcher:
@@ -989,7 +989,7 @@ def get_all_resource_names() -> str:
     return " ".join(sorted(set(names)))
 
 
-def get_resources_help_list(action: str = None, indent: int = 2) -> str:
+def get_resources_help_list(action: Union[str, None] = None, indent: int = 2) -> str:
     """Generate a formatted list of resources for help text.
 
     Args:
@@ -1023,7 +1023,7 @@ def get_resources_help_list(action: str = None, indent: int = 2) -> str:
     return "\n".join(lines)
 
 
-def get_resources_epilog(action: str = None) -> str:
+def get_resources_epilog(action: Union[str, None] = None) -> str:
     """Generate an epilog string with available resources.
 
     Args:

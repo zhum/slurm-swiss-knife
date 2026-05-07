@@ -4,7 +4,7 @@ import json
 import os
 import re
 import subprocess
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Union
 
 from rich.box import (
     SIMPLE_HEAVY,
@@ -344,7 +344,7 @@ class Event(BaseSlurmResource):
 
     @classmethod
     def _get_sacctmgr_command(
-        cls, filters: Dict[str, str] = None, use_json: bool = False
+        cls, filters: Union[Dict[str, str], None] = None, use_json: bool = False
     ) -> List[str]:
         """Build sacctmgr command with filters."""
         cmd = ["sacctmgr", "list", "event"]
@@ -399,7 +399,7 @@ class Event(BaseSlurmResource):
 
     @classmethod
     def _fetch_events(
-        cls, filters: Dict[str, str] = None
+        cls, filters: Union[Dict[str, str], None] = None
     ) -> List[Dict[str, Any]]:
         """Fetch events with JSON fallback to text format.
 
@@ -452,7 +452,7 @@ class Event(BaseSlurmResource):
     @classmethod
     def show(
         cls,
-        field: str = None,
+        field: Union[str, None] = None,
         style: str = "pretty",
         force_cache_update: bool = False,
         delimiter: str = ";",

@@ -152,7 +152,8 @@ class TestReservationCreate:
         """Test create warns about add operations."""
         mock_run.return_value = mock.Mock(stdout="", returncode=0)
 
-        Reservation.create("test-res", **{"users+": "user1"})
+        Reservation.create("test-res", verbose=True,
+                           **{"users+": "user1"})
 
         call_args = [str(c) for c in mock_print.call_args_list]
         assert any("Warning" in str(c) for c in call_args)
@@ -163,7 +164,8 @@ class TestReservationCreate:
         """Test create warns about delete operations."""
         mock_run.return_value = mock.Mock(stdout="", returncode=0)
 
-        Reservation.create("test-res", **{"users-": "user1"})
+        Reservation.create("test-res", verbose=True,
+                           **{"users-": "user1"})
 
         call_args = [str(c) for c in mock_print.call_args_list]
         assert any("Warning" in str(c) for c in call_args)
@@ -247,7 +249,10 @@ class TestReservationUpdate:
         """Test update with add operations."""
         mock_run.return_value = mock.Mock(stdout="", returncode=0)
 
-        Reservation.update("test-res", **{"users+": "newuser"})
+        Reservation.update("test-res",
+                           verbose=True,
+                           dry_run=False,
+                           **{"users+": "newuser"})
 
         mock_run.assert_called_once()
 
@@ -257,7 +262,10 @@ class TestReservationUpdate:
         """Test update with delete operations."""
         mock_run.return_value = mock.Mock(stdout="", returncode=0)
 
-        Reservation.update("test-res", **{"users-": "olduser"})
+        Reservation.update("test-res",
+                           verbose=True,
+                           dry_run=False,
+                           **{"users-": "olduser"})
 
         mock_run.assert_called_once()
 
@@ -655,7 +663,7 @@ class TestReservationTimeFormatting:
     def test_tm2str(self):
         """Test tm2str converts timestamp to string."""
         # Use a known timestamp
-        ts = datetime(2024, 1, 15, 10, 30, 0).timestamp()
+        ts = int(datetime(2024, 1, 15, 10, 30, 0).timestamp())
         result = Reservation.tm2str(ts)
 
         assert "2024-01-15" in result
@@ -725,7 +733,7 @@ class TestReservationPrintOnePretty:
     @mock.patch("slurm_cli.utils.reservations.console.print")
     def test_print_one_pretty_no_data(self, mock_print):
         """Test print_one_pretty with no data."""
-        Reservation.print_one_pretty("test", None)
+        Reservation.print_one_pretty("test", {})
 
         call_args = [str(c) for c in mock_print.call_args_list]
         assert any("No data" in str(c) for c in call_args)

@@ -88,6 +88,8 @@ class BaseSlurmResource:
                     f"Ambiguous argument: {key}. Matches: {', '.join(matches)}"
                 )
                 return False
+            else:
+                full_key = key
             key_type = cls.valid_args[full_key]["type"]
             if key_type == "int":
                 try:

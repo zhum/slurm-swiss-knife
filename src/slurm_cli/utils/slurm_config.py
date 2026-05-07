@@ -1,7 +1,7 @@
 """SLURM config utilities."""
 
 import subprocess
-from typing import Any, Optional
+from typing import Any, Optional, Union
 
 from .base_resource import BaseSlurmResource
 from .profiles import get_profile_config
@@ -14,7 +14,7 @@ class Config(BaseSlurmResource):
         self.kwargs = kwargs
 
     @classmethod
-    def update(cls, name: str, **kwargs: Any) -> None:
+    def update(cls, name: str, verbose: bool, **kwargs: Any) -> None:
         """Update a config."""
         args = ["scontrol", "reconfigure"]
 
@@ -36,7 +36,7 @@ class Config(BaseSlurmResource):
     @classmethod
     def show(
         cls,
-        data: dict = None,
+        data: Union[None, dict] = None,
         style: str = "pretty",
         force_cache_update: bool = False,
         delimiter: str = ";",

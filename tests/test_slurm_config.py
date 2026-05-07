@@ -37,7 +37,7 @@ class TestConfigUpdate:
         """Test successful config update."""
         mock_run.return_value = mock.Mock(stdout="", returncode=0)
 
-        Config.update("test")
+        Config.update("test", verbose=True)
 
         mock_run.assert_called_once()
         args = mock_run.call_args[0][0]
@@ -56,7 +56,7 @@ class TestConfigUpdate:
             stdout="Configuration reloaded", returncode=0
         )
 
-        Config.update("test")
+        Config.update("test", verbose=True)
 
         # Should print stdout in addition to success message
         assert mock_print.call_count >= 2
@@ -69,7 +69,7 @@ class TestConfigUpdate:
             1, "scontrol", stderr="Permission denied"
         )
 
-        Config.update("test")
+        Config.update("test", verbose=True)
 
         call_args = [str(c) for c in mock_print.call_args_list]
         assert any(
@@ -84,7 +84,7 @@ class TestConfigUpdate:
         error.stderr = None
         mock_run.side_effect = error
 
-        Config.update("test")
+        Config.update("test", verbose=True)
 
         call_args = [str(c) for c in mock_print.call_args_list]
         assert any(
@@ -97,7 +97,7 @@ class TestConfigUpdate:
         """Test update with kwargs (even though they're not used)."""
         mock_run.return_value = mock.Mock(stdout="", returncode=0)
 
-        Config.update("test", option="value")
+        Config.update("test", option="value", verbose=True)
 
         mock_run.assert_called_once()
 
