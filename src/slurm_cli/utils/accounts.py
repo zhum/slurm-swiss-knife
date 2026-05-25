@@ -109,9 +109,7 @@ _slurm_cli_accounts_autocomplete() {{
         return script
 
     @classmethod
-    def create(
-        cls, name: str, verbose: bool = False, **kwargs: Any
-    ) -> None:
+    def create(cls, name: str, verbose: bool = False, **kwargs: Any) -> None:
         """Create a new account."""
         console.print(f"Creating account: {name}")
         args = ["sacctmgr", "create", "account", f"name={name}"]
@@ -125,16 +123,12 @@ _slurm_cli_accounts_autocomplete() {{
                 capture_output=True,
                 text=True,
             )
-            console.print(
-                f"[green]Account '{name}' created successfully.[/green]"
-            )
+            console.print(f"[green]Account '{name}' created successfully.[/green]")
             if result.stdout:
                 console.print(result.stdout)
         except subprocess.CalledProcessError as e:
             error_msg = e.stderr or e
-            console.print(
-                f"[red]Failed to create account '{name}':[/red] {error_msg}"
-            )
+            console.print(f"[red]Failed to create account '{name}':[/red] {error_msg}")
 
     @classmethod
     def update(
@@ -174,9 +168,7 @@ _slurm_cli_accounts_autocomplete() {{
             where_str = " ".join(where_conditions)
             set_str = " ".join(set_values) if set_values else ""
             if not dry_run:
-                console.print(
-                    f"Updating accounts where {where_str} set {set_str}"
-                )
+                console.print(f"Updating accounts where {where_str} set {set_str}")
         else:
             # Simple mode - update by name
             args.append("where")
@@ -204,13 +196,9 @@ _slurm_cli_accounts_autocomplete() {{
             if result.stdout:
                 console.print(result.stdout)
             if verbose:
-                console.print(
-                    "[green]Account updated successfully.[/green]"
-                )
+                console.print("[green]Account updated successfully.[/green]")
         except subprocess.CalledProcessError as e:
-            console.print(
-                f"[red]Failed to update account:[/red] {e.stderr or e}"
-            )
+            console.print(f"[red]Failed to update account:[/red] {e.stderr or e}")
 
     @classmethod
     def delete(cls, name: str) -> None:
@@ -272,9 +260,7 @@ _slurm_cli_accounts_autocomplete() {{
         # Handle array fields
         if column in ("coordinators", "flags", "associations"):
             if isinstance(value, list):
-                return (
-                    ", ".join(str(v) for v in value) if value else "-"
-                )
+                return ", ".join(str(v) for v in value) if value else "-"
         if value is None or value == "":
             return "-"
         return str(value)
@@ -329,15 +315,11 @@ _slurm_cli_accounts_autocomplete() {{
         """
         # Build parent-child relationships
         account_map = {}  # name -> account_data
-        children_map: Dict[
-            str, List[str]
-        ] = {}  # parent_name -> [child_names]
+        children_map: Dict[str, List[str]] = {}  # parent_name -> [child_names]
 
         for acc in accounts:
             name = acc.get("name", "")
-            parent = acc.get("parent", "") or acc.get(
-                "parent_account", ""
-            )
+            parent = acc.get("parent", "") or acc.get("parent_account", "")
             account_map[name] = acc
 
             if parent not in children_map:
@@ -347,9 +329,7 @@ _slurm_cli_accounts_autocomplete() {{
         # Find root accounts (no parent or parent not in map)
         root_accounts = []
         for name, acc in account_map.items():
-            parent = acc.get("parent", "") or acc.get(
-                "parent_account", ""
-            )
+            parent = acc.get("parent", "") or acc.get("parent_account", "")
             if not parent or parent not in account_map:
                 root_accounts.append(name)
 
@@ -423,26 +403,17 @@ _slurm_cli_accounts_autocomplete() {{
                 parsed_filter = cls._parse_filter(field)
                 if parsed_filter:
                     # It's a filter like organization=nvidia
-                    accounts = cls._apply_filters(
-                        accounts, [parsed_filter]
-                    )
+                    accounts = cls._apply_filters(accounts, [parsed_filter])
                     if not accounts:
                         console.print(
-                            f"[yellow]No accounts match filter "
-                            f"'{field}'.[/yellow]"
+                            f"[yellow]No accounts match filter " f"'{field}'.[/yellow]"
                         )
                         return
                 else:
                     # It's an account name
-                    accounts = [
-                        acc
-                        for acc in accounts
-                        if acc.get("name") == field
-                    ]
+                    accounts = [acc for acc in accounts if acc.get("name") == field]
                     if not accounts:
-                        console.print(
-                            f"[yellow]Account '{field}' not found.[/yellow]"
-                        )
+                        console.print(f"[yellow]Account '{field}' not found.[/yellow]")
                         return
 
             # Get column configuration from profile (once)
@@ -483,10 +454,7 @@ _slurm_cli_accounts_autocomplete() {{
 
                 # Data rows
                 for account in accounts:
-                    row = [
-                        cls._format_value(account, col)
-                        for col in columns
-                    ]
+                    row = [cls._format_value(account, col) for col in columns]
                     # Replace "-" with empty for CSV
                     row = ["" if v == "-" else v for v in row]
                     print(delimiter.join(row))
@@ -500,9 +468,7 @@ _slurm_cli_accounts_autocomplete() {{
                         console.print(output)
                 else:
                     # Create a rich table
-                    row_styles = (
-                        ["", "on rgb(30,40,60)"] if zebra else None
-                    )
+                    row_styles = ["", "on rgb(30,40,60)"] if zebra else None
                     table = Table(
                         title="Accounts",
                         box=SIMPLE_HEAVY,
@@ -535,10 +501,6 @@ _slurm_cli_accounts_autocomplete() {{
 
         except subprocess.CalledProcessError as e:
             error_msg = e.stderr or e
-            console.print(
-                f"[red]Failed to show accounts:[/red] {error_msg}"
-            )
+            console.print(f"[red]Failed to show accounts:[/red] {error_msg}")
         except json.JSONDecodeError as e:
-            console.print(
-                f"[red]Failed to parse JSON output:[/red] {e}"
-            )
+            console.print(f"[red]Failed to parse JSON output:[/red] {e}")

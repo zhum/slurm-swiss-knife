@@ -165,9 +165,7 @@ class TestGetNodesByPartition:
                 ]
             }
         )
-        mock_result = create_mock_subprocess_result(
-            stdout=json_response
-        )
+        mock_result = create_mock_subprocess_result(stdout=json_response)
 
         with patch.object(subprocess, "run", return_value=mock_result):
             result = _get_nodes_by_partition("gpu")
@@ -176,15 +174,9 @@ class TestGetNodesByPartition:
     def test_partition_json_string_nodes(self):
         """Test _get_nodes_by_partition with string nodes format."""
         json_response = json.dumps(
-            {
-                "partitions": [
-                    {"name": "cpu", "nodes": "cpu-node[01-10]"}
-                ]
-            }
+            {"partitions": [{"name": "cpu", "nodes": "cpu-node[01-10]"}]}
         )
-        mock_result = create_mock_subprocess_result(
-            stdout=json_response
-        )
+        mock_result = create_mock_subprocess_result(stdout=json_response)
 
         with patch.object(subprocess, "run", return_value=mock_result):
             result = _get_nodes_by_partition("cpu")
@@ -193,9 +185,7 @@ class TestGetNodesByPartition:
     def test_partition_not_found(self):
         """Test _get_nodes_by_partition when partition not found."""
         json_response = json.dumps({"partitions": []})
-        mock_result = create_mock_subprocess_result(
-            stdout=json_response
-        )
+        mock_result = create_mock_subprocess_result(stdout=json_response)
 
         with patch.object(subprocess, "run", return_value=mock_result):
             result = _get_nodes_by_partition("nonexistent")
@@ -203,9 +193,7 @@ class TestGetNodesByPartition:
 
     def test_partition_subprocess_error(self):
         """Test _get_nodes_by_partition with subprocess error."""
-        error = subprocess.CalledProcessError(
-            1, "scontrol", stderr="error"
-        )
+        error = subprocess.CalledProcessError(1, "scontrol", stderr="error")
 
         with patch.object(subprocess, "run", side_effect=error):
             result = _get_nodes_by_partition("gpu")
@@ -226,9 +214,7 @@ class TestGetNodesByState:
                 ]
             }
         )
-        mock_result = create_mock_subprocess_result(
-            stdout=json_response
-        )
+        mock_result = create_mock_subprocess_result(stdout=json_response)
 
         with patch.object(subprocess, "run", return_value=mock_result):
             result = _get_nodes_by_state("idle")
@@ -247,9 +233,7 @@ class TestGetNodesByState:
                 ]
             }
         )
-        mock_result = create_mock_subprocess_result(
-            stdout=json_response
-        )
+        mock_result = create_mock_subprocess_result(stdout=json_response)
 
         with patch.object(subprocess, "run", return_value=mock_result):
             result = _get_nodes_by_state("drain")
@@ -266,9 +250,7 @@ class TestGetNodesByState:
                 ]
             }
         )
-        mock_result = create_mock_subprocess_result(
-            stdout=json_response
-        )
+        mock_result = create_mock_subprocess_result(stdout=json_response)
 
         with patch.object(subprocess, "run", return_value=mock_result):
             result = _get_nodes_by_state("IDLE")
@@ -284,9 +266,7 @@ class TestGetNodesByState:
                 ]
             }
         )
-        mock_result = create_mock_subprocess_result(
-            stdout=json_response
-        )
+        mock_result = create_mock_subprocess_result(stdout=json_response)
 
         with patch.object(subprocess, "run", return_value=mock_result):
             result = _get_nodes_by_state("idle")
@@ -294,9 +274,7 @@ class TestGetNodesByState:
 
     def test_state_subprocess_error(self):
         """Test _get_nodes_by_state with subprocess error."""
-        error = subprocess.CalledProcessError(
-            1, "scontrol", stderr="error"
-        )
+        error = subprocess.CalledProcessError(1, "scontrol", stderr="error")
 
         with patch.object(subprocess, "run", side_effect=error):
             result = _get_nodes_by_state("idle")
@@ -329,9 +307,7 @@ class TestGetNodesByUser:
                 ]
             }
         )
-        mock_result = create_mock_subprocess_result(
-            stdout=json_response
-        )
+        mock_result = create_mock_subprocess_result(stdout=json_response)
 
         with patch.object(subprocess, "run", return_value=mock_result):
             result = _get_nodes_by_user("john")
@@ -348,9 +324,7 @@ class TestGetNodesByUser:
                 ]
             }
         )
-        mock_result = create_mock_subprocess_result(
-            stdout=json_response
-        )
+        mock_result = create_mock_subprocess_result(stdout=json_response)
 
         with patch.object(subprocess, "run", return_value=mock_result):
             result = _get_nodes_by_user("john")
@@ -361,9 +335,7 @@ class TestGetNodesByUser:
     def test_user_no_jobs(self):
         """Test _get_nodes_by_user for user with no jobs."""
         json_response = json.dumps({"jobs": []})
-        mock_result = create_mock_subprocess_result(
-            stdout=json_response
-        )
+        mock_result = create_mock_subprocess_result(stdout=json_response)
 
         with patch.object(subprocess, "run", return_value=mock_result):
             result = _get_nodes_by_user("nobody")
@@ -371,9 +343,7 @@ class TestGetNodesByUser:
 
     def test_user_subprocess_error(self):
         """Test _get_nodes_by_user with subprocess error."""
-        error = subprocess.CalledProcessError(
-            1, "squeue", stderr="error"
-        )
+        error = subprocess.CalledProcessError(1, "squeue", stderr="error")
 
         with patch.object(subprocess, "run", side_effect=error):
             result = _get_nodes_by_user("john")
@@ -386,15 +356,9 @@ class TestGetNodesByReservation:
     def test_reservation_with_nodes(self):
         """Test _get_nodes_by_reservation for reservation with nodes."""
         json_response = json.dumps(
-            {
-                "reservations": [
-                    {"name": "maint", "node_list": "node[01-04]"}
-                ]
-            }
+            {"reservations": [{"name": "maint", "node_list": "node[01-04]"}]}
         )
-        mock_result = create_mock_subprocess_result(
-            stdout=json_response
-        )
+        mock_result = create_mock_subprocess_result(stdout=json_response)
 
         with patch.object(subprocess, "run", return_value=mock_result):
             result = _get_nodes_by_reservation("maint")
@@ -403,9 +367,7 @@ class TestGetNodesByReservation:
     def test_reservation_not_found(self):
         """Test _get_nodes_by_reservation when reservation not found."""
         json_response = json.dumps({"reservations": []})
-        mock_result = create_mock_subprocess_result(
-            stdout=json_response
-        )
+        mock_result = create_mock_subprocess_result(stdout=json_response)
 
         with patch.object(subprocess, "run", return_value=mock_result):
             result = _get_nodes_by_reservation("nonexistent")
@@ -413,9 +375,7 @@ class TestGetNodesByReservation:
 
     def test_reservation_subprocess_error(self):
         """Test _get_nodes_by_reservation with subprocess error."""
-        error = subprocess.CalledProcessError(
-            1, "scontrol", stderr="error"
-        )
+        error = subprocess.CalledProcessError(1, "scontrol", stderr="error")
 
         with patch.object(subprocess, "run", side_effect=error):
             result = _get_nodes_by_reservation("maint")
@@ -437,9 +397,7 @@ class TestResolveNodeFilterIntegration:
                 ]
             }
         )
-        mock_result = create_mock_subprocess_result(
-            stdout=json_response
-        )
+        mock_result = create_mock_subprocess_result(stdout=json_response)
 
         with patch.object(subprocess, "run", return_value=mock_result):
             result = resolve_node_filter("partition=gpu")
@@ -455,9 +413,7 @@ class TestResolveNodeFilterIntegration:
                 ]
             }
         )
-        mock_result = create_mock_subprocess_result(
-            stdout=json_response
-        )
+        mock_result = create_mock_subprocess_result(stdout=json_response)
 
         with patch.object(subprocess, "run", return_value=mock_result):
             result = resolve_node_filter("state=idle")
@@ -474,9 +430,7 @@ class TestResolveNodeFilterIntegration:
                 ]
             }
         )
-        mock_result = create_mock_subprocess_result(
-            stdout=json_response
-        )
+        mock_result = create_mock_subprocess_result(stdout=json_response)
 
         with patch.object(subprocess, "run", return_value=mock_result):
             result = resolve_node_filter("user=john")
@@ -486,15 +440,9 @@ class TestResolveNodeFilterIntegration:
     def test_resolve_reservation_filter(self):
         """Test resolve_node_filter with reservation= prefix."""
         json_response = json.dumps(
-            {
-                "reservations": [
-                    {"name": "maint", "node_list": "node[01-10]"}
-                ]
-            }
+            {"reservations": [{"name": "maint", "node_list": "node[01-10]"}]}
         )
-        mock_result = create_mock_subprocess_result(
-            stdout=json_response
-        )
+        mock_result = create_mock_subprocess_result(stdout=json_response)
 
         with patch.object(subprocess, "run", return_value=mock_result):
             result = resolve_node_filter("reservation=maint")
@@ -526,9 +474,7 @@ class TestResolveNodesValue:
                 ]
             }
         )
-        mock_result = create_mock_subprocess_result(
-            stdout=json_response
-        )
+        mock_result = create_mock_subprocess_result(stdout=json_response)
 
         with patch.object(subprocess, "run", return_value=mock_result):
             result = resolve_nodes_value("partition=gpu")
@@ -537,9 +483,7 @@ class TestResolveNodesValue:
     def test_resolve_filter_no_match(self):
         """Test resolve_nodes_value with filter that matches no nodes."""
         json_response = json.dumps({"partitions": []})
-        mock_result = create_mock_subprocess_result(
-            stdout=json_response
-        )
+        mock_result = create_mock_subprocess_result(stdout=json_response)
 
         with patch.object(subprocess, "run", return_value=mock_result):
             result = resolve_nodes_value("partition=nonexistent")
@@ -568,9 +512,7 @@ class TestGetNodesByStateText:
 
     def test_state_text_multiple_nodes(self):
         """Test _get_nodes_by_state_text with multiple nodes."""
-        mock_result = create_mock_subprocess_result(
-            stdout="node01\nnode02\nnode03\n"
-        )
+        mock_result = create_mock_subprocess_result(stdout="node01\nnode02\nnode03\n")
 
         with patch.object(subprocess, "run", return_value=mock_result):
             result = _get_nodes_by_state_text("idle")
@@ -580,9 +522,7 @@ class TestGetNodesByStateText:
 
     def test_state_text_deduplicates(self):
         """Test _get_nodes_by_state_text deduplicates nodes."""
-        mock_result = create_mock_subprocess_result(
-            stdout="node01\nnode01\nnode02\n"
-        )
+        mock_result = create_mock_subprocess_result(stdout="node01\nnode01\nnode02\n")
 
         with patch.object(subprocess, "run", return_value=mock_result):
             result = _get_nodes_by_state_text("idle")
@@ -606,9 +546,7 @@ class TestGetNodesByStateText:
 
     def test_state_text_subprocess_error(self):
         """Test _get_nodes_by_state_text with subprocess error."""
-        error = subprocess.CalledProcessError(
-            1, "sinfo", stderr="error"
-        )
+        error = subprocess.CalledProcessError(1, "sinfo", stderr="error")
 
         with patch.object(subprocess, "run", side_effect=error):
             result = _get_nodes_by_state_text("idle")
@@ -616,14 +554,10 @@ class TestGetNodesByStateText:
 
     def test_state_text_verbose(self):
         """Test _get_nodes_by_state_text with verbose output."""
-        mock_result = create_mock_subprocess_result(
-            stdout="node01\nnode02\n"
-        )
+        mock_result = create_mock_subprocess_result(stdout="node01\nnode02\n")
 
         with patch.object(subprocess, "run", return_value=mock_result):
-            with patch(
-                "slurm_cli.utils.node_filter.console.print"
-            ) as mock_print:
+            with patch("slurm_cli.utils.node_filter.console.print") as mock_print:
                 result = _get_nodes_by_state_text("idle", verbose=True)
                 assert "node01" in result
                 assert "node02" in result
@@ -648,9 +582,7 @@ class TestResolveNodeFilters:
                 ]
             }
         )
-        mock_result = create_mock_subprocess_result(
-            stdout=json_response
-        )
+        mock_result = create_mock_subprocess_result(stdout=json_response)
 
         with patch.object(subprocess, "run", return_value=mock_result):
             result_nodes, other_args = resolve_node_filters(
@@ -663,20 +595,12 @@ class TestResolveNodeFilters:
     def test_exclusion_with_verbose(self):
         """Test resolve_node_filters exclusion with verbose output."""
         json_response = json.dumps(
-            {
-                "partitions": [
-                    {"name": "gpu", "nodes": {"nodes": "node02"}}
-                ]
-            }
+            {"partitions": [{"name": "gpu", "nodes": {"nodes": "node02"}}]}
         )
-        mock_result = create_mock_subprocess_result(
-            stdout=json_response
-        )
+        mock_result = create_mock_subprocess_result(stdout=json_response)
 
         with patch.object(subprocess, "run", return_value=mock_result):
-            with patch(
-                "slurm_cli.utils.node_filter.console.print"
-            ) as mock_print:
+            with patch("slurm_cli.utils.node_filter.console.print") as mock_print:
                 result_nodes, _ = resolve_node_filters(
                     ["node01", "node02", "node03", "not:partition=gpu"],
                     verbose=True,
@@ -699,9 +623,7 @@ class TestResolveNodeFilters:
                 ]
             }
         )
-        mock_result = create_mock_subprocess_result(
-            stdout=json_response
-        )
+        mock_result = create_mock_subprocess_result(stdout=json_response)
 
         with patch.object(subprocess, "run", return_value=mock_result):
             result_nodes, _ = resolve_node_filters(
@@ -733,15 +655,11 @@ class TestResolveNodeFilters:
 
         def mock_run(cmd, **kwargs):
             if "partition" in cmd:
-                return create_mock_subprocess_result(
-                    stdout=partition_response
-                )
+                return create_mock_subprocess_result(stdout=partition_response)
             return create_mock_subprocess_result(stdout=state_response)
 
         with patch.object(subprocess, "run", side_effect=mock_run):
-            result_nodes, _ = resolve_node_filters(
-                ["partition=all", "not:state=drain"]
-            )
+            result_nodes, _ = resolve_node_filters(["partition=all", "not:state=drain"])
             # partition=all gives node01,node02,node03
             # not:state=drain excludes node02
             assert "node01" in result_nodes
@@ -763,9 +681,7 @@ class TestGetNodesByReason:
                 ]
             }
         )
-        mock_result = create_mock_subprocess_result(
-            stdout=json_response
-        )
+        mock_result = create_mock_subprocess_result(stdout=json_response)
 
         with patch.object(subprocess, "run", return_value=mock_result):
             result = _get_nodes_by_reason("Not responding")
@@ -784,9 +700,7 @@ class TestGetNodesByReason:
                 ]
             }
         )
-        mock_result = create_mock_subprocess_result(
-            stdout=json_response
-        )
+        mock_result = create_mock_subprocess_result(stdout=json_response)
 
         with patch.object(subprocess, "run", return_value=mock_result):
             result = _get_nodes_by_reason(".*temp.*")
@@ -804,9 +718,7 @@ class TestGetNodesByReason:
                 ]
             }
         )
-        mock_result = create_mock_subprocess_result(
-            stdout=json_response
-        )
+        mock_result = create_mock_subprocess_result(stdout=json_response)
 
         with patch.object(subprocess, "run", return_value=mock_result):
             result = _get_nodes_by_reason("not responding")
@@ -823,9 +735,7 @@ class TestGetNodesByReason:
                 ]
             }
         )
-        mock_result = create_mock_subprocess_result(
-            stdout=json_response
-        )
+        mock_result = create_mock_subprocess_result(stdout=json_response)
 
         with patch.object(subprocess, "run", return_value=mock_result):
             result = _get_nodes_by_reason("Not responding")
@@ -842,9 +752,7 @@ class TestGetNodesByReason:
                 ]
             }
         )
-        mock_result = create_mock_subprocess_result(
-            stdout=json_response
-        )
+        mock_result = create_mock_subprocess_result(stdout=json_response)
 
         with patch.object(subprocess, "run", return_value=mock_result):
             result = _get_nodes_by_reason("reason")
@@ -855,9 +763,7 @@ class TestGetNodesByReason:
     def test_reason_invalid_regex(self):
         """Test _get_nodes_by_reason with invalid regex pattern."""
         json_response = json.dumps({"nodes": []})
-        mock_result = create_mock_subprocess_result(
-            stdout=json_response
-        )
+        mock_result = create_mock_subprocess_result(stdout=json_response)
 
         with patch.object(subprocess, "run", return_value=mock_result):
             result = _get_nodes_by_reason("[invalid")
@@ -865,9 +771,7 @@ class TestGetNodesByReason:
 
     def test_reason_subprocess_error(self):
         """Test _get_nodes_by_reason with subprocess error."""
-        error = subprocess.CalledProcessError(
-            1, "scontrol", stderr="error"
-        )
+        error = subprocess.CalledProcessError(1, "scontrol", stderr="error")
 
         with patch.object(subprocess, "run", side_effect=error):
             result = _get_nodes_by_reason("pattern")
@@ -882,14 +786,10 @@ class TestGetNodesByReason:
                 ]
             }
         )
-        mock_result = create_mock_subprocess_result(
-            stdout=json_response
-        )
+        mock_result = create_mock_subprocess_result(stdout=json_response)
 
         with patch.object(subprocess, "run", return_value=mock_result):
-            with patch(
-                "slurm_cli.utils.node_filter.console.print"
-            ) as mock_print:
+            with patch("slurm_cli.utils.node_filter.console.print") as mock_print:
                 result = _get_nodes_by_reason("test", verbose=True)
                 assert "node01" in result
                 mock_print.assert_called_once()
@@ -908,9 +808,7 @@ class TestResolveNodeFilterReason:
                 ]
             }
         )
-        mock_result = create_mock_subprocess_result(
-            stdout=json_response
-        )
+        mock_result = create_mock_subprocess_result(stdout=json_response)
 
         with patch.object(subprocess, "run", return_value=mock_result):
             result = resolve_node_filter("drainreason=Not responding")

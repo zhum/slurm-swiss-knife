@@ -15,9 +15,7 @@ sys.path.insert(0, "src")
 from slurm_cli.utils.nodes import Node  # noqa: E402
 
 
-def create_mock_subprocess_result(
-    stdout: str = "", returncode: int = 0
-):
+def create_mock_subprocess_result(stdout: str = "", returncode: int = 0):
     """Create a mock subprocess.CompletedProcess result."""
     mock_result = MagicMock()
     mock_result.stdout = stdout
@@ -166,9 +164,7 @@ class TestNodeCreate:
 
     def test_create_node_with_stdout(self):
         """Test node creation with subprocess stdout."""
-        mock_result = create_mock_subprocess_result(
-            stdout="Node newnode added"
-        )
+        mock_result = create_mock_subprocess_result(stdout="Node newnode added")
         with patch.object(subprocess, "run", return_value=mock_result):
             output = io.StringIO()
             with redirect_stdout(output):
@@ -180,12 +176,8 @@ class TestNodeCreate:
     def test_create_node_with_kwargs(self):
         """Test node creation with additional arguments."""
         mock_result = create_mock_subprocess_result()
-        with patch.object(
-            subprocess, "run", return_value=mock_result
-        ) as mock_run:
-            Node.create(
-                "newnode", state="future", cpus=64, memory=256000
-            )
+        with patch.object(subprocess, "run", return_value=mock_result) as mock_run:
+            Node.create("newnode", state="future", cpus=64, memory=256000)
 
             mock_run.assert_called_once()
             call_args = mock_run.call_args[0][0]

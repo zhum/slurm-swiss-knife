@@ -89,9 +89,7 @@ class TestGuessResourceType:
 
     @mock.patch.object(Resource, "cached_resource_list")
     @mock.patch.object(Resource, "cached_resource")
-    def test_guess_jobs_by_underscore_numeric(
-        self, mock_cached, mock_list
-    ):
+    def test_guess_jobs_by_underscore_numeric(self, mock_cached, mock_list):
         """Test guessing jobs by numeric with underscore."""
         mock_list.return_value = []
         result, _ = Resource.guess_resource_type("123_456")
@@ -110,9 +108,7 @@ class TestGuessResourceType:
     @mock.patch.object(Resource, "cached_resource")
     def test_guess_partitions_by_name(self, mock_cached, mock_list):
         """Test guessing partitions by name in list."""
-        mock_list.side_effect = lambda x: (
-            ["gpu", "cpu"] if x == "partitions" else []
-        )
+        mock_list.side_effect = lambda x: (["gpu", "cpu"] if x == "partitions" else [])
         mock_cached.return_value = {"gpu": {}}
         result, data = Resource.guess_resource_type("gpu")
         assert result == "partitions"
@@ -130,9 +126,7 @@ class TestGuessResourceType:
     @mock.patch.object(Resource, "cached_resource")
     def test_guess_nodes_by_name(self, mock_cached, mock_list):
         """Test guessing nodes by name in list."""
-        mock_list.side_effect = lambda x: (
-            ["node01", "node02"] if x == "nodes" else []
-        )
+        mock_list.side_effect = lambda x: (["node01", "node02"] if x == "nodes" else [])
         mock_cached.return_value = {"node01": {}}
         result, data = Resource.guess_resource_type("node01")
         assert result == "nodes"
@@ -307,9 +301,7 @@ class TestGuessResourceType:
 
     @mock.patch.object(Resource, "cached_resource_list")
     @mock.patch.object(Resource, "cached_resource")
-    def test_guess_username_with_underscore(
-        self, mock_cached, mock_list
-    ):
+    def test_guess_username_with_underscore(self, mock_cached, mock_list):
         """Test guessing 'users' for username with underscore."""
         mock_list.return_value = []
         mock_cached.return_value = {"test_user": {}}
@@ -377,12 +369,8 @@ class TestUpdateCache:
             original_files = dict(Resource.CACHE_FILES)
             original_list = dict(Resource.CACHE_LIST_FILES)
             try:
-                Resource.CACHE_FILES[
-                    "partitions"
-                ] = f"{tmpdir}/part.json"
-                Resource.CACHE_LIST_FILES[
-                    "partitions"
-                ] = f"{tmpdir}/part.list"
+                Resource.CACHE_FILES["partitions"] = f"{tmpdir}/part.json"
+                Resource.CACHE_LIST_FILES["partitions"] = f"{tmpdir}/part.list"
 
                 result = Resource.update_cache("partitions")
 
@@ -406,12 +394,8 @@ class TestUpdateCache:
             original_files = dict(Resource.CACHE_FILES)
             original_list = dict(Resource.CACHE_LIST_FILES)
             try:
-                Resource.CACHE_FILES[
-                    "reservations"
-                ] = f"{tmpdir}/res.json"
-                Resource.CACHE_LIST_FILES[
-                    "reservations"
-                ] = f"{tmpdir}/res.list"
+                Resource.CACHE_FILES["reservations"] = f"{tmpdir}/res.json"
+                Resource.CACHE_LIST_FILES["reservations"] = f"{tmpdir}/res.list"
 
                 result = Resource.update_cache("reservations")
 
@@ -437,9 +421,7 @@ class TestUpdateCache:
             original_list = dict(Resource.CACHE_LIST_FILES)
             try:
                 Resource.CACHE_FILES["nodes"] = f"{tmpdir}/nodes.json"
-                Resource.CACHE_LIST_FILES[
-                    "nodes"
-                ] = f"{tmpdir}/nodes.list"
+                Resource.CACHE_LIST_FILES["nodes"] = f"{tmpdir}/nodes.list"
 
                 result = Resource.update_cache("nodes")
 
@@ -484,9 +466,7 @@ class TestUpdateCache:
             original_list = dict(Resource.CACHE_LIST_FILES)
             try:
                 Resource.CACHE_FILES["jobs"] = f"{tmpdir}/jobs.json"
-                Resource.CACHE_LIST_FILES[
-                    "jobs"
-                ] = f"{tmpdir}/jobs.list"
+                Resource.CACHE_LIST_FILES["jobs"] = f"{tmpdir}/jobs.list"
 
                 result = Resource.update_cache("jobs")
 
@@ -541,9 +521,7 @@ class TestCachedResource:
 
     @mock.patch.object(Resource, "update_cache")
     @mock.patch("slurm_cli.utils.resources.console.status")
-    def test_cached_resource_expired_cache(
-        self, mock_status, mock_update
-    ):
+    def test_cached_resource_expired_cache(self, mock_status, mock_update):
         """Test updating expired cache."""
         mock_update.return_value = {"updated": "data"}
         mock_status.return_value.__enter__ = mock.Mock()
@@ -575,9 +553,7 @@ class TestCachedResource:
 
     @mock.patch.object(Resource, "update_cache")
     @mock.patch("slurm_cli.utils.resources.console.status")
-    def test_cached_resource_force_update(
-        self, mock_status, mock_update
-    ):
+    def test_cached_resource_force_update(self, mock_status, mock_update):
         """Test forcing cache update."""
         mock_update.return_value = {"forced": "data"}
         mock_status.return_value.__enter__ = mock.Mock()
@@ -593,9 +569,7 @@ class TestCachedResource:
                 with open(cache_file, "w") as f:
                     json.dump({"cached": "data"}, f)
 
-                result = Resource.cached_resource(
-                    "qos", force_update=True
-                )
+                result = Resource.cached_resource("qos", force_update=True)
 
                 assert result == {"forced": "data"}
                 mock_update.assert_called_once()
@@ -692,9 +666,7 @@ class TestRunCmdJson:
     @mock.patch("subprocess.run")
     def test_run_cmd_json_success(self, mock_run):
         """Test successful JSON command."""
-        mock_run.return_value = mock.Mock(
-            stdout='{"key": "value"}', returncode=0
-        )
+        mock_run.return_value = mock.Mock(stdout='{"key": "value"}', returncode=0)
 
         result = Resource.run_cmd_json(["echo", "test"])
 
@@ -713,9 +685,7 @@ class TestRunCmdJson:
     @mock.patch("slurm_cli.utils.resources.console.print")
     def test_run_cmd_json_subprocess_error(self, mock_print, mock_run):
         """Test JSON command with subprocess error."""
-        mock_run.side_effect = subprocess.CalledProcessError(
-            1, "cmd", stderr="error"
-        )
+        mock_run.side_effect = subprocess.CalledProcessError(1, "cmd", stderr="error")
 
         with pytest.raises(SystemExit) as exc_info:
             Resource.run_cmd_json(["bad", "cmd"])
@@ -737,9 +707,7 @@ class TestRunCmdJson:
     @mock.patch("slurm_cli.utils.resources.console.print")
     def test_run_cmd_json_invalid_json(self, mock_print, mock_run):
         """Test JSON command with invalid JSON output."""
-        mock_run.return_value = mock.Mock(
-            stdout="not json", stderr="", returncode=0
-        )
+        mock_run.return_value = mock.Mock(stdout="not json", stderr="", returncode=0)
 
         with pytest.raises(SystemExit) as exc_info:
             Resource.run_cmd_json(["echo", "test"])
@@ -769,9 +737,7 @@ class TestRunCmd:
     @mock.patch("subprocess.run")
     def test_run_cmd_success(self, mock_run):
         """Test successful command."""
-        mock_run.return_value = mock.Mock(
-            stdout="output text", returncode=0
-        )
+        mock_run.return_value = mock.Mock(stdout="output text", returncode=0)
 
         result = Resource.run_cmd(["echo", "test"])
 

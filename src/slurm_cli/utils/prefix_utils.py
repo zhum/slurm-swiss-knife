@@ -123,9 +123,7 @@ def generate_bash_case_patterns(
                 aliases[item], min_length=1
             )
             for alias, alias_prefix in alias_prefixes.items():
-                patterns.append(
-                    generate_bash_prefix_pattern(alias_prefix, alias)
-                )
+                patterns.append(generate_bash_prefix_pattern(alias_prefix, alias))
 
         result[item] = "|".join(patterns)
 
@@ -200,9 +198,7 @@ class PrefixMatcher:
 
         # Try finding items that start with input
         matches = [
-            name
-            for name in self._all_names.keys()
-            if name.startswith(input_lower)
+            name for name in self._all_names.keys() if name.startswith(input_lower)
         ]
         if len(matches) == 1:
             return self._all_names[matches[0]], False
@@ -449,8 +445,7 @@ RESOURCES = {
                 "syntax": "slurm-cli add users USERNAME [OPTIONS]",
                 "examples": [
                     "slurm-cli add users john account=research",
-                    "slurm-cli add users name=jane account=eng"
-                    " defaultaccount=eng",
+                    "slurm-cli add users name=jane account=eng" " defaultaccount=eng",
                 ],
                 "options": [
                     "name",
@@ -474,8 +469,7 @@ RESOURCES = {
                 "syntax": "slurm-cli mod users USERNAME set KEY=VALUE",
                 "examples": [
                     "slurm-cli mod users john set adminlevel=operator",
-                    "slurm-cli mod users defaultaccount=old set"
-                    " defaultaccount=new",
+                    "slurm-cli mod users defaultaccount=old set" " defaultaccount=new",
                 ],
                 "options": [
                     "adminlevel",
@@ -503,8 +497,7 @@ RESOURCES = {
                 "syntax": "slurm-cli add qos NAME [OPTIONS]",
                 "examples": [
                     "slurm-cli add qos highprio priority=1000",
-                    "slurm-cli add qos express maxwall=1:00:00"
-                    " preemptmode=cancel",
+                    "slurm-cli add qos express maxwall=1:00:00" " preemptmode=cancel",
                 ],
                 "options": [
                     "name",
@@ -520,8 +513,7 @@ RESOURCES = {
                 "syntax": "slurm-cli mod qos NAME set KEY=VALUE",
                 "examples": [
                     "slurm-cli mod qos normal set priority=500",
-                    "slurm-cli mod qos batch set maxjobspu=10"
-                    " preemptmode=requeue",
+                    "slurm-cli mod qos batch set maxjobspu=10" " preemptmode=requeue",
                 ],
                 "options": [
                     "priority",
@@ -568,8 +560,7 @@ RESOURCES = {
             "update": {
                 "syntax": "slurm-cli mod accounts NAME set KEY=VALUE",
                 "examples": [
-                    "slurm-cli mod accounts research set "
-                    "description='New desc'",
+                    "slurm-cli mod accounts research set " "description='New desc'",
                     "slurm-cli mod accounts parent=old set parent=new",
                 ],
                 "options": [
@@ -608,8 +599,7 @@ RESOURCES = {
                 " [OPTIONS]",
                 "examples": [
                     "slurm-cli add assoc user=john account=research",
-                    "slurm-cli add assoc name=jane account=eng "
-                    "qos=normal,high",
+                    "slurm-cli add assoc name=jane account=eng " "qos=normal,high",
                 ],
                 "options": [
                     "name/user",
@@ -803,9 +793,7 @@ RESOURCES = {
 }
 
 
-def get_resource_help(
-    resource: str, action: Union[str, None] = None
-) -> Optional[Dict]:
+def get_resource_help(resource: str, action: Union[str, None] = None) -> Optional[Dict]:
     """Get help info for a resource and optionally a specific action.
 
     Args:
@@ -913,9 +901,7 @@ def generate_bash_command_case() -> str:
         lines.append(f"        {pattern})")
         if cmd in cmd_extends:
             siblings = " ".join(cmd_extends[cmd])
-            lines.append(
-                f'            if [[ "$cur" == "{cmd}" ]]; then'
-            )
+            lines.append(f'            if [[ "$cur" == "{cmd}" ]]; then')
             lines.append(f'                guessed="{cmd} {siblings}"')
             lines.append(f"            else")
             lines.append(f'                guessed="{cmd}"')

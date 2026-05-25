@@ -21,21 +21,16 @@ class BaseSlurmResource:
         ),
         # [D-]HH:MM:SS (e.g., 2-12:30:00)
         re.compile(
-            r"^(?:(?P<days>\d+)-)?(?P<h>\d{1,2}):(?P<m>\d{1,2}):"
-            r"(?P<s>\d{1,2})$"
+            r"^(?:(?P<days>\d+)-)?(?P<h>\d{1,2}):(?P<m>\d{1,2}):" r"(?P<s>\d{1,2})$"
         ),
         # HH:MM:SS
         re.compile(r"^(?P<h>\d{1,2}):(?P<m>\d{1,2}):(?P<s>\d{1,2})$"),
         # MMDDYY
         re.compile(r"^(?P<month>\d{2})(?P<day>\d{2})(?P<year>\d{2})$"),
         # MM/DD/YY
-        re.compile(
-            r"^(?P<month>\d{2})/(?P<day>\d{2})/(?P<year>\d{2})$"
-        ),
+        re.compile(r"^(?P<month>\d{2})/(?P<day>\d{2})/(?P<year>\d{2})$"),
         # MM.DD.YY
-        re.compile(
-            r"^(?P<month>\d{2})\.(?P<day>\d{2})\.(?P<year>\d{2})$"
-        ),
+        re.compile(r"^(?P<month>\d{2})\.(?P<day>\d{2})\.(?P<year>\d{2})$"),
     ]
 
     # Subclasses should define their valid_args
@@ -75,9 +70,7 @@ class BaseSlurmResource:
                 key = cls.arg_aliases[key]
 
             # Try to match key as a prefix of exactly one valid_args key
-            matches = [
-                k for k in cls.valid_args.keys() if k.startswith(key)
-            ]
+            matches = [k for k in cls.valid_args.keys() if k.startswith(key)]
             if len(matches) == 1:
                 full_key = matches[0]
             elif key not in cls.valid_args.keys():
@@ -95,9 +88,7 @@ class BaseSlurmResource:
                 try:
                     set[full_key] = int(value)
                 except ValueError:
-                    console.print(
-                        f"Invalid integer argument: {full_key}={value}"
-                    )
+                    console.print(f"Invalid integer argument: {full_key}={value}")
                     return False
             elif key_type == "list":
                 set[full_key] = value.split(",")
@@ -106,31 +97,21 @@ class BaseSlurmResource:
                     if value.endswith("M"):
                         set[full_key] = int(value.rstrip("M")) * 1024
                     elif value.endswith("G"):
-                        set[full_key] = (
-                            int(value.rstrip("G")) * 1024 * 1024
-                        )
+                        set[full_key] = int(value.rstrip("G")) * 1024 * 1024
                     else:
-                        console.print(
-                            f"Invalid memory argument: {full_key}={value}"
-                        )
+                        console.print(f"Invalid memory argument: {full_key}={value}")
                         return False
                 except ValueError:
-                    console.print(
-                        f"Invalid memory argument: {full_key}={value}"
-                    )
+                    console.print(f"Invalid memory argument: {full_key}={value}")
                     return False
             elif key_type == "time":
                 try:
                     set[full_key] = cls._parse_time_value(value)
                 except Exception:
-                    console.print(
-                        f"Invalid time argument: {full_key}={value}"
-                    )
+                    console.print(f"Invalid time argument: {full_key}={value}")
                     return False
             elif key_type[0] == "[" and key_type[-1] == "]":
-                valid_values = [
-                    v.strip() for v in key_type[1:-1].split(",")
-                ]
+                valid_values = [v.strip() for v in key_type[1:-1].split(",")]
                 if value.lower() not in valid_values:
                     console.print(
                         f"Invalid list argument: {full_key}={value}."
@@ -151,8 +132,7 @@ class BaseSlurmResource:
                 set[full_key] = value
             else:
                 console.print(
-                    f"Invalid argument: {full_key}={value}. "
-                    f"{key_type} not found"
+                    f"Invalid argument: {full_key}={value}. " f"{key_type} not found"
                 )
                 return False
             if arg_type:
@@ -251,9 +231,7 @@ class BaseSlurmResource:
         return something_was_printed
 
     @classmethod
-    def print_dict_pretty_def(
-        cls, data: dict, value_types: dict
-    ) -> bool:
+    def print_dict_pretty_def(cls, data: dict, value_types: dict) -> bool:
         """Print a dictionary skipping the default values
         in a pretty format."""
         line_len = 2

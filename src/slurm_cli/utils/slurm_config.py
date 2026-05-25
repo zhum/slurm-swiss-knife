@@ -29,9 +29,7 @@ class Config(BaseSlurmResource):
             if result.stdout:
                 console.print(result.stdout)
         except subprocess.CalledProcessError as e:
-            console.print(
-                f"[red]Failed to update config:[/red] {e.stderr or e}"
-            )
+            console.print(f"[red]Failed to update config:[/red] {e.stderr or e}")
 
     @classmethod
     def show(
@@ -45,9 +43,7 @@ class Config(BaseSlurmResource):
     ) -> None:
         """Show a config."""
         # Get profile configuration (for future enhancement)
-        _, _, _, _, _ = get_profile_config(
-            profile, "config", profile_str
-        )
+        _, _, _, _, _ = get_profile_config(profile, "config", profile_str)
         try:
             if style == "json":
                 result = subprocess.run(
@@ -68,6 +64,4 @@ class Config(BaseSlurmResource):
                 if result.stdout:
                     console.print(result.stdout)
         except subprocess.CalledProcessError as e:
-            console.print(
-                f"[red]Failed to show config:[/red] {e.stderr or e}"
-            )
+            console.print(f"[red]Failed to show config:[/red] {e.stderr or e}")

@@ -68,9 +68,7 @@ def is_node_filter(value: str) -> bool:
     return any(value_lower.startswith(p) for p in NODE_FILTER_PREFIXES)
 
 
-def resolve_node_filter(
-    filter_expr: str, verbose: bool = False
-) -> Optional[str]:
+def resolve_node_filter(filter_expr: str, verbose: bool = False) -> Optional[str]:
     """Resolve a node filter expression to a comma-separated list of nodes.
 
     Args:
@@ -110,9 +108,7 @@ def resolve_node_filter(
         return filter_expr
 
 
-def _get_nodes_by_partition(
-    partition: str, verbose: bool = False
-) -> str:
+def _get_nodes_by_partition(partition: str, verbose: bool = False) -> str:
     """Get nodes belonging to a specific partition."""
     try:
         result = subprocess.run(
@@ -125,9 +121,7 @@ def _get_nodes_by_partition(
         partitions = data.get("partitions", [])
         if not partitions:
             if verbose:
-                console.print(
-                    f"[yellow]No partition '{partition}' found[/yellow]"
-                )
+                console.print(f"[yellow]No partition '{partition}' found[/yellow]")
             return ""
 
         # Get nodes from partition
@@ -139,24 +133,18 @@ def _get_nodes_by_partition(
             node_list = nodes
 
         if verbose:
-            console.print(
-                f"[dim]Nodes from partition '{partition}': {node_list}[/dim]"
-            )
+            console.print(f"[dim]Nodes from partition '{partition}': {node_list}[/dim]")
         return node_list
     except subprocess.CalledProcessError as e:
         if verbose:
-            console.print(
-                f"[red]Failed to get nodes from partition: {e.stderr}[/red]"
-            )
+            console.print(f"[red]Failed to get nodes from partition: {e.stderr}[/red]")
         return ""
     except json.JSONDecodeError:
         # Try non-JSON fallback
         return _get_nodes_by_partition_text(partition, verbose)
 
 
-def _get_nodes_by_partition_text(
-    partition: str, verbose: bool = False
-) -> str:
+def _get_nodes_by_partition_text(partition: str, verbose: bool = False) -> str:
     """Get nodes from partition using text output (fallback)."""
     try:
         result = subprocess.run(
@@ -167,9 +155,7 @@ def _get_nodes_by_partition_text(
         )
         nodes = result.stdout.strip()
         if verbose:
-            console.print(
-                f"[dim]Nodes from partition '{partition}': {nodes}[/dim]"
-            )
+            console.print(f"[dim]Nodes from partition '{partition}': {nodes}[/dim]")
         return nodes
     except subprocess.CalledProcessError:
         return ""
@@ -202,15 +188,11 @@ def _get_nodes_by_state(state: str, verbose: bool = False) -> str:
                     break
         nodes = ",".join(sorted(node_set))
         if verbose:
-            console.print(
-                f"[dim]Nodes with state '{state}': {nodes}[/dim]"
-            )
+            console.print(f"[dim]Nodes with state '{state}': {nodes}[/dim]")
         return nodes
     except subprocess.CalledProcessError as e:
         if verbose:
-            console.print(
-                f"[red]Failed to get nodes by state: {e.stderr}[/red]"
-            )
+            console.print(f"[red]Failed to get nodes by state: {e.stderr}[/red]")
         return ""
     except json.JSONDecodeError:
         return _get_nodes_by_state_text(state, verbose)
@@ -231,9 +213,7 @@ def _get_nodes_by_state_text(state: str, verbose: bool = False) -> str:
                 node_set.add(line.strip())
         nodes = ",".join(sorted(node_set))
         if verbose:
-            console.print(
-                f"[dim]Nodes with state '{state}': {nodes}[/dim]"
-            )
+            console.print(f"[dim]Nodes with state '{state}': {nodes}[/dim]")
         return nodes
     except subprocess.CalledProcessError:
         return ""
@@ -262,15 +242,11 @@ def _get_nodes_by_user(user: str, verbose: bool = False) -> str:
 
         nodes = ",".join(sorted(node_set))
         if verbose:
-            console.print(
-                f"[dim]Nodes used by user '{user}': {nodes}[/dim]"
-            )
+            console.print(f"[dim]Nodes used by user '{user}': {nodes}[/dim]")
         return nodes
     except subprocess.CalledProcessError as e:
         if verbose:
-            console.print(
-                f"[red]Failed to get nodes by user: {e.stderr}[/red]"
-            )
+            console.print(f"[red]Failed to get nodes by user: {e.stderr}[/red]")
         return ""
     except json.JSONDecodeError:
         # Fallback to text parsing
@@ -293,17 +269,13 @@ def _get_nodes_by_user_text(user: str, verbose: bool = False) -> str:
 
         nodes = ",".join(sorted(node_set))
         if verbose:
-            console.print(
-                f"[dim]Nodes used by user '{user}': {nodes}[/dim]"
-            )
+            console.print(f"[dim]Nodes used by user '{user}': {nodes}[/dim]")
         return nodes
     except subprocess.CalledProcessError:
         return ""
 
 
-def _get_nodes_by_reservation(
-    reservation: str, verbose: bool = False
-) -> str:
+def _get_nodes_by_reservation(reservation: str, verbose: bool = False) -> str:
     """Get nodes in a specific reservation."""
     try:
         result = subprocess.run(
@@ -316,30 +288,22 @@ def _get_nodes_by_reservation(
         reservations = data.get("reservations", [])
         if not reservations:
             if verbose:
-                console.print(
-                    f"[yellow]No reservation '{reservation}' found[/yellow]"
-                )
+                console.print(f"[yellow]No reservation '{reservation}' found[/yellow]")
             return ""
 
         nodes = reservations[0].get("node_list", "")
         if verbose:
-            console.print(
-                f"[dim]Nodes in reservation '{reservation}': {nodes}[/dim]"
-            )
+            console.print(f"[dim]Nodes in reservation '{reservation}': {nodes}[/dim]")
         return nodes
     except subprocess.CalledProcessError as e:
         if verbose:
-            console.print(
-                f"[red]Failed to get reservation nodes: {e.stderr}[/red]"
-            )
+            console.print(f"[red]Failed to get reservation nodes: {e.stderr}[/red]")
         return ""
     except json.JSONDecodeError:
         return _get_nodes_by_reservation_text(reservation, verbose)
 
 
-def _get_nodes_by_reservation_text(
-    reservation: str, verbose: bool = False
-) -> str:
+def _get_nodes_by_reservation_text(reservation: str, verbose: bool = False) -> str:
     """Get nodes from reservation using text output (fallback)."""
     try:
         result = subprocess.run(
@@ -366,9 +330,7 @@ def _get_nodes_by_reservation_text(
         return ""
 
 
-def _get_nodes_by_reason(
-    reason_pattern: str, verbose: bool = False
-) -> str:
+def _get_nodes_by_reason(reason_pattern: str, verbose: bool = False) -> str:
     """Get nodes with reason matching a regex pattern.
 
     Args:
@@ -392,8 +354,7 @@ def _get_nodes_by_reason(
         except re.error as e:
             if verbose:
                 console.print(
-                    f"[red]Invalid regex pattern '{reason_pattern}': "
-                    f"{e}[/red]"
+                    f"[red]Invalid regex pattern '{reason_pattern}': " f"{e}[/red]"
                 )
             return ""
 
@@ -406,23 +367,18 @@ def _get_nodes_by_reason(
         nodes = ",".join(sorted(node_set))
         if verbose:
             console.print(
-                f"[dim]Nodes matching reason '{reason_pattern}': "
-                f"{nodes}[/dim]"
+                f"[dim]Nodes matching reason '{reason_pattern}': " f"{nodes}[/dim]"
             )
         return nodes
     except subprocess.CalledProcessError as e:
         if verbose:
-            console.print(
-                f"[red]Failed to get nodes by reason: {e.stderr}[/red]"
-            )
+            console.print(f"[red]Failed to get nodes by reason: {e.stderr}[/red]")
         return ""
     except json.JSONDecodeError:
         return _get_nodes_by_reason_text(reason_pattern, verbose)
 
 
-def _get_nodes_by_reason_text(
-    reason_pattern: str, verbose: bool = False
-) -> str:
+def _get_nodes_by_reason_text(reason_pattern: str, verbose: bool = False) -> str:
     """Get nodes by reason using text output (fallback)."""
     try:
         result = subprocess.run(
@@ -457,8 +413,7 @@ def _get_nodes_by_reason_text(
         nodes = ",".join(sorted(node_set))
         if verbose:
             console.print(
-                f"[dim]Nodes matching reason '{reason_pattern}': "
-                f"{nodes}[/dim]"
+                f"[dim]Nodes matching reason '{reason_pattern}': " f"{nodes}[/dim]"
             )
         return nodes
     except subprocess.CalledProcessError:
@@ -679,9 +634,7 @@ def resolve_node_filters(
     result_nodes = include_nodes - exclude_nodes
 
     if verbose and exclude_nodes:
-        console.print(
-            f"[dim]After exclusions: {len(result_nodes)} nodes[/dim]"
-        )
+        console.print(f"[dim]After exclusions: {len(result_nodes)} nodes[/dim]")
 
     return result_nodes, other_args
 

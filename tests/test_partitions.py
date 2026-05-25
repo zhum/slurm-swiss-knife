@@ -136,13 +136,9 @@ class TestPartitionCreate:
     @mock.patch("slurm_cli.utils.partitions.console.print")
     def test_create_with_stdout(self, mock_print, mock_run):
         """Test create with stdout output."""
-        mock_run.return_value = mock.Mock(
-            stdout="Partition created", returncode=0
-        )
+        mock_run.return_value = mock.Mock(stdout="Partition created", returncode=0)
 
-        Partition.create(
-            "test-partition", verbose=True, nodes="node001"
-        )
+        Partition.create("test-partition", verbose=True, nodes="node001")
 
         assert mock_print.call_count >= 1
 
@@ -183,9 +179,7 @@ class TestPartitionCreate:
         Partition.create("test-partition", state="UP")
 
         call_args = [str(c) for c in mock_print.call_args_list]
-        assert any(
-            "Failed" in str(c) or "red" in str(c) for c in call_args
-        )
+        assert any("Failed" in str(c) or "red" in str(c) for c in call_args)
 
 
 class TestPartitionUpdate:
@@ -209,13 +203,9 @@ class TestPartitionUpdate:
     @mock.patch("slurm_cli.utils.partitions.console.print")
     def test_update_with_verbose(self, mock_print, mock_run):
         """Test update with verbose output."""
-        mock_run.return_value = mock.Mock(
-            stdout="Updated", returncode=0
-        )
+        mock_run.return_value = mock.Mock(stdout="Updated", returncode=0)
 
-        Partition.update(
-            "test-partition", verbose=True, maxtime="2-00:00:00"
-        )
+        Partition.update("test-partition", verbose=True, maxtime="2-00:00:00")
 
         assert mock_print.call_count >= 1
 
@@ -225,10 +215,12 @@ class TestPartitionUpdate:
         """Test update with add operations."""
         mock_run.return_value = mock.Mock(stdout="", returncode=0)
 
-        Partition.update("test-partition",
-                         verbose=True,
-                         dry_run=False,
-                         **{"nodes+": "node100"})
+        Partition.update(
+            "test-partition",
+            verbose=True,
+            dry_run=False,
+            **{"nodes+": "node100"},
+        )
 
         mock_run.assert_called_once()
 
@@ -238,10 +230,12 @@ class TestPartitionUpdate:
         """Test update with delete operations."""
         mock_run.return_value = mock.Mock(stdout="", returncode=0)
 
-        Partition.update("test-partition",
-                         verbose=True,
-                         dry_run=False,
-                         **{"nodes-": "node001"})
+        Partition.update(
+            "test-partition",
+            verbose=True,
+            dry_run=False,
+            **{"nodes-": "node001"},
+        )
 
         mock_run.assert_called_once()
 
@@ -256,9 +250,7 @@ class TestPartitionUpdate:
         Partition.update("test-partition", state="UP")
 
         call_args = [str(c) for c in mock_print.call_args_list]
-        assert any(
-            "Failed" in str(c) or "red" in str(c) for c in call_args
-        )
+        assert any("Failed" in str(c) or "red" in str(c) for c in call_args)
 
 
 class TestPartitionDelete:
@@ -280,9 +272,7 @@ class TestPartitionDelete:
     @mock.patch("slurm_cli.utils.partitions.console.print")
     def test_delete_with_stdout(self, mock_print, mock_run):
         """Test delete with stdout output."""
-        mock_run.return_value = mock.Mock(
-            stdout="Partition deleted", returncode=0
-        )
+        mock_run.return_value = mock.Mock(stdout="Partition deleted", returncode=0)
 
         Partition.delete("test-partition")
 
@@ -299,9 +289,7 @@ class TestPartitionDelete:
         Partition.delete("nonexistent")
 
         call_args = [str(c) for c in mock_print.call_args_list]
-        assert any(
-            "Failed" in str(c) or "red" in str(c) for c in call_args
-        )
+        assert any("Failed" in str(c) or "red" in str(c) for c in call_args)
 
 
 class TestPartitionShow:
@@ -477,9 +465,7 @@ class TestPartitionShowOnePretty:
         Partition.show_one_pretty("gpu", data)
 
         call_args = [str(c) for c in mock_print.call_args_list]
-        assert any(
-            "DRN" in str(c) or "DRAIN" in str(c) for c in call_args
-        )
+        assert any("DRN" in str(c) or "DRAIN" in str(c) for c in call_args)
 
     @mock.patch("slurm_cli.utils.partitions.console.print")
     def test_show_one_pretty_down_state(self, mock_print):
@@ -490,9 +476,7 @@ class TestPartitionShowOnePretty:
         Partition.show_one_pretty("gpu", data)
 
         call_args = [str(c) for c in mock_print.call_args_list]
-        assert any(
-            "DWN" in str(c) or "DOWN" in str(c) for c in call_args
-        )
+        assert any("DWN" in str(c) or "DOWN" in str(c) for c in call_args)
 
     @mock.patch("slurm_cli.utils.partitions.console.print")
     def test_show_one_pretty_inactive_state(self, mock_print):
@@ -503,25 +487,19 @@ class TestPartitionShowOnePretty:
         Partition.show_one_pretty("gpu", data)
 
         call_args = [str(c) for c in mock_print.call_args_list]
-        assert any(
-            "INA" in str(c) or "INACTIVE" in str(c) for c in call_args
-        )
+        assert any("INA" in str(c) or "INACTIVE" in str(c) for c in call_args)
 
     @mock.patch("slurm_cli.utils.partitions.console.print")
     def test_show_one_pretty_long_nodelist(self, mock_print):
         """Test show_one_pretty truncates long node list."""
         data = dict(create_sample_partition_data()["gpu"])
-        data["Nodes"] = (
-            "node[" + ",".join(str(i) for i in range(1, 1000)) + "]"
-        )
+        data["Nodes"] = "node[" + ",".join(str(i) for i in range(1, 1000)) + "]"
 
         # Mock console width to force truncation
         with mock.patch.object(Partition, "_WIDTH", 80):
             Partition.show_one_pretty("gpu", data)
 
-        call_args_str = "".join(
-            str(c) for c in mock_print.call_args_list
-        )
+        call_args_str = "".join(str(c) for c in mock_print.call_args_list)
         # Should be truncated with ...
         assert "..." in call_args_str or "node[" in call_args_str
 
@@ -535,10 +513,7 @@ class TestPartitionShowOnePretty:
 
         call_args = [str(c) for c in mock_print.call_args_list]
         # Should have warning about unknown fields
-        assert any(
-            "Warning" in str(c) or "Unknown" in str(c)
-            for c in call_args
-        )
+        assert any("Warning" in str(c) or "Unknown" in str(c) for c in call_args)
 
 
 class TestPartitionValidArgs:

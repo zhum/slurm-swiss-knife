@@ -3,16 +3,12 @@
 import json
 import subprocess
 from datetime import datetime
-from typing import Any, Optional, Union, Dict
+from typing import Any, Dict, Optional, Union
 
 from rich.markup import escape
 
 from .base_resource import BaseSlurmResource
-from .profiles import (
-    format_with_template,
-    get_profile_config,
-    sort_data,
-)
+from .profiles import format_with_template, get_profile_config, sort_data
 
 # from .resources import Resource
 from .utils import console
@@ -54,8 +50,7 @@ class Reservation(BaseSlurmResource):
         },
         "burstbuffer": {
             "type": "list",
-            "help": "Comma-separated list of burst buffer resources"
-            "to be reserved",
+            "help": "Comma-separated list of burst buffer resources" "to be reserved",
         },
         "corecnt": {
             "type": "int",
@@ -125,8 +120,7 @@ class Reservation(BaseSlurmResource):
         },
         "trespernode": {
             "type": "list",
-            "help": "Comma-separated list of TRES per node"
-            "to be reserved",
+            "help": "Comma-separated list of TRES per node" "to be reserved",
         },
     }
 
@@ -142,18 +136,14 @@ class Reservation(BaseSlurmResource):
         return cls._WIDTH
 
     @classmethod
-    def create(
-        cls, name: str, verbose: bool = False, **kwargs: Any
-    ) -> None:
+    def create(cls, name: str, verbose: bool = False, **kwargs: Any) -> None:
         """Create a new reservation."""
         set = {}
         add = {}
         delete = {}
         if not cls._check_args(kwargs, set, add, delete):
             return
-        options = " ".join(
-            [f"{key}={value}" for key, value in set.items()]
-        )
+        options = " ".join([f"{key}={value}" for key, value in set.items()])
         if len(add) > 0:
             console.print(
                 "[yellow]Warning: Adding options is not supported"
@@ -166,9 +156,7 @@ class Reservation(BaseSlurmResource):
             )
         if len(set) > 0:
             options += " "
-            options += " ".join(
-                [f"{key}-={value}" for key, value in delete.items()]
-            )
+            options += " ".join([f"{key}-={value}" for key, value in delete.items()])
         args = [
             "scontrol",
             "create",
@@ -188,14 +176,12 @@ class Reservation(BaseSlurmResource):
                 console.print(result.stdout)
             if verbose:
                 console.print(
-                    f"[green]Reservation '{name}' "
-                    "created successfully.[/green]"
+                    f"[green]Reservation '{name}' " "created successfully.[/green]"
                 )
 
         except subprocess.CalledProcessError as e:
             console.print(
-                f"[red]Failed to create reservation '{name}':[/red]"
-                f" {e.stderr or e}"
+                f"[red]Failed to create reservation '{name}':[/red]" f" {e.stderr or e}"
             )
 
     @classmethod
@@ -212,19 +198,13 @@ class Reservation(BaseSlurmResource):
         delete = {}
         if not cls._check_args(kwargs, set, add, delete):
             return
-        options = " ".join(
-            [f"{key}={value}" for key, value in set.items()]
-        )
+        options = " ".join([f"{key}={value}" for key, value in set.items()])
         if len(add) > 0:
             options += " "
-            options += " ".join(
-                [f"{key}+={value}" for key, value in add.items()]
-            )
+            options += " ".join([f"{key}+={value}" for key, value in add.items()])
         if len(delete) > 0:
             options += " "
-            options += " ".join(
-                [f"{key}-={value}" for key, value in delete.items()]
-            )
+            options += " ".join([f"{key}-={value}" for key, value in delete.items()])
         args = [
             "scontrol",
             "update",
@@ -247,13 +227,11 @@ class Reservation(BaseSlurmResource):
                 console.print(result.stdout)
             if verbose:
                 console.print(
-                    f"[green]Reservation '{name}' "
-                    "updated successfully.[/green]"
+                    f"[green]Reservation '{name}' " "updated successfully.[/green]"
                 )
         except subprocess.CalledProcessError as e:
             console.print(
-                f"[red]Failed to update reservation '{name}':[/red]"
-                f" {e.stderr or e}"
+                f"[red]Failed to update reservation '{name}':[/red]" f" {e.stderr or e}"
             )
 
     @classmethod
@@ -274,13 +252,11 @@ class Reservation(BaseSlurmResource):
             if result.stdout:
                 console.print(result.stdout)
             console.print(
-                f"[green]Reservation '{name}' "
-                "deleted successfully.[/green]"
+                f"[green]Reservation '{name}' " "deleted successfully.[/green]"
             )
         except subprocess.CalledProcessError as e:
             console.print(
-                f"[red]Failed to delete reservation '{name}':[/red]"
-                f" {e.stderr or e}"
+                f"[red]Failed to delete reservation '{name}':[/red]" f" {e.stderr or e}"
             )
 
     @classmethod
@@ -325,18 +301,14 @@ class Reservation(BaseSlurmResource):
             elif template:
                 # Use template-based output
                 if name:
-                    res_data = cls._prepare_template_data(
-                        name, data[name]
-                    )
+                    res_data = cls._prepare_template_data(name, data[name])
                     output = format_with_template(
                         template, res_data, resource="reservations"
                     )
                     console.print(output)
                 else:
                     for res_name, res_data in data.items():
-                        prepared = cls._prepare_template_data(
-                            res_name, res_data
-                        )
+                        prepared = cls._prepare_template_data(res_name, res_data)
                         output = format_with_template(
                             template, prepared, resource="reservations"
                         )
@@ -348,9 +320,7 @@ class Reservation(BaseSlurmResource):
                     for res in data.keys():
                         cls.print_one_pretty(res, data[res])
         except subprocess.CalledProcessError as e:
-            console.print(
-                f"[red]Failed to show reservations:[/red] {e.stderr or e}"
-            )
+            console.print(f"[red]Failed to show reservations:[/red] {e.stderr or e}")
 
     @classmethod
     def _prepare_template_data(cls, name: str, data: dict) -> dict:
@@ -361,21 +331,15 @@ class Reservation(BaseSlurmResource):
         # Format timestamps
         start_time = cls._get_timestamp(data.get("start_time"))
         end_time = cls._get_timestamp(data.get("end_time"))
-        result["start_time"] = (
-            cls.tm2str(start_time) if start_time else "-"
-        )
+        result["start_time"] = cls.tm2str(start_time) if start_time else "-"
         result["end_time"] = cls.tm2str(end_time) if end_time else "-"
 
         # Calculate deltas
         now = int(datetime.now().timestamp())
         if start_time > now:
-            result[
-                "time_status"
-            ] = f"starts in {cls.delta2str(start_time - now)}"
+            result["time_status"] = f"starts in {cls.delta2str(start_time - now)}"
         elif end_time > now:
-            result[
-                "time_status"
-            ] = f"ends in {cls.delta2str(end_time - now)}"
+            result["time_status"] = f"ends in {cls.delta2str(end_time - now)}"
         else:
             result["time_status"] = "expired"
 
@@ -384,9 +348,7 @@ class Reservation(BaseSlurmResource):
             result["users"] = ",".join(result["users"])
 
         # Format accounts list
-        if "accounts" in result and isinstance(
-            result["accounts"], list
-        ):
+        if "accounts" in result and isinstance(result["accounts"], list):
             result["accounts"] = ",".join(result["accounts"])
 
         return result
@@ -415,11 +377,7 @@ class Reservation(BaseSlurmResource):
         ]
 
         # Print header
-        print(
-            delimiter.join(
-                col.title().replace("_", " ") for col in columns
-            )
-        )
+        print(delimiter.join(col.title().replace("_", " ") for col in columns))
 
         # Filter data if name is specified
         items = {name: data[name]} if name else data
@@ -567,13 +525,9 @@ class Reservation(BaseSlurmResource):
         """
 
         # Get valid argument keys including aliases
-        valid_keys = list(cls.valid_args.keys()) + list(
-            cls.arg_aliases.keys()
-        )
+        valid_keys = list(cls.valid_args.keys()) + list(cls.arg_aliases.keys())
         # Build types dict including aliases pointing to their canonical types
-        valid_types_list = [
-            f'[{k}]="{v["type"]}"' for k, v in cls.valid_args.items()
-        ]
+        valid_types_list = [f'[{k}]="{v["type"]}"' for k, v in cls.valid_args.items()]
         # Add alias types (point to same type as canonical)
         for alias, canonical in cls.arg_aliases.items():
             if canonical in cls.valid_args:

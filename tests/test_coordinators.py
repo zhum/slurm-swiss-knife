@@ -14,9 +14,7 @@ sys.path.insert(0, "src")
 from slurm_cli.utils.coordinators import Coordinator  # noqa: E402
 
 
-def create_mock_subprocess_result(
-    stdout: str = "", returncode: int = 0
-):
+def create_mock_subprocess_result(stdout: str = "", returncode: int = 0):
     """Create a mock subprocess.CompletedProcess result."""
     mock_result = MagicMock()
     mock_result.stdout = stdout
@@ -54,9 +52,7 @@ class TestCoordinatorCreate:
         with patch.object(subprocess, "run", return_value=mock_result):
             output = io.StringIO()
             with redirect_stdout(output):
-                Coordinator.create(
-                    user_name="myuser", account="myaccount"
-                )
+                Coordinator.create(user_name="myuser", account="myaccount")
 
             result = output.getvalue()
             assert "added" in result.lower()
@@ -70,9 +66,7 @@ class TestCoordinatorCreate:
         with patch.object(subprocess, "run", return_value=mock_result):
             output = io.StringIO()
             with redirect_stdout(output):
-                Coordinator.create(
-                    user_name="myuser", account="myaccount"
-                )
+                Coordinator.create(user_name="myuser", account="myaccount")
 
             result = output.getvalue()
             assert "Coordinator added successfully" in result
@@ -98,9 +92,7 @@ class TestCoordinatorCreate:
     def test_create_coordinator_with_verbose(self):
         """Test coordinator creation with verbose output."""
         mock_result = create_mock_subprocess_result()
-        with patch.object(
-            subprocess, "run", return_value=mock_result
-        ) as mock_run:
+        with patch.object(subprocess, "run", return_value=mock_result) as mock_run:
             output = io.StringIO()
             with redirect_stdout(output):
                 Coordinator.create(
@@ -122,15 +114,11 @@ class TestCoordinatorCreate:
 
     def test_create_coordinator_failure(self):
         """Test coordinator creation failure handling."""
-        error = subprocess.CalledProcessError(
-            1, "sacctmgr", stderr="Permission denied"
-        )
+        error = subprocess.CalledProcessError(1, "sacctmgr", stderr="Permission denied")
         with patch.object(subprocess, "run", side_effect=error):
             output = io.StringIO()
             with redirect_stdout(output):
-                Coordinator.create(
-                    user_name="myuser", account="myaccount"
-                )
+                Coordinator.create(user_name="myuser", account="myaccount")
 
             result = output.getvalue()
             assert "Failed to create coordinator" in result
@@ -141,9 +129,7 @@ class TestCoordinatorCreate:
         with patch.object(subprocess, "run", side_effect=error):
             output = io.StringIO()
             with redirect_stdout(output):
-                Coordinator.create(
-                    user_name="myuser", account="myaccount"
-                )
+                Coordinator.create(user_name="myuser", account="myaccount")
 
             result = output.getvalue()
             assert "Failed to create coordinator" in result
@@ -231,9 +217,7 @@ class TestCoordinatorShow:
 
     def test_show_pretty_style(self):
         """Test show with pretty style (default)."""
-        mock_json = create_mock_coord_json(
-            [{"name": "myuser", "account": "myaccount"}]
-        )
+        mock_json = create_mock_coord_json([{"name": "myuser", "account": "myaccount"}])
         mock_result = create_mock_subprocess_result(stdout=mock_json)
         with patch.object(subprocess, "run", return_value=mock_result):
             Coordinator.show(style="pretty")
@@ -288,9 +272,7 @@ class TestCoordinatorShow:
 
     def test_show_no_coordinators(self):
         """Test show when accounts have no coordinators."""
-        mock_json = (
-            '{"accounts": [{"name": "test", "coordinators": []}]}'
-        )
+        mock_json = '{"accounts": [{"name": "test", "coordinators": []}]}'
         mock_result = create_mock_subprocess_result(stdout=mock_json)
         with patch.object(subprocess, "run", return_value=mock_result):
             Coordinator.show()
@@ -298,9 +280,7 @@ class TestCoordinatorShow:
 
     def test_show_subprocess_error(self):
         """Test show with subprocess error."""
-        error = subprocess.CalledProcessError(
-            1, "sacctmgr", stderr="Permission denied"
-        )
+        error = subprocess.CalledProcessError(1, "sacctmgr", stderr="Permission denied")
         with patch.object(subprocess, "run", side_effect=error):
             output = io.StringIO()
             with redirect_stdout(output):
@@ -327,9 +307,7 @@ class TestCoordinatorShow:
         )
         mock_result = create_mock_subprocess_result(stdout=mock_json)
         with patch.object(subprocess, "run", return_value=mock_result):
-            Coordinator.show(
-                profile_str="coordinators.columns=name,account"
-            )
+            Coordinator.show(profile_str="coordinators.columns=name,account")
             # Should not crash
 
     def test_show_with_delimiter(self):

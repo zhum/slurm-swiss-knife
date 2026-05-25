@@ -379,12 +379,8 @@ DEFAULT_PROFILES: Dict[str, Dict[str, Any]] = {
                 "users=[hot_pink]{users}[/hot_pink]"
             )
         },
-        "coordinators": {
-            "template": "[cyan]{account}[/cyan]: [green]{name}[/green]"
-        },
-        "users": {
-            "template": "[cyan]{name}[/cyan] ({default_account})"
-        },
+        "coordinators": {"template": "[cyan]{account}[/cyan]: [green]{name}[/green]"},
+        "users": {"template": "[cyan]{name}[/cyan] ({default_account})"},
         "jobs": {
             "template": (
                 "[cyan bold]{job_id}[/cyan bold] "
@@ -463,9 +459,7 @@ class ProfileManager:
 
         self._loaded = True
 
-    def _parse_profile_file(
-        self, filepath: str
-    ) -> Dict[str, Dict[str, Any]]:
+    def _parse_profile_file(self, filepath: str) -> Dict[str, Dict[str, Any]]:
         """Parse a profile file.
 
         Format:
@@ -521,15 +515,11 @@ class ProfileManager:
                 key = key.strip()
                 value = value.strip()
 
-                self._set_nested_value(
-                    profiles[current_profile], key, value
-                )
+                self._set_nested_value(profiles[current_profile], key, value)
 
         return profiles
 
-    def _set_nested_value(
-        self, target: Dict[str, Any], key: str, value: str
-    ) -> None:
+    def _set_nested_value(self, target: Dict[str, Any], key: str, value: str) -> None:
         """Set a nested value in a dictionary.
 
         Key format: resource.columns, resource.styles.field,
@@ -550,18 +540,14 @@ class ProfileManager:
             if value == "*":
                 current[final_key] = "*"
             else:
-                current[final_key] = [
-                    v.strip() for v in value.split(",")
-                ]
+                current[final_key] = [v.strip() for v in value.split(",")]
         elif final_key == "template":
             # Keep template as-is, but convert escaped newlines
             current[final_key] = value
         else:
             current[final_key] = value
 
-    def _merge_profiles(
-        self, new_profiles: Dict[str, Dict[str, Any]]
-    ) -> None:
+    def _merge_profiles(self, new_profiles: Dict[str, Dict[str, Any]]) -> None:
         """Merge new profiles into existing profiles."""
         for name, profile in new_profiles.items():
             if name in self._profiles:
@@ -569,16 +555,10 @@ class ProfileManager:
             else:
                 self._profiles[name] = profile
 
-    def _deep_merge(
-        self, base: Dict[str, Any], override: Dict[str, Any]
-    ) -> None:
+    def _deep_merge(self, base: Dict[str, Any], override: Dict[str, Any]) -> None:
         """Deep merge override into base."""
         for key, value in override.items():
-            if (
-                key in base
-                and isinstance(base[key], dict)
-                and isinstance(value, dict)
-            ):
+            if key in base and isinstance(base[key], dict) and isinstance(value, dict):
                 self._deep_merge(base[key], value)
             else:
                 base[key] = value
@@ -602,9 +582,7 @@ class ProfileManager:
         self._load_profiles()
         return list(self._profiles.keys())
 
-    def parse_profile_string(
-        self, profile_str: str
-    ) -> Dict[str, Dict[str, Any]]:
+    def parse_profile_string(self, profile_str: str) -> Dict[str, Dict[str, Any]]:
         """Parse an inline profile string.
 
         Format: resource.columns=col1,col2;resource.template=[cyan]{name}[/]
@@ -640,9 +618,7 @@ class ProfileManager:
         for part in parts:
             if "=" in part:
                 key, value = part.split("=", 1)
-                self._set_nested_value(
-                    profile, key.strip(), value.strip()
-                )
+                self._set_nested_value(profile, key.strip(), value.strip())
 
         return profile
 
@@ -807,9 +783,7 @@ def get_template_for_resource(
     return None
 
 
-def _normalize_profile_str(
-    profile_str: Optional[str], resource: str
-) -> Optional[str]:
+def _normalize_profile_str(profile_str: Optional[str], resource: str) -> Optional[str]:
     """Normalize profile string, adding resource prefix if missing.
 
     Supports shorthand formats:
@@ -828,11 +802,7 @@ def _normalize_profile_str(
 
     # Check if it's already in proper format (has resource.key= pattern)
     # Look for pattern like "resource.columns=" or "resource.template="
-    if (
-        "." in profile_str.split("=")[0]
-        if "=" in profile_str
-        else False
-    ):
+    if "." in profile_str.split("=")[0] if "=" in profile_str else False:
         return profile_str
 
     # Check if it starts with "columns=" or "template=" or "styles="
@@ -895,21 +865,13 @@ def get_profile_config(
     # Normalize profile_str - add resource prefix if missing
     normalized_str = _normalize_profile_str(profile_str, resource)
 
-    columns = get_columns_for_resource(
-        profile_name, resource, normalized_str
-    )
+    columns = get_columns_for_resource(profile_name, resource, normalized_str)
 
     # Parse columns for sort info
-    columns, sort_field, sort_ascending = parse_columns_with_sort(
-        columns
-    )
+    columns, sort_field, sort_ascending = parse_columns_with_sort(columns)
 
-    styles = get_styles_for_resource(
-        profile_name, resource, normalized_str
-    )
-    template = get_template_for_resource(
-        profile_name, resource, normalized_str
-    )
+    styles = get_styles_for_resource(profile_name, resource, normalized_str)
+    template = get_template_for_resource(profile_name, resource, normalized_str)
     return columns, styles, template, sort_field, sort_ascending
 
 
@@ -1017,9 +979,7 @@ def format_with_template(
     # First, process conditional blocks {?field TEXT}
     # Pattern matches {?field_name any text including {field} until }
     # We need to handle nested braces carefully
-    conditional_pattern = re.compile(
-        r"\{\?(\w+)\s+([^{}]*(?:\{[^{}]*\}[^{}]*)*)\}"
-    )
+    conditional_pattern = re.compile(r"\{\?(\w+)\s+([^{}]*(?:\{[^{}]*\}[^{}]*)*)\}")
 
     def replace_conditional(match: re.Match) -> str:
         field = match.group(1)
@@ -1158,9 +1118,7 @@ def show_profile_help(resource: str) -> bool:
     resource_fields = get_resource_fields()
     if full_resource not in resource_fields:
         print(f"No field documentation for resource: {resource}")
-        print(
-            f"Available resources: {', '.join(resource_fields.keys())}"
-        )
+        print(f"Available resources: {', '.join(resource_fields.keys())}")
         return True
 
     fields = resource_fields[full_resource]
@@ -1207,9 +1165,7 @@ def show_all_profile_fields() -> None:
     print("  field-              - Sort descending by field")
     print("\nTemplate syntax:")
     print("  {field}             - Show field value")
-    print(
-        "  {?field TEXT}       - Show TEXT only if field is not empty"
-    )
+    print("  {?field TEXT}       - Show TEXT only if field is not empty")
     print("  [color]...[/]       - Rich markup for colors")
     print("  \\n                  - Newline")
     print("\nExample:")
@@ -1338,13 +1294,9 @@ def _sort_with_depth(
         except (ValueError, TypeError):
             return (0 if is_account else 1, 0, str(value).lower())
 
-    def add_sorted_subtree(
-        items: List[Dict[str, Any]]
-    ) -> List[Dict[str, Any]]:
+    def add_sorted_subtree(items: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
         result = []
-        sorted_items = sorted(
-            items, key=sort_key, reverse=not ascending
-        )
+        sorted_items = sorted(items, key=sort_key, reverse=not ascending)
         for item in sorted_items:
             result.append(item)
             # Only account items can have children (not user items)
@@ -1352,9 +1304,7 @@ def _sort_with_depth(
             if is_account:
                 item_id = item.get(id_key, "")
                 if item_id in parent_children:
-                    result.extend(
-                        add_sorted_subtree(parent_children[item_id])
-                    )
+                    result.extend(add_sorted_subtree(parent_children[item_id]))
         return result
 
     return add_sorted_subtree(roots)

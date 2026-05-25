@@ -6,9 +6,7 @@ import re
 import subprocess
 from typing import Any, Dict, List, Optional, Union
 
-from rich.box import (
-    SIMPLE_HEAVY,
-)  # pyright: ignore[reportMissingImports]
+from rich.box import SIMPLE_HEAVY  # pyright: ignore[reportMissingImports]
 from rich.table import Table  # pyright: ignore[reportMissingImports]
 
 from .base_resource import BaseSlurmResource
@@ -40,9 +38,7 @@ def expand_node_ranges(node_spec: str) -> set:
                     # Preserve leading zeros
                     width = len(start)
                     for i in range(int(start), int(end) + 1):
-                        nodes.add(
-                            f"{prefix}{str(i).zfill(width)}{suffix}"
-                        )
+                        nodes.add(f"{prefix}{str(i).zfill(width)}{suffix}")
                 else:
                     nodes.add(f"{prefix}{range_part}{suffix}")
         else:
@@ -221,15 +217,11 @@ class Event(BaseSlurmResource):
 
             if key_lower == "clusters":
                 result = [
-                    e
-                    for e in result
-                    if e.get("cluster", "").lower() == value.lower()
+                    e for e in result if e.get("cluster", "").lower() == value.lower()
                 ]
             elif key_lower == "events":
                 result = [
-                    e
-                    for e in result
-                    if e.get("event", "").lower() == value.lower()
+                    e for e in result if e.get("event", "").lower() == value.lower()
                 ]
             elif key_lower == "nodes":
                 # Check if filter contains node ranges or multiple nodes
@@ -237,44 +229,30 @@ class Event(BaseSlurmResource):
                     # Expand node ranges to individual names for matching
                     filter_nodes = expand_node_ranges(value.lower())
                     result = [
-                        e
-                        for e in result
-                        if e.get("node", "").lower() in filter_nodes
+                        e for e in result if e.get("node", "").lower() in filter_nodes
                     ]
                 elif "," in value:
                     # Multiple comma-separated nodes (from resolved filter)
-                    filter_nodes = {
-                        n.strip().lower() for n in value.split(",")
-                    }
+                    filter_nodes = {n.strip().lower() for n in value.split(",")}
                     result = [
-                        e
-                        for e in result
-                        if e.get("node", "").lower() in filter_nodes
+                        e for e in result if e.get("node", "").lower() in filter_nodes
                     ]
                 else:
                     # Simple substring match for partial names
                     result = [
-                        e
-                        for e in result
-                        if value.lower() in e.get("node", "").lower()
+                        e for e in result if value.lower() in e.get("node", "").lower()
                     ]
             elif key_lower == "states":
                 result = [
-                    e
-                    for e in result
-                    if value.lower() in e.get("state", "").lower()
+                    e for e in result if value.lower() in e.get("state", "").lower()
                 ]
             elif key_lower == "user":
                 result = [
-                    e
-                    for e in result
-                    if value.lower() in e.get("user", "").lower()
+                    e for e in result if value.lower() in e.get("user", "").lower()
                 ]
             elif key_lower == "reason":
                 result = [
-                    e
-                    for e in result
-                    if value.lower() in e.get("reason", "").lower()
+                    e for e in result if value.lower() in e.get("reason", "").lower()
                 ]
             elif key_lower == "mincpus":
                 min_cpus = int(value)
@@ -295,26 +273,20 @@ class Event(BaseSlurmResource):
                 result = [
                     e
                     for e in result
-                    if cls._extract_nodes(e.get("tres", ""))
-                    >= min_nodes
+                    if cls._extract_nodes(e.get("tres", "")) >= min_nodes
                 ]
             elif key_lower == "maxnodes":
                 max_nodes = int(value)
                 result = [
                     e
                     for e in result
-                    if cls._extract_nodes(e.get("tres", ""))
-                    <= max_nodes
+                    if cls._extract_nodes(e.get("tres", "")) <= max_nodes
                 ]
             # Start and End filters would need date parsing - simplified here
             elif key_lower == "start":
-                result = [
-                    e for e in result if value in e.get("start", "")
-                ]
+                result = [e for e in result if value in e.get("start", "")]
             elif key_lower == "end":
-                result = [
-                    e for e in result if value in e.get("end", "")
-                ]
+                result = [e for e in result if value in e.get("end", "")]
 
         return result
 
@@ -344,7 +316,9 @@ class Event(BaseSlurmResource):
 
     @classmethod
     def _get_sacctmgr_command(
-        cls, filters: Union[Dict[str, str], None] = None, use_json: bool = False
+        cls,
+        filters: Union[Dict[str, str], None] = None,
+        use_json: bool = False,
     ) -> List[str]:
         """Build sacctmgr command with filters."""
         cmd = ["sacctmgr", "list", "event"]
@@ -425,18 +399,14 @@ class Event(BaseSlurmResource):
                     return events
                 # Got output but couldn't parse as JSON - set flag
                 with open(EVENTS_NO_JSON_FLAG, "w") as f:
-                    f.write(
-                        "JSON format not supported by this Slurm version"
-                    )
+                    f.write("JSON format not supported by this Slurm version")
             except (
                 subprocess.CalledProcessError,
                 json.JSONDecodeError,
             ):
                 # JSON failed - set flag and fall through to text format
                 with open(EVENTS_NO_JSON_FLAG, "w") as f:
-                    f.write(
-                        "JSON format not supported by this Slurm version"
-                    )
+                    f.write("JSON format not supported by this Slurm version")
 
         # Use text format
         cmd = cls._get_sacctmgr_command(filters, use_json=False)
@@ -576,9 +546,7 @@ class Event(BaseSlurmResource):
                 events = cls._apply_filters(events, filters)
 
             if not events:
-                console.print(
-                    "[yellow]No events matching filters found.[/yellow]"
-                )
+                console.print("[yellow]No events matching filters found.[/yellow]")
                 return
 
             # Apply sorting
@@ -593,8 +561,7 @@ class Event(BaseSlurmResource):
                 print(delimiter.join(columns))
                 for event in events:
                     row = [
-                        cls._format_value(event, col, truncate=False)
-                        for col in columns
+                        cls._format_value(event, col, truncate=False) for col in columns
                     ]
                     print(delimiter.join(row))
             else:
@@ -616,17 +583,13 @@ class Event(BaseSlurmResource):
                     row_style = None
                     if zebra and i % 2 == 1:
                         row_style = "on grey15"
-                    row = [
-                        cls._format_value(event, col) for col in columns
-                    ]
+                    row = [cls._format_value(event, col) for col in columns]
                     table.add_row(*row, style=row_style)
 
                 console.print(table)
 
         except subprocess.CalledProcessError as e:
-            console.print(
-                f"[red]Failed to show events:[/red] {e.stderr or e}"
-            )
+            console.print(f"[red]Failed to show events:[/red] {e.stderr or e}")
 
     @classmethod
     def create(cls, *args, **kwargs) -> None:
@@ -646,9 +609,7 @@ class Event(BaseSlurmResource):
     @classmethod
     def generate_autocomplete_options(cls) -> str:
         """Generate bash autocomplete script for event options."""
-        filter_opts = " ".join(
-            f"{opt}=" for opt in EVENT_FILTER_OPTIONS
-        )
+        filter_opts = " ".join(f"{opt}=" for opt in EVENT_FILTER_OPTIONS)
         states = "DOWN DRAIN FAIL FUTR IDLE MAINT POWER REBOOT"
 
         script = f"""

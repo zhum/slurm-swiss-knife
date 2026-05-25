@@ -138,9 +138,7 @@ class User(BaseSlurmResource):
     }
 
     @classmethod
-    def _match_filter(
-        cls, user: Dict[str, Any], key: str, value: str
-    ) -> bool:
+    def _match_filter(cls, user: Dict[str, Any], key: str, value: str) -> bool:
         """Check if a user matches the given filter.
 
         Handles field aliases and nested fields.
@@ -196,9 +194,7 @@ class User(BaseSlurmResource):
             "wckeys",
         ):
             if isinstance(value, list):
-                return (
-                    ", ".join(str(v) for v in value) if value else "-"
-                )
+                return ", ".join(str(v) for v in value) if value else "-"
         if value is None or value == "":
             return "-"
         return str(value)
@@ -351,9 +347,7 @@ _slurm_cli_users_autocomplete() {{
         return script
 
     @classmethod
-    def create(
-        cls, name: str, verbose: bool = False, **kwargs: Any
-    ) -> None:
+    def create(cls, name: str, verbose: bool = False, **kwargs: Any) -> None:
         """Create a new user."""
         console.print(f"Creating user: {name}")
         args = ["sacctmgr", "create", "user", name]
@@ -367,15 +361,11 @@ _slurm_cli_users_autocomplete() {{
                 capture_output=True,
                 text=True,
             )
-            console.print(
-                f"[green]User '{name}' created successfully.[/green]"
-            )
+            console.print(f"[green]User '{name}' created successfully.[/green]")
             if result.stdout:
                 console.print(result.stdout)
         except subprocess.CalledProcessError as e:
-            console.print(
-                f"[red]Failed to create user '{name}':[/red] {e.stderr or e}"
-            )
+            console.print(f"[red]Failed to create user '{name}':[/red] {e.stderr or e}")
 
     @classmethod
     def update(
@@ -415,9 +405,7 @@ _slurm_cli_users_autocomplete() {{
             # Simple mode - update by name
             args.extend(["where", f"name={name}"])
         else:
-            console.print(
-                "[red]No user name or WHERE conditions specified.[/red]"
-            )
+            console.print("[red]No user name or WHERE conditions specified.[/red]")
             return
 
         # Build SET clause
@@ -486,13 +474,10 @@ _slurm_cli_users_autocomplete() {{
             if result.stdout:
                 console.print(result.stdout)
             if verbose:
-                console.print(
-                    f"[green]User '{name}' updated successfully.[/green]"
-                )
+                console.print(f"[green]User '{name}' updated successfully.[/green]")
         except subprocess.CalledProcessError as e:
             console.print(
-                f"[red]Failed to update user '{name}':[/red] "
-                f"{e.stderr or e}"
+                f"[red]Failed to update user '{name}':[/red] " f"{e.stderr or e}"
             )
 
     @classmethod
@@ -513,15 +498,11 @@ _slurm_cli_users_autocomplete() {{
                 capture_output=True,
                 text=True,
             )
-            console.print(
-                f"[green]User '{name}' deleted successfully.[/green]"
-            )
+            console.print(f"[green]User '{name}' deleted successfully.[/green]")
             if result.stdout:
                 console.print(result.stdout)
         except subprocess.CalledProcessError as e:
-            console.print(
-                f"[red]Failed to delete user '{name}':[/red] {e.stderr or e}"
-            )
+            console.print(f"[red]Failed to delete user '{name}':[/red] {e.stderr or e}")
 
     @classmethod
     def show(
@@ -570,24 +551,17 @@ _slurm_cli_users_autocomplete() {{
                 if "=" in name:
                     key, value = name.split("=", 1)
                     key = key.lower()
-                    users = [
-                        u
-                        for u in users
-                        if cls._match_filter(u, key, value)
-                    ]
+                    users = [u for u in users if cls._match_filter(u, key, value)]
                     if not users:
                         console.print(
-                            f"[yellow]No users match filter "
-                            f"'{name}'.[/yellow]"
+                            f"[yellow]No users match filter " f"'{name}'.[/yellow]"
                         )
                         return
                 else:
                     # It's a username
                     users = [u for u in users if u.get("name") == name]
                     if not users:
-                        console.print(
-                            f"[yellow]User '{name}' not found.[/yellow]"
-                        )
+                        console.print(f"[yellow]User '{name}' not found.[/yellow]")
                         return
 
             # Get column configuration from profile (once)
@@ -609,16 +583,12 @@ _slurm_cli_users_autocomplete() {{
                 console.print_json(json.dumps(filtered_data, indent=2))
             elif style == "csv":
                 # Header
-                headers = [
-                    col.title().replace("_", " ") for col in columns
-                ]
+                headers = [col.title().replace("_", " ") for col in columns]
                 print(delimiter.join(headers))
 
                 # Data rows
                 for user in users:
-                    row = [
-                        cls._format_value(user, col) for col in columns
-                    ]
+                    row = [cls._format_value(user, col) for col in columns]
                     print(delimiter.join(row))
             else:  # pretty style
                 # Create table
@@ -627,15 +597,11 @@ _slurm_cli_users_autocomplete() {{
                 # Add columns with styles
                 for col in columns:
                     style = styles.get(col, "white")
-                    table.add_column(
-                        col.title().replace("_", " "), style=style
-                    )
+                    table.add_column(col.title().replace("_", " "), style=style)
 
                 # Add rows
                 for i, user in enumerate(users):
-                    row = [
-                        cls._format_value(user, col) for col in columns
-                    ]
+                    row = [cls._format_value(user, col) for col in columns]
                     if zebra and i % 2 == 1:
                         table.add_row(*row, style="dim")
                     else:
@@ -644,6 +610,4 @@ _slurm_cli_users_autocomplete() {{
                 console.print(table)
 
         except subprocess.CalledProcessError as e:
-            console.print(
-                f"[red]Failed to show users:[/red] {e.stderr or e}"
-            )
+            console.print(f"[red]Failed to show users:[/red] {e.stderr or e}")

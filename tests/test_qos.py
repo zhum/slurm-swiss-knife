@@ -15,9 +15,7 @@ sys.path.insert(0, "src")
 from slurm_cli.utils.qos import Qos  # noqa: E402
 
 
-def create_mock_subprocess_result(
-    stdout: str = "", returncode: int = 0
-):
+def create_mock_subprocess_result(stdout: str = "", returncode: int = 0):
     """Create a mock subprocess.CompletedProcess result."""
     mock_result = MagicMock()
     mock_result.stdout = stdout
@@ -73,9 +71,7 @@ class TestQosCreate:
     def test_create_qos_with_kwargs(self):
         """Test QoS creation with additional arguments."""
         mock_result = create_mock_subprocess_result()
-        with patch.object(
-            subprocess, "run", return_value=mock_result
-        ) as mock_run:
+        with patch.object(subprocess, "run", return_value=mock_result) as mock_run:
             Qos.create("newqos", priority=100, description="Test QoS")
 
             mock_run.assert_called_once()
@@ -243,9 +239,7 @@ class TestQosUpdate:
 
     def test_update_qos_failure(self):
         """Test update failure handling."""
-        error = subprocess.CalledProcessError(
-            1, "sacctmgr", stderr="No matching QoS"
-        )
+        error = subprocess.CalledProcessError(1, "sacctmgr", stderr="No matching QoS")
         with patch.object(subprocess, "run", side_effect=error):
             output = io.StringIO()
             with redirect_stdout(output):
@@ -272,9 +266,7 @@ class TestQosUpdate:
 
     def test_update_qos_with_stdout(self):
         """Test update with subprocess stdout."""
-        mock_result = create_mock_subprocess_result(
-            stdout="Modified QoS record(s)"
-        )
+        mock_result = create_mock_subprocess_result(stdout="Modified QoS record(s)")
         with patch.object(subprocess, "run", return_value=mock_result):
             output = io.StringIO()
             with redirect_stdout(output):
@@ -329,9 +321,7 @@ class TestQosDelete:
     def test_delete_qos_success(self):
         """Test successful QoS deletion."""
         mock_result = create_mock_subprocess_result(stdout="")
-        with patch.object(
-            subprocess, "run", return_value=mock_result
-        ) as mock_run:
+        with patch.object(subprocess, "run", return_value=mock_result) as mock_run:
             output = io.StringIO()
             with redirect_stdout(output):
                 Qos.delete("oldqos")
@@ -349,9 +339,7 @@ class TestQosDelete:
 
     def test_delete_qos_with_stdout(self):
         """Test QoS deletion with subprocess stdout."""
-        mock_result = create_mock_subprocess_result(
-            stdout="Deleting QoS..."
-        )
+        mock_result = create_mock_subprocess_result(stdout="Deleting QoS...")
         with patch.object(subprocess, "run", return_value=mock_result):
             output = io.StringIO()
             with redirect_stdout(output):
@@ -385,9 +373,7 @@ class TestQosDelete:
 
     def test_delete_qos_failure(self):
         """Test QoS deletion failure handling."""
-        error = subprocess.CalledProcessError(
-            1, "sacctmgr", stderr="QoS not found"
-        )
+        error = subprocess.CalledProcessError(1, "sacctmgr", stderr="QoS not found")
         with patch.object(subprocess, "run", side_effect=error):
             output = io.StringIO()
             with redirect_stdout(output):
@@ -413,9 +399,7 @@ class TestQosShow:
                 }
             ]
         }
-        mock_result = create_mock_subprocess_result(
-            stdout=json.dumps(mock_data)
-        )
+        mock_result = create_mock_subprocess_result(stdout=json.dumps(mock_data))
         with patch.object(subprocess, "run", return_value=mock_result):
             output = io.StringIO()
             with redirect_stdout(output):
@@ -440,9 +424,7 @@ class TestQosShow:
                 }
             ]
         }
-        mock_result = create_mock_subprocess_result(
-            stdout=json.dumps(mock_data)
-        )
+        mock_result = create_mock_subprocess_result(stdout=json.dumps(mock_data))
         with patch.object(subprocess, "run", return_value=mock_result):
             output = io.StringIO()
             with redirect_stdout(output):
@@ -467,9 +449,7 @@ class TestQosShow:
                 }
             ]
         }
-        mock_result = create_mock_subprocess_result(
-            stdout=json.dumps(mock_data)
-        )
+        mock_result = create_mock_subprocess_result(stdout=json.dumps(mock_data))
         with patch.object(subprocess, "run", return_value=mock_result):
             output = io.StringIO()
             with redirect_stdout(output):
@@ -495,9 +475,7 @@ class TestQosShow:
                 }
             ]
         }
-        mock_result = create_mock_subprocess_result(
-            stdout=json.dumps(mock_data)
-        )
+        mock_result = create_mock_subprocess_result(stdout=json.dumps(mock_data))
         with patch.object(subprocess, "run", return_value=mock_result):
             output = io.StringIO()
             with redirect_stdout(output):
@@ -525,9 +503,7 @@ class TestQosShow:
                 {"name": "high", "id": 2},
             ]
         }
-        mock_result = create_mock_subprocess_result(
-            stdout=json.dumps(mock_data)
-        )
+        mock_result = create_mock_subprocess_result(stdout=json.dumps(mock_data))
         with patch.object(subprocess, "run", return_value=mock_result):
             output = io.StringIO()
             with redirect_stdout(output):
@@ -539,9 +515,7 @@ class TestQosShow:
     def test_show_with_field_not_found(self):
         """Test show with field filter that doesn't match."""
         mock_data = {"qos": [{"name": "normal", "id": 1}]}
-        mock_result = create_mock_subprocess_result(
-            stdout=json.dumps(mock_data)
-        )
+        mock_result = create_mock_subprocess_result(stdout=json.dumps(mock_data))
         with patch.object(subprocess, "run", return_value=mock_result):
             output = io.StringIO()
             with redirect_stdout(output):
@@ -566,9 +540,7 @@ class TestQosShow:
                 for i in range(5)
             ]
         }
-        mock_result = create_mock_subprocess_result(
-            stdout=json.dumps(mock_data)
-        )
+        mock_result = create_mock_subprocess_result(stdout=json.dumps(mock_data))
         with patch.object(subprocess, "run", return_value=mock_result):
             output = io.StringIO()
             with redirect_stdout(output):
@@ -591,28 +563,20 @@ class TestQosShow:
                     "usage_factor": {"set": True, "number": 1.0},
                     "limits": {
                         "max": {
-                            "jobs": {
-                                "per": {
-                                    "user": {"set": True, "number": 10}
-                                }
-                            },
+                            "jobs": {"per": {"user": {"set": True, "number": 10}}},
                             "tres": {
                                 "per": {"job": [], "user": []},
                                 "total": [],
                             },
                             "wall_clock": {
-                                "per": {
-                                    "job": {"set": True, "number": 3600}
-                                }
+                                "per": {"job": {"set": True, "number": 3600}}
                             },
                         }
                     },
                 }
             ]
         }
-        mock_result = create_mock_subprocess_result(
-            stdout=json.dumps(mock_data)
-        )
+        mock_result = create_mock_subprocess_result(stdout=json.dumps(mock_data))
         with patch.object(subprocess, "run", return_value=mock_result):
             output = io.StringIO()
             with redirect_stdout(output):
@@ -626,9 +590,7 @@ class TestQosShow:
 
     def test_show_subprocess_error(self):
         """Test show with subprocess error."""
-        error = subprocess.CalledProcessError(
-            1, "sacctmgr", stderr="Permission denied"
-        )
+        error = subprocess.CalledProcessError(1, "sacctmgr", stderr="Permission denied")
         with patch.object(subprocess, "run", side_effect=error):
             output = io.StringIO()
             with redirect_stdout(output):
@@ -639,9 +601,7 @@ class TestQosShow:
 
     def test_show_json_decode_error(self):
         """Test show with invalid JSON response."""
-        mock_result = create_mock_subprocess_result(
-            stdout="invalid json {"
-        )
+        mock_result = create_mock_subprocess_result(stdout="invalid json {")
         with patch.object(subprocess, "run", return_value=mock_result):
             output = io.StringIO()
             with redirect_stdout(output):
@@ -670,22 +630,16 @@ class TestQosShow:
                                         {"name": "cpu", "count": 64},
                                         {"type": "gpu", "count": 4},
                                     ],
-                                    "user": [
-                                        {"name": "mem", "count": 256}
-                                    ],
+                                    "user": [{"name": "mem", "count": 256}],
                                 },
-                                "total": [
-                                    {"name": "node", "count": 10}
-                                ],
+                                "total": [{"name": "node", "count": 10}],
                             }
                         }
                     },
                 }
             ]
         }
-        mock_result = create_mock_subprocess_result(
-            stdout=json.dumps(mock_data)
-        )
+        mock_result = create_mock_subprocess_result(stdout=json.dumps(mock_data))
         with patch.object(subprocess, "run", return_value=mock_result):
             output = io.StringIO()
             with redirect_stdout(output):
@@ -716,9 +670,7 @@ class TestQosShow:
                 }
             ]
         }
-        mock_result = create_mock_subprocess_result(
-            stdout=json.dumps(mock_data)
-        )
+        mock_result = create_mock_subprocess_result(stdout=json.dumps(mock_data))
         with patch.object(subprocess, "run", return_value=mock_result):
             output = io.StringIO()
             with redirect_stdout(output):
@@ -748,9 +700,7 @@ class TestQosShow:
                 }
             ]
         }
-        mock_result = create_mock_subprocess_result(
-            stdout=json.dumps(mock_data)
-        )
+        mock_result = create_mock_subprocess_result(stdout=json.dumps(mock_data))
         with patch.object(subprocess, "run", return_value=mock_result):
             output = io.StringIO()
             with redirect_stdout(output):
@@ -834,13 +784,7 @@ class TestQosPrepareTemplateData:
         """Test preparing max jobs per user."""
         qos = {
             "name": "normal",
-            "limits": {
-                "max": {
-                    "jobs": {
-                        "per": {"user": {"set": True, "number": 10}}
-                    }
-                }
-            },
+            "limits": {"max": {"jobs": {"per": {"user": {"set": True, "number": 10}}}}},
         }
         result = Qos._prepare_template_data(qos)
         assert result["max_jobs_per_user"] == 10
@@ -850,11 +794,7 @@ class TestQosPrepareTemplateData:
         qos = {
             "name": "normal",
             "limits": {
-                "max": {
-                    "wall_clock": {
-                        "per": {"job": {"set": True, "number": 7200}}
-                    }
-                }
+                "max": {"wall_clock": {"per": {"job": {"set": True, "number": 7200}}}}
             },
         }
         result = Qos._prepare_template_data(qos)

@@ -9,11 +9,7 @@ from rich.box import SIMPLE_HEAVY
 from rich.table import Table
 
 from .base_resource import BaseSlurmResource
-from .profiles import (
-    format_with_template,
-    get_profile_config,
-    sort_data,
-)
+from .profiles import format_with_template, get_profile_config, sort_data
 from .utils import console
 
 
@@ -308,9 +304,7 @@ class Job(BaseSlurmResource):
         }
 
     @classmethod
-    def _fetch_jobs(
-        cls, force_update: bool = False
-    ) -> List[Dict[str, Any]]:
+    def _fetch_jobs(cls, force_update: bool = False) -> List[Dict[str, Any]]:
         """Fetch jobs from scontrol (with caching for autocomplete)."""
         from .resources import Resource
 
@@ -350,9 +344,7 @@ class Job(BaseSlurmResource):
             else:
                 time_limit_str = _format_duration(time_limit_val)
         else:
-            time_limit_str = (
-                _format_duration(time_limit) if time_limit else ""
-            )
+            time_limit_str = _format_duration(time_limit) if time_limit else ""
 
         # Get node count
         node_count = get_value(job, "node_count", 0)
@@ -417,9 +409,7 @@ class Job(BaseSlurmResource):
             else str(job.get("priority", "")),
             "reason": get_value(job, "state_reason", ""),
             "command": get_value(job, "command", ""),
-            "working_directory": get_value(
-                job, "current_working_directory", ""
-            ),
+            "working_directory": get_value(job, "current_working_directory", ""),
             "standard_output": get_value(job, "standard_output", ""),
             "standard_error": get_value(job, "standard_error", ""),
         }
@@ -438,52 +428,32 @@ class Job(BaseSlurmResource):
             value_lower = value.lower()
 
             if key_lower == "job_id":
-                result = [
-                    j
-                    for j in result
-                    if str(j.get("job_id", "")) == value
-                ]
+                result = [j for j in result if str(j.get("job_id", "")) == value]
             elif key_lower == "user":
                 result = [
-                    j
-                    for j in result
-                    if value_lower in j.get("user_name", "").lower()
+                    j for j in result if value_lower in j.get("user_name", "").lower()
                 ]
             elif key_lower == "account":
                 result = [
-                    j
-                    for j in result
-                    if value_lower in j.get("account", "").lower()
+                    j for j in result if value_lower in j.get("account", "").lower()
                 ]
             elif key_lower == "partition":
                 result = [
-                    j
-                    for j in result
-                    if value_lower in j.get("partition", "").lower()
+                    j for j in result if value_lower in j.get("partition", "").lower()
                 ]
             elif key_lower == "state":
                 result = [
-                    j
-                    for j in result
-                    if value_lower in j.get("job_state", "").lower()
+                    j for j in result if value_lower in j.get("job_state", "").lower()
                 ]
             elif key_lower == "name":
-                result = [
-                    j
-                    for j in result
-                    if value_lower in j.get("name", "").lower()
-                ]
+                result = [j for j in result if value_lower in j.get("name", "").lower()]
             elif key_lower == "nodes":
                 result = [
-                    j
-                    for j in result
-                    if value_lower in j.get("nodes", "").lower()
+                    j for j in result if value_lower in j.get("nodes", "").lower()
                 ]
             elif key_lower == "reservation":
                 result = [
-                    j
-                    for j in result
-                    if value_lower in j.get("reservation", "").lower()
+                    j for j in result if value_lower in j.get("reservation", "").lower()
                 ]
 
         return result
@@ -558,9 +528,7 @@ class Job(BaseSlurmResource):
                 jobs = cls._apply_filters(jobs, filters)
 
             if not jobs:
-                console.print(
-                    "[yellow]No jobs matching filters found.[/yellow]"
-                )
+                console.print("[yellow]No jobs matching filters found.[/yellow]")
                 return
 
             # Apply sorting
@@ -592,9 +560,7 @@ class Job(BaseSlurmResource):
                 # Add columns
                 for col in columns:
                     col_style = merged_styles.get(col, "white")
-                    table.add_column(
-                        col.replace("_", " ").title(), style=col_style
-                    )
+                    table.add_column(col.replace("_", " ").title(), style=col_style)
 
                 # Add rows
                 for i, job in enumerate(jobs):
@@ -607,9 +573,7 @@ class Job(BaseSlurmResource):
                 console.print(table)
 
         except subprocess.CalledProcessError as e:
-            console.print(
-                f"[red]Failed to show jobs:[/red] {e.stderr or e}"
-            )
+            console.print(f"[red]Failed to show jobs:[/red] {e.stderr or e}")
 
     @classmethod
     def create(cls, *args, **kwargs) -> None:
@@ -652,18 +616,14 @@ class Job(BaseSlurmResource):
             if result.stdout:
                 console.print(result.stdout)
             if verbose:
-                console.print(
-                    f"[green]Job '{job_id}' updated successfully.[/green]"
-                )
+                console.print(f"[green]Job '{job_id}' updated successfully.[/green]")
         except subprocess.CalledProcessError as e:
             console.print(
                 f"[red]Failed to update job '{job_id}':[/red] {e.stderr or e}"
             )
 
     @classmethod
-    def delete(
-        cls, job_id: str, verbose: bool = False, **kwargs: Any
-    ) -> None:
+    def delete(cls, job_id: str, verbose: bool = False, **kwargs: Any) -> None:
         """Cancel job(s) using scancel.
 
         Args:
@@ -689,16 +649,12 @@ class Job(BaseSlurmResource):
             jobs = cls._apply_filters(jobs, kwargs)
 
             if not jobs:
-                console.print(
-                    "[yellow]No jobs matching filters found.[/yellow]"
-                )
+                console.print("[yellow]No jobs matching filters found.[/yellow]")
                 return
 
             # Cancel all matching jobs in one call
             job_ids = [j["job_id"] for j in jobs]
-            console.print(
-                f"[yellow]Cancelling {len(job_ids)} job(s)...[/yellow]"
-            )
+            console.print(f"[yellow]Cancelling {len(job_ids)} job(s)...[/yellow]")
             cls._cancel_jobs(job_ids, verbose=verbose)
         elif job_id:
             # Cancel single job by ID
@@ -707,9 +663,7 @@ class Job(BaseSlurmResource):
             console.print("[red]Job ID or filter is required.[/red]")
 
     @classmethod
-    def _cancel_jobs(
-        cls, job_ids: List[str], verbose: bool = False
-    ) -> None:
+    def _cancel_jobs(cls, job_ids: List[str], verbose: bool = False) -> None:
         """Cancel jobs by IDs (pass all to scancel in one call)."""
         if not job_ids:
             return
@@ -724,13 +678,9 @@ class Job(BaseSlurmResource):
             if result.stdout:
                 console.print(result.stdout)
             if verbose:
-                console.print(
-                    f"[green]{len(job_ids)} job(s) cancelled.[/green]"
-                )
+                console.print(f"[green]{len(job_ids)} job(s) cancelled.[/green]")
         except subprocess.CalledProcessError as e:
-            console.print(
-                f"[red]Failed to cancel jobs:[/red] {e.stderr or e}"
-            )
+            console.print(f"[red]Failed to cancel jobs:[/red] {e.stderr or e}")
 
     @classmethod
     def _cancel_by_user(cls, user: str, verbose: bool = False) -> None:
@@ -746,9 +696,7 @@ class Job(BaseSlurmResource):
             if result.stdout:
                 console.print(result.stdout)
             if verbose:
-                console.print(
-                    f"[green]All jobs for user '{user}' cancelled.[/green]"
-                )
+                console.print(f"[green]All jobs for user '{user}' cancelled.[/green]")
         except subprocess.CalledProcessError as e:
             console.print(
                 f"[red]Failed to cancel jobs for user '{user}':[/red] "
@@ -758,9 +706,7 @@ class Job(BaseSlurmResource):
     @classmethod
     def generate_autocomplete_options(cls) -> str:
         """Generate bash autocomplete script for job options."""
-        filter_opts = " ".join(
-            f"{opt}=" for opt in cls.JOB_FILTER_OPTIONS
-        )
+        filter_opts = " ".join(f"{opt}=" for opt in cls.JOB_FILTER_OPTIONS)
         states = " ".join(cls.JOB_STATES)
 
         # Build update options list

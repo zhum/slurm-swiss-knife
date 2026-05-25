@@ -51,10 +51,7 @@ class TestCheckArgs:
             {"nonexistent": "value"}, set_dict, add_dict, delete_dict
         )
         assert result is False
-        assert any(
-            "Invalid argument" in str(c)
-            for c in mock_print.call_args_list
-        )
+        assert any("Invalid argument" in str(c) for c in mock_print.call_args_list)
 
     @mock.patch("slurm_cli.utils.base_resource.console.print")
     def test_ambiguous_argument(self, mock_print):
@@ -75,9 +72,7 @@ class TestCheckArgs:
             {"state": "value"}, set_dict, add_dict, delete_dict
         )
         assert result is False
-        assert any(
-            "Ambiguous" in str(c) for c in mock_print.call_args_list
-        )
+        assert any("Ambiguous" in str(c) for c in mock_print.call_args_list)
 
     def test_integer_valid(self):
         """Test valid integer argument."""
@@ -96,10 +91,7 @@ class TestCheckArgs:
             {"intfield": "not_an_int"}, set_dict, add_dict, delete_dict
         )
         assert result is False
-        assert any(
-            "Invalid integer" in str(c)
-            for c in mock_print.call_args_list
-        )
+        assert any("Invalid integer" in str(c) for c in mock_print.call_args_list)
 
     def test_list_valid(self):
         """Test valid list argument."""
@@ -136,10 +128,7 @@ class TestCheckArgs:
             {"memfield": "1024K"}, set_dict, add_dict, delete_dict
         )
         assert result is False
-        assert any(
-            "Invalid memory" in str(c)
-            for c in mock_print.call_args_list
-        )
+        assert any("Invalid memory" in str(c) for c in mock_print.call_args_list)
 
     @mock.patch("slurm_cli.utils.base_resource.console.print")
     def test_memory_invalid_value(self, mock_print):
@@ -149,10 +138,7 @@ class TestCheckArgs:
             {"memfield": "abcM"}, set_dict, add_dict, delete_dict
         )
         assert result is False
-        assert any(
-            "Invalid memory" in str(c)
-            for c in mock_print.call_args_list
-        )
+        assert any("Invalid memory" in str(c) for c in mock_print.call_args_list)
 
     def test_time_valid(self):
         """Test valid time argument."""
@@ -174,9 +160,7 @@ class TestCheckArgs:
             delete_dict,
         )
         assert result is False
-        assert any(
-            "Invalid time" in str(c) for c in mock_print.call_args_list
-        )
+        assert any("Invalid time" in str(c) for c in mock_print.call_args_list)
 
     def test_choice_valid(self):
         """Test valid choice argument."""
@@ -195,10 +179,7 @@ class TestCheckArgs:
             {"choicefield": "invalid"}, set_dict, add_dict, delete_dict
         )
         assert result is False
-        assert any(
-            "Invalid list argument" in str(c)
-            for c in mock_print.call_args_list
-        )
+        assert any("Invalid list argument" in str(c) for c in mock_print.call_args_list)
 
     def test_qos_type(self):
         """Test qos type argument."""
@@ -235,9 +216,7 @@ class TestCheckArgs:
         )
         assert result is True
 
-    @mock.patch(
-        "slurm_cli.utils.base_resource.Resource.cached_resource_list"
-    )
+    @mock.patch("slurm_cli.utils.base_resource.Resource.cached_resource_list")
     def test_nodes_valid(self, mock_cache):
         """Test valid nodes argument."""
         mock_cache.return_value = ["node01", "node02"]
@@ -248,9 +227,7 @@ class TestCheckArgs:
         assert result is True
         assert set_dict["nodesfield"] == "node01"
 
-    @mock.patch(
-        "slurm_cli.utils.base_resource.Resource.cached_resource_list"
-    )
+    @mock.patch("slurm_cli.utils.base_resource.Resource.cached_resource_list")
     @mock.patch("slurm_cli.utils.base_resource.console.print")
     def test_nodes_valid(self, mock_print, mock_cache):
         """Test valid nodes argument (validation removed, Slurm validates)."""
@@ -271,9 +248,7 @@ class TestCheckArgs:
             {"unknowntype": "value"}, set_dict, add_dict, delete_dict
         )
         assert result is False
-        assert any(
-            "not found" in str(c) for c in mock_print.call_args_list
-        )
+        assert any("not found" in str(c) for c in mock_print.call_args_list)
 
     def test_add_operation(self):
         """Test add operation with + suffix."""
@@ -372,18 +347,14 @@ class TestParseTimeValue:
     def test_yyyy_mm_dd_hh_mm_format(self):
         """Test parsing YYYY-MM-DDTHH:MM format."""
         try:
-            result = BaseSlurmResource._parse_time_value(
-                "2024-12-31T14:30"
-            )
+            result = BaseSlurmResource._parse_time_value("2024-12-31T14:30")
             assert isinstance(result, str)
         except TypeError:
             pass
 
     def test_yyyy_mm_dd_hh_mm_ss_format(self):
         """Test parsing YYYY-MM-DDTHH:MM:SS format."""
-        result = BaseSlurmResource._parse_time_value(
-            "2024-12-31T14:30:45"
-        )
+        result = BaseSlurmResource._parse_time_value("2024-12-31T14:30:45")
         assert "2024-12-31" in result
         assert "14:30:45" in result
 
@@ -423,9 +394,7 @@ class TestPrintDictPretty:
     @mock.patch("slurm_cli.utils.base_resource.console.print")
     def test_list_value(self, mock_print):
         """Test printing dict with list value."""
-        result = BaseSlurmResource.print_dict_pretty(
-            {"key": ["a", "b", "c"]}
-        )
+        result = BaseSlurmResource.print_dict_pretty({"key": ["a", "b", "c"]})
         assert result is True
 
     @mock.patch("slurm_cli.utils.base_resource.console.print")
@@ -457,9 +426,7 @@ class TestPrintDictPrettyDef:
         """Test default values are skipped."""
         data = {"state": "UP"}
         value_types = {"state": {"def": "UP"}}
-        result = BaseSlurmResource.print_dict_pretty_def(
-            data, value_types
-        )
+        result = BaseSlurmResource.print_dict_pretty_def(data, value_types)
         assert result is False
 
     @mock.patch("slurm_cli.utils.base_resource.console.print")
@@ -467,9 +434,7 @@ class TestPrintDictPrettyDef:
         """Test non-default values are shown."""
         data = {"state": "DOWN"}
         value_types = {"state": {"def": "UP"}}
-        result = BaseSlurmResource.print_dict_pretty_def(
-            data, value_types
-        )
+        result = BaseSlurmResource.print_dict_pretty_def(data, value_types)
         assert result is True
 
     @mock.patch("slurm_cli.utils.base_resource.console.print")
@@ -477,9 +442,7 @@ class TestPrintDictPrettyDef:
         """Test allow fields get allow style."""
         data = {"allowgroups": "admin"}
         value_types = {"allowgroups": {"def": "ALL"}}
-        result = BaseSlurmResource.print_dict_pretty_def(
-            data, value_types
-        )
+        result = BaseSlurmResource.print_dict_pretty_def(data, value_types)
         assert result is True
 
     @mock.patch("slurm_cli.utils.base_resource.console.print")
@@ -487,9 +450,7 @@ class TestPrintDictPrettyDef:
         """Test deny fields get deny style."""
         data = {"denygroups": "guest"}
         value_types = {"denygroups": {"def": ""}}
-        result = BaseSlurmResource.print_dict_pretty_def(
-            data, value_types
-        )
+        result = BaseSlurmResource.print_dict_pretty_def(data, value_types)
         assert result is True
 
     @mock.patch("slurm_cli.utils.base_resource.console.print")
@@ -497,9 +458,7 @@ class TestPrintDictPrettyDef:
         """Test qos fields get qos style."""
         data = {"qos": "high"}
         value_types = {"qos": {"def": ""}}
-        result = BaseSlurmResource.print_dict_pretty_def(
-            data, value_types
-        )
+        result = BaseSlurmResource.print_dict_pretty_def(data, value_types)
         assert result is True
 
 
@@ -511,9 +470,7 @@ class TestPrintDictPrettyFlagsDef:
         """Test default flags are skipped."""
         data = {"hidden": "NO"}
         value_types = {"hidden": {"def": "NO"}}
-        result = BaseSlurmResource.print_dict_pretty_flags_def(
-            data, value_types
-        )
+        result = BaseSlurmResource.print_dict_pretty_flags_def(data, value_types)
         assert result is False
 
     @mock.patch("slurm_cli.utils.base_resource.console.print")
@@ -521,13 +478,9 @@ class TestPrintDictPrettyFlagsDef:
         """Test YES flags are shown in green."""
         data = {"hidden": "YES"}
         value_types = {"hidden": {"def": "NO"}}
-        result = BaseSlurmResource.print_dict_pretty_flags_def(
-            data, value_types
-        )
+        result = BaseSlurmResource.print_dict_pretty_flags_def(data, value_types)
         assert result is True
-        call_args_str = "".join(
-            str(c) for c in mock_print.call_args_list
-        )
+        call_args_str = "".join(str(c) for c in mock_print.call_args_list)
         assert "green" in call_args_str
 
     @mock.patch("slurm_cli.utils.base_resource.console.print")
@@ -535,13 +488,9 @@ class TestPrintDictPrettyFlagsDef:
         """Test non-YES flags are shown in red."""
         data = {"enabled": "NO"}
         value_types = {"enabled": {"def": "YES"}}
-        result = BaseSlurmResource.print_dict_pretty_flags_def(
-            data, value_types
-        )
+        result = BaseSlurmResource.print_dict_pretty_flags_def(data, value_types)
         assert result is True
-        call_args_str = "".join(
-            str(c) for c in mock_print.call_args_list
-        )
+        call_args_str = "".join(str(c) for c in mock_print.call_args_list)
         assert "red" in call_args_str
 
     @mock.patch("slurm_cli.utils.base_resource.console.print")
@@ -558,9 +507,7 @@ class TestPrintDictPrettyFlagsDef:
             "longflag2": {"def": "NO"},
             "longflag3": {"def": "NO"},
         }
-        result = BaseSlurmResource.print_dict_pretty_flags_def(
-            data, value_types
-        )
+        result = BaseSlurmResource.print_dict_pretty_flags_def(data, value_types)
         assert result is True
 
 

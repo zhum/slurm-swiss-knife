@@ -50,9 +50,7 @@ class TestEventParseEvents:
 
     def test_parse_events_header_only(self):
         """Test parsing header only."""
-        events = Event._parse_events(
-            "Cluster|Duration|NodeName|State|\n"
-        )
+        events = Event._parse_events("Cluster|Duration|NodeName|State|\n")
         assert len(events) == 0
 
 
@@ -112,9 +110,7 @@ class TestEventShow:
     )
     def test_show_pretty_style(self, mock_exists, mock_run):
         """Test show with pretty style."""
-        mock_run.return_value = MagicMock(
-            stdout=MOCK_EVENTS_DATA, stderr=""
-        )
+        mock_run.return_value = MagicMock(stdout=MOCK_EVENTS_DATA, stderr="")
         # Should not crash
         Event.show(style="pretty")
         mock_run.assert_called_once()
@@ -126,9 +122,7 @@ class TestEventShow:
     )
     def test_show_json_style(self, mock_exists, mock_run):
         """Test show with json style."""
-        mock_run.return_value = MagicMock(
-            stdout=MOCK_EVENTS_DATA, stderr=""
-        )
+        mock_run.return_value = MagicMock(stdout=MOCK_EVENTS_DATA, stderr="")
         Event.show(style="json")
         mock_run.assert_called_once()
 
@@ -139,9 +133,7 @@ class TestEventShow:
     )
     def test_show_csv_style(self, mock_exists, mock_run):
         """Test show with csv style."""
-        mock_run.return_value = MagicMock(
-            stdout=MOCK_EVENTS_DATA, stderr=""
-        )
+        mock_run.return_value = MagicMock(stdout=MOCK_EVENTS_DATA, stderr="")
         output = io.StringIO()
         with redirect_stdout(output):
             Event.show(style="csv", delimiter="|")
@@ -155,9 +147,7 @@ class TestEventShow:
     )
     def test_show_with_filter(self, mock_exists, mock_run):
         """Test show with filter."""
-        mock_run.return_value = MagicMock(
-            stdout=MOCK_EVENTS_DATA, stderr=""
-        )
+        mock_run.return_value = MagicMock(stdout=MOCK_EVENTS_DATA, stderr="")
         Event.show(field="States=DRAIN")
         mock_run.assert_called_once()
 
@@ -167,12 +157,8 @@ class TestEventShow:
     )
     def test_show_subprocess_error(self, mock_exists):
         """Test show with subprocess error."""
-        error = subprocess.CalledProcessError(
-            1, "sacctmgr", stderr="Permission denied"
-        )
-        with patch(
-            "slurm_cli.utils.events.subprocess.run", side_effect=error
-        ):
+        error = subprocess.CalledProcessError(1, "sacctmgr", stderr="Permission denied")
+        with patch("slurm_cli.utils.events.subprocess.run", side_effect=error):
             output = io.StringIO()
             with redirect_stdout(output):
                 Event.show()
@@ -340,9 +326,7 @@ class TestParseJsonEvents:
 
     def test_parse_valid_json(self):
         """Test parsing valid JSON events."""
-        json_data = (
-            '{"events": [{"NodeName": "node1", "State": "DRAIN"}]}'
-        )
+        json_data = '{"events": [{"NodeName": "node1", "State": "DRAIN"}]}'
         events = Event._parse_json_events(json_data)
         assert len(events) == 1
         assert events[0]["node"] == "node1"
@@ -380,12 +364,8 @@ class TestFetchEvents:
     def test_fetch_events_json_success(self, mock_exists, mock_run):
         """Test fetching events with JSON format success."""
         mock_exists.return_value = False  # No flag file
-        json_response = (
-            '{"events": [{"NodeName": "node1", "State": "DRAIN"}]}'
-        )
-        mock_run.return_value = MagicMock(
-            stdout=json_response, stderr=""
-        )
+        json_response = '{"events": [{"NodeName": "node1", "State": "DRAIN"}]}'
+        mock_run.return_value = MagicMock(stdout=json_response, stderr="")
 
         events = Event._fetch_events()
 
@@ -398,9 +378,7 @@ class TestFetchEvents:
     @patch("slurm_cli.utils.events.subprocess.run")
     @patch("slurm_cli.utils.events.os.path.exists")
     @patch("builtins.open", create=True)
-    def test_fetch_events_json_fails_sets_flag(
-        self, mock_open, mock_exists, mock_run
-    ):
+    def test_fetch_events_json_fails_sets_flag(self, mock_open, mock_exists, mock_run):
         """Test JSON failure sets flag and falls back to text."""
         mock_exists.return_value = False  # No flag file initially
 
@@ -408,9 +386,7 @@ class TestFetchEvents:
         # Second call (text) succeeds
         mock_run.side_effect = [
             MagicMock(stdout="not json", stderr=""),  # JSON attempt
-            MagicMock(
-                stdout=MOCK_EVENTS_DATA, stderr=""
-            ),  # Text fallback
+            MagicMock(stdout=MOCK_EVENTS_DATA, stderr=""),  # Text fallback
         ]
 
         events = Event._fetch_events()
@@ -422,18 +398,14 @@ class TestFetchEvents:
 
     @patch("slurm_cli.utils.events.subprocess.run")
     @patch("slurm_cli.utils.events.os.path.exists")
-    def test_fetch_events_skips_json_with_flag(
-        self, mock_exists, mock_run
-    ):
+    def test_fetch_events_skips_json_with_flag(self, mock_exists, mock_run):
         """Test fetch events skips JSON when flag file exists."""
 
         def exists_side_effect(path):
             return path == EVENTS_NO_JSON_FLAG
 
         mock_exists.side_effect = exists_side_effect
-        mock_run.return_value = MagicMock(
-            stdout=MOCK_EVENTS_DATA, stderr=""
-        )
+        mock_run.return_value = MagicMock(stdout=MOCK_EVENTS_DATA, stderr="")
 
         events = Event._fetch_events()
 
@@ -479,9 +451,7 @@ class TestShowWithNodeFilter:
         mock_exists.side_effect = mock_exists_with_no_json_flag
         mock_is_filter.return_value = True
         mock_resolve.return_value = "node1,node2"
-        mock_run.return_value = MagicMock(
-            stdout=MOCK_EVENTS_DATA, stderr=""
-        )
+        mock_run.return_value = MagicMock(stdout=MOCK_EVENTS_DATA, stderr="")
 
         Event.show(field="Nodes=partition=gpu")
 
@@ -498,9 +468,7 @@ class TestShowWithNodeFilter:
         mock_exists.side_effect = mock_exists_with_no_json_flag
         mock_is_filter.return_value = True
         mock_resolve.return_value = "resolved-node1,resolved-node2"
-        mock_run.return_value = MagicMock(
-            stdout=MOCK_EVENTS_DATA, stderr=""
-        )
+        mock_run.return_value = MagicMock(stdout=MOCK_EVENTS_DATA, stderr="")
 
         Event.show(field="nodes=partition=defq")
 
@@ -530,14 +498,10 @@ class TestShowWithNodeFilter:
 
     @patch("slurm_cli.utils.events.subprocess.run")
     @patch("slurm_cli.utils.events.os.path.exists")
-    def test_show_with_condflags_open_skips_cache(
-        self, mock_exists, mock_run
-    ):
+    def test_show_with_condflags_open_skips_cache(self, mock_exists, mock_run):
         """Test show with CondFlags=Open skips cache."""
         mock_exists.side_effect = mock_exists_with_no_json_flag
-        mock_run.return_value = MagicMock(
-            stdout=MOCK_EVENTS_DATA, stderr=""
-        )
+        mock_run.return_value = MagicMock(stdout=MOCK_EVENTS_DATA, stderr="")
 
         Event.show(field="CondFlags=Open")
 

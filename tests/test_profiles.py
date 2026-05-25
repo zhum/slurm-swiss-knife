@@ -57,9 +57,7 @@ class TestProfileManager:
             "users",
         ]
         for resource in expected_resources:
-            assert (
-                resource in default
-            ), f"Resource {resource} not in default"
+            assert resource in default, f"Resource {resource} not in default"
 
     def test_profile_manager_singleton(self):
         """Test that get_profile_manager returns a singleton."""
@@ -106,9 +104,7 @@ accounts.styles.name = cyan bold
             try:
                 import slurm_cli.utils.profiles as profiles_mod
 
-                with patch.object(
-                    profiles_mod, "PROFILE_FILES", [f.name]
-                ):
+                with patch.object(profiles_mod, "PROFILE_FILES", [f.name]):
                     manager = ProfileManager()
                     manager._loaded = False  # Reset to force reload
                     profile = manager.get_profile("test")
@@ -118,10 +114,7 @@ accounts.styles.name = cyan bold
                         "name",
                         "description",
                     ]
-                    assert (
-                        profile["accounts"]["styles"]["name"]
-                        == "cyan bold"
-                    )
+                    assert profile["accounts"]["styles"]["name"] == "cyan bold"
             finally:
                 os.unlink(f.name)
 
@@ -141,9 +134,7 @@ accounts.template = [cyan]{name}[/] \\
             try:
                 import slurm_cli.utils.profiles as profiles_mod
 
-                with patch.object(
-                    profiles_mod, "PROFILE_FILES", [f.name]
-                ):
+                with patch.object(profiles_mod, "PROFILE_FILES", [f.name]):
                     manager = ProfileManager()
                     manager._loaded = False
                     profile = manager.get_profile("test")
@@ -175,9 +166,7 @@ accounts.columns = name
             try:
                 import slurm_cli.utils.profiles as profiles_mod
 
-                with patch.object(
-                    profiles_mod, "PROFILE_FILES", [f.name]
-                ):
+                with patch.object(profiles_mod, "PROFILE_FILES", [f.name]):
                     manager = ProfileManager()
                     manager._loaded = False
                     profile = manager.get_profile("test")
@@ -204,9 +193,7 @@ qos.columns = name,priority
             try:
                 import slurm_cli.utils.profiles as profiles_mod
 
-                with patch.object(
-                    profiles_mod, "PROFILE_FILES", [f.name]
-                ):
+                with patch.object(profiles_mod, "PROFILE_FILES", [f.name]):
                     manager = ProfileManager()
                     manager._loaded = False
                     test1 = manager.get_profile("test1")
@@ -241,9 +228,7 @@ accounts.columns = *
             try:
                 import slurm_cli.utils.profiles as profiles_mod
 
-                with patch.object(
-                    profiles_mod, "PROFILE_FILES", [f.name]
-                ):
+                with patch.object(profiles_mod, "PROFILE_FILES", [f.name]):
                     manager = ProfileManager()
                     manager._loaded = False
                     profile = manager.get_profile("test")
@@ -258,9 +243,7 @@ class TestProfileStringParsing:
     def test_parse_simple_string(self):
         """Test parsing a simple profile string."""
         manager = ProfileManager()
-        result = manager.parse_profile_string(
-            "accounts.columns=name,description"
-        )
+        result = manager.parse_profile_string("accounts.columns=name,description")
         assert "accounts" in result
         assert result["accounts"]["columns"] == ["name", "description"]
 
@@ -271,10 +254,7 @@ class TestProfileStringParsing:
             "accounts.template=[cyan]{name}[/] - {description}"
         )
         assert "accounts" in result
-        assert (
-            result["accounts"]["template"]
-            == "[cyan]{name}[/] - {description}"
-        )
+        assert result["accounts"]["template"] == "[cyan]{name}[/] - {description}"
 
     def test_parse_multiple_settings(self):
         """Test parsing multiple settings separated by semicolon."""
@@ -295,17 +275,12 @@ class TestProfileStringParsing:
         )
         assert "accounts" in result
         # Semicolon should be preserved since it's not followed by resource.key=
-        assert (
-            "name: {name}; desc: {description}"
-            in result["accounts"]["template"]
-        )
+        assert "name: {name}; desc: {description}" in result["accounts"]["template"]
 
     def test_parse_styles(self):
         """Test parsing style settings."""
         manager = ProfileManager()
-        result = manager.parse_profile_string(
-            "accounts.styles.name=cyan bold"
-        )
+        result = manager.parse_profile_string("accounts.styles.name=cyan bold")
         assert "accounts" in result
         assert result["accounts"]["styles"]["name"] == "cyan bold"
 
@@ -315,9 +290,7 @@ class TestNormalizeProfileStr:
 
     def test_normalize_with_prefix(self):
         """Test that strings with prefix are unchanged."""
-        result = _normalize_profile_str(
-            "accounts.template=[cyan]{name}[/]", "accounts"
-        )
+        result = _normalize_profile_str("accounts.template=[cyan]{name}[/]", "accounts")
         assert result == "accounts.template=[cyan]{name}[/]"
 
     def test_normalize_without_prefix(self):
@@ -332,16 +305,12 @@ class TestNormalizeProfileStr:
 
     def test_normalize_different_resources(self):
         """Test normalization with different resource types."""
-        result = _normalize_profile_str(
-            "{name} - {users}", "reservations"
-        )
+        result = _normalize_profile_str("{name} - {users}", "reservations")
         assert result == "reservations.template={name} - {users}"
 
     def test_normalize_column_list_shorthand(self):
         """Test that comma-separated words become columns."""
-        result = _normalize_profile_str(
-            "name,organization,flags", "accounts"
-        )
+        result = _normalize_profile_str("name,organization,flags", "accounts")
         assert result == "accounts.columns=name,organization,flags"
 
     def test_normalize_single_column_shorthand(self):
@@ -494,9 +463,7 @@ class TestIsFieldEmpty:
 
     def test_set_dict_is_set(self):
         """Test set/number pattern when set."""
-        assert not is_field_empty(
-            "timestamp", {"set": True, "number": 12345}
-        )
+        assert not is_field_empty("timestamp", {"set": True, "number": 12345})
 
     def test_default_value_empty(self):
         """Test that default values are considered empty."""
@@ -507,9 +474,7 @@ class TestIsFieldEmpty:
 
     def test_non_default_not_empty(self):
         """Test that non-default values are not empty."""
-        assert not is_field_empty(
-            "coordinators", ["user1"], resource="accounts"
-        )
+        assert not is_field_empty("coordinators", ["user1"], resource="accounts")
 
 
 class TestFormatWithTemplate:
@@ -535,9 +500,7 @@ class TestFormatWithTemplate:
 
     def test_missing_field(self):
         """Test that missing fields are replaced with placeholder."""
-        result = format_with_template(
-            "{name} - {missing}", {"name": "test"}
-        )
+        result = format_with_template("{name} - {missing}", {"name": "test"})
         # Missing fields get a placeholder value (e.g., "-" or empty)
         assert "test - " in result
 
@@ -577,9 +540,7 @@ class TestFormatWithTemplate:
 
     def test_rich_markup_preserved(self):
         """Test that Rich markup is preserved in output."""
-        result = format_with_template(
-            "[cyan]{name}[/cyan]", {"name": "test"}
-        )
+        result = format_with_template("[cyan]{name}[/cyan]", {"name": "test"})
         assert result == "[cyan]test[/cyan]"
 
     def test_custom_value_formatter(self):
@@ -621,9 +582,7 @@ line2
             try:
                 import slurm_cli.utils.profiles as profiles_mod
 
-                with patch.object(
-                    profiles_mod, "PROFILE_FILES", [f.name]
-                ):
+                with patch.object(profiles_mod, "PROFILE_FILES", [f.name]):
                     manager = ProfileManager()
                     manager._loaded = False
                     profile = manager.get_profile("test")
@@ -650,9 +609,7 @@ reservations.template = [bold]{name}[/] \\
             try:
                 import slurm_cli.utils.profiles as profiles_mod
 
-                with patch.object(
-                    profiles_mod, "PROFILE_FILES", [f.name]
-                ):
+                with patch.object(profiles_mod, "PROFILE_FILES", [f.name]):
                     manager = ProfileManager()
                     manager._loaded = False
                     profile = manager.get_profile("test")
@@ -680,21 +637,15 @@ accounts.template = Line1\\n\\
             try:
                 import slurm_cli.utils.profiles as profiles_mod
 
-                with patch.object(
-                    profiles_mod, "PROFILE_FILES", [f.name]
-                ):
+                with patch.object(profiles_mod, "PROFILE_FILES", [f.name]):
                     manager = ProfileManager()
                     manager._loaded = False
                     profile = manager.get_profile("test")
                     template = profile["accounts"]["template"]
                     # Should contain \n escapes
-                    assert (
-                        "\\n" in template
-                        or "\n"
-                        not in template.replace("Line1", "")
-                        .replace("Line2", "")
-                        .replace("Line3", "")
-                    )
+                    assert "\\n" in template or "\n" not in template.replace(
+                        "Line1", ""
+                    ).replace("Line2", "").replace("Line3", "")
             finally:
                 os.unlink(f.name)
 
@@ -744,9 +695,7 @@ class TestEdgeCases:
             manager._loaded = False
             # Should not raise, just skip missing files
             profiles = manager.list_profiles()
-            assert (
-                "default" in profiles
-            )  # Built-in defaults still present
+            assert "default" in profiles  # Built-in defaults still present
 
     def test_profile_without_resources(self):
         """Test parsing profile with no resource settings."""
@@ -762,9 +711,7 @@ class TestEdgeCases:
             try:
                 import slurm_cli.utils.profiles as profiles_mod
 
-                with patch.object(
-                    profiles_mod, "PROFILE_FILES", [f.name]
-                ):
+                with patch.object(profiles_mod, "PROFILE_FILES", [f.name]):
                     manager = ProfileManager()
                     manager._loaded = False
                     profile = manager.get_profile("empty")
@@ -795,9 +742,7 @@ class TestEdgeCases:
     def test_deeply_nested_styles(self):
         """Test parsing deeply nested styles."""
         manager = ProfileManager()
-        result = manager.parse_profile_string(
-            "accounts.styles.name=cyan bold"
-        )
+        result = manager.parse_profile_string("accounts.styles.name=cyan bold")
         assert result["accounts"]["styles"]["name"] == "cyan bold"
 
 
@@ -819,9 +764,7 @@ class TestProfileFileParseErrors:
 
             manager = ProfileManager()
             # Mock PROFILE_FILES to use our test file
-            with mock.patch(
-                "slurm_cli.utils.profiles.PROFILE_FILES", [profile_file]
-            ):
+            with mock.patch("slurm_cli.utils.profiles.PROFILE_FILES", [profile_file]):
                 # Capture stderr
                 captured = io.StringIO()
                 with mock.patch.object(sys, "stderr", captured):
@@ -836,22 +779,13 @@ class TestMergeProfiles:
     def test_merge_existing_profile(self):
         """Test merging into existing profile."""
         manager = ProfileManager()
-        manager._profiles = {
-            "custom": {"accounts": {"columns": ["name"]}}
-        }
-        new_profiles = {
-            "custom": {"accounts": {"styles": {"name": "bold"}}}
-        }
+        manager._profiles = {"custom": {"accounts": {"columns": ["name"]}}}
+        new_profiles = {"custom": {"accounts": {"styles": {"name": "bold"}}}}
         manager._merge_profiles(new_profiles)
 
         assert "custom" in manager._profiles
-        assert manager._profiles["custom"]["accounts"]["columns"] == [
-            "name"
-        ]
-        assert (
-            manager._profiles["custom"]["accounts"]["styles"]["name"]
-            == "bold"
-        )
+        assert manager._profiles["custom"]["accounts"]["columns"] == ["name"]
+        assert manager._profiles["custom"]["accounts"]["styles"]["name"] == "bold"
 
 
 class TestDeepMerge:
@@ -888,9 +822,7 @@ class TestIsFieldEmptyWithDefaults:
 
     def test_field_differs_from_default(self):
         """Test field that differs from its default value."""
-        result = is_field_empty(
-            "coordinators", "admin,user1", resource="accounts"
-        )
+        result = is_field_empty("coordinators", "admin,user1", resource="accounts")
         assert result is False
 
 
@@ -899,23 +831,17 @@ class TestFormatWithTemplateDict:
 
     def test_dict_with_set_number(self):
         """Test formatting dict with set=True and number."""
-        result = format_with_template(
-            "{value}", {"value": {"set": True, "number": 42}}
-        )
+        result = format_with_template("{value}", {"value": {"set": True, "number": 42}})
         assert "42" in result
 
     def test_dict_with_infinite(self):
         """Test formatting dict with infinite=True."""
-        result = format_with_template(
-            "{value}", {"value": {"infinite": True}}
-        )
+        result = format_with_template("{value}", {"value": {"infinite": True}})
         assert "∞" in result
 
     def test_dict_without_set(self):
         """Test formatting dict without set flag."""
-        result = format_with_template(
-            "{value}", {"value": {"some_key": "some_val"}}
-        )
+        result = format_with_template("{value}", {"value": {"some_key": "some_val"}})
         # Should stringify the dict
         assert "some_key" in result or "some_val" in result
 
@@ -936,9 +862,7 @@ class TestExtractFieldsFromTemplate:
 
     def test_mixed_fields(self):
         """Test extracting mix of regular and conditional fields."""
-        fields = extract_fields_from_template(
-            "{name} {?status [status]}"
-        )
+        fields = extract_fields_from_template("{name} {?status [status]}")
         assert "name" in fields
         assert "status" in fields
 
@@ -1039,9 +963,7 @@ class TestParseColumnsWithSort:
 
     def test_descending_sort(self):
         """Test - suffix for descending sort."""
-        columns, sort_field, sort_asc = parse_columns_with_sort(
-            ["name", "priority-"]
-        )
+        columns, sort_field, sort_asc = parse_columns_with_sort(["name", "priority-"])
         assert columns == ["name", "priority"]
         assert sort_field == "priority"
         assert sort_asc is False

@@ -24,36 +24,24 @@ which is available in Click 8.0+.
 import importlib.metadata
 import json
 import os
-import sys
 import subprocess
+import sys
 from typing import Any, Dict, List, Optional, Tuple, Union
 
 import click  # pyright: ignore[reportMissingImports]
 from fast_autocomplete import AutoComplete  # pyright: ignore
-from rich.box import (
-    SIMPLE_HEAVY,
-)  # pyright: ignore[reportMissingImports]
+from rich.box import SIMPLE_HEAVY  # pyright: ignore[reportMissingImports]
 from rich.table import Table  # pyright: ignore[reportMissingImports]
 
 from .utils.accounts import Account
 from .utils.associations import Association
-from .utils.autocomplete_helpers import (
-    get_common_autocomplete_functions,
-)
+from .utils.autocomplete_helpers import get_common_autocomplete_functions
 from .utils.config import ROUTES, VERBS
 from .utils.coordinators import Coordinator
 from .utils.events import Event
-from .utils.job_filter import (
-    is_job_filter,
-    resolve_job_filters,
-    resolve_job_ids,
-)
+from .utils.job_filter import is_job_filter, resolve_job_filters, resolve_job_ids
 from .utils.jobs import Job
-from .utils.node_filter import (
-    is_node_filter,
-    resolve_node_filters,
-    resolve_nodes_value,
-)
+from .utils.node_filter import is_node_filter, resolve_node_filters, resolve_nodes_value
 from .utils.nodes import Node
 from .utils.partitions import Partition
 from .utils.prefix_utils import (  # get_all_resource_names,
@@ -67,11 +55,7 @@ from .utils.prefix_utils import (  # get_all_resource_names,
     get_resource_help,
     get_resources_epilog,
 )
-from .utils.profiles import (
-    is_profile_help,
-    show_all_profile_fields,
-    show_profile_help,
-)
+from .utils.profiles import is_profile_help, show_all_profile_fields, show_profile_help
 from .utils.qos import Qos
 from .utils.reservations import Reservation
 from .utils.resources import Resource
@@ -226,13 +210,10 @@ def resolve_command_alias(command: str) -> str:
     if canonical == command and not exact:
         # No match found - check for ambiguous prefix
         all_names = matcher.get_all_names()
-        matches = [
-            n for n in all_names if n.startswith(command.lower())
-        ]
+        matches = [n for n in all_names if n.startswith(command.lower())]
         if len(matches) > 1:
             raise click.ClickException(
-                f"Ambiguous command: {command}. "
-                f"Could be: {', '.join(matches)}"
+                f"Ambiguous command: {command}. " f"Could be: {', '.join(matches)}"
             )
     return canonical
 
@@ -332,9 +313,7 @@ def get_force_update(ctx: click.Context) -> bool:
     return ctx.obj.get("force_update", False)
 
 
-def get_dry_run(
-    ctx: click.Context, dry_run_override: bool = False
-) -> bool:
+def get_dry_run(ctx: click.Context, dry_run_override: bool = False) -> bool:
     """Get the dry-run flag from context or override.
 
     Priority:
@@ -374,9 +353,7 @@ def get_skip_confirm(
     return yes or force or global_yes
 
 
-def get_profile(
-    ctx: click.Context, profile_override: Union[None, str] = None
-) -> str:
+def get_profile(ctx: click.Context, profile_override: Union[None, str] = None) -> str:
     """Get the profile name from context or override."""
     if profile_override:
         return profile_override
@@ -464,22 +441,15 @@ def show_resource_help(action: str, resource: str) -> bool:
     action_help = get_resource_help(resource, action)
     if not action_help:
         # Show general resource description only
+        console.print(f"\n[bold]{help_info.get('description', canonical)}[/bold]")
         console.print(
-            f"\n[bold]{help_info.get('description', canonical)}[/bold]"
-        )
-        console.print(
-            f"\n[yellow]No '{action}' action available"
-            f" for {canonical}[/yellow]"
+            f"\n[yellow]No '{action}' action available" f" for {canonical}[/yellow]"
         )
         return True
 
     # Show help
-    console.print(
-        f"\n[bold]{help_info.get('description', canonical)}[/bold]"
-    )
-    console.print(
-        f"\n[cyan]Syntax:[/cyan] {action_help.get('syntax', '')}"
-    )
+    console.print(f"\n[bold]{help_info.get('description', canonical)}[/bold]")
+    console.print(f"\n[cyan]Syntax:[/cyan] {action_help.get('syntax', '')}")
 
     if action_help.get("examples"):
         console.print("\n[cyan]Examples:[/cyan]")
@@ -531,9 +501,7 @@ def print_help(command: str, ctx: click.Context) -> None:
 
 def create_autocomplete() -> AutoComplete:
     """Create and return an autocomplete instance."""
-    words: Dict[str, Dict[str, Any]] = {
-        value: {} for value in VERBS.keys()
-    }
+    words: Dict[str, Dict[str, Any]] = {value: {} for value in VERBS.keys()}
     return AutoComplete(words=words, synonyms=VERBS)
 
 
@@ -572,51 +540,70 @@ def ensure_resource_name(
         # Jobs are fetched directly, not cached
         return "jobs", field, {}
     elif resource[:4] == "node":
-        data = Resource.cached_resource(
-            "nodes",
-            force_update,
-        ) or {}
+        data = (
+            Resource.cached_resource(
+                "nodes",
+                force_update,
+            )
+            or {}
+        )
         return resource, field, data
     elif resource[:4] == "part":
-        data = Resource.cached_resource(
-            "partitions",
-            force_update,
-        ) or {}
+        data = (
+            Resource.cached_resource(
+                "partitions",
+                force_update,
+            )
+            or {}
+        )
         return resource, field, data
     elif resource[:4] == "user":
-        data = Resource.cached_resource(
-            "users",
-            force_update,
-        ) or {}
+        data = (
+            Resource.cached_resource(
+                "users",
+                force_update,
+            )
+            or {}
+        )
         return resource, field, data
     elif resource[:3] == "qos":
-        data = Resource.cached_resource(
-            "qos",
-            force_update,
-        ) or {}
+        data = (
+            Resource.cached_resource(
+                "qos",
+                force_update,
+            )
+            or {}
+        )
         return resource, field, data
     elif resource[:3] == "acc":
-        data = Resource.cached_resource(
-            "accounts",
-            force_update,
-        ) or {}
+        data = (
+            Resource.cached_resource(
+                "accounts",
+                force_update,
+            )
+            or {}
+        )
         return resource, field, data
     elif resource[:3] == "res":
-        data = Resource.cached_resource(
-            "reservations",
-            force_update,
-        ) or {}
+        data = (
+            Resource.cached_resource(
+                "reservations",
+                force_update,
+            )
+            or {}
+        )
         return resource, field, data
     elif resource[:4] == "conf":
-        data = Resource.cached_resource(
-            "config",
-            force_update,
-        ) or {}
+        data = (
+            Resource.cached_resource(
+                "config",
+                force_update,
+            )
+            or {}
+        )
         return resource, field, data
     else:
-        resource_type, data = Resource.guess_resource_type(
-            resource, force_update
-        )
+        resource_type, data = Resource.guess_resource_type(resource, force_update)
         if resource_type and resource_type != "unknown":
             return resource_type, resource, (data or {})
         else:
@@ -719,9 +706,7 @@ def show_command_help_with_resources(
     if isinstance(routes, dict):
         for resource_type, fields in routes.items():
             if isinstance(fields, dict):
-                field_list = (
-                    ", ".join(fields.keys()) if fields else "N/A"
-                )
+                field_list = ", ".join(fields.keys()) if fields else "N/A"
             else:
                 field_list = "N/A"
             operations: List[str] = []
@@ -730,20 +715,12 @@ def show_command_help_with_resources(
                 and resource_type in ROUTES["get-set"]
             ):
                 operations.append("get, mod")
-            if (
-                isinstance(ROUTES["create"], dict)
-                and resource_type in ROUTES["create"]
-            ):
+            if isinstance(ROUTES["create"], dict) and resource_type in ROUTES["create"]:
                 operations.append("create")
-            if (
-                isinstance(ROUTES["create"], dict)
-                and resource_type in ROUTES["create"]
-            ):
+            if isinstance(ROUTES["create"], dict) and resource_type in ROUTES["create"]:
                 operations.append("delete")
 
-            table.add_row(
-                resource_type, field_list, ", ".join(operations)
-            )
+            table.add_row(resource_type, field_list, ", ".join(operations))
         for field in [
             "problems",
             "stats",
@@ -934,9 +911,7 @@ class CustomGroup(click.Group):
                 aliases = f"({', '.join(COMMANDS[name]['aliases'])}) "
             else:
                 aliases = ""
-            commands.append(
-                (name, f"{aliases}{COMMANDS[name]['description']}")
-            )
+            commands.append((name, f"{aliases}{COMMANDS[name]['description']}"))
 
         with formatter.section("Commands"):
             formatter.write_dl(commands)
@@ -989,35 +964,22 @@ def register_commands() -> None:
 
     # Modify help text to show aliases inline
     show.help = "Show information about Slurm resources (aliases: get)"
-    update.help = (
-        "Update Slurm resource fields "
-        "(aliases: edit, change, modify)"
-    )
+    update.help = "Update Slurm resource fields " "(aliases: edit, change, modify)"
     create.help = "Create Slurm resources (aliases: new, add)"
     delete.help = "Delete Slurm resources (aliases: remove, rm)"
     list_resources.help = "List available Slurm resources (aliases: ls)"
     version.help = "Show slurm-cli and slurmctld version (aliases: ver)"
-    reconfigure.help = (
-        "Reconfigure slurmctld (aliases: reconf, confreload)"
-    )
+    reconfigure.help = "Reconfigure slurmctld (aliases: reconf, confreload)"
     ping.help = "Ping slurmctld"
     takeover.help = "Take over as primary slurmctld"
-    write_config.help = (
-        "Write Slurm configuration file (aliases: wconf)"
-    )
-    batch_script.help = (
-        "Run scontrol write batch_script for a job (aliases: bscript)"
-    )
+    write_config.help = "Write Slurm configuration file (aliases: wconf)"
+    batch_script.help = "Run scontrol write batch_script for a job (aliases: bscript)"
     token.help = "Generate JWT authentication token (aliases: tok)"
-    drain.help = (
-        "Drain nodes (aliases: dr). Reason: -r, --reason, or reason="
-    )
+    drain.help = "Drain nodes (aliases: dr). Reason: -r, --reason, or reason="
     undrain.help = "Undrain/resume nodes (aliases: undr, resume)"
     reboot.help = "Reboot nodes (aliases: reb)"
     cancel_reboot.help = "Cancel pending reboot (aliases: cancel-reb)"
-    hold.help = (
-        "Hold jobs (aliases: hol). Reason: -r, --reason, or reason="
-    )
+    hold.help = "Hold jobs (aliases: hol). Reason: -r, --reason, or reason="
     release.help = "Release held jobs (aliases: rel)"
     top.help = "Move jobs to top of queue"
     requeue.help = "Requeue jobs (aliases: req)"
@@ -1042,9 +1004,7 @@ def register_commands() -> None:
     metavar="RESOURCE",
 )
 @click.argument("field", required=False, nargs=-1)
-@click.option(
-    "--verbose", "-v", is_flag=True, help="Enable verbose output"
-)
+@click.option("--verbose", "-v", is_flag=True, help="Enable verbose output")
 @click.option(
     "--tree",
     "-T",
@@ -1202,18 +1162,12 @@ def show(
             has_filters = any(is_node_filter(f) for f in field)
             if has_filters:
                 # Use resolve_node_filters for all fields (supports exclusions)
-                resolved_nodes, _ = resolve_node_filters(
-                    list(field), verbose
-                )
+                resolved_nodes, _ = resolve_node_filters(list(field), verbose)
                 if not resolved_nodes:
-                    console.print(
-                        "[yellow]No nodes matched filters[/yellow]"
-                    )
+                    console.print("[yellow]No nodes matched filters[/yellow]")
                     return
                 # Filter data to only include resolved nodes
-                filtered_data = {
-                    k: v for k, v in data.items() if k in resolved_nodes
-                }
+                filtered_data = {k: v for k, v in data.items() if k in resolved_nodes}
                 Node.show(
                     data=filtered_data,
                     style=style,
@@ -1346,13 +1300,9 @@ def show(
         if field:
             has_filters = any(is_node_filter(f) for f in field)
             if has_filters:
-                resolved_nodes, _ = resolve_node_filters(
-                    list(field), verbose
-                )
+                resolved_nodes, _ = resolve_node_filters(list(field), verbose)
                 if not resolved_nodes:
-                    console.print(
-                        "[yellow]No nodes matched filters[/yellow]"
-                    )
+                    console.print("[yellow]No nodes matched filters[/yellow]")
                     return
                 # Pass the resolved nodes as comma-separated list
                 Event.show(
@@ -1391,9 +1341,7 @@ def show(
             if has_filters:
                 resolved_jobs, _ = resolve_job_ids(list(field), verbose)
                 if not resolved_jobs:
-                    console.print(
-                        "[yellow]No jobs matched filters[/yellow]"
-                    )
+                    console.print("[yellow]No jobs matched filters[/yellow]")
                     return
                 # Pass resolved job IDs
                 for job_id in resolved_jobs:
@@ -1444,9 +1392,7 @@ def show(
 @click.argument("field", required=False)
 @click.argument("value", required=False)
 @click.argument("names", nargs=-1, required=False)
-@click.option(
-    "--verbose", "-v", is_flag=True, help="Enable verbose output"
-)
+@click.option("--verbose", "-v", is_flag=True, help="Enable verbose output")
 @click.option(
     "--yes",
     "-y",
@@ -1533,9 +1479,7 @@ def update(
                 update_options[arg] = None
 
     # Resolve node filters in options (e.g., nodes=partition=cpu)
-    update_options = resolve_node_filters_in_options(
-        update_options, verbose
-    )
+    update_options = resolve_node_filters_in_options(update_options, verbose)
     if update_options is None:
         return  # Node filter matched nothing, abort
 
@@ -1614,14 +1558,11 @@ def update(
         additional_args = " ".join(f"'{arg}'" for arg in names)
         if verbose and not dry_run:
             console.print(
-                f"Updating {canonical_resource} {field} '{value}' "
-                f"{additional_args}"
+                f"Updating {canonical_resource} {field} '{value}' " f"{additional_args}"
             )
 
         if canonical_resource[:4] == "part":
-            Partition.update(
-                field, verbose, dry_run=dry_run, **update_options
-            )
+            Partition.update(field, verbose, dry_run=dry_run, **update_options)
         elif canonical_resource[:4] == "node":
             # Resolve node filter if field is a filter expression
             if is_node_filter(field):
@@ -1633,37 +1574,21 @@ def update(
                     )
                     return
                 field = resolved
-            Node.update(
-                field, verbose, dry_run=dry_run, **update_options
-            )
+            Node.update(field, verbose, dry_run=dry_run, **update_options)
         elif canonical_resource[:4] == "user":
-            User.update(
-                field, verbose, dry_run=dry_run, **update_options
-            )
+            User.update(field, verbose, dry_run=dry_run, **update_options)
         elif canonical_resource[:3] == "qos":
-            Qos.update(
-                field, verbose, dry_run=dry_run, **update_options
-            )
+            Qos.update(field, verbose, dry_run=dry_run, **update_options)
         elif canonical_resource[:3] == "acc":
-            Account.update(
-                field, verbose, dry_run=dry_run, **update_options
-            )
+            Account.update(field, verbose, dry_run=dry_run, **update_options)
         elif canonical_resource[:5] == "assoc":
-            Association.update(
-                field, verbose, dry_run=dry_run, **update_options
-            )
+            Association.update(field, verbose, dry_run=dry_run, **update_options)
         elif canonical_resource[:3] == "res":
-            Reservation.update(
-                field, verbose, dry_run=dry_run, **update_options
-            )
+            Reservation.update(field, verbose, dry_run=dry_run, **update_options)
         elif canonical_resource[:5] == "coord":
-            Coordinator.update(
-                field, verbose, dry_run=dry_run, **update_options
-            )
+            Coordinator.update(field, verbose, dry_run=dry_run, **update_options)
         elif canonical_resource[:4] == "conf":
-            Config.update(
-                field, verbose, dry_run=dry_run, **update_options
-            )
+            Config.update(field, verbose, dry_run=dry_run, **update_options)
         elif canonical_resource[:3] == "job":
             # Resolve job filter if field is a filter expression
             if is_job_filter(field):
@@ -1682,13 +1607,9 @@ def update(
                         **update_options,
                     )
             else:
-                Job.update(
-                    field, verbose, dry_run=dry_run, **update_options
-                )
+                Job.update(field, verbose, dry_run=dry_run, **update_options)
         else:
-            console.print(
-                f"[red]Resource '{canonical_resource}' not found.[/red]"
-            )
+            console.print(f"[red]Resource '{canonical_resource}' not found.[/red]")
     else:
         # Simple mode: modify accounts/associations NAME key=value
         extra_kwargs: Dict[str, Any] = (
@@ -1713,17 +1634,11 @@ def update(
                     )
                     return
                 field = resolved
-            Node.update(
-                field, verbose, dry_run=dry_run, **update_options
-            )
+            Node.update(field, verbose, dry_run=dry_run, **update_options)
         elif canonical_resource[:4] == "part":
-            Partition.update(
-                field, verbose, dry_run=dry_run, **update_options
-            )
+            Partition.update(field, verbose, dry_run=dry_run, **update_options)
         elif canonical_resource[:3] == "res":
-            Reservation.update(
-                field, verbose, dry_run=dry_run, **update_options
-            )
+            Reservation.update(field, verbose, dry_run=dry_run, **update_options)
         elif canonical_resource[:3] == "job":
             # Resolve job filter if field is a filter expression
             if is_job_filter(field):
@@ -1742,9 +1657,7 @@ def update(
                         **update_options,
                     )
             else:
-                Job.update(
-                    field, verbose, dry_run=dry_run, **update_options
-                )
+                Job.update(field, verbose, dry_run=dry_run, **update_options)
         else:
             # If no additional arguments, show general update message
             if dry_run:
@@ -1753,9 +1666,7 @@ def update(
                     f"{canonical_resource} {field} '{value}'"
                 )
             else:
-                console.print(
-                    f"Updating {canonical_resource} {field} '{value}'"
-                )
+                console.print(f"Updating {canonical_resource} {field} '{value}'")
 
 
 # Create command
@@ -1777,9 +1688,7 @@ def update(
     is_flag=True,
     help="Show what would be updated without making changes",
 )
-@click.option(
-    "--verbose", "-v", is_flag=True, help="Enable verbose output"
-)
+@click.option("--verbose", "-v", is_flag=True, help="Enable verbose output")
 @click.option(
     "--force",
     "-f",
@@ -1855,9 +1764,7 @@ def create(
                 create_options[arg] = None
 
     # Resolve node filters in options (e.g., nodes=partition=cpu)
-    create_options = resolve_node_filters_in_options(
-        create_options, verbose
-    )
+    create_options = resolve_node_filters_in_options(create_options, verbose)
     if create_options is None:
         return  # Node filter matched nothing, abort
 
@@ -1874,8 +1781,7 @@ def create(
     else:
         if verbose:
             console.print(
-                f"Creating {canonical_resource} {field} "
-                f"{additional_args}"
+                f"Creating {canonical_resource} {field} " f"{additional_args}"
             )
 
         if canonical_resource[:4] == "part":
@@ -1900,12 +1806,10 @@ def create(
             # Check if account or wckey is specified
             skip_confirm = get_skip_confirm(ctx, yes, force)
             has_account = any(
-                k.lower() in ("account", "defaultaccount")
-                for k in create_options
+                k.lower() in ("account", "defaultaccount") for k in create_options
             )
             has_wckey = any(
-                k.lower() in ("wckey", "defaultwckey")
-                for k in create_options
+                k.lower() in ("wckey", "defaultwckey") for k in create_options
             )
             if not has_account and not has_wckey:
                 console.print(
@@ -1917,9 +1821,7 @@ def create(
                     "an account association.[/yellow]"
                 )
                 if not skip_confirm:
-                    if not confirm_single_key(
-                        "Do you want to continue?"
-                    ):
+                    if not confirm_single_key("Do you want to continue?"):
                         console.print("Aborted.")
                         return
 
@@ -1945,9 +1847,9 @@ def create(
             # Get user from options if not set from positional arg
             # Handle name= or user= keys
             if not user_name:
-                user_name = create_options.pop(
-                    "name", None
-                ) or create_options.pop("user", None)
+                user_name = create_options.pop("name", None) or create_options.pop(
+                    "user", None
+                )
 
             Coordinator.create(user_name, verbose, **create_options)
         elif canonical_resource[:5] == "assoc":
@@ -1962,9 +1864,9 @@ def create(
             # Get name from options if not set from positional arg
             # Accept both name= and user= as the username
             if not user_name:
-                user_name = create_options.pop(
-                    "name", None
-                ) or create_options.pop("user", None)
+                user_name = create_options.pop("name", None) or create_options.pop(
+                    "user", None
+                )
 
             if not user_name:
                 console.print(
@@ -1974,9 +1876,7 @@ def create(
                 return
             Association.create(user_name, verbose, **create_options)
         else:
-            console.print(
-                f"[red]Resource '{canonical_resource}' not found.[/red]"
-            )
+            console.print(f"[red]Resource '{canonical_resource}' not found.[/red]")
 
 
 # delete command
@@ -2013,9 +1913,7 @@ def create(
     is_flag=True,
     help="Show what would be deleted without making changes",
 )
-@click.option(
-    "--verbose", "-v", is_flag=True, help="Enable verbose output"
-)
+@click.option("--verbose", "-v", is_flag=True, help="Enable verbose output")
 @click.option(
     "--list-fields",
     "-L",
@@ -2094,8 +1992,7 @@ def delete(
             return
 
         if not skip_confirm and not confirm_single_key(
-            f"Are you sure you want to delete associations "
-            f"where {conditions_str}?"
+            f"Are you sure you want to delete associations " f"where {conditions_str}?"
         ):
             console.print("[red]Operation cancelled.[/red]")
             raise click.Abort()
@@ -2155,9 +2052,7 @@ def delete(
         job_ids, user_filters = resolve_job_ids(args, verbose)
 
         # Sort job IDs for consistent display
-        sorted_job_ids = sorted(
-            job_ids, key=lambda x: int(x.split("_")[0])
-        )
+        sorted_job_ids = sorted(job_ids, key=lambda x: int(x.split("_")[0]))
 
         # Check if any jobs were found
         if not sorted_job_ids and not user_filters:
@@ -2184,26 +2079,19 @@ def delete(
         if not skip_confirm:
             confirm_parts = []
             if user_filters:
-                confirm_parts.append(
-                    f"ALL jobs for user(s): {', '.join(user_filters)}"
-                )
+                confirm_parts.append(f"ALL jobs for user(s): {', '.join(user_filters)}")
             if sorted_job_ids:
                 confirm_parts.append(
-                    f"{len(sorted_job_ids)} job(s): "
-                    f"{', '.join(sorted_job_ids)}"
+                    f"{len(sorted_job_ids)} job(s): " f"{', '.join(sorted_job_ids)}"
                 )
             if confirm_parts:
-                if not confirm_single_key(
-                    f"Cancel {' and '.join(confirm_parts)}?"
-                ):
+                if not confirm_single_key(f"Cancel {' and '.join(confirm_parts)}?"):
                     console.print("[red]Operation cancelled.[/red]")
                     raise click.Abort()
 
         # Cancel by user (scancel -u USER)
         for user in user_filters:
-            console.print(
-                f"[yellow]Cancelling ALL jobs for user: {user}[/yellow]"
-            )
+            console.print(f"[yellow]Cancelling ALL jobs for user: {user}[/yellow]")
             Job._cancel_by_user(user, verbose=verbose)
 
         # Cancel specific job IDs
@@ -3131,9 +3019,7 @@ def list_resources(
     if isinstance(routes, dict):
         for resource_type, fields in routes.items():
             if isinstance(fields, dict):
-                field_list = (
-                    ", ".join(fields.keys()) if fields else "N/A"
-                )
+                field_list = ", ".join(fields.keys()) if fields else "N/A"
             else:
                 field_list = "N/A"
             operations: List[str] = []
@@ -3142,20 +3028,12 @@ def list_resources(
                 and resource_type in ROUTES["get-set"]
             ):
                 operations.append("get/set")
-            if (
-                isinstance(ROUTES["create"], dict)
-                and resource_type in ROUTES["create"]
-            ):
+            if isinstance(ROUTES["create"], dict) and resource_type in ROUTES["create"]:
                 operations.append("create")
-            if (
-                isinstance(ROUTES["create"], dict)
-                and resource_type in ROUTES["create"]
-            ):
+            if isinstance(ROUTES["create"], dict) and resource_type in ROUTES["create"]:
                 operations.append("delete")
 
-            table.add_row(
-                resource_type, field_list, ", ".join(operations)
-            )
+            table.add_row(resource_type, field_list, ", ".join(operations))
         for field in [
             "problems",
             "stats",
@@ -3169,9 +3047,7 @@ def list_resources(
 
 
 @click.command(context_settings=CONTEXT_SETTINGS)
-@click.option(
-    "--verbose", "-v", is_flag=True, help="Enable verbose output"
-)
+@click.option("--verbose", "-v", is_flag=True, help="Enable verbose output")
 def version(verbose: bool = False) -> None:
     """Show version information."""
     _version = importlib.metadata.version("slurm-cli")
@@ -3189,18 +3065,14 @@ def version(verbose: bool = False) -> None:
         console.print(f"\n[dim]{result.stdout.strip()}[/dim]")
     except subprocess.CalledProcessError as e:
         if verbose:
-            console.print(
-                f"[red]Error getting Slurm version: {e}[/red]"
-            )
+            console.print(f"[red]Error getting Slurm version: {e}[/red]")
     except FileNotFoundError:
         if verbose:
             console.print("[yellow]scontrol not found[/yellow]")
 
 
 @click.command(context_settings=CONTEXT_SETTINGS)
-@click.option(
-    "--verbose", "-v", is_flag=True, help="Enable verbose output"
-)
+@click.option("--verbose", "-v", is_flag=True, help="Enable verbose output")
 @click.option(
     "--dry-run",
     is_flag=True,
@@ -3233,9 +3105,7 @@ def reconfigure(
         )
         if result.stdout:
             console.print(result.stdout.strip())
-        console.print(
-            "[green]Reconfigure command sent successfully[/green]"
-        )
+        console.print("[green]Reconfigure command sent successfully[/green]")
     except subprocess.CalledProcessError as e:
         console.print(f"[red]Error: {e.stderr.strip() or e}[/red]")
     except FileNotFoundError:
@@ -3243,18 +3113,14 @@ def reconfigure(
 
 
 @click.command(context_settings=CONTEXT_SETTINGS)
-@click.option(
-    "--verbose", "-v", is_flag=True, help="Enable verbose output"
-)
+@click.option("--verbose", "-v", is_flag=True, help="Enable verbose output")
 @click.option(
     "--dry-run",
     is_flag=True,
     help="Show command without executing",
 )
 @click.pass_context
-def ping(
-    ctx: click.Context, verbose: bool = False, dry_run: bool = False
-) -> None:
+def ping(ctx: click.Context, verbose: bool = False, dry_run: bool = False) -> None:
     """Ping slurmctld.
 
     Checks if the Slurm controller is responding.
@@ -3285,18 +3151,14 @@ def ping(
 
 
 @click.command(context_settings=CONTEXT_SETTINGS)
-@click.option(
-    "--verbose", "-v", is_flag=True, help="Enable verbose output"
-)
+@click.option("--verbose", "-v", is_flag=True, help="Enable verbose output")
 @click.option(
     "--dry-run",
     is_flag=True,
     help="Show command without executing",
 )
 @click.pass_context
-def takeover(
-    ctx: click.Context, verbose: bool = False, dry_run: bool = False
-) -> None:
+def takeover(ctx: click.Context, verbose: bool = False, dry_run: bool = False) -> None:
     """Take over as primary slurmctld.
 
     Causes the backup slurmctld to take over as the primary controller.
@@ -3321,9 +3183,7 @@ def takeover(
         )
         if result.stdout:
             console.print(result.stdout.strip())
-        console.print(
-            "[green]Takeover command sent successfully[/green]"
-        )
+        console.print("[green]Takeover command sent successfully[/green]")
     except subprocess.CalledProcessError as e:
         console.print(f"[red]Error: {e.stderr.strip() or e}[/red]")
     except FileNotFoundError:
@@ -3331,9 +3191,7 @@ def takeover(
 
 
 @click.command(context_settings=CONTEXT_SETTINGS)
-@click.option(
-    "--verbose", "-v", is_flag=True, help="Enable verbose output"
-)
+@click.option("--verbose", "-v", is_flag=True, help="Enable verbose output")
 @click.option(
     "--dry-run",
     is_flag=True,
@@ -3377,9 +3235,7 @@ def write_config(
         )
         if result.stdout:
             console.print(result.stdout.strip())
-        console.print(
-            "[green]Write config command sent successfully[/green]"
-        )
+        console.print("[green]Write config command sent successfully[/green]")
     except subprocess.CalledProcessError as e:
         console.print(f"[red]Error: {e.stderr.strip() or e}[/red]")
     except FileNotFoundError:
@@ -3387,9 +3243,7 @@ def write_config(
 
 
 @click.command(context_settings=CONTEXT_SETTINGS)
-@click.option(
-    "--verbose", "-v", is_flag=True, help="Enable verbose output"
-)
+@click.option("--verbose", "-v", is_flag=True, help="Enable verbose output")
 @click.option(
     "--dry-run",
     is_flag=True,
@@ -3446,9 +3300,7 @@ def schedloglevel(
         )
         if result.stdout:
             console.print(result.stdout.strip())
-        console.print(
-            "[green]Scheduler log level command sent successfully[/green]"
-        )
+        console.print("[green]Scheduler log level command sent successfully[/green]")
     except subprocess.CalledProcessError as e:
         console.print(f"[red]Error: {e.stderr.strip() or e}[/red]")
     except FileNotFoundError:
@@ -3456,9 +3308,7 @@ def schedloglevel(
 
 
 @click.command(context_settings=CONTEXT_SETTINGS)
-@click.option(
-    "--verbose", "-v", is_flag=True, help="Enable verbose output"
-)
+@click.option("--verbose", "-v", is_flag=True, help="Enable verbose output")
 @click.option(
     "--dry-run",
     is_flag=True,
@@ -3532,9 +3382,7 @@ def setdebug(
     if nodes_value:
         # Resolve filter expressions to actual nodelist if needed
         if is_node_filter(nodes_value):
-            resolved_nodes, _ = resolve_node_filters(
-                [nodes_value], verbose
-            )
+            resolved_nodes, _ = resolve_node_filters([nodes_value], verbose)
             if not resolved_nodes:
                 console.print(
                     f"[red]Error: Node filter '{nodes_value}' "
@@ -3570,18 +3418,14 @@ def setdebug(
 
 
 @click.command(context_settings=CONTEXT_SETTINGS)
-@click.option(
-    "--verbose", "-v", is_flag=True, help="Enable verbose output"
-)
+@click.option("--verbose", "-v", is_flag=True, help="Enable verbose output")
 @click.option(
     "--dry-run",
     is_flag=True,
     help="Show command without executing",
 )
 @click.pass_context
-def bbstat(
-    ctx: click.Context, verbose: bool = False, dry_run: bool = False
-) -> None:
+def bbstat(ctx: click.Context, verbose: bool = False, dry_run: bool = False) -> None:
     """Show burst buffer status (aliases: bbs).
 
     Displays current burst buffer status from slurmctld.
@@ -3667,9 +3511,7 @@ _SETDEBUGFLAGS_LOWER = {f.lower(): f for f in SETDEBUGFLAGS_FLAGS}
         "ignore_unknown_options": True,
     }
 )
-@click.option(
-    "--verbose", "-v", is_flag=True, help="Enable verbose output"
-)
+@click.option("--verbose", "-v", is_flag=True, help="Enable verbose output")
 @click.option(
     "--dry-run",
     is_flag=True,
@@ -3733,9 +3575,7 @@ def setdebugflags(
 
     if nodes_value is not None:
         if is_node_filter(nodes_value):
-            resolved_nodes, _ = resolve_node_filters(
-                [nodes_value], verbose
-            )
+            resolved_nodes, _ = resolve_node_filters([nodes_value], verbose)
             if not resolved_nodes:
                 console.print(
                     f"[red]Error: Node filter '{nodes_value}' matched no nodes[/red]"
@@ -3754,9 +3594,7 @@ def setdebugflags(
         console.print(f"[dim]Running: {' '.join(args)}[/dim]")
 
     try:
-        result = subprocess.run(
-            args, capture_output=True, text=True, check=True
-        )
+        result = subprocess.run(args, capture_output=True, text=True, check=True)
         if result.stdout:
             console.print(result.stdout.strip())
     except subprocess.CalledProcessError as e:
@@ -3765,9 +3603,7 @@ def setdebugflags(
         console.print("[red]Error: scontrol not found[/red]")
 
 
-def _scontrol_simple(
-    cmd_name: str, verbose: bool, dry_run: bool
-) -> None:
+def _scontrol_simple(cmd_name: str, verbose: bool, dry_run: bool) -> None:
     """Run a simple scontrol subcommand with no extra arguments."""
     args = ["scontrol", cmd_name]
     if dry_run:
@@ -3776,9 +3612,7 @@ def _scontrol_simple(
     if verbose:
         console.print(f"[dim]Running: {' '.join(args)}[/dim]")
     try:
-        result = subprocess.run(
-            args, capture_output=True, text=True, check=True
-        )
+        result = subprocess.run(args, capture_output=True, text=True, check=True)
         if result.stdout:
             console.print(result.stdout.strip())
     except subprocess.CalledProcessError as e:
@@ -3788,71 +3622,45 @@ def _scontrol_simple(
 
 
 @click.command(context_settings=CONTEXT_SETTINGS)
-@click.option(
-    "--verbose", "-v", is_flag=True, help="Enable verbose output"
-)
-@click.option(
-    "--dry-run", is_flag=True, help="Show command without executing"
-)
+@click.option("--verbose", "-v", is_flag=True, help="Enable verbose output")
+@click.option("--dry-run", is_flag=True, help="Show command without executing")
 @click.pass_context
 def burstbuffer(
     ctx: click.Context, verbose: bool = False, dry_run: bool = False
 ) -> None:
     """Show burst buffer information."""
-    _scontrol_simple(
-        "burstbuffer", verbose, get_dry_run(ctx) or dry_run
-    )
+    _scontrol_simple("burstbuffer", verbose, get_dry_run(ctx) or dry_run)
 
 
 @click.command(context_settings=CONTEXT_SETTINGS)
-@click.option(
-    "--verbose", "-v", is_flag=True, help="Enable verbose output"
-)
-@click.option(
-    "--dry-run", is_flag=True, help="Show command without executing"
-)
+@click.option("--verbose", "-v", is_flag=True, help="Enable verbose output")
+@click.option("--dry-run", is_flag=True, help="Show command without executing")
 @click.pass_context
-def daemons(
-    ctx: click.Context, verbose: bool = False, dry_run: bool = False
-) -> None:
+def daemons(ctx: click.Context, verbose: bool = False, dry_run: bool = False) -> None:
     """Show running Slurm daemons."""
     _scontrol_simple("daemons", verbose, get_dry_run(ctx) or dry_run)
 
 
 @click.command(context_settings=CONTEXT_SETTINGS)
-@click.option(
-    "--verbose", "-v", is_flag=True, help="Enable verbose output"
-)
-@click.option(
-    "--dry-run", is_flag=True, help="Show command without executing"
-)
+@click.option("--verbose", "-v", is_flag=True, help="Enable verbose output")
+@click.option("--dry-run", is_flag=True, help="Show command without executing")
 @click.pass_context
-def dwstat(
-    ctx: click.Context, verbose: bool = False, dry_run: bool = False
-) -> None:
+def dwstat(ctx: click.Context, verbose: bool = False, dry_run: bool = False) -> None:
     """Show DataWarp/burst buffer status."""
     _scontrol_simple("dwstat", verbose, get_dry_run(ctx) or dry_run)
 
 
 @click.command(context_settings=CONTEXT_SETTINGS)
-@click.option(
-    "--verbose", "-v", is_flag=True, help="Enable verbose output"
-)
-@click.option(
-    "--dry-run", is_flag=True, help="Show command without executing"
-)
+@click.option("--verbose", "-v", is_flag=True, help="Enable verbose output")
+@click.option("--dry-run", is_flag=True, help="Show command without executing")
 @click.pass_context
-def topology(
-    ctx: click.Context, verbose: bool = False, dry_run: bool = False
-) -> None:
+def topology(ctx: click.Context, verbose: bool = False, dry_run: bool = False) -> None:
     """Show network topology information."""
     _scontrol_simple("topology", verbose, get_dry_run(ctx) or dry_run)
 
 
 @click.command(context_settings=CONTEXT_SETTINGS)
-@click.option(
-    "--verbose", "-v", is_flag=True, help="Enable verbose output"
-)
+@click.option("--verbose", "-v", is_flag=True, help="Enable verbose output")
 @click.option(
     "--dry-run",
     is_flag=True,
@@ -3911,9 +3719,7 @@ def batch_script(
         )
         if result.stdout:
             console.print(result.stdout.strip())
-        console.print(
-            "[green]Batch script command sent successfully[/green]"
-        )
+        console.print("[green]Batch script command sent successfully[/green]")
     except subprocess.CalledProcessError as e:
         console.print(f"[red]Error: {e.stderr.strip() or e}[/red]")
     except FileNotFoundError:
@@ -3983,9 +3789,7 @@ def parse_time_to_seconds(time_str: str) -> Optional[int]:
 
 @click.command(context_settings=CONTEXT_SETTINGS)
 @click.argument("options", nargs=-1)
-@click.option(
-    "--verbose", "-v", is_flag=True, help="Enable verbose output"
-)
+@click.option("--verbose", "-v", is_flag=True, help="Enable verbose output")
 @click.option(
     "--dry-run",
     is_flag=True,
@@ -4016,9 +3820,7 @@ def token(
     # Parse options
     for opt in options:
         if "=" not in opt:
-            console.print(
-                f"[red]Error: Invalid option format: {opt}[/red]"
-            )
+            console.print(f"[red]Error: Invalid option format: {opt}[/red]")
             console.print("Options must be in key=value format")
             return
 
@@ -4037,9 +3839,7 @@ def token(
         elif key == "username":
             args.append(f"username={value}")
         else:
-            console.print(
-                f"[yellow]Warning: Unknown option: {key}[/yellow]"
-            )
+            console.print(f"[yellow]Warning: Unknown option: {key}[/yellow]")
             args.append(f"{key}={value}")
 
     if dry_run:
@@ -4064,9 +3864,7 @@ def token(
         console.print("[red]Error: scontrol not found[/red]")
 
 
-def _resolve_user_filter(
-    value: str, verbose: bool = False
-) -> Optional[str]:
+def _resolve_user_filter(value: str, verbose: bool = False) -> Optional[str]:
     """Resolve a user filter expression to a comma-separated list of users.
 
     Supports:
@@ -4106,9 +3904,7 @@ def _resolve_user_filter(
                 if result.stdout:
                     data = json.loads(result.stdout)
                     users = data.get("users", [])
-                    user_names = [
-                        u.get("name") for u in users if u.get("name")
-                    ]
+                    user_names = [u.get("name") for u in users if u.get("name")]
                     if user_names:
                         if verbose:
                             console.print(
@@ -4137,8 +3933,7 @@ def _resolve_user_filter(
             # Unknown filter, return as-is (scontrol might handle it)
             if verbose:
                 console.print(
-                    f"[dim]Unknown user filter '{key}', "
-                    f"passing as-is[/dim]"
+                    f"[dim]Unknown user filter '{key}', " f"passing as-is[/dim]"
                 )
             return value
 
@@ -4152,9 +3947,7 @@ ASSOC_MGR_FLAGS = ["users", "assoc", "qos"]
 
 @click.command(context_settings=CONTEXT_SETTINGS)
 @click.argument("options", nargs=-1)
-@click.option(
-    "--verbose", "-v", is_flag=True, help="Enable verbose output"
-)
+@click.option("--verbose", "-v", is_flag=True, help="Enable verbose output")
 @click.option(
     "--dry-run",
     is_flag=True,
@@ -4196,9 +3989,7 @@ def assoc_mgr(
     # Parse options
     for opt in options:
         if "=" not in opt:
-            console.print(
-                f"[red]Error: Invalid option format: {opt}[/red]"
-            )
+            console.print(f"[red]Error: Invalid option format: {opt}[/red]")
             console.print("Options must be in key=value format")
             return
 
@@ -4224,9 +4015,7 @@ def assoc_mgr(
                 return
             args.append(f"flags={value}")
         else:
-            console.print(
-                f"[yellow]Warning: Unknown option: {key}[/yellow]"
-            )
+            console.print(f"[yellow]Warning: Unknown option: {key}[/yellow]")
             args.append(f"{key}={value}")
 
     if dry_run:
@@ -4253,17 +4042,13 @@ def assoc_mgr(
 
 @click.command(context_settings=CONTEXT_SETTINGS)
 @click.argument("nodes", nargs=-1, required=True)
-@click.option(
-    "--reason", "-r", default=None, help="Reason for draining nodes"
-)
+@click.option("--reason", "-r", default=None, help="Reason for draining nodes")
 @click.option(
     "--dry-run",
     is_flag=True,
     help="Show what would be done without making changes",
 )
-@click.option(
-    "--verbose", "-v", is_flag=True, help="Enable verbose output"
-)
+@click.option("--verbose", "-v", is_flag=True, help="Enable verbose output")
 @click.pass_context
 def drain(
     ctx: click.Context,
@@ -4305,14 +4090,10 @@ def drain(
             node_args.append(arg)
 
     # Resolve node filters with exclusions
-    resolved_nodes, other_args = resolve_node_filters(
-        node_args, verbose
-    )
+    resolved_nodes, other_args = resolve_node_filters(node_args, verbose)
 
     if not resolved_nodes:
-        console.print(
-            "[red]Error: No nodes specified or all excluded[/red]"
-        )
+        console.print("[red]Error: No nodes specified or all excluded[/red]")
         return
 
     # Convert set to sorted list for consistent output
@@ -4358,9 +4139,7 @@ def drain(
     is_flag=True,
     help="Show what would be done without making changes",
 )
-@click.option(
-    "--verbose", "-v", is_flag=True, help="Enable verbose output"
-)
+@click.option("--verbose", "-v", is_flag=True, help="Enable verbose output")
 @click.pass_context
 def undrain(
     ctx: click.Context,
@@ -4387,14 +4166,10 @@ def undrain(
     """
     dry_run = get_dry_run(ctx, dry_run)
     # Resolve node filters with exclusions
-    resolved_nodes, other_args = resolve_node_filters(
-        list(nodes), verbose
-    )
+    resolved_nodes, other_args = resolve_node_filters(list(nodes), verbose)
 
     if not resolved_nodes:
-        console.print(
-            "[red]Error: No nodes specified or all excluded[/red]"
-        )
+        console.print("[red]Error: No nodes specified or all excluded[/red]")
         return
 
     # Convert set to sorted list for consistent output
@@ -4439,9 +4214,7 @@ def undrain(
     is_flag=True,
     help="Show what would be done without making changes",
 )
-@click.option(
-    "--verbose", "-v", is_flag=True, help="Enable verbose output"
-)
+@click.option("--verbose", "-v", is_flag=True, help="Enable verbose output")
 @click.pass_context
 def reboot(
     ctx: click.Context,
@@ -4499,14 +4272,10 @@ def reboot(
         nodelist = "ALL"
     else:
         # Resolve node filters with exclusions
-        resolved_nodes, other_args = resolve_node_filters(
-            node_args, verbose
-        )
+        resolved_nodes, other_args = resolve_node_filters(node_args, verbose)
 
         if not resolved_nodes:
-            console.print(
-                "[red]Error: No nodes specified or all excluded[/red]"
-            )
+            console.print("[red]Error: No nodes specified or all excluded[/red]")
             return
 
         # Convert set to sorted list for consistent output
@@ -4557,9 +4326,7 @@ def reboot(
     is_flag=True,
     help="Show what would be done without making changes",
 )
-@click.option(
-    "--verbose", "-v", is_flag=True, help="Enable verbose output"
-)
+@click.option("--verbose", "-v", is_flag=True, help="Enable verbose output")
 @click.pass_context
 def cancel_reboot(
     ctx: click.Context,
@@ -4584,14 +4351,10 @@ def cancel_reboot(
     """
     dry_run = get_dry_run(ctx, dry_run)
     # Resolve node filters with exclusions
-    resolved_nodes, other_args = resolve_node_filters(
-        list(nodes), verbose
-    )
+    resolved_nodes, other_args = resolve_node_filters(list(nodes), verbose)
 
     if not resolved_nodes:
-        console.print(
-            "[red]Error: No nodes specified or all excluded[/red]"
-        )
+        console.print("[red]Error: No nodes specified or all excluded[/red]")
         return
 
     # Convert set to sorted list for consistent output
@@ -4616,9 +4379,7 @@ def cancel_reboot(
         )
         if result.stdout:
             console.print(result.stdout.strip())
-        console.print(
-            f"[green]Cancelled reboot for node(s): {nodelist}[/green]"
-        )
+        console.print(f"[green]Cancelled reboot for node(s): {nodelist}[/green]")
     except subprocess.CalledProcessError as e:
         console.print(f"[red]Error: {e.stderr.strip() or e}[/red]")
     except FileNotFoundError:
@@ -4627,9 +4388,7 @@ def cancel_reboot(
 
 @click.command(context_settings=CONTEXT_SETTINGS)
 @click.argument("jobs", nargs=-1, required=True)
-@click.option(
-    "--reason", "-r", default=None, help="Reason for holding jobs"
-)
+@click.option("--reason", "-r", default=None, help="Reason for holding jobs")
 @click.option(
     "--user",
     "-u",
@@ -4641,9 +4400,7 @@ def cancel_reboot(
     is_flag=True,
     help="Show what would be done without making changes",
 )
-@click.option(
-    "--verbose", "-v", is_flag=True, help="Enable verbose output"
-)
+@click.option("--verbose", "-v", is_flag=True, help="Enable verbose output")
 @click.pass_context
 def hold(
     ctx: click.Context,
@@ -4725,8 +4482,7 @@ def hold(
                 console.print(result.stdout.strip())
         except subprocess.CalledProcessError as e:
             console.print(
-                f"[red]Error holding job {job_id}: "
-                f"{e.stderr.strip() or e}[/red]"
+                f"[red]Error holding job {job_id}: " f"{e.stderr.strip() or e}[/red]"
             )
         except FileNotFoundError:
             console.print("[red]Error: scontrol not found[/red]")
@@ -4734,9 +4490,7 @@ def hold(
 
     if job_ids and not dry_run:
         hold_type = "User held" if user else "Held"
-        console.print(
-            f"[green]{hold_type} job(s): {', '.join(job_ids)}[/green]"
-        )
+        console.print(f"[green]{hold_type} job(s): {', '.join(job_ids)}[/green]")
 
 
 @click.command(context_settings=CONTEXT_SETTINGS)
@@ -4746,9 +4500,7 @@ def hold(
     is_flag=True,
     help="Show what would be done without making changes",
 )
-@click.option(
-    "--verbose", "-v", is_flag=True, help="Enable verbose output"
-)
+@click.option("--verbose", "-v", is_flag=True, help="Enable verbose output")
 @click.pass_context
 def release(
     ctx: click.Context,
@@ -4803,17 +4555,14 @@ def release(
                 console.print(result.stdout.strip())
         except subprocess.CalledProcessError as e:
             console.print(
-                f"[red]Error releasing job {job_id}: "
-                f"{e.stderr.strip() or e}[/red]"
+                f"[red]Error releasing job {job_id}: " f"{e.stderr.strip() or e}[/red]"
             )
         except FileNotFoundError:
             console.print("[red]Error: scontrol not found[/red]")
             return
 
     if job_ids and not dry_run:
-        console.print(
-            f"[green]Released job(s): {', '.join(job_ids)}[/green]"
-        )
+        console.print(f"[green]Released job(s): {', '.join(job_ids)}[/green]")
 
 
 @click.command(context_settings=CONTEXT_SETTINGS)
@@ -4823,9 +4572,7 @@ def release(
     is_flag=True,
     help="Show what would be done without making changes",
 )
-@click.option(
-    "--verbose", "-v", is_flag=True, help="Enable verbose output"
-)
+@click.option("--verbose", "-v", is_flag=True, help="Enable verbose output")
 @click.pass_context
 def top(
     ctx: click.Context,
@@ -4892,9 +4639,7 @@ def top(
     is_flag=True,
     help="Show what would be done without making changes",
 )
-@click.option(
-    "--verbose", "-v", is_flag=True, help="Enable verbose output"
-)
+@click.option("--verbose", "-v", is_flag=True, help="Enable verbose output")
 @click.pass_context
 def requeue(
     ctx: click.Context,
@@ -4949,17 +4694,14 @@ def requeue(
                 console.print(result.stdout.strip())
         except subprocess.CalledProcessError as e:
             console.print(
-                f"[red]Error requeuing job {job_id}: "
-                f"{e.stderr.strip() or e}[/red]"
+                f"[red]Error requeuing job {job_id}: " f"{e.stderr.strip() or e}[/red]"
             )
         except FileNotFoundError:
             console.print("[red]Error: scontrol not found[/red]")
             return
 
     if job_ids and not dry_run:
-        console.print(
-            f"[green]Requeued job(s): {', '.join(job_ids)}[/green]"
-        )
+        console.print(f"[green]Requeued job(s): {', '.join(job_ids)}[/green]")
 
 
 @click.command(context_settings=CONTEXT_SETTINGS)
@@ -4969,9 +4711,7 @@ def requeue(
     is_flag=True,
     help="Show what would be done without making changes",
 )
-@click.option(
-    "--verbose", "-v", is_flag=True, help="Enable verbose output"
-)
+@click.option("--verbose", "-v", is_flag=True, help="Enable verbose output")
 @click.pass_context
 def suspend(
     ctx: click.Context,
@@ -5026,17 +4766,14 @@ def suspend(
                 console.print(result.stdout.strip())
         except subprocess.CalledProcessError as e:
             console.print(
-                f"[red]Error suspending job {job_id}: "
-                f"{e.stderr.strip() or e}[/red]"
+                f"[red]Error suspending job {job_id}: " f"{e.stderr.strip() or e}[/red]"
             )
         except FileNotFoundError:
             console.print("[red]Error: scontrol not found[/red]")
             return
 
     if job_ids and not dry_run:
-        console.print(
-            f"[green]Suspended job(s): {', '.join(job_ids)}[/green]"
-        )
+        console.print(f"[green]Suspended job(s): {', '.join(job_ids)}[/green]")
 
 
 @click.command(context_settings=CONTEXT_SETTINGS)

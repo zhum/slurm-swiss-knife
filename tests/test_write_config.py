@@ -19,15 +19,14 @@ def runner():
 # Flag and Option Tests
 # =============================================================================
 
+
 def test_write_config_dry_run(runner):
     """Test write-config with --dry-run flag."""
     from slurm_cli.cli import register_commands
 
     register_commands()
 
-    result = runner.invoke(
-        main, ["write-config", "--dry-run"]
-    )
+    result = runner.invoke(main, ["write-config", "--dry-run"])
     assert result.exit_code == 0
     assert "DRY RUN" in result.output
     # Should show the command that would be run
@@ -55,9 +54,7 @@ def test_write_config_dry_run_and_verbose(runner):
 
     register_commands()
 
-    result = runner.invoke(
-        main, ["write-config", "--dry-run", "-v"]
-    )
+    result = runner.invoke(main, ["write-config", "--dry-run", "-v"])
     assert result.exit_code == 0
     # Both dry-run output and verbose output should be present
     assert "DRY RUN" in result.output
@@ -82,6 +79,7 @@ def test_write_config_short_flags(runner):
 # Alias Tests
 # =============================================================================
 
+
 def test_write_config_alias_wconf(runner):
     """Test write-config with 'wconf' alias."""
     from slurm_cli.cli import register_commands
@@ -98,6 +96,7 @@ def test_write_config_alias_wconf(runner):
 # =============================================================================
 # Error Handling Tests
 # =============================================================================
+
 
 def test_write_config_error_handling(runner):
     """Test write-config error handling when scontrol fails."""
@@ -134,6 +133,7 @@ def test_write_config_not_found(runner):
 # Help and Documentation Tests
 # =============================================================================
 
+
 def test_write_config_in_help(runner):
     """Test that write-config appears in main help."""
     from slurm_cli.cli import register_commands
@@ -163,6 +163,7 @@ def test_write_config_help_text(runner):
 # =============================================================================
 # Integration Tests - Command Registration
 # =============================================================================
+
 
 def test_register_commands_includes_write_config():
     """Test that register_commands properly includes write-config."""
@@ -220,6 +221,7 @@ def test_register_commands_includes_all_scontrol_commands():
 # Prefix Matching Tests (for autocomplete)
 # =============================================================================
 
+
 def test_write_config_prefix_matching():
     """Test that write-config responds to common prefixes."""
     from slurm_cli.cli import resolve_command_alias
@@ -245,6 +247,7 @@ def test_takeover_prefix_matching():
 # =============================================================================
 # Regression Tests - Ensure Existing Behavior Still Works
 # =============================================================================
+
 
 def test_reconfigure_still_works_after_write_config_addition(runner):
     """Regression: ensure reconfigure still works after adding write-config."""
@@ -283,4 +286,3 @@ def test_ping_still_works_after_write_config_addition(runner):
         result = runner.invoke(main, ["ping"])
         assert result.exit_code == 0
         assert "Slurmctld" in result.output
-

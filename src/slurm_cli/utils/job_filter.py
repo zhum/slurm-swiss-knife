@@ -79,9 +79,7 @@ def parse_job_filter(filter_expr: str) -> dict:
     return {key.lower(): value}
 
 
-def resolve_job_filter(
-    filter_expr: str, verbose: bool = False
-) -> List[str]:
+def resolve_job_filter(filter_expr: str, verbose: bool = False) -> List[str]:
     """Resolve a job filter expression to a list of job IDs.
 
     Args:
@@ -148,26 +146,18 @@ def _get_jobs_by_user(user: str, verbose: bool = False) -> List[str]:
             errors="replace",
         )
         job_ids = [
-            jid.strip()
-            for jid in result.stdout.strip().split("\n")
-            if jid.strip()
+            jid.strip() for jid in result.stdout.strip().split("\n") if jid.strip()
         ]
         if verbose:
-            console.print(
-                f"[dim]Jobs for user '{user}': {len(job_ids)} found[/dim]"
-            )
+            console.print(f"[dim]Jobs for user '{user}': {len(job_ids)} found[/dim]")
         return job_ids
     except subprocess.CalledProcessError as e:
         if verbose:
-            console.print(
-                f"[red]Failed to get jobs by user: {e.stderr}[/red]"
-            )
+            console.print(f"[red]Failed to get jobs by user: {e.stderr}[/red]")
         return []
 
 
-def _get_jobs_by_account(
-    account: str, verbose: bool = False
-) -> List[str]:
+def _get_jobs_by_account(account: str, verbose: bool = False) -> List[str]:
     """Get job IDs for jobs charged to a specific account."""
     try:
         result = subprocess.run(
@@ -178,27 +168,20 @@ def _get_jobs_by_account(
             errors="replace",
         )
         job_ids = [
-            jid.strip()
-            for jid in result.stdout.strip().split("\n")
-            if jid.strip()
+            jid.strip() for jid in result.stdout.strip().split("\n") if jid.strip()
         ]
         if verbose:
             console.print(
-                f"[dim]Jobs for account '{account}': "
-                f"{len(job_ids)} found[/dim]"
+                f"[dim]Jobs for account '{account}': " f"{len(job_ids)} found[/dim]"
             )
         return job_ids
     except subprocess.CalledProcessError as e:
         if verbose:
-            console.print(
-                f"[red]Failed to get jobs by account: {e.stderr}[/red]"
-            )
+            console.print(f"[red]Failed to get jobs by account: {e.stderr}[/red]")
         return []
 
 
-def _get_jobs_by_partition(
-    partition: str, verbose: bool = False
-) -> List[str]:
+def _get_jobs_by_partition(partition: str, verbose: bool = False) -> List[str]:
     """Get job IDs for jobs in a specific partition."""
     try:
         result = subprocess.run(
@@ -209,21 +192,16 @@ def _get_jobs_by_partition(
             errors="replace",
         )
         job_ids = [
-            jid.strip()
-            for jid in result.stdout.strip().split("\n")
-            if jid.strip()
+            jid.strip() for jid in result.stdout.strip().split("\n") if jid.strip()
         ]
         if verbose:
             console.print(
-                f"[dim]Jobs in partition '{partition}': "
-                f"{len(job_ids)} found[/dim]"
+                f"[dim]Jobs in partition '{partition}': " f"{len(job_ids)} found[/dim]"
             )
         return job_ids
     except subprocess.CalledProcessError as e:
         if verbose:
-            console.print(
-                f"[red]Failed to get jobs by partition: {e.stderr}[/red]"
-            )
+            console.print(f"[red]Failed to get jobs by partition: {e.stderr}[/red]")
         return []
 
 
@@ -238,20 +216,14 @@ def _get_jobs_by_state(state: str, verbose: bool = False) -> List[str]:
             errors="replace",
         )
         job_ids = [
-            jid.strip()
-            for jid in result.stdout.strip().split("\n")
-            if jid.strip()
+            jid.strip() for jid in result.stdout.strip().split("\n") if jid.strip()
         ]
         if verbose:
-            console.print(
-                f"[dim]Jobs with state '{state}': {len(job_ids)} found[/dim]"
-            )
+            console.print(f"[dim]Jobs with state '{state}': {len(job_ids)} found[/dim]")
         return job_ids
     except subprocess.CalledProcessError as e:
         if verbose:
-            console.print(
-                f"[red]Failed to get jobs by state: {e.stderr}[/red]"
-            )
+            console.print(f"[red]Failed to get jobs by state: {e.stderr}[/red]")
         return []
 
 
@@ -266,26 +238,18 @@ def _get_jobs_by_name(name: str, verbose: bool = False) -> List[str]:
             errors="replace",
         )
         job_ids = [
-            jid.strip()
-            for jid in result.stdout.strip().split("\n")
-            if jid.strip()
+            jid.strip() for jid in result.stdout.strip().split("\n") if jid.strip()
         ]
         if verbose:
-            console.print(
-                f"[dim]Jobs with name '{name}': {len(job_ids)} found[/dim]"
-            )
+            console.print(f"[dim]Jobs with name '{name}': {len(job_ids)} found[/dim]")
         return job_ids
     except subprocess.CalledProcessError as e:
         if verbose:
-            console.print(
-                f"[red]Failed to get jobs by name: {e.stderr}[/red]"
-            )
+            console.print(f"[red]Failed to get jobs by name: {e.stderr}[/red]")
         return []
 
 
-def _get_jobs_by_name_regex(
-    pattern: str, verbose: bool = False
-) -> List[str]:
+def _get_jobs_by_name_regex(pattern: str, verbose: bool = False) -> List[str]:
     """Get job IDs for jobs with name matching a regex pattern.
 
     Args:
@@ -301,9 +265,7 @@ def _get_jobs_by_name_regex(
             regex = re.compile(pattern, re.IGNORECASE)
         except re.error as e:
             if verbose:
-                console.print(
-                    f"[red]Invalid regex pattern '{pattern}': {e}[/red]"
-                )
+                console.print(f"[red]Invalid regex pattern '{pattern}': {e}[/red]")
             return []
 
         # Get all jobs with their names
@@ -333,9 +295,7 @@ def _get_jobs_by_name_regex(
         return job_ids
     except subprocess.CalledProcessError as e:
         if verbose:
-            console.print(
-                f"[red]Failed to get jobs by name regex: {e.stderr}[/red]"
-            )
+            console.print(f"[red]Failed to get jobs by name regex: {e.stderr}[/red]")
         return []
 
 
@@ -350,26 +310,18 @@ def _get_jobs_by_nodes(nodes: str, verbose: bool = False) -> List[str]:
             errors="replace",
         )
         job_ids = [
-            jid.strip()
-            for jid in result.stdout.strip().split("\n")
-            if jid.strip()
+            jid.strip() for jid in result.stdout.strip().split("\n") if jid.strip()
         ]
         if verbose:
-            console.print(
-                f"[dim]Jobs on nodes '{nodes}': {len(job_ids)} found[/dim]"
-            )
+            console.print(f"[dim]Jobs on nodes '{nodes}': {len(job_ids)} found[/dim]")
         return job_ids
     except subprocess.CalledProcessError as e:
         if verbose:
-            console.print(
-                f"[red]Failed to get jobs by nodes: {e.stderr}[/red]"
-            )
+            console.print(f"[red]Failed to get jobs by nodes: {e.stderr}[/red]")
         return []
 
 
-def _get_jobs_by_reservation(
-    reservation: str, verbose: bool = False
-) -> List[str]:
+def _get_jobs_by_reservation(reservation: str, verbose: bool = False) -> List[str]:
     """Get job IDs for jobs using a specific reservation."""
     try:
         result = subprocess.run(
@@ -380,9 +332,7 @@ def _get_jobs_by_reservation(
             errors="replace",
         )
         job_ids = [
-            jid.strip()
-            for jid in result.stdout.strip().split("\n")
-            if jid.strip()
+            jid.strip() for jid in result.stdout.strip().split("\n") if jid.strip()
         ]
         if verbose:
             console.print(
@@ -392,9 +342,7 @@ def _get_jobs_by_reservation(
         return job_ids
     except subprocess.CalledProcessError as e:
         if verbose:
-            console.print(
-                f"[red]Failed to get jobs by reservation: {e.stderr}[/red]"
-            )
+            console.print(f"[red]Failed to get jobs by reservation: {e.stderr}[/red]")
         return []
 
 
@@ -409,18 +357,14 @@ def _get_all_jobs(verbose: bool = False) -> List[str]:
             errors="replace",
         )
         job_ids = [
-            jid.strip()
-            for jid in result.stdout.strip().split("\n")
-            if jid.strip()
+            jid.strip() for jid in result.stdout.strip().split("\n") if jid.strip()
         ]
         if verbose:
             console.print(f"[dim]All jobs: {len(job_ids)} found[/dim]")
         return job_ids
     except subprocess.CalledProcessError as e:
         if verbose:
-            console.print(
-                f"[red]Failed to get all jobs: {e.stderr}[/red]"
-            )
+            console.print(f"[red]Failed to get all jobs: {e.stderr}[/red]")
         return []
 
 
@@ -473,8 +417,7 @@ def resolve_job_filters(
             included_jobs.update(resolved)
             if verbose:
                 console.print(
-                    f"[dim]Including {len(resolved)} jobs "
-                    f"from filter: {arg}[/dim]"
+                    f"[dim]Including {len(resolved)} jobs " f"from filter: {arg}[/dim]"
                 )
         elif arg.isdigit() or "_" in arg:
             # Direct job ID (may include array job IDs like 123_4)
@@ -488,17 +431,13 @@ def resolve_job_filters(
         all_jobs = _get_all_jobs(verbose)
         included_jobs = set(all_jobs)
         if verbose:
-            console.print(
-                f"[dim]Starting with all {len(included_jobs)} jobs[/dim]"
-            )
+            console.print(f"[dim]Starting with all {len(included_jobs)} jobs[/dim]")
 
     # Apply exclusions
     final_jobs = included_jobs - excluded_jobs
 
     if verbose and excluded_jobs:
-        console.print(
-            f"[dim]After exclusions: {len(final_jobs)} jobs[/dim]"
-        )
+        console.print(f"[dim]After exclusions: {len(final_jobs)} jobs[/dim]")
 
     return final_jobs, other_args
 

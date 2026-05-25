@@ -52,9 +52,7 @@ class TestConfigUpdate:
     @mock.patch("slurm_cli.utils.slurm_config.console.print")
     def test_update_with_stdout(self, mock_print, mock_run):
         """Test update with stdout output."""
-        mock_run.return_value = mock.Mock(
-            stdout="Configuration reloaded", returncode=0
-        )
+        mock_run.return_value = mock.Mock(stdout="Configuration reloaded", returncode=0)
 
         Config.update("test", verbose=True)
 
@@ -72,9 +70,7 @@ class TestConfigUpdate:
         Config.update("test", verbose=True)
 
         call_args = [str(c) for c in mock_print.call_args_list]
-        assert any(
-            "Failed" in str(c) or "red" in str(c) for c in call_args
-        )
+        assert any("Failed" in str(c) or "red" in str(c) for c in call_args)
 
     @mock.patch("subprocess.run")
     @mock.patch("slurm_cli.utils.slurm_config.console.print")
@@ -87,9 +83,7 @@ class TestConfigUpdate:
         Config.update("test", verbose=True)
 
         call_args = [str(c) for c in mock_print.call_args_list]
-        assert any(
-            "Failed" in str(c) or "red" in str(c) for c in call_args
-        )
+        assert any("Failed" in str(c) or "red" in str(c) for c in call_args)
 
     @mock.patch("subprocess.run")
     @mock.patch("slurm_cli.utils.slurm_config.console.print")
@@ -121,9 +115,7 @@ class TestConfigShow:
         assert "show" in args
         assert "config" in args
         assert "--json" in args
-        mock_print_json.assert_called_once_with(
-            '{"ClusterName": "test"}'
-        )
+        mock_print_json.assert_called_once_with('{"ClusterName": "test"}')
 
     @mock.patch("subprocess.run")
     @mock.patch("slurm_cli.utils.slurm_config.console.print")
@@ -150,9 +142,7 @@ class TestConfigShow:
     @mock.patch("slurm_cli.utils.slurm_config.console.print")
     def test_show_default_style_is_pretty(self, mock_print, mock_run):
         """Test show defaults to pretty style."""
-        mock_run.return_value = mock.Mock(
-            stdout="Config output", returncode=0
-        )
+        mock_run.return_value = mock.Mock(stdout="Config output", returncode=0)
 
         Config.show()
 
@@ -170,9 +160,7 @@ class TestConfigShow:
         Config.show()
 
         call_args = [str(c) for c in mock_print.call_args_list]
-        assert any(
-            "Failed" in str(c) or "red" in str(c) for c in call_args
-        )
+        assert any("Failed" in str(c) or "red" in str(c) for c in call_args)
 
     @mock.patch("subprocess.run")
     @mock.patch("slurm_cli.utils.slurm_config.console.print")
@@ -185,9 +173,7 @@ class TestConfigShow:
         Config.show(style="json")
 
         call_args = [str(c) for c in mock_print.call_args_list]
-        assert any(
-            "Failed" in str(c) or "red" in str(c) for c in call_args
-        )
+        assert any("Failed" in str(c) or "red" in str(c) for c in call_args)
 
     @mock.patch("subprocess.run")
     @mock.patch("slurm_cli.utils.slurm_config.console.print_json")
@@ -215,9 +201,7 @@ class TestConfigShow:
     @mock.patch("slurm_cli.utils.slurm_config.console.print")
     def test_show_with_data_parameter(self, mock_print, mock_run):
         """Test show with data parameter (ignored)."""
-        mock_run.return_value = mock.Mock(
-            stdout="Config output", returncode=0
-        )
+        mock_run.return_value = mock.Mock(stdout="Config output", returncode=0)
 
         Config.show(data={"key": "value"})
 
@@ -227,9 +211,7 @@ class TestConfigShow:
     @mock.patch("slurm_cli.utils.slurm_config.console.print")
     def test_show_with_force_cache_update(self, mock_print, mock_run):
         """Test show with force_cache_update parameter (ignored)."""
-        mock_run.return_value = mock.Mock(
-            stdout="Config output", returncode=0
-        )
+        mock_run.return_value = mock.Mock(stdout="Config output", returncode=0)
 
         Config.show(force_cache_update=True)
 
@@ -239,9 +221,7 @@ class TestConfigShow:
     @mock.patch("slurm_cli.utils.slurm_config.console.print")
     def test_show_with_delimiter(self, mock_print, mock_run):
         """Test show with delimiter parameter (ignored)."""
-        mock_run.return_value = mock.Mock(
-            stdout="Config output", returncode=0
-        )
+        mock_run.return_value = mock.Mock(stdout="Config output", returncode=0)
 
         Config.show(delimiter="|")
 
@@ -251,9 +231,7 @@ class TestConfigShow:
     @mock.patch("slurm_cli.utils.slurm_config.console.print")
     def test_show_with_profile(self, mock_print, mock_run):
         """Test show with profile parameter."""
-        mock_run.return_value = mock.Mock(
-            stdout="Config output", returncode=0
-        )
+        mock_run.return_value = mock.Mock(stdout="Config output", returncode=0)
 
         Config.show(profile="custom")
 
@@ -263,9 +241,7 @@ class TestConfigShow:
     @mock.patch("slurm_cli.utils.slurm_config.console.print")
     def test_show_with_profile_str(self, mock_print, mock_run):
         """Test show with profile_str parameter."""
-        mock_run.return_value = mock.Mock(
-            stdout="Config output", returncode=0
-        )
+        mock_run.return_value = mock.Mock(stdout="Config output", returncode=0)
 
         Config.show(profile_str="{name}: {value}")
 

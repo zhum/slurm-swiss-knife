@@ -15,9 +15,7 @@ sys.path.insert(0, "src")
 from slurm_cli.utils.users import User  # noqa: E402
 
 
-def create_mock_subprocess_result(
-    stdout: str = "", returncode: int = 0
-):
+def create_mock_subprocess_result(stdout: str = "", returncode: int = 0):
     """Create a mock subprocess.CompletedProcess result."""
     mock_result = MagicMock()
     mock_result.stdout = stdout
@@ -265,9 +263,7 @@ class TestUserUpdate:
 
     def test_update_user_failure(self):
         """Test update failure handling."""
-        error = subprocess.CalledProcessError(
-            1, "sacctmgr", stderr="No matching users"
-        )
+        error = subprocess.CalledProcessError(1, "sacctmgr", stderr="No matching users")
         with patch.object(subprocess, "run", side_effect=error):
             output = io.StringIO()
             with redirect_stdout(output):
@@ -286,9 +282,7 @@ class TestUserUpdate:
         ):
             output = io.StringIO()
             with redirect_stdout(output):
-                User.update(
-                    "testuser", verbose=True, adminlevel="admin"
-                )
+                User.update("testuser", verbose=True, adminlevel="admin")
 
             result = output.getvalue()
             assert "Running:" in result
@@ -296,9 +290,7 @@ class TestUserUpdate:
 
     def test_update_user_with_stdout(self):
         """Test update with subprocess stdout."""
-        mock_result = create_mock_subprocess_result(
-            stdout="Modified user record(s)"
-        )
+        mock_result = create_mock_subprocess_result(stdout="Modified user record(s)")
         with patch.object(subprocess, "run", return_value=mock_result):
             output = io.StringIO()
             with redirect_stdout(output):
@@ -417,9 +409,7 @@ class TestUserShow:
                 {"name": "user2", "default_account": "account2"},
             ]
         }
-        mock_result = create_mock_subprocess_result(
-            stdout=json.dumps(mock_data)
-        )
+        mock_result = create_mock_subprocess_result(stdout=json.dumps(mock_data))
         with patch.object(subprocess, "run", return_value=mock_result):
             output = io.StringIO()
             with redirect_stdout(output):
@@ -437,9 +427,7 @@ class TestUserShow:
                 {"name": "user2", "administrator_level": "None"},
             ]
         }
-        mock_result = create_mock_subprocess_result(
-            stdout=json.dumps(mock_data)
-        )
+        mock_result = create_mock_subprocess_result(stdout=json.dumps(mock_data))
         with patch.object(subprocess, "run", return_value=mock_result):
             output = io.StringIO()
             with redirect_stdout(output):
@@ -456,9 +444,7 @@ class TestUserShow:
                 {"name": "user1", "administrator_level": "None"},
             ]
         }
-        mock_result = create_mock_subprocess_result(
-            stdout=json.dumps(mock_data)
-        )
+        mock_result = create_mock_subprocess_result(stdout=json.dumps(mock_data))
         with patch.object(subprocess, "run", return_value=mock_result):
             output = io.StringIO()
             with redirect_stdout(output):
@@ -481,9 +467,7 @@ class TestUserShow:
 
     def test_show_failure(self):
         """Test show failure handling."""
-        error = subprocess.CalledProcessError(
-            1, "sacctmgr", stderr="Permission denied"
-        )
+        error = subprocess.CalledProcessError(1, "sacctmgr", stderr="Permission denied")
         with patch.object(subprocess, "run", side_effect=error):
             output = io.StringIO()
             with redirect_stdout(output):
@@ -500,9 +484,7 @@ class TestUserShow:
                 {"name": "otheruser", "administrator_level": "None"},
             ]
         }
-        mock_result = create_mock_subprocess_result(
-            stdout=json.dumps(mock_data)
-        )
+        mock_result = create_mock_subprocess_result(stdout=json.dumps(mock_data))
         with patch.object(subprocess, "run", return_value=mock_result):
             output = io.StringIO()
             with redirect_stdout(output):
@@ -521,9 +503,7 @@ class TestUserShow:
                 {"name": "user1", "administrator_level": "None"},
             ]
         }
-        mock_result = create_mock_subprocess_result(
-            stdout=json.dumps(mock_data)
-        )
+        mock_result = create_mock_subprocess_result(stdout=json.dumps(mock_data))
         with patch.object(subprocess, "run", return_value=mock_result):
             output = io.StringIO()
             with redirect_stdout(output):
@@ -539,9 +519,7 @@ class TestUserShow:
                 {"name": "user1", "administrator_level": "None"},
             ]
         }
-        mock_result = create_mock_subprocess_result(
-            stdout=json.dumps(mock_data)
-        )
+        mock_result = create_mock_subprocess_result(stdout=json.dumps(mock_data))
         with patch.object(subprocess, "run", return_value=mock_result):
             output = io.StringIO()
             with redirect_stdout(output):
@@ -553,9 +531,7 @@ class TestUserShow:
 
     def test_show_json_calls_correct_command(self):
         """Test that JSON style calls sacctmgr with --json flag."""
-        mock_result = create_mock_subprocess_result(
-            stdout='{"users": []}'
-        )
+        mock_result = create_mock_subprocess_result(stdout='{"users": []}')
         with patch.object(
             subprocess,
             "run",
@@ -570,9 +546,7 @@ class TestUserShow:
     def test_show_pretty_calls_correct_command(self):
         """Test that pretty style calls sacctmgr with --json flag."""
         mock_data = {"users": []}
-        mock_result = create_mock_subprocess_result(
-            stdout=json.dumps(mock_data)
-        )
+        mock_result = create_mock_subprocess_result(stdout=json.dumps(mock_data))
         with patch.object(
             subprocess,
             "run",
@@ -758,9 +732,7 @@ class TestUserFilterAliases:
         }
         assert User._match_filter(user, "defaultaccount", "myaccount")
         assert User._match_filter(user, "account", "myaccount")
-        assert not User._match_filter(
-            user, "defaultaccount", "otheraccount"
-        )
+        assert not User._match_filter(user, "defaultaccount", "otheraccount")
 
     def test_match_filter_default_wckey_alias(self):
         """Test _match_filter with defaultwckey alias."""

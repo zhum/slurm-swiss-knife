@@ -401,9 +401,7 @@ class TestEnsureResourceName:
     def test_associations_resource(self):
         """Test associations resource mapping (needs mocking for guess)."""
         # Associations goes through guess_resource_type which needs mocking
-        with patch(
-            "slurm_cli.cli.Resource.guess_resource_type"
-        ) as mock:
+        with patch("slurm_cli.cli.Resource.guess_resource_type") as mock:
             mock.return_value = ("associations", [])
             result, field, data = ensure_resource_name("associations")
             assert result == "associations"
@@ -413,9 +411,7 @@ class TestEnsureResourceName:
         # Need to mock cached_resource since it calls slurm commands
         with patch("slurm_cli.cli.Resource.cached_resource") as mock:
             mock.return_value = {"partitions": []}
-            result, field, data = ensure_resource_name(
-                "partitions", "gpu"
-            )
+            result, field, data = ensure_resource_name("partitions", "gpu")
             assert field == "gpu"
 
 
@@ -426,9 +422,7 @@ class TestShowCommand:
         """Test show config command."""
         register_commands()
         with patch("slurm_cli.cli.Config.show") as mock_show:
-            with patch(
-                "slurm_cli.cli.ensure_resource_name"
-            ) as mock_ensure:
+            with patch("slurm_cli.cli.ensure_resource_name") as mock_ensure:
                 mock_ensure.return_value = ("config", None, {})
                 result = runner.invoke(main, ["show", "config"])
                 mock_show.assert_called_once()
@@ -438,9 +432,7 @@ class TestShowCommand:
         """Test show reservations command."""
         register_commands()
         with patch("slurm_cli.cli.Reservation.show") as mock_show:
-            with patch(
-                "slurm_cli.cli.ensure_resource_name"
-            ) as mock_ensure:
+            with patch("slurm_cli.cli.ensure_resource_name") as mock_ensure:
                 mock_ensure.return_value = ("reservations", None, {})
                 result = runner.invoke(main, ["show", "reservations"])
                 mock_show.assert_called_once()
@@ -450,17 +442,13 @@ class TestShowCommand:
         """Test show reservations with specific name."""
         register_commands()
         with patch("slurm_cli.cli.Reservation.show") as mock_show:
-            with patch(
-                "slurm_cli.cli.ensure_resource_name"
-            ) as mock_ensure:
+            with patch("slurm_cli.cli.ensure_resource_name") as mock_ensure:
                 mock_ensure.return_value = (
                     "reservations",
                     "test_res",
                     {},
                 )
-                result = runner.invoke(
-                    main, ["show", "reservations", "test_res"]
-                )
+                result = runner.invoke(main, ["show", "reservations", "test_res"])
                 mock_show.assert_called_once()
                 assert result.exit_code == 0
 
@@ -468,9 +456,7 @@ class TestShowCommand:
         """Test show partitions command."""
         register_commands()
         with patch("slurm_cli.cli.Partition.show") as mock_show:
-            with patch(
-                "slurm_cli.cli.ensure_resource_name"
-            ) as mock_ensure:
+            with patch("slurm_cli.cli.ensure_resource_name") as mock_ensure:
                 mock_ensure.return_value = ("partitions", None, {})
                 result = runner.invoke(main, ["show", "partitions"])
                 mock_show.assert_called_once()
@@ -480,13 +466,9 @@ class TestShowCommand:
         """Test show partitions with specific name."""
         register_commands()
         with patch("slurm_cli.cli.Partition.show") as mock_show:
-            with patch(
-                "slurm_cli.cli.ensure_resource_name"
-            ) as mock_ensure:
+            with patch("slurm_cli.cli.ensure_resource_name") as mock_ensure:
                 mock_ensure.return_value = ("partitions", "gpu", {})
-                result = runner.invoke(
-                    main, ["show", "partitions", "gpu"]
-                )
+                result = runner.invoke(main, ["show", "partitions", "gpu"])
                 mock_show.assert_called_once()
                 assert result.exit_code == 0
 
@@ -494,9 +476,7 @@ class TestShowCommand:
         """Test show nodes command."""
         register_commands()
         with patch("slurm_cli.cli.Node.show") as mock_show:
-            with patch(
-                "slurm_cli.cli.ensure_resource_name"
-            ) as mock_ensure:
+            with patch("slurm_cli.cli.ensure_resource_name") as mock_ensure:
                 mock_ensure.return_value = ("nodes", None, {})
                 result = runner.invoke(main, ["show", "nodes"])
                 mock_show.assert_called_once()
@@ -506,13 +486,9 @@ class TestShowCommand:
         """Test show nodes with specific name."""
         register_commands()
         with patch("slurm_cli.cli.Node.show") as mock_show:
-            with patch(
-                "slurm_cli.cli.ensure_resource_name"
-            ) as mock_ensure:
+            with patch("slurm_cli.cli.ensure_resource_name") as mock_ensure:
                 mock_ensure.return_value = ("nodes", "node01", {})
-                result = runner.invoke(
-                    main, ["show", "nodes", "node01"]
-                )
+                result = runner.invoke(main, ["show", "nodes", "node01"])
                 mock_show.assert_called_once()
                 assert result.exit_code == 0
 
@@ -520,9 +496,7 @@ class TestShowCommand:
         """Test show qos command."""
         register_commands()
         with patch("slurm_cli.cli.Qos.show") as mock_show:
-            with patch(
-                "slurm_cli.cli.ensure_resource_name"
-            ) as mock_ensure:
+            with patch("slurm_cli.cli.ensure_resource_name") as mock_ensure:
                 mock_ensure.return_value = ("qos", None, {})
                 result = runner.invoke(main, ["show", "qos"])
                 mock_show.assert_called_once()
@@ -532,9 +506,7 @@ class TestShowCommand:
         """Test show qos with specific field."""
         register_commands()
         with patch("slurm_cli.cli.Qos.show") as mock_show:
-            with patch(
-                "slurm_cli.cli.ensure_resource_name"
-            ) as mock_ensure:
+            with patch("slurm_cli.cli.ensure_resource_name") as mock_ensure:
                 mock_ensure.return_value = ("qos", "normal", {})
                 result = runner.invoke(main, ["show", "qos", "normal"])
                 mock_show.assert_called_once()
@@ -544,9 +516,7 @@ class TestShowCommand:
         """Test show accounts command."""
         register_commands()
         with patch("slurm_cli.cli.Account.show") as mock_show:
-            with patch(
-                "slurm_cli.cli.ensure_resource_name"
-            ) as mock_ensure:
+            with patch("slurm_cli.cli.ensure_resource_name") as mock_ensure:
                 mock_ensure.return_value = ("accounts", None, {})
                 result = runner.invoke(main, ["show", "accounts"])
                 mock_show.assert_called_once()
@@ -556,13 +526,9 @@ class TestShowCommand:
         """Test show accounts with specific field."""
         register_commands()
         with patch("slurm_cli.cli.Account.show") as mock_show:
-            with patch(
-                "slurm_cli.cli.ensure_resource_name"
-            ) as mock_ensure:
+            with patch("slurm_cli.cli.ensure_resource_name") as mock_ensure:
                 mock_ensure.return_value = ("accounts", "myaccount", {})
-                result = runner.invoke(
-                    main, ["show", "accounts", "myaccount"]
-                )
+                result = runner.invoke(main, ["show", "accounts", "myaccount"])
                 mock_show.assert_called_once()
                 assert result.exit_code == 0
 
@@ -570,9 +536,7 @@ class TestShowCommand:
         """Test show coordinators command."""
         register_commands()
         with patch("slurm_cli.cli.Coordinator.show") as mock_show:
-            with patch(
-                "slurm_cli.cli.ensure_resource_name"
-            ) as mock_ensure:
+            with patch("slurm_cli.cli.ensure_resource_name") as mock_ensure:
                 mock_ensure.return_value = ("coordinators", None, {})
                 result = runner.invoke(main, ["show", "coordinators"])
                 mock_show.assert_called_once()
@@ -582,13 +546,9 @@ class TestShowCommand:
         """Test show coordinators with specific field."""
         register_commands()
         with patch("slurm_cli.cli.Coordinator.show") as mock_show:
-            with patch(
-                "slurm_cli.cli.ensure_resource_name"
-            ) as mock_ensure:
+            with patch("slurm_cli.cli.ensure_resource_name") as mock_ensure:
                 mock_ensure.return_value = ("coordinators", "admin", {})
-                result = runner.invoke(
-                    main, ["show", "coordinators", "admin"]
-                )
+                result = runner.invoke(main, ["show", "coordinators", "admin"])
                 mock_show.assert_called_once()
                 assert result.exit_code == 0
 
@@ -596,9 +556,7 @@ class TestShowCommand:
         """Test show users command."""
         register_commands()
         with patch("slurm_cli.cli.User.show") as mock_show:
-            with patch(
-                "slurm_cli.cli.ensure_resource_name"
-            ) as mock_ensure:
+            with patch("slurm_cli.cli.ensure_resource_name") as mock_ensure:
                 mock_ensure.return_value = ("users", None, {})
                 result = runner.invoke(main, ["show", "users"])
                 mock_show.assert_called_once()
@@ -608,13 +566,9 @@ class TestShowCommand:
         """Test show users with specific name."""
         register_commands()
         with patch("slurm_cli.cli.User.show") as mock_show:
-            with patch(
-                "slurm_cli.cli.ensure_resource_name"
-            ) as mock_ensure:
+            with patch("slurm_cli.cli.ensure_resource_name") as mock_ensure:
                 mock_ensure.return_value = ("users", "testuser", {})
-                result = runner.invoke(
-                    main, ["show", "users", "testuser"]
-                )
+                result = runner.invoke(main, ["show", "users", "testuser"])
                 mock_show.assert_called_once()
                 assert result.exit_code == 0
 
@@ -632,14 +586,11 @@ class TestShowCommand:
         register_commands()
         with patch("slurm_cli.cli.ensure_resource_name") as mock_ensure:
             mock_ensure.return_value = ("accounts", None, {})
-            result = runner.invoke(
-                main, ["--profile-str", "help", "show", "accounts"]
-            )
+            result = runner.invoke(main, ["--profile-str", "help", "show", "accounts"])
             assert result.exit_code == 0
             # Should show field help
             assert (
-                "field" in result.output.lower()
-                or "template" in result.output.lower()
+                "field" in result.output.lower() or "template" in result.output.lower()
             )
 
 
@@ -660,10 +611,7 @@ class TestUpdateCommand:
             ["update", "partitions", "state", "up", "--dry-run"],
         )
         assert result.exit_code == 0
-        assert (
-            "DRY RUN" in result.output
-            or "Would update" in result.output
-        )
+        assert "DRY RUN" in result.output or "Would update" in result.output
 
     def test_update_with_verbose(self, runner):
         """Test update with verbose flag."""
@@ -685,12 +633,8 @@ class TestUpdateCommand:
     def test_update_partition(self, runner):
         """Test update partition."""
         register_commands()
-        with patch(
-            "slurm_cli.utils.partitions.Partition.update"
-        ) as mock:
-            result = runner.invoke(
-                main, ["update", "partitions", "gpu", "state=up"]
-            )
+        with patch("slurm_cli.utils.partitions.Partition.update") as mock:
+            result = runner.invoke(main, ["update", "partitions", "gpu", "state=up"])
             # Should try to update or show message
             assert result.exit_code == 0 or mock.called
 
@@ -721,10 +665,7 @@ class TestCreateCommand:
             ["create", "users", "testuser", "--dry-run"],
         )
         assert result.exit_code == 0
-        assert (
-            "DRY RUN" in result.output
-            or "Would create" in result.output
-        )
+        assert "DRY RUN" in result.output or "Would create" in result.output
 
 
 class TestListResourcesCommand:
@@ -735,9 +676,7 @@ class TestListResourcesCommand:
         register_commands()
         result = runner.invoke(main, ["list-resources"])
         assert result.exit_code == 0
-        assert (
-            "Resource" in result.output or "partitions" in result.output
-        )
+        assert "Resource" in result.output or "partitions" in result.output
 
     def test_list_resources_with_zebra(self, runner):
         """Test list-resources with zebra option."""
@@ -766,10 +705,7 @@ class TestHelpCommand:
         result = runner.invoke(main, ["help"])
         assert result.exit_code == 0
         # Should show main help
-        assert (
-            "Usage" in result.output
-            or "command" in result.output.lower()
-        )
+        assert "Usage" in result.output or "command" in result.output.lower()
 
     def test_help_with_word(self, runner):
         """Test help with autocomplete word."""
@@ -789,9 +725,7 @@ class TestHelpCommand:
         result = runner.invoke(main, ["help", "xyzunknown"])
         assert result.exit_code == 0
         # Should show no suggestions
-        assert (
-            "No suggestions" in result.output or result.exit_code == 0
-        )
+        assert "No suggestions" in result.output or result.exit_code == 0
 
     def test_help_with_zebra(self, runner):
         """Test help with zebra option."""
@@ -852,9 +786,7 @@ class TestEnsureResourceNameBranches:
     def test_ensure_resource_partitions(self, mock_cache):
         """Test ensure_resource_name with partitions prefix."""
         mock_cache.return_value = {"gpu": {}}
-        resource, field, data = ensure_resource_name(
-            "partitions", False
-        )
+        resource, field, data = ensure_resource_name("partitions", False)
         assert resource == "partitions"
 
     @patch("slurm_cli.cli.Resource.cached_resource")
@@ -882,9 +814,7 @@ class TestEnsureResourceNameBranches:
     def test_ensure_resource_reservations(self, mock_cache):
         """Test ensure_resource_name with reservations prefix."""
         mock_cache.return_value = {"maint": {}}
-        resource, field, data = ensure_resource_name(
-            "reservations", False
-        )
+        resource, field, data = ensure_resource_name("reservations", False)
         assert resource == "reservations"
 
     @patch("slurm_cli.cli.Resource.cached_resource")
@@ -919,9 +849,7 @@ class TestEnsureResourceNameBranches:
     def test_ensure_resource_licenses(self):
         """Test ensure_resource_name with licenses."""
         resource, field, data = ensure_resource_name("licenses", False)
-        assert (
-            "`licens`es" in resource or "licenses" in resource.lower()
-        )
+        assert "`licens`es" in resource or "licenses" in resource.lower()
 
     def test_ensure_resource_runawayjobs(self):
         """Test ensure_resource_name with bad jobs."""
@@ -930,9 +858,7 @@ class TestEnsureResourceNameBranches:
 
     def test_ensure_resource_transactions(self):
         """Test ensure_resource_name with transactions."""
-        resource, field, data = ensure_resource_name(
-            "transactions", False
-        )
+        resource, field, data = ensure_resource_name("transactions", False)
         assert resource == "transactions"
 
     def test_ensure_resource_tres(self):
@@ -947,18 +873,14 @@ class TestEnsureResourceNameBranches:
 
     def test_ensure_resource_coordinators(self):
         """Test ensure_resource_name with coordinators."""
-        resource, field, data = ensure_resource_name(
-            "coordinators", False
-        )
+        resource, field, data = ensure_resource_name("coordinators", False)
         assert resource == "coordinators"
 
     @patch("slurm_cli.cli.Resource.guess_resource_type")
     def test_ensure_resource_unknown(self, mock_guess):
         """Test ensure_resource_name with unknown resource."""
         mock_guess.return_value = (None, None)
-        resource, field, data = ensure_resource_name(
-            "xyzunknown", False
-        )
+        resource, field, data = ensure_resource_name("xyzunknown", False)
         assert resource is None
 
 
@@ -969,13 +891,9 @@ class TestShowStyleOverrides:
         """Test show command with --pretty flag."""
         register_commands()
         with patch("slurm_cli.cli.Account.show") as mock_show:
-            with patch(
-                "slurm_cli.cli.ensure_resource_name"
-            ) as mock_ensure:
+            with patch("slurm_cli.cli.ensure_resource_name") as mock_ensure:
                 mock_ensure.return_value = ("accounts", None, {})
-                result = runner.invoke(
-                    main, ["show", "--pretty", "accounts"]
-                )
+                result = runner.invoke(main, ["show", "--pretty", "accounts"])
                 mock_show.assert_called_once()
                 call_kwargs = mock_show.call_args[1]
                 assert call_kwargs["style"] == "pretty"
@@ -984,13 +902,9 @@ class TestShowStyleOverrides:
         """Test show command with --json flag."""
         register_commands()
         with patch("slurm_cli.cli.Account.show") as mock_show:
-            with patch(
-                "slurm_cli.cli.ensure_resource_name"
-            ) as mock_ensure:
+            with patch("slurm_cli.cli.ensure_resource_name") as mock_ensure:
                 mock_ensure.return_value = ("accounts", None, {})
-                result = runner.invoke(
-                    main, ["show", "--json", "accounts"]
-                )
+                result = runner.invoke(main, ["show", "--json", "accounts"])
                 mock_show.assert_called_once()
                 call_kwargs = mock_show.call_args[1]
                 assert call_kwargs["style"] == "json"
@@ -999,13 +913,9 @@ class TestShowStyleOverrides:
         """Test show command with --csv flag."""
         register_commands()
         with patch("slurm_cli.cli.Account.show") as mock_show:
-            with patch(
-                "slurm_cli.cli.ensure_resource_name"
-            ) as mock_ensure:
+            with patch("slurm_cli.cli.ensure_resource_name") as mock_ensure:
                 mock_ensure.return_value = ("accounts", None, {})
-                result = runner.invoke(
-                    main, ["show", "--csv", "accounts"]
-                )
+                result = runner.invoke(main, ["show", "--csv", "accounts"])
                 mock_show.assert_called_once()
                 call_kwargs = mock_show.call_args[1]
                 assert call_kwargs["style"] == "csv"
@@ -1057,9 +967,7 @@ class TestUpdateCommand:
             ["update", "xyzunknown", "test"],
         )
         # Click validates resource type, so it shows error
-        assert (
-            result.exit_code == 2 or "invalid" in result.output.lower()
-        )
+        assert result.exit_code == 2 or "invalid" in result.output.lower()
 
 
 class TestCreateCommand:
@@ -1097,9 +1005,7 @@ class TestCreateCommand:
             ["create", "xyzunknown", "test"],
         )
         # Click validates resource type, so it shows error
-        assert (
-            result.exit_code == 2 or "invalid" in result.output.lower()
-        )
+        assert result.exit_code == 2 or "invalid" in result.output.lower()
 
 
 class TestDeleteCommand:
@@ -1199,8 +1105,7 @@ class TestListResourcesCommand:
         assert result.exit_code == 0
         # Should list resources
         assert (
-            "partition" in result.output.lower()
-            or "resource" in result.output.lower()
+            "partition" in result.output.lower() or "resource" in result.output.lower()
         )
 
     def test_list_resources_with_zebra(self, runner):
@@ -1233,13 +1138,9 @@ class TestCLIIntegration:
         """Test show command with CSV style."""
         register_commands()
         with patch("slurm_cli.cli.Account.show") as mock_show:
-            with patch(
-                "slurm_cli.cli.ensure_resource_name"
-            ) as mock_ensure:
+            with patch("slurm_cli.cli.ensure_resource_name") as mock_ensure:
                 mock_ensure.return_value = ("accounts", None, {})
-                result = runner.invoke(
-                    main, ["--csv", "show", "accounts"]
-                )
+                result = runner.invoke(main, ["--csv", "show", "accounts"])
                 mock_show.assert_called_once()
                 # Check that CSV style was passed
                 call_kwargs = mock_show.call_args[1]
@@ -1250,13 +1151,9 @@ class TestCLIIntegration:
         """Test show command with JSON style."""
         register_commands()
         with patch("slurm_cli.cli.Account.show") as mock_show:
-            with patch(
-                "slurm_cli.cli.ensure_resource_name"
-            ) as mock_ensure:
+            with patch("slurm_cli.cli.ensure_resource_name") as mock_ensure:
                 mock_ensure.return_value = ("accounts", None, {})
-                result = runner.invoke(
-                    main, ["--json", "show", "accounts"]
-                )
+                result = runner.invoke(main, ["--json", "show", "accounts"])
                 mock_show.assert_called_once()
                 call_kwargs = mock_show.call_args[1]
                 assert call_kwargs["style"] == "json"
@@ -1266,9 +1163,7 @@ class TestCLIIntegration:
         """Test show command with custom delimiter."""
         register_commands()
         with patch("slurm_cli.cli.Account.show") as mock_show:
-            with patch(
-                "slurm_cli.cli.ensure_resource_name"
-            ) as mock_ensure:
+            with patch("slurm_cli.cli.ensure_resource_name") as mock_ensure:
                 mock_ensure.return_value = ("accounts", None, {})
                 result = runner.invoke(
                     main,
@@ -1283,9 +1178,7 @@ class TestCLIIntegration:
         """Test main command with multiple options."""
         register_commands()
         with patch("slurm_cli.cli.Account.show") as mock_show:
-            with patch(
-                "slurm_cli.cli.ensure_resource_name"
-            ) as mock_ensure:
+            with patch("slurm_cli.cli.ensure_resource_name") as mock_ensure:
                 mock_ensure.return_value = ("accounts", None, {})
                 result = runner.invoke(
                     main,

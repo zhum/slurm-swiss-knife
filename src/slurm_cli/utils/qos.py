@@ -8,11 +8,7 @@ from rich.box import SIMPLE_HEAVY
 from rich.table import Table
 
 from .base_resource import BaseSlurmResource
-from .profiles import (
-    format_with_template,
-    get_profile_config,
-    sort_data,
-)
+from .profiles import format_with_template, get_profile_config, sort_data
 from .utils import console
 
 # QoS configuration options (sacctmgr field names)
@@ -147,9 +143,7 @@ class Qos(BaseSlurmResource):
         }
 
     @classmethod
-    def create(
-        cls, name: str, verbose: bool = False, **kwargs: Any
-    ) -> None:
+    def create(cls, name: str, verbose: bool = False, **kwargs: Any) -> None:
         """Create a new QoS."""
         console.print(f"Creating QoS: {name}")
         args = ["sacctmgr", "create", "qos", name]
@@ -163,15 +157,11 @@ class Qos(BaseSlurmResource):
                 capture_output=True,
                 text=True,
             )
-            console.print(
-                f"[green]QoS '{name}' created successfully.[/green]"
-            )
+            console.print(f"[green]QoS '{name}' created successfully.[/green]")
             if result.stdout:
                 console.print(result.stdout)
         except subprocess.CalledProcessError as e:
-            console.print(
-                f"[red]Failed to create QoS '{name}':[/red] {e.stderr or e}"
-            )
+            console.print(f"[red]Failed to create QoS '{name}':[/red] {e.stderr or e}")
 
     @classmethod
     def update(
@@ -211,9 +201,7 @@ class Qos(BaseSlurmResource):
             # Simple mode - update by name
             args.extend(["where", f"name={name}"])
         else:
-            console.print(
-                "[red]No QoS name or WHERE conditions specified.[/red]"
-            )
+            console.print("[red]No QoS name or WHERE conditions specified.[/red]")
             return
 
         # Build SET clause
@@ -270,13 +258,10 @@ class Qos(BaseSlurmResource):
             if result.stdout:
                 console.print(result.stdout)
             if verbose:
-                console.print(
-                    f"[green]QoS '{name}' updated successfully.[/green]"
-                )
+                console.print(f"[green]QoS '{name}' updated successfully.[/green]")
         except subprocess.CalledProcessError as e:
             console.print(
-                f"[red]Failed to update QoS '{name}':[/red] "
-                f"{e.stderr or e}"
+                f"[red]Failed to update QoS '{name}':[/red] " f"{e.stderr or e}"
             )
 
     @classmethod
@@ -288,9 +273,7 @@ class Qos(BaseSlurmResource):
             verbose: Enable verbose output
         """
         if not name:
-            console.print(
-                "[red]No QoS name specified for deletion.[/red]"
-            )
+            console.print("[red]No QoS name specified for deletion.[/red]")
             return
 
         args = ["sacctmgr", "-i", "delete", "qos", f"names={name}"]
@@ -307,13 +290,10 @@ class Qos(BaseSlurmResource):
             )
             if result.stdout:
                 console.print(result.stdout)
-            console.print(
-                f"[green]QoS '{name}' deleted successfully.[/green]"
-            )
+            console.print(f"[green]QoS '{name}' deleted successfully.[/green]")
         except subprocess.CalledProcessError as e:
             console.print(
-                f"[red]Failed to delete QoS '{name}':[/red] "
-                f"{e.stderr or e}"
+                f"[red]Failed to delete QoS '{name}':[/red] " f"{e.stderr or e}"
             )
 
     @classmethod
@@ -365,13 +345,9 @@ class Qos(BaseSlurmResource):
 
             # Filter by field (QoS name) if specified
             if field:
-                qos_list = [
-                    qos for qos in qos_list if qos.get("name") == field
-                ]
+                qos_list = [qos for qos in qos_list if qos.get("name") == field]
                 if not qos_list:
-                    console.print(
-                        f"[yellow]QoS '{field}' not found.[/yellow]"
-                    )
+                    console.print(f"[yellow]QoS '{field}' not found.[/yellow]")
                     return
 
             # Apply sorting
@@ -413,9 +389,7 @@ class Qos(BaseSlurmResource):
 
             if style == "json":
                 # Print filtered JSON
-                console.print_json(
-                    json.dumps({"qos": qos_list}, indent=2)
-                )
+                console.print_json(json.dumps({"qos": qos_list}, indent=2))
             elif template_cfg and style == "pretty":
                 # Use template-based output
                 for qos in qos_list:
@@ -460,18 +434,14 @@ class Qos(BaseSlurmResource):
                         "UsageFactor",
                         "green",
                         "right",
-                        lambda q: get_set_value(
-                            q.get("usage_factor", {}), "1.0"
-                        ),
+                        lambda q: get_set_value(q.get("usage_factor", {}), "1.0"),
                     ),
                     (
                         "usage_threshold",
                         "UsageThreshold",
                         "blue",
                         "right",
-                        lambda q: get_set_value(
-                            q.get("usage_threshold", {})
-                        ),
+                        lambda q: get_set_value(q.get("usage_threshold", {})),
                     ),
                     (
                         "flags",
@@ -485,20 +455,14 @@ class Qos(BaseSlurmResource):
                         "PreemptMode",
                         "red",
                         "left",
-                        lambda q: ",".join(
-                            q.get("preempt", {}).get("mode", [])
-                        )
-                        or "-",
+                        lambda q: ",".join(q.get("preempt", {}).get("mode", [])) or "-",
                     ),
                     (
                         "preempt_list",
                         "PreemptList",
                         "red",
                         "left",
-                        lambda q: ",".join(
-                            q.get("preempt", {}).get("list", [])
-                        )
-                        or "-",
+                        lambda q: ",".join(q.get("preempt", {}).get("list", [])) or "-",
                     ),
                     (
                         "preempt_exempt_time",
@@ -515,9 +479,7 @@ class Qos(BaseSlurmResource):
                         "blue",
                         "right",
                         lambda q: (
-                            str(
-                                get_nested(q, "limits.grace_time") or ""
-                            )
+                            str(get_nested(q, "limits.grace_time") or "")
                             if get_nested(q, "limits.grace_time")
                             else "-"
                         ),
@@ -527,9 +489,7 @@ class Qos(BaseSlurmResource):
                         "LimitsFactor",
                         "green",
                         "right",
-                        lambda q: get_set_value(
-                            get_nested(q, "limits.factor") or {}
-                        ),
+                        lambda q: get_set_value(get_nested(q, "limits.factor") or {}),
                     ),
                     (
                         "max_wall_per_job",
@@ -537,10 +497,7 @@ class Qos(BaseSlurmResource):
                         "yellow",
                         "right",
                         lambda q: get_set_value(
-                            get_nested(
-                                q, "limits.max.wall_clock.per.job"
-                            )
-                            or {}
+                            get_nested(q, "limits.max.wall_clock.per.job") or {}
                         ),
                     ),
                     (
@@ -549,8 +506,7 @@ class Qos(BaseSlurmResource):
                         "blue",
                         "right",
                         lambda q: get_set_value(
-                            get_nested(q, "limits.max.jobs.per.user")
-                            or {}
+                            get_nested(q, "limits.max.jobs.per.user") or {}
                         ),
                     ),
                     (
@@ -572,8 +528,7 @@ class Qos(BaseSlurmResource):
                         "cyan",
                         "left",
                         lambda q: format_tres_list(
-                            get_nested(q, "limits.max.tres.per.job")
-                            or []
+                            get_nested(q, "limits.max.tres.per.job") or []
                         ),
                     ),
                     (
@@ -582,8 +537,7 @@ class Qos(BaseSlurmResource):
                         "cyan",
                         "left",
                         lambda q: format_tres_list(
-                            get_nested(q, "limits.max.tres.per.user")
-                            or []
+                            get_nested(q, "limits.max.tres.per.user") or []
                         ),
                     ),
                     (
@@ -654,29 +608,17 @@ class Qos(BaseSlurmResource):
                             # Consider non-default if not empty/"-"
                             if value and value != "-":
                                 # Skip default values
-                                if (
-                                    col_key == "usage_factor"
-                                    and value == "1.0"
-                                ):
+                                if col_key == "usage_factor" and value == "1.0":
                                     continue
-                                if (
-                                    col_key == "priority"
-                                    and value == "0"
-                                ):
+                                if col_key == "priority" and value == "0":
                                     continue
-                                if (
-                                    col_key == "preempt_mode"
-                                    and value == "DISABLED"
-                                ):
+                                if col_key == "preempt_mode" and value == "DISABLED":
                                     continue
                                 has_value = True
                                 break
 
                         # Always show name, id, and description
-                        if (
-                            col_key in ["name", "id", "description"]
-                            or has_value
-                        ):
+                        if col_key in ["name", "id", "description"] or has_value:
                             visible_columns.append(
                                 (
                                     col_name,
@@ -689,24 +631,18 @@ class Qos(BaseSlurmResource):
                 # Output based on style
                 if style == "csv":
                     # Print CSV header
-                    headers = [
-                        col_name
-                        for col_name, _, _, _ in visible_columns
-                    ]
+                    headers = [col_name for col_name, _, _, _ in visible_columns]
                     print(delimiter.join(headers))
 
                     # Print CSV data rows
                     for qos in qos_list:
                         row_values = [
-                            col_func(qos)
-                            for _, _, _, col_func in visible_columns
+                            col_func(qos) for _, _, _, col_func in visible_columns
                         ]
                         print(delimiter.join(row_values))
                 else:  # pretty style
                     # Create table with dynamic columns
-                    row_styles = (
-                        ["", "on rgb(30,40,60)"] if zebra else None
-                    )
+                    row_styles = ["", "on rgb(30,40,60)"] if zebra else None
                     table = Table(
                         title="Quality of Service (QoS)",
                         box=SIMPLE_HEAVY,
@@ -730,21 +666,16 @@ class Qos(BaseSlurmResource):
                     # Add rows
                     for qos in qos_list:
                         row_values = [
-                            col_func(qos)
-                            for _, _, _, col_func in visible_columns
+                            col_func(qos) for _, _, _, col_func in visible_columns
                         ]
                         table.add_row(*row_values)
 
                     console.print(table)
 
         except subprocess.CalledProcessError as e:
-            console.print(
-                f"[red]Failed to show QoS:[/red] {e.stderr or e}"
-            )
+            console.print(f"[red]Failed to show QoS:[/red] {e.stderr or e}")
         except json.JSONDecodeError as e:
-            console.print(
-                f"[red]Failed to parse JSON output:[/red] {e}"
-            )
+            console.print(f"[red]Failed to parse JSON output:[/red] {e}")
 
     @classmethod
     def _prepare_template_data(cls, qos: dict) -> dict:
@@ -759,15 +690,9 @@ class Qos(BaseSlurmResource):
             return None
 
         # Flatten common nested values
-        result["priority"] = (
-            get_set_value(qos.get("priority", {})) or "-"
-        )
-        result["usage_factor"] = (
-            get_set_value(qos.get("usage_factor", {})) or "1.0"
-        )
-        result["grace_time"] = (
-            get_set_value(qos.get("grace_time", {})) or "-"
-        )
+        result["priority"] = get_set_value(qos.get("priority", {})) or "-"
+        result["usage_factor"] = get_set_value(qos.get("usage_factor", {})) or "1.0"
+        result["grace_time"] = get_set_value(qos.get("grace_time", {})) or "-"
 
         # Format flags
         flags = qos.get("flags", [])
@@ -776,9 +701,7 @@ class Qos(BaseSlurmResource):
         # Format preempt mode
         preempt = qos.get("preempt", {})
         preempt_mode = preempt.get("mode", [])
-        result["preempt_mode"] = (
-            ",".join(preempt_mode) if preempt_mode else "-"
-        )
+        result["preempt_mode"] = ",".join(preempt_mode) if preempt_mode else "-"
 
         # Format limits - extract nested values
         limits = qos.get("limits", {})
@@ -787,24 +710,17 @@ class Qos(BaseSlurmResource):
         # Max jobs
         max_jobs = max_limits.get("jobs", {})
         result["max_jobs_per_user"] = (
-            get_set_value(max_jobs.get("per", {}).get("user", {}))
-            or "-"
+            get_set_value(max_jobs.get("per", {}).get("user", {})) or "-"
         )
         result["max_jobs_active_per_user"] = (
             get_set_value(
-                max_limits.get("active_jobs", {})
-                .get("per", {})
-                .get("user", {})
+                max_limits.get("active_jobs", {}).get("per", {}).get("user", {})
             )
             or "-"
         )
 
         # Max wall time
-        max_wall = (
-            max_limits.get("wall_clock", {})
-            .get("per", {})
-            .get("job", {})
-        )
+        max_wall = max_limits.get("wall_clock", {}).get("per", {}).get("job", {})
         result["max_wall"] = get_set_value(max_wall) or "-"
 
         # Format TRES lists
@@ -821,12 +737,8 @@ class Qos(BaseSlurmResource):
             return ",".join(parts) if parts else "-"
 
         tres = max_limits.get("tres", {})
-        result["max_tres_per_job"] = format_tres(
-            tres.get("per", {}).get("job", [])
-        )
-        result["max_tres_per_user"] = format_tres(
-            tres.get("per", {}).get("user", [])
-        )
+        result["max_tres_per_job"] = format_tres(tres.get("per", {}).get("job", []))
+        result["max_tres_per_user"] = format_tres(tres.get("per", {}).get("user", []))
         result["max_tres_total"] = format_tres(tres.get("total", []))
 
         return result

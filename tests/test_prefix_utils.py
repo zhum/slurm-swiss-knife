@@ -82,9 +82,7 @@ class TestPrefixMatcher:
 
     def test_alias_match(self):
         """Test alias matching."""
-        matcher = PrefixMatcher(
-            ["show", "create"], aliases={"show": ["get"]}
-        )
+        matcher = PrefixMatcher(["show", "create"], aliases={"show": ["get"]})
         canonical, exact = matcher.match("get")
         assert canonical == "show"
         assert exact is True
@@ -104,9 +102,7 @@ class TestPrefixMatcher:
 
     def test_get_all_names(self):
         """Test getting all valid names."""
-        matcher = PrefixMatcher(
-            ["show", "create"], aliases={"show": ["get"]}
-        )
+        matcher = PrefixMatcher(["show", "create"], aliases={"show": ["get"]})
         names = matcher.get_all_names()
         assert "show" in names
         assert "create" in names

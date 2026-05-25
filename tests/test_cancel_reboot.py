@@ -18,15 +18,14 @@ def runner():
 # Flag and Option Tests
 # =============================================================================
 
+
 def test_cancel_reboot_dry_run(runner):
     """Test cancel-reboot with --dry-run flag."""
     from slurm_cli.cli import register_commands
 
     register_commands()
 
-    result = runner.invoke(
-        main, ["cancel-reboot", "node001", "--dry-run"]
-    )
+    result = runner.invoke(main, ["cancel-reboot", "node001", "--dry-run"])
     assert result.exit_code == 0
     assert "DRY RUN" in result.output
     # Should show the command that would be run
@@ -54,9 +53,7 @@ def test_cancel_reboot_dry_run_and_verbose(runner):
 
     register_commands()
 
-    result = runner.invoke(
-        main, ["cancel-reboot", "node001", "--dry-run", "-v"]
-    )
+    result = runner.invoke(main, ["cancel-reboot", "node001", "--dry-run", "-v"])
     assert result.exit_code == 0
     # Both dry-run output and verbose output should be present
     assert "DRY RUN" in result.output
@@ -81,6 +78,7 @@ def test_cancel_reboot_short_flags(runner):
 # Alias Tests
 # =============================================================================
 
+
 def test_cancel_reboot_alias(runner):
     """Test cancel-reboot with 'cancel-reb' alias."""
     from slurm_cli.cli import register_commands
@@ -97,6 +95,7 @@ def test_cancel_reboot_alias(runner):
 # =============================================================================
 # Error Handling Tests
 # =============================================================================
+
 
 def test_cancel_reboot_error_handling(runner):
     """Test cancel-reboot error handling when scontrol fails."""
@@ -133,6 +132,7 @@ def test_cancel_reboot_not_found(runner):
 # Help and Documentation Tests
 # =============================================================================
 
+
 def test_cancel_reboot_in_help(runner):
     """Test that cancel-reboot appears in main help."""
     from slurm_cli.cli import register_commands
@@ -162,6 +162,7 @@ def test_cancel_reboot_help_text(runner):
 # =============================================================================
 # Integration Tests - Command Registration
 # =============================================================================
+
 
 def test_register_commands_includes_cancel_reboot():
     """Test that register_commands properly includes cancel-reboot."""
@@ -207,6 +208,7 @@ def test_register_commands_includes_all_scontrol_commands():
 # Prefix Matching Tests (for autocomplete)
 # =============================================================================
 
+
 def test_cancel_reboot_prefix_matching():
     """Test that cancel-reboot responds to common prefixes."""
     from slurm_cli.cli import resolve_command_alias
@@ -218,6 +220,7 @@ def test_cancel_reboot_prefix_matching():
 # =============================================================================
 # Regression Tests - Ensure Existing Behavior Still Works
 # =============================================================================
+
 
 def test_reconfigure_still_works_after_cancel_reboot_addition(runner):
     """Regression: ensure reconfigure still works after adding cancel-reboot."""
@@ -262,6 +265,7 @@ def test_ping_still_works_after_cancel_reboot_addition(runner):
 # Node Filter Resolution Tests
 # =============================================================================
 
+
 def test_cancel_reboot_with_node_filter(runner):
     """Test cancel-reboot with partition filter."""
     from slurm_cli.cli import register_commands
@@ -271,13 +275,9 @@ def test_cancel_reboot_with_node_filter(runner):
     with patch("subprocess.run") as mock_run:
         mock_run.return_value.stdout = ""
         mock_run.return_value.returncode = 0
-        with patch(
-            "slurm_cli.cli.resolve_node_filters"
-        ) as mock_resolve:
+        with patch("slurm_cli.cli.resolve_node_filters") as mock_resolve:
             mock_resolve.return_value = ({"node001", "node002"}, [])
-            result = runner.invoke(
-                main, ["cancel-reboot", "partition=gpu"]
-            )
+            result = runner.invoke(main, ["cancel-reboot", "partition=gpu"])
             assert result.exit_code == 0
             mock_resolve.assert_called_once()
             call_args = mock_run.call_args[0][0]
@@ -293,9 +293,7 @@ def test_cancel_reboot_with_multiple_filters(runner):
     with patch("subprocess.run") as mock_run:
         mock_run.return_value.stdout = ""
         mock_run.return_value.returncode = 0
-        with patch(
-            "slurm_cli.cli.resolve_node_filters"
-        ) as mock_resolve:
+        with patch("slurm_cli.cli.resolve_node_filters") as mock_resolve:
             mock_resolve.return_value = ({"node001", "node002"}, [])
             result = runner.invoke(
                 main, ["cancel-reboot", "partition=gpu not:user=alice"]
@@ -308,6 +306,7 @@ def test_cancel_reboot_with_multiple_filters(runner):
 # =============================================================================
 # Output Message Tests
 # =============================================================================
+
 
 def test_cancel_reboot_success_message(runner):
     """Test that success message is displayed."""
@@ -341,6 +340,7 @@ def test_cancel_reboot_stdout_output(runner):
 # Edge Cases
 # =============================================================================
 
+
 def test_cancel_reboot_empty_nodes(runner):
     """Test cancel-reboot with no nodes specified."""
     from slurm_cli.cli import register_commands
@@ -363,14 +363,14 @@ def test_cancel_reboot_empty_string_nodes(runner):
 
     # When empty string is provided, it should resolve to no nodes
     with patch("subprocess.run") as mock_run:
-        with patch(
-            "slurm_cli.cli.resolve_node_filters"
-        ) as mock_resolve:
+        with patch("slurm_cli.cli.resolve_node_filters") as mock_resolve:
             mock_resolve.return_value = (set(), [])
             result = runner.invoke(main, ["cancel-reboot", ""])
             assert result.exit_code in [0, 2]
             # Should show error about no nodes
-            assert "No nodes specified" in result.output or "all excluded" in result.output
+            assert (
+                "No nodes specified" in result.output or "all excluded" in result.output
+            )
 
 
 def test_cancel_reboot_empty_set_nodes(runner):
@@ -381,14 +381,14 @@ def test_cancel_reboot_empty_set_nodes(runner):
 
     # When a filter resolves to an empty set, the function should handle it gracefully
     with patch("subprocess.run") as mock_run:
-        with patch(
-            "slurm_cli.cli.resolve_node_filters"
-        ) as mock_resolve:
+        with patch("slurm_cli.cli.resolve_node_filters") as mock_resolve:
             mock_resolve.return_value = (set(), [])
             result = runner.invoke(main, ["cancel-reboot", "partition=nonexistent"])
             # Should show error about no nodes being found
             assert result.exit_code in [0, 2]
-            assert "No nodes specified" in result.output or "all excluded" in result.output
+            assert (
+                "No nodes specified" in result.output or "all excluded" in result.output
+            )
 
 
 def test_cancel_reboot_with_stdout_output(runner):
@@ -403,4 +403,3 @@ def test_cancel_reboot_with_stdout_output(runner):
         assert result.exit_code == 0
         # Should show both the stdout and success message
         assert "Requeued" in result.output
-

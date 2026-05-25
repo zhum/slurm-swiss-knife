@@ -110,9 +110,7 @@ class TestResolveJobFilter:
     @mock.patch("slurm_cli.utils.job_filter.subprocess.run")
     def test_resolve_user_filter(self, mock_run):
         """Test resolving user filter."""
-        mock_run.return_value = mock.Mock(
-            stdout="12345\n12346\n", returncode=0
-        )
+        mock_run.return_value = mock.Mock(stdout="12345\n12346\n", returncode=0)
 
         result = resolve_job_filter("user=john")
 
@@ -125,9 +123,7 @@ class TestResolveJobFilter:
     @mock.patch("slurm_cli.utils.job_filter.subprocess.run")
     def test_resolve_account_filter(self, mock_run):
         """Test resolving account filter."""
-        mock_run.return_value = mock.Mock(
-            stdout="12345\n", returncode=0
-        )
+        mock_run.return_value = mock.Mock(stdout="12345\n", returncode=0)
 
         result = resolve_job_filter("account=research")
 
@@ -139,9 +135,7 @@ class TestResolveJobFilter:
     @mock.patch("slurm_cli.utils.job_filter.subprocess.run")
     def test_resolve_partition_filter(self, mock_run):
         """Test resolving partition filter."""
-        mock_run.return_value = mock.Mock(
-            stdout="12345\n12346\n12347\n", returncode=0
-        )
+        mock_run.return_value = mock.Mock(stdout="12345\n12346\n12347\n", returncode=0)
 
         result = resolve_job_filter("partition=gpu")
 
@@ -153,9 +147,7 @@ class TestResolveJobFilter:
     @mock.patch("slurm_cli.utils.job_filter.subprocess.run")
     def test_resolve_state_filter(self, mock_run):
         """Test resolving state filter."""
-        mock_run.return_value = mock.Mock(
-            stdout="12345\n", returncode=0
-        )
+        mock_run.return_value = mock.Mock(stdout="12345\n", returncode=0)
 
         result = resolve_job_filter("state=running")
 
@@ -167,9 +159,7 @@ class TestResolveJobFilter:
     @mock.patch("slurm_cli.utils.job_filter.subprocess.run")
     def test_resolve_name_filter(self, mock_run):
         """Test resolving name filter."""
-        mock_run.return_value = mock.Mock(
-            stdout="12345\n", returncode=0
-        )
+        mock_run.return_value = mock.Mock(stdout="12345\n", returncode=0)
 
         result = resolve_job_filter("name=myjob")
 
@@ -181,9 +171,7 @@ class TestResolveJobFilter:
     @mock.patch("slurm_cli.utils.job_filter.subprocess.run")
     def test_resolve_nodes_filter(self, mock_run):
         """Test resolving nodes filter."""
-        mock_run.return_value = mock.Mock(
-            stdout="12345\n", returncode=0
-        )
+        mock_run.return_value = mock.Mock(stdout="12345\n", returncode=0)
 
         result = resolve_job_filter("nodes=node001")
 
@@ -195,9 +183,7 @@ class TestResolveJobFilter:
     @mock.patch("slurm_cli.utils.job_filter.subprocess.run")
     def test_resolve_reservation_filter(self, mock_run):
         """Test resolving reservation filter."""
-        mock_run.return_value = mock.Mock(
-            stdout="12345\n", returncode=0
-        )
+        mock_run.return_value = mock.Mock(stdout="12345\n", returncode=0)
 
         result = resolve_job_filter("reservation=maint")
 
@@ -234,13 +220,9 @@ class TestResolveJobIds:
     @mock.patch("slurm_cli.utils.job_filter.subprocess.run")
     def test_resolve_mixed_args(self, mock_run):
         """Test resolving mix of job IDs and filters."""
-        mock_run.return_value = mock.Mock(
-            stdout="99999\n", returncode=0
-        )
+        mock_run.return_value = mock.Mock(stdout="99999\n", returncode=0)
 
-        job_ids, user_filters = resolve_job_ids(
-            ["12345", "user=john", "state=pending"]
-        )
+        job_ids, user_filters = resolve_job_ids(["12345", "user=john", "state=pending"])
 
         # 12345 is explicit, john is user filter, state resolves to 99999
         assert "12345" in job_ids
@@ -256,9 +238,7 @@ class TestResolveJobIds:
 
     def test_resolve_user_filter_separate(self):
         """Test user filters are returned separately."""
-        job_ids, user_filters = resolve_job_ids(
-            ["user=john", "user=jane"]
-        )
+        job_ids, user_filters = resolve_job_ids(["user=john", "user=jane"])
 
         assert job_ids == []
         assert "john" in user_filters
@@ -273,9 +253,7 @@ class TestResolveJobIds:
 
     def test_resolve_deduplicates(self):
         """Test duplicate job IDs are removed."""
-        job_ids, user_filters = resolve_job_ids(
-            ["12345", "12345", "12346"]
-        )
+        job_ids, user_filters = resolve_job_ids(["12345", "12345", "12346"])
 
         assert job_ids == ["12345", "12346"]
 
@@ -333,9 +311,7 @@ class TestGetAllJobs:
     @mock.patch("slurm_cli.utils.job_filter.subprocess.run")
     def test_get_all_jobs_success(self, mock_run):
         """Test _get_all_jobs returns all job IDs."""
-        mock_run.return_value = mock.Mock(
-            stdout="12345\n12346\n12347\n", returncode=0
-        )
+        mock_run.return_value = mock.Mock(stdout="12345\n12346\n12347\n", returncode=0)
 
         result = _get_all_jobs()
 
@@ -353,13 +329,9 @@ class TestGetAllJobs:
     @mock.patch("slurm_cli.utils.job_filter.subprocess.run")
     def test_get_all_jobs_verbose(self, mock_run):
         """Test _get_all_jobs with verbose output."""
-        mock_run.return_value = mock.Mock(
-            stdout="12345\n", returncode=0
-        )
+        mock_run.return_value = mock.Mock(stdout="12345\n", returncode=0)
 
-        with mock.patch(
-            "slurm_cli.utils.job_filter.console.print"
-        ) as mock_print:
+        with mock.patch("slurm_cli.utils.job_filter.console.print") as mock_print:
             result = _get_all_jobs(verbose=True)
 
             assert result == ["12345"]
@@ -383,9 +355,7 @@ class TestGetAllJobs:
             1, "squeue", stderr="error"
         )
 
-        with mock.patch(
-            "slurm_cli.utils.job_filter.console.print"
-        ) as mock_print:
+        with mock.patch("slurm_cli.utils.job_filter.console.print") as mock_print:
             result = _get_all_jobs(verbose=True)
 
             assert result == []
@@ -398,9 +368,7 @@ class TestResolveJobFilters:
     @mock.patch("slurm_cli.utils.job_filter.subprocess.run")
     def test_exclusion_filter(self, mock_run):
         """Test resolve_job_filters with not: exclusion filter."""
-        mock_run.return_value = mock.Mock(
-            stdout="12345\n", returncode=0
-        )
+        mock_run.return_value = mock.Mock(stdout="12345\n", returncode=0)
 
         result_jobs, other_args = resolve_job_filters(
             ["12345", "12346", "not:user=john"]
@@ -414,13 +382,9 @@ class TestResolveJobFilters:
     @mock.patch("slurm_cli.utils.job_filter.subprocess.run")
     def test_exclusion_with_verbose(self, mock_run):
         """Test resolve_job_filters exclusion with verbose output."""
-        mock_run.return_value = mock.Mock(
-            stdout="12345\n", returncode=0
-        )
+        mock_run.return_value = mock.Mock(stdout="12345\n", returncode=0)
 
-        with mock.patch(
-            "slurm_cli.utils.job_filter.console.print"
-        ) as mock_print:
+        with mock.patch("slurm_cli.utils.job_filter.console.print") as mock_print:
             result_jobs, _ = resolve_job_filters(
                 ["12345", "12346", "not:user=john"], verbose=True
             )
@@ -438,9 +402,7 @@ class TestResolveJobFilters:
                 return mock.Mock(stdout="12345\n", returncode=0)
             else:
                 # all jobs
-                return mock.Mock(
-                    stdout="12345\n12346\n12347\n", returncode=0
-                )
+                return mock.Mock(stdout="12345\n12346\n12347\n", returncode=0)
 
         mock_run.side_effect = mock_squeue
 
@@ -459,18 +421,12 @@ class TestResolveJobFilters:
             if "-u" in cmd:
                 return mock.Mock(stdout="12345\n", returncode=0)
             else:
-                return mock.Mock(
-                    stdout="12345\n12346\n12347\n", returncode=0
-                )
+                return mock.Mock(stdout="12345\n12346\n12347\n", returncode=0)
 
         mock_run.side_effect = mock_squeue
 
-        with mock.patch(
-            "slurm_cli.utils.job_filter.console.print"
-        ) as mock_print:
-            result_jobs, _ = resolve_job_filters(
-                ["not:user=john"], verbose=True
-            )
+        with mock.patch("slurm_cli.utils.job_filter.console.print") as mock_print:
+            result_jobs, _ = resolve_job_filters(["not:user=john"], verbose=True)
 
             # Should print "Starting with all X jobs"
             assert mock_print.called
@@ -482,9 +438,7 @@ class TestResolveJobFilters:
     @mock.patch("slurm_cli.utils.job_filter.subprocess.run")
     def test_positive_filter(self, mock_run):
         """Test resolve_job_filters with positive filter."""
-        mock_run.return_value = mock.Mock(
-            stdout="12345\n12346\n", returncode=0
-        )
+        mock_run.return_value = mock.Mock(stdout="12345\n12346\n", returncode=0)
 
         result_jobs, _ = resolve_job_filters(["partition=gpu"])
 
@@ -494,16 +448,10 @@ class TestResolveJobFilters:
     @mock.patch("slurm_cli.utils.job_filter.subprocess.run")
     def test_positive_filter_verbose(self, mock_run):
         """Test resolve_job_filters positive filter with verbose."""
-        mock_run.return_value = mock.Mock(
-            stdout="12345\n", returncode=0
-        )
+        mock_run.return_value = mock.Mock(stdout="12345\n", returncode=0)
 
-        with mock.patch(
-            "slurm_cli.utils.job_filter.console.print"
-        ) as mock_print:
-            result_jobs, _ = resolve_job_filters(
-                ["partition=gpu"], verbose=True
-            )
+        with mock.patch("slurm_cli.utils.job_filter.console.print") as mock_print:
+            result_jobs, _ = resolve_job_filters(["partition=gpu"], verbose=True)
 
             assert mock_print.called
             assert "12345" in result_jobs
@@ -524,9 +472,7 @@ class TestResolveJobFilters:
 
     def test_other_args_passed_through(self):
         """Test non-job args are returned as other_args."""
-        result_jobs, other_args = resolve_job_filters(
-            ["12345", "reason=test"]
-        )
+        result_jobs, other_args = resolve_job_filters(["12345", "reason=test"])
 
         assert "12345" in result_jobs
         assert "reason=test" in other_args
@@ -549,9 +495,7 @@ class TestResolveJobFilters:
     @mock.patch("slurm_cli.utils.job_filter.subprocess.run")
     def test_exclusion_not_filter_passed_through(self, mock_run):
         """Test not: prefix on non-filter is passed through."""
-        result_jobs, other_args = resolve_job_filters(
-            ["12345", "not:randomstring"]
-        )
+        result_jobs, other_args = resolve_job_filters(["12345", "not:randomstring"])
 
         assert "12345" in result_jobs
         assert "not:randomstring" in other_args
@@ -563,13 +507,9 @@ class TestResolveJobFilterVerbose:
     @mock.patch("slurm_cli.utils.job_filter.subprocess.run")
     def test_user_filter_verbose(self, mock_run):
         """Test resolve_job_filter user filter with verbose."""
-        mock_run.return_value = mock.Mock(
-            stdout="12345\n", returncode=0
-        )
+        mock_run.return_value = mock.Mock(stdout="12345\n", returncode=0)
 
-        with mock.patch(
-            "slurm_cli.utils.job_filter.console.print"
-        ) as mock_print:
+        with mock.patch("slurm_cli.utils.job_filter.console.print") as mock_print:
             result = resolve_job_filter("user=john", verbose=True)
 
             assert result == ["12345"]
@@ -578,16 +518,10 @@ class TestResolveJobFilterVerbose:
     @mock.patch("slurm_cli.utils.job_filter.subprocess.run")
     def test_account_filter_verbose(self, mock_run):
         """Test resolve_job_filter account filter with verbose."""
-        mock_run.return_value = mock.Mock(
-            stdout="12345\n", returncode=0
-        )
+        mock_run.return_value = mock.Mock(stdout="12345\n", returncode=0)
 
-        with mock.patch(
-            "slurm_cli.utils.job_filter.console.print"
-        ) as mock_print:
-            result = resolve_job_filter(
-                "account=research", verbose=True
-            )
+        with mock.patch("slurm_cli.utils.job_filter.console.print") as mock_print:
+            result = resolve_job_filter("account=research", verbose=True)
 
             assert result == ["12345"]
             mock_print.assert_called_once()
@@ -595,13 +529,9 @@ class TestResolveJobFilterVerbose:
     @mock.patch("slurm_cli.utils.job_filter.subprocess.run")
     def test_partition_filter_verbose(self, mock_run):
         """Test resolve_job_filter partition filter with verbose."""
-        mock_run.return_value = mock.Mock(
-            stdout="12345\n", returncode=0
-        )
+        mock_run.return_value = mock.Mock(stdout="12345\n", returncode=0)
 
-        with mock.patch(
-            "slurm_cli.utils.job_filter.console.print"
-        ) as mock_print:
+        with mock.patch("slurm_cli.utils.job_filter.console.print") as mock_print:
             result = resolve_job_filter("partition=gpu", verbose=True)
 
             assert result == ["12345"]
@@ -610,13 +540,9 @@ class TestResolveJobFilterVerbose:
     @mock.patch("slurm_cli.utils.job_filter.subprocess.run")
     def test_state_filter_verbose(self, mock_run):
         """Test resolve_job_filter state filter with verbose."""
-        mock_run.return_value = mock.Mock(
-            stdout="12345\n", returncode=0
-        )
+        mock_run.return_value = mock.Mock(stdout="12345\n", returncode=0)
 
-        with mock.patch(
-            "slurm_cli.utils.job_filter.console.print"
-        ) as mock_print:
+        with mock.patch("slurm_cli.utils.job_filter.console.print") as mock_print:
             result = resolve_job_filter("state=running", verbose=True)
 
             assert result == ["12345"]
@@ -625,13 +551,9 @@ class TestResolveJobFilterVerbose:
     @mock.patch("slurm_cli.utils.job_filter.subprocess.run")
     def test_name_filter_verbose(self, mock_run):
         """Test resolve_job_filter name filter with verbose."""
-        mock_run.return_value = mock.Mock(
-            stdout="12345\n", returncode=0
-        )
+        mock_run.return_value = mock.Mock(stdout="12345\n", returncode=0)
 
-        with mock.patch(
-            "slurm_cli.utils.job_filter.console.print"
-        ) as mock_print:
+        with mock.patch("slurm_cli.utils.job_filter.console.print") as mock_print:
             result = resolve_job_filter("name=myjob", verbose=True)
 
             assert result == ["12345"]
@@ -670,9 +592,7 @@ class TestResolveJobFilterVerbose:
             stdout="12345 my_test\n12346 other\n", returncode=0
         )
 
-        with mock.patch(
-            "slurm_cli.utils.job_filter.console.print"
-        ) as mock_print:
+        with mock.patch("slurm_cli.utils.job_filter.console.print") as mock_print:
             result = resolve_job_filter("jobname=my_.*", verbose=True)
 
             assert result == ["12345"]
@@ -681,12 +601,8 @@ class TestResolveJobFilterVerbose:
     @mock.patch("slurm_cli.utils.job_filter.subprocess.run")
     def test_jobname_filter_invalid_regex(self, mock_run):
         """Test jobname filter with invalid regex."""
-        with mock.patch(
-            "slurm_cli.utils.job_filter.console.print"
-        ) as mock_print:
-            result = resolve_job_filter(
-                "jobname=[invalid", verbose=True
-            )
+        with mock.patch("slurm_cli.utils.job_filter.console.print") as mock_print:
+            result = resolve_job_filter("jobname=[invalid", verbose=True)
 
             assert result == []
             mock_print.assert_called_once()
@@ -695,13 +611,9 @@ class TestResolveJobFilterVerbose:
     @mock.patch("slurm_cli.utils.job_filter.subprocess.run")
     def test_nodes_filter_verbose(self, mock_run):
         """Test resolve_job_filter nodes filter with verbose."""
-        mock_run.return_value = mock.Mock(
-            stdout="12345\n", returncode=0
-        )
+        mock_run.return_value = mock.Mock(stdout="12345\n", returncode=0)
 
-        with mock.patch(
-            "slurm_cli.utils.job_filter.console.print"
-        ) as mock_print:
+        with mock.patch("slurm_cli.utils.job_filter.console.print") as mock_print:
             result = resolve_job_filter("nodes=node001", verbose=True)
 
             assert result == ["12345"]
@@ -710,16 +622,10 @@ class TestResolveJobFilterVerbose:
     @mock.patch("slurm_cli.utils.job_filter.subprocess.run")
     def test_reservation_filter_verbose(self, mock_run):
         """Test resolve_job_filter reservation filter with verbose."""
-        mock_run.return_value = mock.Mock(
-            stdout="12345\n", returncode=0
-        )
+        mock_run.return_value = mock.Mock(stdout="12345\n", returncode=0)
 
-        with mock.patch(
-            "slurm_cli.utils.job_filter.console.print"
-        ) as mock_print:
-            result = resolve_job_filter(
-                "reservation=maint", verbose=True
-            )
+        with mock.patch("slurm_cli.utils.job_filter.console.print") as mock_print:
+            result = resolve_job_filter("reservation=maint", verbose=True)
 
             assert result == ["12345"]
             mock_print.assert_called_once()
@@ -735,9 +641,7 @@ class TestResolveJobFilterErrors:
             1, "squeue", stderr="error"
         )
 
-        with mock.patch(
-            "slurm_cli.utils.job_filter.console.print"
-        ) as mock_print:
+        with mock.patch("slurm_cli.utils.job_filter.console.print") as mock_print:
             result = resolve_job_filter("user=john", verbose=True)
 
             assert result == []
@@ -750,12 +654,8 @@ class TestResolveJobFilterErrors:
             1, "squeue", stderr="error"
         )
 
-        with mock.patch(
-            "slurm_cli.utils.job_filter.console.print"
-        ) as mock_print:
-            result = resolve_job_filter(
-                "account=research", verbose=True
-            )
+        with mock.patch("slurm_cli.utils.job_filter.console.print") as mock_print:
+            result = resolve_job_filter("account=research", verbose=True)
 
             assert result == []
             mock_print.assert_called_once()
@@ -767,9 +667,7 @@ class TestResolveJobFilterErrors:
             1, "squeue", stderr="error"
         )
 
-        with mock.patch(
-            "slurm_cli.utils.job_filter.console.print"
-        ) as mock_print:
+        with mock.patch("slurm_cli.utils.job_filter.console.print") as mock_print:
             result = resolve_job_filter("partition=gpu", verbose=True)
 
             assert result == []
@@ -782,9 +680,7 @@ class TestResolveJobFilterErrors:
             1, "squeue", stderr="error"
         )
 
-        with mock.patch(
-            "slurm_cli.utils.job_filter.console.print"
-        ) as mock_print:
+        with mock.patch("slurm_cli.utils.job_filter.console.print") as mock_print:
             result = resolve_job_filter("state=running", verbose=True)
 
             assert result == []
@@ -797,9 +693,7 @@ class TestResolveJobFilterErrors:
             1, "squeue", stderr="error"
         )
 
-        with mock.patch(
-            "slurm_cli.utils.job_filter.console.print"
-        ) as mock_print:
+        with mock.patch("slurm_cli.utils.job_filter.console.print") as mock_print:
             result = resolve_job_filter("name=myjob", verbose=True)
 
             assert result == []
@@ -812,9 +706,7 @@ class TestResolveJobFilterErrors:
             1, "squeue", stderr="error"
         )
 
-        with mock.patch(
-            "slurm_cli.utils.job_filter.console.print"
-        ) as mock_print:
+        with mock.patch("slurm_cli.utils.job_filter.console.print") as mock_print:
             result = resolve_job_filter("nodes=node001", verbose=True)
 
             assert result == []
@@ -827,12 +719,8 @@ class TestResolveJobFilterErrors:
             1, "squeue", stderr="error"
         )
 
-        with mock.patch(
-            "slurm_cli.utils.job_filter.console.print"
-        ) as mock_print:
-            result = resolve_job_filter(
-                "reservation=maint", verbose=True
-            )
+        with mock.patch("slurm_cli.utils.job_filter.console.print") as mock_print:
+            result = resolve_job_filter("reservation=maint", verbose=True)
 
             assert result == []
             mock_print.assert_called_once()

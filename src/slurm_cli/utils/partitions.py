@@ -2,18 +2,14 @@
 
 import json
 import subprocess
-from typing import Any, Optional, Union, Dict
+from typing import Any, Dict, Optional, Union
 
 from rich.box import SIMPLE_HEAVY
 from rich.markup import escape
 from rich.table import Table
 
 from .base_resource import BaseSlurmResource
-from .profiles import (
-    format_with_template,
-    get_profile_config,
-    sort_data,
-)
+from .profiles import format_with_template, get_profile_config, sort_data
 
 # from .resources import Resource, ResourceType
 from .utils import console
@@ -647,7 +643,9 @@ class Partition(BaseSlurmResource):
 
     @classmethod
     def show_pretty(
-        cls, name: Optional[str] = None, partitions: Optional[dict] = None
+        cls,
+        name: Optional[str] = None,
+        partitions: Optional[dict] = None,
     ) -> None:
         if not partitions:
             console.print("[red]No partitions found.[/red]")

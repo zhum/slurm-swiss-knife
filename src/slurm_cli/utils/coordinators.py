@@ -214,9 +214,7 @@ _slurm_cli_coordinators_autocomplete() {
             verbose: Enable verbose output
         """
         if not names:
-            console.print(
-                "[red]No coordinator names specified for deletion.[/red]"
-            )
+            console.print("[red]No coordinator names specified for deletion.[/red]")
             return
 
         for name in names:
@@ -267,9 +265,7 @@ _slurm_cli_coordinators_autocomplete() {
                     {
                         "name": coord.get("name", ""),
                         "account": account_name,
-                        "direct": "Yes"
-                        if coord.get("direct")
-                        else "No",
+                        "direct": "Yes" if coord.get("direct") else "No",
                     }
                 )
         return coordinators
@@ -379,9 +375,7 @@ _slurm_cli_coordinators_autocomplete() {
 
             # Apply sorting
             if sort_field:
-                coordinators = sort_data(
-                    coordinators, sort_field, sort_asc
-                )
+                coordinators = sort_data(coordinators, sort_field, sort_asc)
 
             # Output based on style
             if style == "json":
@@ -390,9 +384,7 @@ _slurm_cli_coordinators_autocomplete() {
                 # CSV header
                 print(delimiter.join(columns))
                 for coord in coordinators:
-                    row = [
-                        cls._format_value(coord, col) for col in columns
-                    ]
+                    row = [cls._format_value(coord, col) for col in columns]
                     print(delimiter.join(row))
             else:
                 # Pretty table output
@@ -413,14 +405,10 @@ _slurm_cli_coordinators_autocomplete() {
                     row_style = None
                     if zebra and i % 2 == 1:
                         row_style = "on grey15"
-                    row = [
-                        cls._format_value(coord, col) for col in columns
-                    ]
+                    row = [cls._format_value(coord, col) for col in columns]
                     table.add_row(*row, style=row_style)
 
                 console.print(table)
 
         except subprocess.CalledProcessError as e:
-            console.print(
-                f"[red]Failed to show coordinators:[/red] {e.stderr or e}"
-            )
+            console.print(f"[red]Failed to show coordinators:[/red] {e.stderr or e}")

@@ -2,18 +2,14 @@
 
 import json
 import subprocess
-from typing import Any, Dict, Optional, Union, List
+from typing import Any, Dict, List, Optional, Union
 
 from rich.box import SIMPLE_HEAVY
 from rich.markup import escape
 from rich.table import Table
 
 from .base_resource import BaseSlurmResource
-from .profiles import (
-    format_with_template,
-    get_profile_config,
-    sort_data,
-)
+from .profiles import format_with_template, get_profile_config, sort_data
 from .utils import console
 
 
@@ -129,23 +125,16 @@ class Node(BaseSlurmResource):
     def generate_autocomplete_options(cls) -> str:
         """Generate bash autocomplete script for node options."""
         show_opts = " ".join(f"{opt}=" for opt in cls.NODE_SHOW_OPTIONS)
-        update_opts = " ".join(
-            f"{opt}=" for opt in cls.NODE_UPDATE_OPTIONS
-        )
+        update_opts = " ".join(f"{opt}=" for opt in cls.NODE_UPDATE_OPTIONS)
         # Add node filter options for selecting nodes
         filter_opts = " ".join(
-            f"{opt}=" if opt != "ALL" else opt
-            for opt in cls.NODE_FILTER_OPTIONS
+            f"{opt}=" if opt != "ALL" else opt for opt in cls.NODE_FILTER_OPTIONS
         )
         # Add negation filter options (not:filter=)
         neg_filter_opts = " ".join(
-            f"not:{opt}="
-            for opt in cls.NODE_FILTER_OPTIONS
-            if opt != "ALL"
+            f"not:{opt}=" for opt in cls.NODE_FILTER_OPTIONS if opt != "ALL"
         )
-        create_opts = " ".join(
-            f"{opt}=" for opt in cls.NODE_CREATE_OPTIONS
-        )
+        create_opts = " ".join(f"{opt}=" for opt in cls.NODE_CREATE_OPTIONS)
         states = " ".join(cls.NODE_STATES)
         create_states = " ".join(cls.NODE_CREATE_STATES)
         update_states = " ".join(cls.NODE_UPDATE_STATES)
@@ -244,9 +233,7 @@ _slurm_cli_nodes_autocomplete() {{
         return cls._WIDTH
 
     @classmethod
-    def create(
-        cls, name: str, verbose: bool = False, **kwargs: Any
-    ) -> None:
+    def create(cls, name: str, verbose: bool = False, **kwargs: Any) -> None:
         """Create a new node.
 
         Both NodeName and state are required.
@@ -256,25 +243,15 @@ _slurm_cli_nodes_autocomplete() {{
         # State is required
         state = kwargs.get("state", "").lower()
         if not state:
-            console.print(
-                "[red]Node creation requires state= parameter.[/red]"
-            )
-            console.print(
-                f"Allowed states: {', '.join(cls.NODE_CREATE_STATES)}"
-            )
-            console.print(
-                "Usage: slurm-cli create nodes NODENAME state=future|cloud"
-            )
+            console.print("[red]Node creation requires state= parameter.[/red]")
+            console.print(f"Allowed states: {', '.join(cls.NODE_CREATE_STATES)}")
+            console.print("Usage: slurm-cli create nodes NODENAME state=future|cloud")
             return
 
         # Validate state value
         if state not in cls.NODE_CREATE_STATES:
-            console.print(
-                f"[red]Invalid state '{state}' for node creation.[/red]"
-            )
-            console.print(
-                f"Allowed states: {', '.join(cls.NODE_CREATE_STATES)}"
-            )
+            console.print(f"[red]Invalid state '{state}' for node creation.[/red]")
+            console.print(f"Allowed states: {', '.join(cls.NODE_CREATE_STATES)}")
             return
 
         # Build scontrol command
@@ -293,15 +270,11 @@ _slurm_cli_nodes_autocomplete() {{
                 capture_output=True,
                 text=True,
             )
-            console.print(
-                f"[green]Node '{name}' created successfully.[/green]"
-            )
+            console.print(f"[green]Node '{name}' created successfully.[/green]")
             if result.stdout:
                 console.print(result.stdout)
         except subprocess.CalledProcessError as e:
-            console.print(
-                f"[red]Failed to create node '{name}':[/red] {e.stderr or e}"
-            )
+            console.print(f"[red]Failed to create node '{name}':[/red] {e.stderr or e}")
 
     @classmethod
     def update(
@@ -325,32 +298,22 @@ _slurm_cli_nodes_autocomplete() {{
         Valid CpuBind: none, socket, ldom, core, thread, off
         """
         if not name:
-            console.print(
-                "[red]Node name is required for update.[/red]"
-            )
-            console.print(
-                "Usage: slurm-cli update nodes NODENAME KEY=VALUE..."
-            )
+            console.print("[red]Node name is required for update.[/red]")
+            console.print("Usage: slurm-cli update nodes NODENAME KEY=VALUE...")
             return
 
         # Validate state if provided
         state = kwargs.get("state", "")
         if state and state.lower() not in cls.NODE_UPDATE_STATES:
-            console.print(
-                f"[red]Invalid state '{state}' for node update.[/red]"
-            )
-            console.print(
-                f"Valid states: {', '.join(cls.NODE_UPDATE_STATES)}"
-            )
+            console.print(f"[red]Invalid state '{state}' for node update.[/red]")
+            console.print(f"Valid states: {', '.join(cls.NODE_UPDATE_STATES)}")
             return
 
         # Validate cpubind if provided
         cpubind = kwargs.get("cpubind", "")
         if cpubind and cpubind.lower() not in cls.NODE_CPUBIND_VALUES:
             console.print(f"[red]Invalid cpubind '{cpubind}'.[/red]")
-            console.print(
-                f"Valid values: {', '.join(cls.NODE_CPUBIND_VALUES)}"
-            )
+            console.print(f"Valid values: {', '.join(cls.NODE_CPUBIND_VALUES)}")
             return
 
         # Build scontrol command
@@ -373,15 +336,11 @@ _slurm_cli_nodes_autocomplete() {{
                 capture_output=True,
                 text=True,
             )
-            console.print(
-                f"[green]Node '{name}' updated successfully.[/green]"
-            )
+            console.print(f"[green]Node '{name}' updated successfully.[/green]")
             if result.stdout:
                 console.print(result.stdout)
         except subprocess.CalledProcessError as e:
-            console.print(
-                f"[red]Failed to update node '{name}':[/red] {e.stderr or e}"
-            )
+            console.print(f"[red]Failed to update node '{name}':[/red] {e.stderr or e}")
 
     @classmethod
     def delete(cls, name: str, verbose: bool = False) -> None:
@@ -390,9 +349,7 @@ _slurm_cli_nodes_autocomplete() {{
         Command format: scontrol delete nodename=NODES
         """
         if not name:
-            console.print(
-                "[red]Node name is required for deletion.[/red]"
-            )
+            console.print("[red]Node name is required for deletion.[/red]")
             console.print("Usage: slurm-cli delete nodes NODENAME")
             return
 
@@ -408,15 +365,11 @@ _slurm_cli_nodes_autocomplete() {{
                 capture_output=True,
                 text=True,
             )
-            console.print(
-                f"[green]Node '{name}' deleted successfully.[/green]"
-            )
+            console.print(f"[green]Node '{name}' deleted successfully.[/green]")
             if result.stdout:
                 console.print(result.stdout)
         except subprocess.CalledProcessError as e:
-            console.print(
-                f"[red]Failed to delete node '{name}':[/red] {e.stderr or e}"
-            )
+            console.print(f"[red]Failed to delete node '{name}':[/red] {e.stderr or e}")
 
     @classmethod
     def show(
@@ -458,30 +411,22 @@ _slurm_cli_nodes_autocomplete() {{
                     console.print_json(json.dumps(data, indent=4))
             elif style == "csv":
                 cls.show_csv(
-                    name, data, delimiter, verbose, columns_cfg # type: ignore
+                    name, data, delimiter, verbose, columns_cfg  # type: ignore
                 )
             elif template_cfg and style == "pretty":
                 # Use template-based output (e.g., oneline profile)
-                nodes_to_show = (
-                    {name: data[name]}
-                    if name and name in data
-                    else data
-                )
-                for node_name, node_data in sorted(
-                    nodes_to_show.items()
-                ):
+                nodes_to_show = {name: data[name]} if name and name in data else data
+                for node_name, node_data in sorted(nodes_to_show.items()):
                     # Prepare data with name included
                     prepared = {"name": node_name, **node_data}
                     output = format_with_template(
                         template_cfg, prepared, resource="nodes"
                     )
                     console.print(output)
-            elif (
-                columns_cfg and columns_cfg != "*" and style == "pretty"
-            ):
+            elif columns_cfg and columns_cfg != "*" and style == "pretty":
                 # Use column-based table output (e.g., compact, minimal)
                 cls.show_columns(
-                    name, data, columns_cfg, styles_cfg, zebra # type: ignore
+                    name, data, columns_cfg, styles_cfg, zebra  # type: ignore
                 )
             else:  # Default pretty style
                 if name:
@@ -490,9 +435,7 @@ _slurm_cli_nodes_autocomplete() {{
                     for node in data.keys():
                         cls.show_one_pretty(node, data[node], verbose)
         except subprocess.CalledProcessError as e:
-            console.print(
-                f"[red]Failed to show node(s):[/red] {e.stderr or e}"
-            )
+            console.print(f"[red]Failed to show node(s):[/red] {e.stderr or e}")
 
     @classmethod
     def show_columns(
@@ -508,9 +451,7 @@ _slurm_cli_nodes_autocomplete() {{
             console.print("[red]No nodes found.[/red]")
             return
 
-        nodes_to_show = (
-            {name: nodes[name]} if name and name in nodes else nodes
-        )
+        nodes_to_show = {name: nodes[name]} if name and name in nodes else nodes
 
         # Create table
         row_styles = ["", "dim"] if zebra else None
@@ -551,9 +492,7 @@ _slurm_cli_nodes_autocomplete() {{
                     else:
                         row.append(str(state))
                 else:
-                    value = node_data.get(
-                        col_lower, node_data.get(col, "")
-                    )
+                    value = node_data.get(col_lower, node_data.get(col, ""))
                     if isinstance(value, list):
                         row.append(",".join(str(v) for v in value))
                     else:
@@ -582,11 +521,7 @@ _slurm_cli_nodes_autocomplete() {{
             if isinstance(value, dict):
                 # Handle set/number structures
                 if "set" in value and "number" in value:
-                    return (
-                        str(value.get("number", ""))
-                        if value.get("set")
-                        else ""
-                    )
+                    return str(value.get("number", "")) if value.get("set") else ""
                 # Handle other dicts as JSON
                 return json.dumps(value)
             elif isinstance(value, list):
@@ -596,9 +531,7 @@ _slurm_cli_nodes_autocomplete() {{
                 return str(value) if value is not None else ""
 
         # Determine nodes to show
-        nodes_to_show = (
-            {name: nodes[name]} if name and name in nodes else nodes
-        )
+        nodes_to_show = {name: nodes[name]} if name and name in nodes else nodes
 
         # If specific columns specified in profile, use those
         if columns and columns != "*":
@@ -610,9 +543,7 @@ _slurm_cli_nodes_autocomplete() {{
                 for col in columns:
                     if col.lower() == "name":
                         continue
-                    value = node_data.get(
-                        col.lower(), node_data.get(col, "")
-                    )
+                    value = node_data.get(col.lower(), node_data.get(col, ""))
                     row.append(flatten_value(value))
                 print(delimiter.join(row))
             return
@@ -678,9 +609,9 @@ _slurm_cli_nodes_autocomplete() {{
             all_fields = all_fields - skip_fields
 
         # Sort fields: priority first, then alphabetically
-        sorted_fields = [
-            f for f in priority_fields if f in all_fields
-        ] + sorted([f for f in all_fields if f not in priority_fields])
+        sorted_fields = [f for f in priority_fields if f in all_fields] + sorted(
+            [f for f in all_fields if f not in priority_fields]
+        )
 
         # Print CSV header
         headers = ["NodeName"] + sorted_fields
@@ -690,8 +621,7 @@ _slurm_cli_nodes_autocomplete() {{
         for node_name in sorted(nodes_to_show.keys()):
             node_data = nodes_to_show[node_name]
             row = [node_name] + [
-                flatten_value(node_data.get(field, ""))
-                for field in sorted_fields
+                flatten_value(node_data.get(field, "")) for field in sorted_fields
             ]
             print(delimiter.join(row))
 
@@ -706,8 +636,7 @@ _slurm_cli_nodes_autocomplete() {{
         console.print("=============================================")
         # console.print_json(json.dumps(data, indent=4))
         console.print(
-            f"[label]Node[/]: [object]{escape(name)}[/] "
-            f"{','.join(data['state'])}"
+            f"[label]Node[/]: [object]{escape(name)}[/] " f"{','.join(data['state'])}"
         )
         console.print(
             f"[label]CPUs[/]: [b]{data['cpus']}/"

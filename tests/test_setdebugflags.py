@@ -28,7 +28,11 @@ def test_setdebugflags_enable_flag(runner):
         result = runner.invoke(main, ["setdebugflags", "+Backfill"])
         assert result.exit_code == 0
         mock_run.assert_called_once()
-        assert mock_run.call_args[0][0] == ["scontrol", "setdebugflags", "+Backfill"]
+        assert mock_run.call_args[0][0] == [
+            "scontrol",
+            "setdebugflags",
+            "+Backfill",
+        ]
 
 
 def test_setdebugflags_disable_flag(runner):
@@ -37,7 +41,11 @@ def test_setdebugflags_disable_flag(runner):
         mock_run.return_value.returncode = 0
         result = runner.invoke(main, ["setdebugflags", "-Agent"])
         assert result.exit_code == 0
-        assert mock_run.call_args[0][0] == ["scontrol", "setdebugflags", "-Agent"]
+        assert mock_run.call_args[0][0] == [
+            "scontrol",
+            "setdebugflags",
+            "-Agent",
+        ]
 
 
 def test_setdebugflags_multiple_flags(runner):
@@ -47,7 +55,13 @@ def test_setdebugflags_multiple_flags(runner):
         result = runner.invoke(main, ["setdebugflags", "+Backfill", "+Agent", "-Gang"])
         assert result.exit_code == 0
         cmd = mock_run.call_args[0][0]
-        assert cmd == ["scontrol", "setdebugflags", "+Backfill", "+Agent", "-Gang"]
+        assert cmd == [
+            "scontrol",
+            "setdebugflags",
+            "+Backfill",
+            "+Agent",
+            "-Gang",
+        ]
 
 
 def test_setdebugflags_case_insensitive(runner):
@@ -105,7 +119,11 @@ def test_setdebugflags_sdf_alias(runner):
         mock_run.return_value.returncode = 0
         result = runner.invoke(main, ["sdf", "+Backfill"])
         assert result.exit_code == 0
-        assert mock_run.call_args[0][0] == ["scontrol", "setdebugflags", "+Backfill"]
+        assert mock_run.call_args[0][0] == [
+            "scontrol",
+            "setdebugflags",
+            "+Backfill",
+        ]
 
 
 def test_setdebugflags_error(runner):

@@ -24,9 +24,7 @@ class TestAssociationInit:
 
     def test_association_init_with_kwargs(self):
         """Test Association can be initialized with additional kwargs."""
-        assoc = Association(
-            account="nvidia", user="testuser", cluster="test"
-        )
+        assoc = Association(account="nvidia", user="testuser", cluster="test")
         assert assoc.account == "nvidia"
         assert assoc.kwargs == {"user": "testuser", "cluster": "test"}
 
@@ -140,9 +138,7 @@ class TestAssociationUpdate:
         """Test update handles errors gracefully."""
         from subprocess import CalledProcessError
 
-        mock_run.side_effect = CalledProcessError(
-            1, "cmd", stderr="error"
-        )
+        mock_run.side_effect = CalledProcessError(1, "cmd", stderr="error")
 
         # Should not raise, just print error
         Association.update("nvidia", False, shares="100")
@@ -230,9 +226,7 @@ class TestAssociationFilters:
             {"account": "root", "user": "user2"},
             {"account": "nvidia", "user": "user3"},
         ]
-        result = Association._apply_filters(
-            associations, [("account", "nvidia")]
-        )
+        result = Association._apply_filters(associations, [("account", "nvidia")])
         assert len(result) == 2
         assert all(a["account"] == "nvidia" for a in result)
 
@@ -387,19 +381,13 @@ class TestAssociationFormatValueEdgeCases:
 
     def test_format_max_with_jobs(self):
         """Test formatting max field with jobs limit."""
-        assoc = {
-            "max": {"jobs": {"active": {"set": True, "number": 10}}}
-        }
+        assoc = {"max": {"jobs": {"active": {"set": True, "number": 10}}}}
         result = Association._format_value(assoc, "max")
         assert "jobs=10" in result
 
     def test_format_max_with_tres(self):
         """Test formatting max field with tres limits."""
-        assoc = {
-            "max": {
-                "tres": {"per": {"cpu": {"set": True, "number": 100}}}
-            }
-        }
+        assoc = {"max": {"tres": {"per": {"cpu": {"set": True, "number": 100}}}}}
         result = Association._format_value(assoc, "max")
         assert "cpu=100" in result
 
@@ -427,9 +415,7 @@ class TestAssociationSortHierarchically:
 
     def test_sort_single_account(self):
         """Test sorting with single account and no users."""
-        associations = [
-            {"account": "root", "user": "", "parent_account": ""}
-        ]
+        associations = [{"account": "root", "user": "", "parent_account": ""}]
         result = Association._sort_hierarchically(associations)
         assert len(result) == 1
         assert result[0]["_depth"] == 0
@@ -488,9 +474,7 @@ class TestAssociationSortHierarchically:
             {"account": "root", "user": "", "parent_account": ""},
             {"account": "nvidia", "user": "", "parent_account": "root"},
         ]
-        result = Association._sort_hierarchically(
-            associations, indent="    "
-        )
+        result = Association._sort_hierarchically(associations, indent="    ")
         assert result[0]["_indent"] == ""
         assert result[1]["_indent"] == "    "
 
@@ -724,9 +708,7 @@ class TestAssociationShowStyles:
         """Test show handles subprocess errors."""
         from subprocess import CalledProcessError
 
-        mock_run.side_effect = CalledProcessError(
-            1, "cmd", stderr="sacctmgr error"
-        )
+        mock_run.side_effect = CalledProcessError(1, "cmd", stderr="sacctmgr error")
 
         # Should not raise, just print error
         Association.show()
@@ -751,9 +733,7 @@ class TestAssociationCreate:
     @patch("slurm_cli.utils.associations.subprocess.run")
     def test_create_with_output(self, mock_run):
         """Test create with output from sacctmgr."""
-        mock_run.return_value = MagicMock(
-            stdout="Added user: testuser", stderr=""
-        )
+        mock_run.return_value = MagicMock(stdout="Added user: testuser", stderr="")
 
         Association.create("testuser", account="nvidia")
         mock_run.assert_called_once()
@@ -794,9 +774,7 @@ class TestAssociationDeleteEdgeCases:
     @patch("slurm_cli.utils.associations.subprocess.run")
     def test_delete_with_output(self, mock_run):
         """Test delete with output from sacctmgr."""
-        mock_run.return_value = MagicMock(
-            stdout="Deleted 3 associations", stderr=""
-        )
+        mock_run.return_value = MagicMock(stdout="Deleted 3 associations", stderr="")
 
         Association.delete(["user=testuser"])
         mock_run.assert_called_once()

@@ -92,9 +92,7 @@ class TestReservationInit:
 
     def test_init_with_kwargs(self):
         """Test initialization with kwargs."""
-        r = Reservation(
-            "maint-window", partition="gpu", nodes="node[001-010]"
-        )
+        r = Reservation("maint-window", partition="gpu", nodes="node[001-010]")
         assert r.name == "maint-window"
         assert r.kwargs == {
             "partition": "gpu",
@@ -138,9 +136,7 @@ class TestReservationCreate:
     @mock.patch("slurm_cli.utils.reservations.console.print")
     def test_create_with_stdout(self, mock_print, mock_run):
         """Test create with stdout output."""
-        mock_run.return_value = mock.Mock(
-            stdout="Reservation created", returncode=0
-        )
+        mock_run.return_value = mock.Mock(stdout="Reservation created", returncode=0)
 
         Reservation.create("test-res", verbose=True, nodes="node001")
 
@@ -152,8 +148,7 @@ class TestReservationCreate:
         """Test create warns about add operations."""
         mock_run.return_value = mock.Mock(stdout="", returncode=0)
 
-        Reservation.create("test-res", verbose=True,
-                           **{"users+": "user1"})
+        Reservation.create("test-res", verbose=True, **{"users+": "user1"})
 
         call_args = [str(c) for c in mock_print.call_args_list]
         assert any("Warning" in str(c) for c in call_args)
@@ -164,8 +159,7 @@ class TestReservationCreate:
         """Test create warns about delete operations."""
         mock_run.return_value = mock.Mock(stdout="", returncode=0)
 
-        Reservation.create("test-res", verbose=True,
-                           **{"users-": "user1"})
+        Reservation.create("test-res", verbose=True, **{"users-": "user1"})
 
         call_args = [str(c) for c in mock_print.call_args_list]
         assert any("Warning" in str(c) for c in call_args)
@@ -182,9 +176,7 @@ class TestReservationCreate:
         Reservation.create("test-res", accounts="testaccount")
 
         call_args = [str(c) for c in mock_print.call_args_list]
-        assert any(
-            "Failed" in str(c) or "red" in str(c) for c in call_args
-        )
+        assert any("Failed" in str(c) or "red" in str(c) for c in call_args)
 
     @mock.patch("subprocess.run")
     @mock.patch("slurm_cli.utils.reservations.console.print")
@@ -208,9 +200,7 @@ class TestReservationCreate:
         assert "starttime=now" in options_str
         assert "endtime=2025-12-31T23:59:59" in options_str
         # Should NOT contain the alias forms
-        assert (
-            "start=" not in options_str or "starttime=" in options_str
-        )
+        assert "start=" not in options_str or "starttime=" in options_str
         assert "end=" not in options_str or "endtime=" in options_str
 
 
@@ -235,9 +225,7 @@ class TestReservationUpdate:
     @mock.patch("slurm_cli.utils.reservations.console.print")
     def test_update_with_verbose(self, mock_print, mock_run):
         """Test update with verbose output."""
-        mock_run.return_value = mock.Mock(
-            stdout="Updated", returncode=0
-        )
+        mock_run.return_value = mock.Mock(stdout="Updated", returncode=0)
 
         Reservation.update("test-res", verbose=True, duration="2:00:00")
 
@@ -249,10 +237,12 @@ class TestReservationUpdate:
         """Test update with add operations."""
         mock_run.return_value = mock.Mock(stdout="", returncode=0)
 
-        Reservation.update("test-res",
-                           verbose=True,
-                           dry_run=False,
-                           **{"users+": "newuser"})
+        Reservation.update(
+            "test-res",
+            verbose=True,
+            dry_run=False,
+            **{"users+": "newuser"},
+        )
 
         mock_run.assert_called_once()
 
@@ -262,10 +252,12 @@ class TestReservationUpdate:
         """Test update with delete operations."""
         mock_run.return_value = mock.Mock(stdout="", returncode=0)
 
-        Reservation.update("test-res",
-                           verbose=True,
-                           dry_run=False,
-                           **{"users-": "olduser"})
+        Reservation.update(
+            "test-res",
+            verbose=True,
+            dry_run=False,
+            **{"users-": "olduser"},
+        )
 
         mock_run.assert_called_once()
 
@@ -301,9 +293,7 @@ class TestReservationUpdate:
         Reservation.update("test-res", accounts="newaccount")
 
         call_args = [str(c) for c in mock_print.call_args_list]
-        assert any(
-            "Failed" in str(c) or "red" in str(c) for c in call_args
-        )
+        assert any("Failed" in str(c) or "red" in str(c) for c in call_args)
 
 
 class TestReservationDelete:
@@ -325,9 +315,7 @@ class TestReservationDelete:
     @mock.patch("slurm_cli.utils.reservations.console.print")
     def test_delete_with_stdout(self, mock_print, mock_run):
         """Test delete with stdout output."""
-        mock_run.return_value = mock.Mock(
-            stdout="Reservation deleted", returncode=0
-        )
+        mock_run.return_value = mock.Mock(stdout="Reservation deleted", returncode=0)
 
         Reservation.delete("test-res")
 
@@ -344,9 +332,7 @@ class TestReservationDelete:
         Reservation.delete("nonexistent")
 
         call_args = [str(c) for c in mock_print.call_args_list]
-        assert any(
-            "Failed" in str(c) or "red" in str(c) for c in call_args
-        )
+        assert any("Failed" in str(c) or "red" in str(c) for c in call_args)
 
 
 class TestReservationShow:
@@ -415,9 +401,7 @@ class TestReservationShow:
         output = io.StringIO()
 
         with redirect_stdout(output):
-            Reservation.show(
-                name="maint-window", data=data, style="csv"
-            )
+            Reservation.show(name="maint-window", data=data, style="csv")
 
         result = output.getvalue()
         lines = result.strip().split("\n")
@@ -474,9 +458,7 @@ class TestReservationPrepareTemplateData:
     def test_prepare_template_data_basic(self):
         """Test _prepare_template_data with basic data."""
         data = create_sample_reservation_data()["maint-window"]
-        result = Reservation._prepare_template_data(
-            "maint-window", data
-        )
+        result = Reservation._prepare_template_data("maint-window", data)
 
         assert result["name"] == "maint-window"
         assert "start_time" in result
@@ -752,9 +734,7 @@ class TestReservationPrintOnePretty:
     @mock.patch("slurm_cli.utils.reservations.console.print")
     def test_print_one_pretty_with_watts(self, mock_print):
         """Test print_one_pretty with watts field."""
-        data = dict(
-            create_sample_reservation_data()["research-booking"]
-        )
+        data = dict(create_sample_reservation_data()["research-booking"])
 
         Reservation.print_one_pretty("research-booking", data)
 
@@ -788,9 +768,7 @@ class TestReservationPrintOnePretty:
 
         Reservation.print_one_pretty("maint-window", data)
 
-        call_args_str = "".join(
-            str(c) for c in mock_print.call_args_list
-        )
+        call_args_str = "".join(str(c) for c in mock_print.call_args_list)
         assert "hot_pink" in call_args_str
 
     @mock.patch("slurm_cli.utils.reservations.console.print")
@@ -880,8 +858,7 @@ class TestReservationValidArgs:
         """Test all aliases point to valid argument names."""
         for alias, canonical in Reservation.arg_aliases.items():
             assert canonical in Reservation.valid_args, (
-                f"Alias '{alias}' points to '{canonical}' "
-                "which is not in valid_args"
+                f"Alias '{alias}' points to '{canonical}' " "which is not in valid_args"
             )
 
 
@@ -911,9 +888,7 @@ class TestReservationCreateVerbose:
         """Test verbose create success message."""
         mock_run.return_value = mock.Mock(stdout="", returncode=0)
 
-        Reservation.create(
-            "test-res", verbose=True, accounts="testaccount"
-        )
+        Reservation.create("test-res", verbose=True, accounts="testaccount")
 
         # Should have success message
         call_args = [str(c) for c in mock_print.call_args_list]
@@ -929,9 +904,7 @@ class TestReservationUpdateVerbose:
         """Test verbose update success message."""
         mock_run.return_value = mock.Mock(stdout="Output", returncode=0)
 
-        Reservation.update(
-            "test-res", verbose=True, accounts="newaccount"
-        )
+        Reservation.update("test-res", verbose=True, accounts="newaccount")
 
         # Should have multiple prints (output + success)
         assert mock_print.call_count >= 2

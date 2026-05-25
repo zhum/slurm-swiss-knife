@@ -43,9 +43,7 @@ def test_show_command(runner):
             None,
             {"test": "data"},
         )
-        with patch(
-            "slurm_cli.utils.partitions.Partition.show"
-        ) as mock_show:
+        with patch("slurm_cli.utils.partitions.Partition.show") as mock_show:
             result = runner.invoke(main, ["show", "partitions"])
             assert result.exit_code == 0
             mock_show.assert_called_once()
@@ -102,12 +100,8 @@ def test_style_option_pretty(runner):
             None,
             {"test": "data"},
         )
-        with patch(
-            "slurm_cli.utils.partitions.Partition.show"
-        ) as mock_show:
-            result = runner.invoke(
-                main, ["--style", "pretty", "show", "partitions"]
-            )
+        with patch("slurm_cli.utils.partitions.Partition.show") as mock_show:
+            result = runner.invoke(main, ["--style", "pretty", "show", "partitions"])
             assert result.exit_code == 0
             mock_show.assert_called_once()
             # Check that style="pretty" was passed
@@ -127,12 +121,8 @@ def test_style_option_json(runner):
             None,
             {"test": "data"},
         )
-        with patch(
-            "slurm_cli.utils.partitions.Partition.show"
-        ) as mock_show:
-            result = runner.invoke(
-                main, ["--style", "json", "show", "partitions"]
-            )
+        with patch("slurm_cli.utils.partitions.Partition.show") as mock_show:
+            result = runner.invoke(main, ["--style", "json", "show", "partitions"])
             assert result.exit_code == 0
             mock_show.assert_called_once()
             # Check that style="json" was passed
@@ -152,12 +142,8 @@ def test_pretty_flag(runner):
             None,
             {"test": "data"},
         )
-        with patch(
-            "slurm_cli.utils.partitions.Partition.show"
-        ) as mock_show:
-            result = runner.invoke(
-                main, ["--pretty", "show", "partitions"]
-            )
+        with patch("slurm_cli.utils.partitions.Partition.show") as mock_show:
+            result = runner.invoke(main, ["--pretty", "show", "partitions"])
             assert result.exit_code == 0
             mock_show.assert_called_once()
             # Check that style="pretty" was passed
@@ -177,12 +163,8 @@ def test_json_flag(runner):
             None,
             {"test": "data"},
         )
-        with patch(
-            "slurm_cli.utils.partitions.Partition.show"
-        ) as mock_show:
-            result = runner.invoke(
-                main, ["--json", "show", "partitions"]
-            )
+        with patch("slurm_cli.utils.partitions.Partition.show") as mock_show:
+            result = runner.invoke(main, ["--json", "show", "partitions"])
             assert result.exit_code == 0
             mock_show.assert_called_once()
             # Check that style="json" was passed
@@ -202,12 +184,8 @@ def test_force_cache_update_flag(runner):
             None,
             {"test": "data"},
         )
-        with patch(
-            "slurm_cli.utils.partitions.Partition.show"
-        ) as mock_show:
-            result = runner.invoke(
-                main, ["--force-update", "show", "partitions"]
-            )
+        with patch("slurm_cli.utils.partitions.Partition.show") as mock_show:
+            result = runner.invoke(main, ["--force-update", "show", "partitions"])
             assert result.exit_code == 0
             mock_show.assert_called_once()
             # Check that force_update=True was passed to ensure_resource_name
@@ -228,9 +206,7 @@ def test_style_and_cache_options_together(runner):
             None,
             {"test": "data"},
         )
-        with patch(
-            "slurm_cli.utils.partitions.Partition.show"
-        ) as mock_show:
+        with patch("slurm_cli.utils.partitions.Partition.show") as mock_show:
             result = runner.invoke(
                 main,
                 [
@@ -249,9 +225,7 @@ def test_style_and_cache_options_together(runner):
             # Check that force_update=True was passed to ensure_resource_name
             mock_ensure.assert_called_once()
             ensure_call_args = mock_ensure.call_args
-            assert (
-                ensure_call_args[0][2] is True
-            )  # force_update parameter
+            assert ensure_call_args[0][2] is True  # force_update parameter
 
 
 def test_convenience_flags_override_style(runner):
@@ -266,9 +240,7 @@ def test_convenience_flags_override_style(runner):
             None,
             {"test": "data"},
         )
-        with patch(
-            "slurm_cli.utils.partitions.Partition.show"
-        ) as mock_show:
+        with patch("slurm_cli.utils.partitions.Partition.show") as mock_show:
             # --pretty should override --style json
             result = runner.invoke(
                 main,
@@ -285,9 +257,7 @@ def test_convenience_flags_override_style(runner):
             None,
             {"test": "data"},
         )
-        with patch(
-            "slurm_cli.utils.partitions.Partition.show"
-        ) as mock_show:
+        with patch("slurm_cli.utils.partitions.Partition.show") as mock_show:
             # --json should override --style pretty
             result = runner.invoke(
                 main,
@@ -312,9 +282,7 @@ def test_style_options_with_aliases(runner):
             None,
             {"test": "data"},
         )
-        with patch(
-            "slurm_cli.utils.partitions.Partition.show"
-        ) as mock_show:
+        with patch("slurm_cli.utils.partitions.Partition.show") as mock_show:
             result = runner.invoke(main, ["--json", "sh", "partitions"])
             assert result.exit_code == 0
             mock_show.assert_called_once()
@@ -328,12 +296,8 @@ def test_style_options_with_aliases(runner):
             None,
             {"test": "data"},
         )
-        with patch(
-            "slurm_cli.utils.partitions.Partition.show"
-        ) as mock_show:
-            result = runner.invoke(
-                main, ["--pretty", "sho", "partitions"]
-            )
+        with patch("slurm_cli.utils.partitions.Partition.show") as mock_show:
+            result = runner.invoke(main, ["--pretty", "sho", "partitions"])
             assert result.exit_code == 0
             mock_show.assert_called_once()
             call_args = mock_show.call_args
@@ -353,20 +317,14 @@ def test_force_cache_update_with_aliases(runner):
             None,
             {"test": "data"},
         )
-        with patch(
-            "slurm_cli.utils.partitions.Partition.show"
-        ) as mock_show:
-            result = runner.invoke(
-                main, ["--force-update", "sh", "partitions"]
-            )
+        with patch("slurm_cli.utils.partitions.Partition.show") as mock_show:
+            result = runner.invoke(main, ["--force-update", "sh", "partitions"])
             assert result.exit_code == 0
             mock_show.assert_called_once()
             # Check that force_update=True was passed to ensure_resource_name
             mock_ensure.assert_called_once()
             ensure_call_args = mock_ensure.call_args
-            assert (
-                ensure_call_args[0][2] is True
-            )  # force_update parameter
+            assert ensure_call_args[0][2] is True  # force_update parameter
 
     # Test with 'sho' alias (not 's' which is now ambiguous with 'set')
     with patch("slurm_cli.cli.ensure_resource_name") as mock_ensure:
@@ -375,20 +333,14 @@ def test_force_cache_update_with_aliases(runner):
             None,
             {"test": "data"},
         )
-        with patch(
-            "slurm_cli.utils.partitions.Partition.show"
-        ) as mock_show:
-            result = runner.invoke(
-                main, ["--force-update", "sho", "partitions"]
-            )
+        with patch("slurm_cli.utils.partitions.Partition.show") as mock_show:
+            result = runner.invoke(main, ["--force-update", "sho", "partitions"])
             assert result.exit_code == 0
             mock_show.assert_called_once()
             # Check that force_update=True was passed to ensure_resource_name
             mock_ensure.assert_called_once()
             ensure_call_args = mock_ensure.call_args
-            assert (
-                ensure_call_args[0][2] is True
-            )  # force_update parameter
+            assert ensure_call_args[0][2] is True  # force_update parameter
 
 
 def test_style_options_with_different_resources(runner):
@@ -428,33 +380,25 @@ def test_force_cache_update_with_different_resources(runner):
     with patch("slurm_cli.cli.ensure_resource_name") as mock_ensure:
         mock_ensure.return_value = ("nodes", None, {"test": "data"})
         with patch("slurm_cli.utils.nodes.Node.show") as mock_show:
-            result = runner.invoke(
-                main, ["--force-update", "show", "nodes"]
-            )
+            result = runner.invoke(main, ["--force-update", "show", "nodes"])
             assert result.exit_code == 0
             mock_show.assert_called_once()
             # Check that force_update=True was passed to ensure_resource_name
             mock_ensure.assert_called_once()
             ensure_call_args = mock_ensure.call_args
-            assert (
-                ensure_call_args[0][2] is True
-            )  # force_update parameter
+            assert ensure_call_args[0][2] is True  # force_update parameter
 
     # Test with users
     with patch("slurm_cli.cli.ensure_resource_name") as mock_ensure:
         mock_ensure.return_value = ("users", None, {"test": "data"})
         with patch("slurm_cli.utils.users.User.show") as mock_show:
-            result = runner.invoke(
-                main, ["--force-update", "show", "users"]
-            )
+            result = runner.invoke(main, ["--force-update", "show", "users"])
             assert result.exit_code == 0
             mock_show.assert_called_once()
             # Check that force_update=True was passed to ensure_resource_name
             mock_ensure.assert_called_once()
             ensure_call_args = mock_ensure.call_args
-            assert (
-                ensure_call_args[0][2] is True
-            )  # force_update parameter
+            assert ensure_call_args[0][2] is True  # force_update parameter
 
 
 def test_invalid_style_option(runner):
@@ -463,9 +407,7 @@ def test_invalid_style_option(runner):
 
     register_commands()
 
-    result = runner.invoke(
-        main, ["--style", "invalid", "show", "partitions"]
-    )
+    result = runner.invoke(main, ["--style", "invalid", "show", "partitions"])
     # Should fail with invalid choice
     assert result.exit_code != 0
     assert "Invalid value" in result.output or "Usage:" in result.output
@@ -483,9 +425,7 @@ def test_default_style_behavior(runner):
             None,
             {"test": "data"},
         )
-        with patch(
-            "slurm_cli.utils.partitions.Partition.show"
-        ) as mock_show:
+        with patch("slurm_cli.utils.partitions.Partition.show") as mock_show:
             result = runner.invoke(main, ["show", "partitions"])
             assert result.exit_code == 0
             mock_show.assert_called_once()
@@ -494,18 +434,14 @@ def test_default_style_behavior(runner):
             # Check that force_update=False was passed to ensure_resource_name
             mock_ensure.assert_called_once()
             ensure_call_args = mock_ensure.call_args
-            assert (
-                ensure_call_args[0][2] is False
-            )  # force_update parameter
+            assert ensure_call_args[0][2] is False  # force_update parameter
 
 
 def test_cache_update_functionality():
     """Test force_cache_update parameter works in Resource.cached_resource."""
 
     # Create a temporary cache file
-    with tempfile.NamedTemporaryFile(
-        mode="w", delete=False, suffix=".json"
-    ) as f:
+    with tempfile.NamedTemporaryFile(mode="w", delete=False, suffix=".json") as f:
         json.dump({"test": "data"}, f)
         cache_file = f.name
 
@@ -643,9 +579,7 @@ def test_ping_command(runner):
     register_commands()
 
     with patch("subprocess.run") as mock_run:
-        mock_run.return_value.stdout = (
-            "Slurmctld(primary) at localhost is UP"
-        )
+        mock_run.return_value.stdout = "Slurmctld(primary) at localhost is UP"
         mock_run.return_value.returncode = 0
         result = runner.invoke(main, ["ping"])
         assert result.exit_code == 0
@@ -662,9 +596,7 @@ def test_ping_command_alias(runner):
     register_commands()
 
     with patch("subprocess.run") as mock_run:
-        mock_run.return_value.stdout = (
-            "Slurmctld(primary) at localhost is UP"
-        )
+        mock_run.return_value.stdout = "Slurmctld(primary) at localhost is UP"
         mock_run.return_value.returncode = 0
         result = runner.invoke(main, ["pi"])
         assert result.exit_code == 0
@@ -826,6 +758,7 @@ def test_register_commands_includes_all_scontrol_commands():
 # Integration Tests - Command Registration
 # =============================================================================
 
+
 def test_register_commands_includes_write_config():
     """Test that register_commands properly includes write-config."""
     from slurm_cli.cli import main, register_commands
@@ -842,6 +775,7 @@ def test_register_commands_includes_write_config():
 # =============================================================================
 # Regression Tests - Ensure Existing Behavior Still Works
 # =============================================================================
+
 
 def test_reconfigure_still_works_after_write_config_addition(runner):
     """Regression: ensure reconfigure still works after adding write-config."""
@@ -987,9 +921,7 @@ def test_token_command_with_both_options(runner):
     with patch("subprocess.run") as mock_run:
         mock_run.return_value.stdout = "SLURM_JWT=test_token"
         mock_run.return_value.returncode = 0
-        result = runner.invoke(
-            main, ["token", "lifespan=2h", "username=admin"]
-        )
+        result = runner.invoke(main, ["token", "lifespan=2h", "username=admin"])
         assert result.exit_code == 0
         call_args = mock_run.call_args[0][0]
         assert "scontrol" in call_args
@@ -1065,9 +997,7 @@ def test_drain_command_multiple_nodes(runner):
     with patch("subprocess.run") as mock_run:
         mock_run.return_value.stdout = ""
         mock_run.return_value.returncode = 0
-        result = runner.invoke(
-            main, ["drain", "node001", "node002", "node[003-005]"]
-        )
+        result = runner.invoke(main, ["drain", "node001", "node002", "node[003-005]"])
         assert result.exit_code == 0
         call_args = mock_run.call_args[0][0]
         # Ranges are expanded to individual nodes
@@ -1088,9 +1018,7 @@ def test_drain_command_with_reason(runner):
     with patch("subprocess.run") as mock_run:
         mock_run.return_value.stdout = ""
         mock_run.return_value.returncode = 0
-        result = runner.invoke(
-            main, ["drain", "node001", "--reason", "Maintenance"]
-        )
+        result = runner.invoke(main, ["drain", "node001", "--reason", "Maintenance"])
         assert result.exit_code == 0
         call_args = mock_run.call_args[0][0]
         assert "reason=Maintenance" in call_args
@@ -1105,9 +1033,7 @@ def test_drain_command_with_short_reason(runner):
     with patch("subprocess.run") as mock_run:
         mock_run.return_value.stdout = ""
         mock_run.return_value.returncode = 0
-        result = runner.invoke(
-            main, ["drain", "node001", "-r", "Hardware issue"]
-        )
+        result = runner.invoke(main, ["drain", "node001", "-r", "Hardware issue"])
         assert result.exit_code == 0
         call_args = mock_run.call_args[0][0]
         assert "reason=Hardware issue" in call_args
@@ -1188,9 +1114,7 @@ def test_undrain_command_multiple_nodes(runner):
     with patch("subprocess.run") as mock_run:
         mock_run.return_value.stdout = ""
         mock_run.return_value.returncode = 0
-        result = runner.invoke(
-            main, ["undrain", "node001", "node002", "node[003-005]"]
-        )
+        result = runner.invoke(main, ["undrain", "node001", "node002", "node[003-005]"])
         assert result.exit_code == 0
         call_args = mock_run.call_args[0][0]
         # Ranges are expanded to individual nodes
@@ -1253,9 +1177,7 @@ def test_drain_command_with_partition_filter(runner):
     with patch("subprocess.run") as mock_run:
         mock_run.return_value.stdout = ""
         mock_run.return_value.returncode = 0
-        with patch(
-            "slurm_cli.cli.resolve_node_filters"
-        ) as mock_resolve:
+        with patch("slurm_cli.cli.resolve_node_filters") as mock_resolve:
             mock_resolve.return_value = (
                 {"node001", "node002", "node003"},
                 [],
@@ -1281,9 +1203,7 @@ def test_undrain_command_with_state_filter(runner):
     with patch("subprocess.run") as mock_run:
         mock_run.return_value.stdout = ""
         mock_run.return_value.returncode = 0
-        with patch(
-            "slurm_cli.cli.resolve_node_filters"
-        ) as mock_resolve:
+        with patch("slurm_cli.cli.resolve_node_filters") as mock_resolve:
             mock_resolve.return_value = ({"node001", "node002"}, [])
             result = runner.invoke(main, ["undrain", "state=drain"])
             assert result.exit_code == 0
@@ -1314,9 +1234,7 @@ def test_drain_command_with_exclusion_filter(runner):
     with patch("subprocess.run") as mock_run:
         mock_run.return_value.stdout = ""
         mock_run.return_value.returncode = 0
-        with patch(
-            "slurm_cli.cli.resolve_node_filters"
-        ) as mock_resolve:
+        with patch("slurm_cli.cli.resolve_node_filters") as mock_resolve:
             # Simulating partition=gpu with 5 nodes, not:reservation=maint excludes 2
             mock_resolve.return_value = (
                 {"node001", "node002", "node003"},
@@ -1364,9 +1282,7 @@ def test_reboot_command_multiple_nodes(runner):
     with patch("subprocess.run") as mock_run:
         mock_run.return_value.stdout = ""
         mock_run.return_value.returncode = 0
-        result = runner.invoke(
-            main, ["reboot", "node001", "node002", "node003"]
-        )
+        result = runner.invoke(main, ["reboot", "node001", "node002", "node003"])
         assert result.exit_code == 0
         assert "Rebooting" in result.output
         call_args = mock_run.call_args[0][0]
@@ -1398,9 +1314,7 @@ def test_reboot_command_with_nextstate(runner):
     with patch("subprocess.run") as mock_run:
         mock_run.return_value.stdout = ""
         mock_run.return_value.returncode = 0
-        result = runner.invoke(
-            main, ["reboot", "nextstate=DOWN", "node001"]
-        )
+        result = runner.invoke(main, ["reboot", "nextstate=DOWN", "node001"])
         assert result.exit_code == 0
         call_args = mock_run.call_args[0][0]
         assert "nextstate=DOWN" in call_args
@@ -1415,9 +1329,7 @@ def test_reboot_command_with_reason(runner):
     with patch("subprocess.run") as mock_run:
         mock_run.return_value.stdout = ""
         mock_run.return_value.returncode = 0
-        result = runner.invoke(
-            main, ["reboot", "reason=Kernel update", "node001"]
-        )
+        result = runner.invoke(main, ["reboot", "reason=Kernel update", "node001"])
         assert result.exit_code == 0
         call_args = mock_run.call_args[0][0]
         assert "reason=Kernel update" in call_args
@@ -1484,9 +1396,7 @@ def test_reboot_command_invalid_nextstate(runner):
 
     register_commands()
 
-    result = runner.invoke(
-        main, ["reboot", "nextstate=INVALID", "node001"]
-    )
+    result = runner.invoke(main, ["reboot", "nextstate=INVALID", "node001"])
     assert "Error" in result.output
     assert "RESUME or DOWN" in result.output
 
@@ -1500,9 +1410,7 @@ def test_reboot_command_with_filter(runner):
     with patch("subprocess.run") as mock_run:
         mock_run.return_value.stdout = ""
         mock_run.return_value.returncode = 0
-        with patch(
-            "slurm_cli.cli.resolve_node_filters"
-        ) as mock_resolve:
+        with patch("slurm_cli.cli.resolve_node_filters") as mock_resolve:
             mock_resolve.return_value = (
                 {"node001", "node002", "node003"},
                 [],
@@ -1543,9 +1451,7 @@ def test_cancel_reboot_command_multiple_nodes(runner):
     with patch("subprocess.run") as mock_run:
         mock_run.return_value.stdout = ""
         mock_run.return_value.returncode = 0
-        result = runner.invoke(
-            main, ["cancel-reboot", "node001", "node002", "node003"]
-        )
+        result = runner.invoke(main, ["cancel-reboot", "node001", "node002", "node003"])
         assert result.exit_code == 0
         assert "Cancelled reboot" in result.output
         call_args = mock_run.call_args[0][0]
@@ -1575,16 +1481,12 @@ def test_cancel_reboot_command_with_filter(runner):
     with patch("subprocess.run") as mock_run:
         mock_run.return_value.stdout = ""
         mock_run.return_value.returncode = 0
-        with patch(
-            "slurm_cli.cli.resolve_node_filters"
-        ) as mock_resolve:
+        with patch("slurm_cli.cli.resolve_node_filters") as mock_resolve:
             mock_resolve.return_value = (
                 {"node001", "node002", "node003"},
                 [],
             )
-            result = runner.invoke(
-                main, ["cancel-reboot", "partition=gpu"]
-            )
+            result = runner.invoke(main, ["cancel-reboot", "partition=gpu"])
             assert result.exit_code == 0
             mock_resolve.assert_called_once()
             call_args = mock_run.call_args[0][0]
@@ -1598,22 +1500,16 @@ def test_show_nodes_with_filter(runner):
     register_commands()
 
     # Mock Resource.cached_resource to return test data
-    with patch(
-        "slurm_cli.utils.resources.Resource.cached_resource"
-    ) as mock_cache:
+    with patch("slurm_cli.utils.resources.Resource.cached_resource") as mock_cache:
         mock_cache.return_value = {
             "node001": {"name": "node001", "state": "idle"},
             "node002": {"name": "node002", "state": "idle"},
         }
         # Mock resolve_node_filters in cli module (where it's imported)
-        with patch(
-            "slurm_cli.cli.resolve_node_filters"
-        ) as mock_resolve:
+        with patch("slurm_cli.cli.resolve_node_filters") as mock_resolve:
             mock_resolve.return_value = ({"node001", "node002"}, [])
             with patch("slurm_cli.utils.nodes.Node.show") as mock_show:
-                result = runner.invoke(
-                    main, ["show", "nodes", "partition=gpu"]
-                )
+                result = runner.invoke(main, ["show", "nodes", "partition=gpu"])
                 # The command should not crash with KeyError
                 # It should call resolve_node_filters for the filter
                 mock_resolve.assert_called_once()
@@ -1812,9 +1708,7 @@ class TestProfileOutput:
             template,
             sort_field,
             sort_asc,
-        ) = get_profile_config(
-            "default", "qos", "qos.columns=name,priority,flags"
-        )
+        ) = get_profile_config("default", "qos", "qos.columns=name,priority,flags")
         assert columns == ["name", "priority", "flags"]
 
     def test_different_profiles_different_output(self, runner):
@@ -1855,10 +1749,7 @@ class TestListFields:
         assert result.exit_code == 0
         assert "Available fields for 'jobs'" in result.output
         # Should show job-specific fields
-        assert (
-            "job_id" in result.output
-            or "jobid" in result.output.lower()
-        )
+        assert "job_id" in result.output or "jobid" in result.output.lower()
         # Should not show fields from other resources
         assert "[nodes]" not in result.output
 
@@ -1885,10 +1776,7 @@ class TestListFields:
         """Test --list-fields with unknown resource."""
         result = runner.invoke(main, ["--list-fields=invalid"])
         assert result.exit_code == 0
-        assert (
-            "No field documentation for resource: invalid"
-            in result.output
-        )
+        assert "No field documentation for resource: invalid" in result.output
         assert "Available resources:" in result.output
 
     def test_list_fields_qos(self, runner):
@@ -1904,10 +1792,7 @@ class TestListFields:
         result = runner.invoke(main, ["show", "jobs", "--list-fields"])
         assert result.exit_code == 0
         assert "Available fields for 'jobs'" in result.output
-        assert (
-            "job_id" in result.output
-            or "jobid" in result.output.lower()
-        )
+        assert "job_id" in result.output or "jobid" in result.output.lower()
 
     def test_list_fields_show_resource_level_short(self, runner):
         """Test show <resource> -L works with short flag."""
@@ -1952,9 +1837,7 @@ class TestJobControlCommands:
 
         register_commands()
         with patch("subprocess.run") as mock_run:
-            mock_run.return_value = MagicMock(
-                returncode=0, stdout="", stderr=""
-            )
+            mock_run.return_value = MagicMock(returncode=0, stdout="", stderr="")
             result = runner.invoke(main, ["hold", "12345"])
             assert result.exit_code == 0
             mock_run.assert_called()
@@ -1969,9 +1852,7 @@ class TestJobControlCommands:
 
         register_commands()
         with patch("subprocess.run") as mock_run:
-            mock_run.return_value = MagicMock(
-                returncode=0, stdout="", stderr=""
-            )
+            mock_run.return_value = MagicMock(returncode=0, stdout="", stderr="")
             result = runner.invoke(
                 main, ["hold", "12345", "--reason", "Waiting for data"]
             )
@@ -1986,12 +1867,8 @@ class TestJobControlCommands:
 
         register_commands()
         with patch("subprocess.run") as mock_run:
-            mock_run.return_value = MagicMock(
-                returncode=0, stdout="", stderr=""
-            )
-            result = runner.invoke(
-                main, ["hold", "12345", "reason=Need review"]
-            )
+            mock_run.return_value = MagicMock(returncode=0, stdout="", stderr="")
+            result = runner.invoke(main, ["hold", "12345", "reason=Need review"])
             assert result.exit_code == 0
             mock_run.assert_called()
             call_args = mock_run.call_args[0][0]
@@ -2003,9 +1880,7 @@ class TestJobControlCommands:
 
         register_commands()
         with patch("subprocess.run") as mock_run:
-            mock_run.return_value = MagicMock(
-                returncode=0, stdout="", stderr=""
-            )
+            mock_run.return_value = MagicMock(returncode=0, stdout="", stderr="")
             result = runner.invoke(main, ["release", "12345"])
             assert result.exit_code == 0
             mock_run.assert_called()
@@ -2020,9 +1895,7 @@ class TestJobControlCommands:
 
         register_commands()
         with patch("subprocess.run") as mock_run:
-            mock_run.return_value = MagicMock(
-                returncode=0, stdout="", stderr=""
-            )
+            mock_run.return_value = MagicMock(returncode=0, stdout="", stderr="")
             result = runner.invoke(main, ["top", "12345", "12346"])
             assert result.exit_code == 0
             mock_run.assert_called()
@@ -2040,9 +1913,7 @@ class TestJobControlCommands:
 
         register_commands()
         with patch("subprocess.run") as mock_run:
-            mock_run.return_value = MagicMock(
-                returncode=0, stdout="", stderr=""
-            )
+            mock_run.return_value = MagicMock(returncode=0, stdout="", stderr="")
             result = runner.invoke(main, ["requeue", "12345"])
             assert result.exit_code == 0
             mock_run.assert_called()
@@ -2057,9 +1928,7 @@ class TestJobControlCommands:
 
         register_commands()
         with patch("subprocess.run") as mock_run:
-            mock_run.return_value = MagicMock(
-                returncode=0, stdout="", stderr=""
-            )
+            mock_run.return_value = MagicMock(returncode=0, stdout="", stderr="")
             result = runner.invoke(main, ["suspend", "12345"])
             assert result.exit_code == 0
             mock_run.assert_called()
@@ -2082,9 +1951,7 @@ class TestJobControlCommands:
 
         register_commands()
         with patch("subprocess.run") as mock_run:
-            mock_run.return_value = MagicMock(
-                returncode=0, stdout="", stderr=""
-            )
+            mock_run.return_value = MagicMock(returncode=0, stdout="", stderr="")
             result = runner.invoke(main, ["hold", "12345", "-v"])
             assert result.exit_code == 0
             assert "Running:" in result.output
@@ -2095,9 +1962,7 @@ class TestJobControlCommands:
 
         register_commands()
         with patch("subprocess.run") as mock_run:
-            mock_run.return_value = MagicMock(
-                returncode=0, stdout="", stderr=""
-            )
+            mock_run.return_value = MagicMock(returncode=0, stdout="", stderr="")
             result = runner.invoke(main, ["hold", "-u", "12345"])
             assert result.exit_code == 0
             mock_run.assert_called()
@@ -2113,9 +1978,7 @@ class TestJobControlCommands:
 
         register_commands()
         with patch("subprocess.run") as mock_run:
-            mock_run.return_value = MagicMock(
-                returncode=0, stdout="", stderr=""
-            )
+            mock_run.return_value = MagicMock(returncode=0, stdout="", stderr="")
             result = runner.invoke(
                 main, ["hold", "--user", "12345", "-r", "Review needed"]
             )
@@ -2184,9 +2047,7 @@ def test_job_command_with_user_filter(runner):
         mock_resolve.return_value = ({"12345", "12346"}, [])
 
         with patch("subprocess.run") as mock_run:
-            mock_run.return_value = MagicMock(
-                returncode=0, stdout="", stderr=""
-            )
+            mock_run.return_value = MagicMock(returncode=0, stdout="", stderr="")
             result = runner.invoke(main, ["hold", "user=testuser"])
             # Should have called resolve_job_filters
             mock_resolve.assert_called_once()
@@ -2204,12 +2065,8 @@ def test_job_command_with_exclusion_filter(runner):
         mock_resolve.return_value = ({"12345", "12346"}, [])
 
         with patch("subprocess.run") as mock_run:
-            mock_run.return_value = MagicMock(
-                returncode=0, stdout="", stderr=""
-            )
-            result = runner.invoke(
-                main, ["hold", "partition=gpu", "not:user=admin"]
-            )
+            mock_run.return_value = MagicMock(returncode=0, stdout="", stderr="")
+            result = runner.invoke(main, ["hold", "partition=gpu", "not:user=admin"])
             assert result.exit_code == 0
             # Should have called resolve_job_filters with both filters
             mock_resolve.assert_called_once()
@@ -2241,9 +2098,7 @@ class TestDryRun:
 
         register_commands()
         with patch("subprocess.run") as mock_run:
-            mock_run.return_value = MagicMock(
-                returncode=0, stdout="", stderr=""
-            )
+            mock_run.return_value = MagicMock(returncode=0, stdout="", stderr="")
             result = runner.invoke(
                 main, ["--dry-run", "delete", "users", "testuser", "-y"]
             )
@@ -2313,9 +2168,7 @@ class TestDryRun:
                     stdout='{"users": [{"name": "testuser"}]}',
                     stderr="",
                 )
-                result = runner.invoke(
-                    main, ["delete", "users", "testuser", "-y"]
-                )
+                result = runner.invoke(main, ["delete", "users", "testuser", "-y"])
                 assert result.exit_code == 0
                 assert "DRY RUN" in result.output
 
@@ -2333,9 +2186,7 @@ class TestDryRun:
                     stdout='{"users": [{"name": "testuser"}]}',
                     stderr="",
                 )
-                result = runner.invoke(
-                    main, ["delete", "users", "testuser", "-y"]
-                )
+                result = runner.invoke(main, ["delete", "users", "testuser", "-y"])
                 assert "DRY RUN" in result.output
 
     def test_env_var_yes_value(self, runner):
@@ -2352,9 +2203,7 @@ class TestDryRun:
                     stdout='{"users": [{"name": "testuser"}]}',
                     stderr="",
                 )
-                result = runner.invoke(
-                    main, ["delete", "users", "testuser", "-y"]
-                )
+                result = runner.invoke(main, ["delete", "users", "testuser", "-y"])
                 assert "DRY RUN" in result.output
 
     def test_env_var_1_value(self, runner):
@@ -2371,9 +2220,7 @@ class TestDryRun:
                     stdout='{"users": [{"name": "testuser"}]}',
                     stderr="",
                 )
-                result = runner.invoke(
-                    main, ["delete", "users", "testuser", "-y"]
-                )
+                result = runner.invoke(main, ["delete", "users", "testuser", "-y"])
                 assert "DRY RUN" in result.output
 
 
@@ -2392,9 +2239,7 @@ class TestGlobalYesOption:
                 stderr="",
             )
             # Global -y should skip confirmation
-            result = runner.invoke(
-                main, ["-y", "delete", "users", "testuser"]
-            )
+            result = runner.invoke(main, ["-y", "delete", "users", "testuser"])
             # Should not prompt for confirmation
             # (result depends on mocks, but no prompt should occur)
             assert "cancelled" not in result.output.lower()
@@ -2410,9 +2255,7 @@ class TestGlobalYesOption:
                 stdout='{"users": [{"name": "testuser"}]}',
                 stderr="",
             )
-            result = runner.invoke(
-                main, ["delete", "users", "testuser", "-y"]
-            )
+            result = runner.invoke(main, ["delete", "users", "testuser", "-y"])
             assert "cancelled" not in result.output.lower()
 
     def test_get_skip_confirm_function(self):
@@ -2528,27 +2371,17 @@ class TestGuessResourceType:
         """Test guessing 'partitions' from 'part' prefix."""
         from slurm_cli.utils.resources import Resource
 
-        with patch.object(
-            Resource, "cached_resource_list", return_value=[]
-        ):
-            with patch.object(
-                Resource, "cached_resource", return_value=[]
-            ):
-                resource_type, _ = Resource.guess_resource_type(
-                    "partitions"
-                )
+        with patch.object(Resource, "cached_resource_list", return_value=[]):
+            with patch.object(Resource, "cached_resource", return_value=[]):
+                resource_type, _ = Resource.guess_resource_type("partitions")
                 assert resource_type == "partitions"
 
     def test_guess_node_by_prefix(self):
         """Test guessing 'nodes' from 'node' prefix."""
         from slurm_cli.utils.resources import Resource
 
-        with patch.object(
-            Resource, "cached_resource_list", return_value=[]
-        ):
-            with patch.object(
-                Resource, "cached_resource", return_value=[]
-            ):
+        with patch.object(Resource, "cached_resource_list", return_value=[]):
+            with patch.object(Resource, "cached_resource", return_value=[]):
                 resource_type, _ = Resource.guess_resource_type("nodes")
                 assert resource_type == "nodes"
 
@@ -2556,12 +2389,8 @@ class TestGuessResourceType:
         """Test guessing 'qos' from 'qos' prefix."""
         from slurm_cli.utils.resources import Resource
 
-        with patch.object(
-            Resource, "cached_resource_list", return_value=[]
-        ):
-            with patch.object(
-                Resource, "cached_resource", return_value=[]
-            ):
+        with patch.object(Resource, "cached_resource_list", return_value=[]):
+            with patch.object(Resource, "cached_resource", return_value=[]):
                 resource_type, _ = Resource.guess_resource_type("qos")
                 assert resource_type == "qos"
 
@@ -2569,42 +2398,26 @@ class TestGuessResourceType:
         """Test guessing 'accounts' from 'acc' prefix."""
         from slurm_cli.utils.resources import Resource
 
-        with patch.object(
-            Resource, "cached_resource_list", return_value=[]
-        ):
-            with patch.object(
-                Resource, "cached_resource", return_value=[]
-            ):
-                resource_type, _ = Resource.guess_resource_type(
-                    "accounts"
-                )
+        with patch.object(Resource, "cached_resource_list", return_value=[]):
+            with patch.object(Resource, "cached_resource", return_value=[]):
+                resource_type, _ = Resource.guess_resource_type("accounts")
                 assert resource_type == "accounts"
 
     def test_guess_reservation_by_prefix(self):
         """Test guessing 'reservations' from 'res' prefix."""
         from slurm_cli.utils.resources import Resource
 
-        with patch.object(
-            Resource, "cached_resource_list", return_value=[]
-        ):
-            with patch.object(
-                Resource, "cached_resource", return_value=[]
-            ):
-                resource_type, _ = Resource.guess_resource_type(
-                    "reservations"
-                )
+        with patch.object(Resource, "cached_resource_list", return_value=[]):
+            with patch.object(Resource, "cached_resource", return_value=[]):
+                resource_type, _ = Resource.guess_resource_type("reservations")
                 assert resource_type == "reservations"
 
     def test_guess_user_by_prefix(self):
         """Test guessing 'users' from 'user' prefix."""
         from slurm_cli.utils.resources import Resource
 
-        with patch.object(
-            Resource, "cached_resource_list", return_value=[]
-        ):
-            with patch.object(
-                Resource, "cached_resource", return_value=[]
-            ):
+        with patch.object(Resource, "cached_resource_list", return_value=[]):
+            with patch.object(Resource, "cached_resource", return_value=[]):
                 resource_type, _ = Resource.guess_resource_type("users")
                 assert resource_type == "users"
 
@@ -2612,24 +2425,16 @@ class TestGuessResourceType:
         """Test guessing 'coordinators' from 'coord' prefix."""
         from slurm_cli.utils.resources import Resource
 
-        with patch.object(
-            Resource, "cached_resource_list", return_value=[]
-        ):
-            with patch.object(
-                Resource, "cached_resource", return_value=[]
-            ):
-                resource_type, _ = Resource.guess_resource_type(
-                    "coordinators"
-                )
+        with patch.object(Resource, "cached_resource_list", return_value=[]):
+            with patch.object(Resource, "cached_resource", return_value=[]):
+                resource_type, _ = Resource.guess_resource_type("coordinators")
                 assert resource_type == "coordinators"
 
     def test_guess_events_by_prefix(self):
         """Test guessing 'events' from 'ev' prefix."""
         from slurm_cli.utils.resources import Resource
 
-        with patch.object(
-            Resource, "cached_resource_list", return_value=[]
-        ):
+        with patch.object(Resource, "cached_resource_list", return_value=[]):
             resource_type, _ = Resource.guess_resource_type("events")
             assert resource_type == "events"
 
@@ -2637,9 +2442,7 @@ class TestGuessResourceType:
         """Test guessing 'licenses' from 'lic' prefix."""
         from slurm_cli.utils.resources import Resource
 
-        with patch.object(
-            Resource, "cached_resource_list", return_value=[]
-        ):
+        with patch.object(Resource, "cached_resource_list", return_value=[]):
             resource_type, _ = Resource.guess_resource_type("licenses")
             assert resource_type == "licenses"
 
@@ -2762,46 +2565,28 @@ class TestResourceTypeAutodetection:
         """Test guessing 'users' for username-like string not in cache."""
         from slurm_cli.utils.resources import Resource
 
-        with patch.object(
-            Resource, "cached_resource_list", return_value=[]
-        ):
-            with patch.object(
-                Resource, "cached_resource", return_value={"user1": {}}
-            ):
+        with patch.object(Resource, "cached_resource_list", return_value=[]):
+            with patch.object(Resource, "cached_resource", return_value={"user1": {}}):
                 # Valid username pattern (letter + alphanumeric)
-                resource_type, _ = Resource.guess_resource_type(
-                    "szhumatiy"
-                )
+                resource_type, _ = Resource.guess_resource_type("szhumatiy")
                 assert resource_type == "users"
 
     def test_guess_user_with_underscore(self):
         """Test guessing 'users' for username with underscore."""
         from slurm_cli.utils.resources import Resource
 
-        with patch.object(
-            Resource, "cached_resource_list", return_value=[]
-        ):
-            with patch.object(
-                Resource, "cached_resource", return_value={"user1": {}}
-            ):
-                resource_type, _ = Resource.guess_resource_type(
-                    "test_user"
-                )
+        with patch.object(Resource, "cached_resource_list", return_value=[]):
+            with patch.object(Resource, "cached_resource", return_value={"user1": {}}):
+                resource_type, _ = Resource.guess_resource_type("test_user")
                 assert resource_type == "users"
 
     def test_guess_user_with_hyphen(self):
         """Test guessing 'users' for username with hyphen."""
         from slurm_cli.utils.resources import Resource
 
-        with patch.object(
-            Resource, "cached_resource_list", return_value=[]
-        ):
-            with patch.object(
-                Resource, "cached_resource", return_value={"user1": {}}
-            ):
-                resource_type, _ = Resource.guess_resource_type(
-                    "test-user"
-                )
+        with patch.object(Resource, "cached_resource_list", return_value=[]):
+            with patch.object(Resource, "cached_resource", return_value={"user1": {}}):
+                resource_type, _ = Resource.guess_resource_type("test-user")
                 assert resource_type == "users"
 
 
@@ -2824,7 +2609,13 @@ def test_batch_script_command(runner):
         assert "Batch script command sent successfully" in result.output
         mock_run.assert_called_once()
         call_args = mock_run.call_args[0][0]
-        assert call_args == ["scontrol", "write", "batch_script", "12345", "script.sh"]
+        assert call_args == [
+            "scontrol",
+            "write",
+            "batch_script",
+            "12345",
+            "script.sh",
+        ]
 
 
 def test_batch_script_command_with_job_id_only(runner):
@@ -2924,9 +2715,7 @@ def test_assoc_mgr_command(runner):
     register_commands()
 
     with patch("subprocess.run") as mock_run:
-        mock_run.return_value.stdout = (
-            "User Records\nAssociation Records"
-        )
+        mock_run.return_value.stdout = "User Records\nAssociation Records"
         mock_run.return_value.returncode = 0
         result = runner.invoke(main, ["assoc_mgr"])
         assert result.exit_code == 0
@@ -2959,9 +2748,7 @@ def test_assoc_mgr_command_with_accounts(runner):
     with patch("subprocess.run") as mock_run:
         mock_run.return_value.stdout = "Association Records"
         mock_run.return_value.returncode = 0
-        result = runner.invoke(
-            main, ["assoc_mgr", "accounts=physics,chemistry"]
-        )
+        result = runner.invoke(main, ["assoc_mgr", "accounts=physics,chemistry"])
         assert result.exit_code == 0
         call_args = mock_run.call_args[0][0]
         assert call_args == [
@@ -3420,8 +3207,18 @@ def test_setdebug_command_all_levels(runner):
 
     register_commands()
 
-    levels = ["quiet", "fatal", "error", "info", "verbose",
-              "debug", "debug2", "debug3", "debug4", "debug5"]
+    levels = [
+        "quiet",
+        "fatal",
+        "error",
+        "info",
+        "verbose",
+        "debug",
+        "debug2",
+        "debug3",
+        "debug4",
+        "debug5",
+    ]
     for level in levels:
         with patch("subprocess.run") as mock_run:
             mock_run.return_value.stdout = ""
@@ -3457,7 +3254,12 @@ def test_setdebug_command_with_nodes(runner):
         result = runner.invoke(main, ["setdebug", "info", "nodes=node001"])
         assert result.exit_code == 0
         call_args = mock_run.call_args[0][0]
-        assert call_args == ["scontrol", "setdebug", "info", "nodes=node001"]
+        assert call_args == [
+            "scontrol",
+            "setdebug",
+            "info",
+            "nodes=node001",
+        ]
 
 
 def test_setdebug_command_dry_run(runner):

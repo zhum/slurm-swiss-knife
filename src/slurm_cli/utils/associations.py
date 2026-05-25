@@ -64,9 +64,7 @@ ASSOCIATION_QOSLEVEL_OPTIONS: List[str] = [
 ]
 
 # Combined options for backward compatibility
-ASSOCIATION_OPTIONS: List[str] = (
-    ASSOCIATION_FILTER_OPTIONS + ASSOCIATION_SET_OPTIONS
-)
+ASSOCIATION_OPTIONS: List[str] = ASSOCIATION_FILTER_OPTIONS + ASSOCIATION_SET_OPTIONS
 
 
 class Association(BaseSlurmResource):
@@ -115,13 +113,9 @@ class Association(BaseSlurmResource):
     @classmethod
     def generate_autocomplete_options(cls) -> str:
         """Generate bash autocomplete script for association options."""
-        filter_keys = [
-            opt.lower() for opt in ASSOCIATION_FILTER_OPTIONS
-        ]
+        filter_keys = [opt.lower() for opt in ASSOCIATION_FILTER_OPTIONS]
         set_keys = [opt.lower() for opt in ASSOCIATION_SET_OPTIONS]
-        qoslevel_opts = " ".join(
-            opt.lower() for opt in ASSOCIATION_QOSLEVEL_OPTIONS
-        )
+        qoslevel_opts = " ".join(opt.lower() for opt in ASSOCIATION_QOSLEVEL_OPTIONS)
         filter_opts = " ".join(f"{k}=" for k in filter_keys)
         set_opts = " ".join(f"{k}=" for k in set_keys)
 
@@ -279,14 +273,10 @@ _slurm_cli_associations_autocomplete() {{
                 tres = value["tres"]
                 if isinstance(tres, dict):
                     for tres_type in ("per", "minutes"):
-                        if tres_type in tres and isinstance(
-                            tres[tres_type], dict
-                        ):
+                        if tres_type in tres and isinstance(tres[tres_type], dict):
                             for k, v in tres[tres_type].items():
                                 if isinstance(v, dict) and v.get("set"):
-                                    parts.append(
-                                        f"{k}={v.get('number', 0)}"
-                                    )
+                                    parts.append(f"{k}={v.get('number', 0)}")
             return ", ".join(parts) if parts else "-"
         if value is None or value == "":
             return "-"
@@ -388,16 +378,12 @@ _slurm_cli_associations_autocomplete() {{
                 result.append(assoc)
 
             # Add users (sorted)
-            users = sorted(
-                info.get("users", []), key=lambda u: u.get("user", "")
-            )
+            users = sorted(info.get("users", []), key=lambda u: u.get("user", ""))
             for user_assoc in users:
                 assoc = user_assoc.copy()
                 assoc["_depth"] = depth + 1
                 assoc["_indent"] = indent * (depth + 1)
-                assoc[
-                    "_parent_id"
-                ] = account_name  # For hierarchical sorting
+                assoc["_parent_id"] = account_name  # For hierarchical sorting
                 assoc["_is_account"] = False
                 result.append(assoc)
 
@@ -467,9 +453,7 @@ _slurm_cli_associations_autocomplete() {{
         # Sort root accounts
         root_accounts.sort()
 
-        def add_children_to_node(
-            parent_node, account_name: str, info: dict
-        ):
+        def add_children_to_node(parent_node, account_name: str, info: dict):
             """Add users and child accounts to a node."""
             # Add users under this account
             users = info.get("users", [])
@@ -479,12 +463,8 @@ _slurm_cli_associations_autocomplete() {{
                 u_qos = user_info.get("qos", "")
                 u_part = user_info.get("partition", "")
                 u_qos_str = f" [dim]qos={u_qos}[/dim]" if u_qos else ""
-                u_part_str = (
-                    f" [dim]partition={u_part}[/dim]" if u_part else ""
-                )
-                parent_node.add(
-                    f"[green]{user}[/green]{u_part_str}{u_qos_str}"
-                )
+                u_part_str = f" [dim]partition={u_part}[/dim]" if u_part else ""
+                parent_node.add(f"[green]{user}[/green]{u_part_str}{u_qos_str}")
 
             # Add child accounts
             children = info.get("children", [])
@@ -510,18 +490,14 @@ _slurm_cli_associations_autocomplete() {{
         for root in root_accounts:
             info = accounts.get(root, {})
             qos_str = (
-                f" [dim]qos={info.get('qos', '')}[/dim]"
-                if info.get("qos")
-                else ""
+                f" [dim]qos={info.get('qos', '')}[/dim]" if info.get("qos") else ""
             )
             part_str = (
                 f" [dim]partition={info.get('partition', '')}[/dim]"
                 if info.get("partition")
                 else ""
             )
-            tree = Tree(
-                f"[bold yellow]{root}[/bold yellow]{part_str}{qos_str}"
-            )
+            tree = Tree(f"[bold yellow]{root}[/bold yellow]{part_str}{qos_str}")
             add_children_to_node(tree, root, info)
             console.print(tree)
 
@@ -574,9 +550,7 @@ _slurm_cli_associations_autocomplete() {{
                 parsed_filter = cls._parse_filter(field)
                 if parsed_filter:
                     # It's a filter like account=nvidia
-                    associations = cls._apply_filters(
-                        associations, [parsed_filter]
-                    )
+                    associations = cls._apply_filters(associations, [parsed_filter])
                     if not associations:
                         console.print(
                             f"[yellow]No associations match filter "
@@ -586,9 +560,7 @@ _slurm_cli_associations_autocomplete() {{
                 else:
                     # Treat as account name filter
                     associations = [
-                        assoc
-                        for assoc in associations
-                        if assoc.get("account") == field
+                        assoc for assoc in associations if assoc.get("account") == field
                     ]
                     if not associations:
                         console.print(
@@ -608,9 +580,7 @@ _slurm_cli_associations_autocomplete() {{
 
             if tree:
                 # Tree mode - sort hierarchically and add indent
-                associations = cls._sort_hierarchically(
-                    associations, indent
-                )
+                associations = cls._sort_hierarchically(associations, indent)
                 # Apply hierarchical sorting if specified
                 if sort_field:
                     associations = sort_hierarchical_data(
@@ -623,9 +593,7 @@ _slurm_cli_associations_autocomplete() {{
                     )
             elif sort_field:
                 # Flat mode sorting
-                associations = sort_data(
-                    associations, sort_field, sort_asc
-                )
+                associations = sort_data(associations, sort_field, sort_asc)
 
             if style == "json":
                 # Print filtered JSON
@@ -658,9 +626,7 @@ _slurm_cli_associations_autocomplete() {{
                         console.print(output)
                 else:
                     # Create a rich table
-                    row_styles = (
-                        ["", "on rgb(30,40,60)"] if zebra else None
-                    )
+                    row_styles = ["", "on rgb(30,40,60)"] if zebra else None
                     table = Table(
                         title="Associations",
                         box=SIMPLE_HEAVY,
@@ -692,27 +658,19 @@ _slurm_cli_associations_autocomplete() {{
 
                     # Use buffer-based console to prevent column truncation
                     buf = io.StringIO()
-                    wide_console = Console(
-                        file=buf, width=500, force_terminal=True
-                    )
+                    wide_console = Console(file=buf, width=500, force_terminal=True)
                     wide_console.print(table)
                     output = buf.getvalue()
                     print(output, end="")
 
         except subprocess.CalledProcessError as e:
             error_msg = e.stderr or e
-            console.print(
-                f"[red]Failed to show associations:[/red] {error_msg}"
-            )
+            console.print(f"[red]Failed to show associations:[/red] {error_msg}")
         except json.JSONDecodeError as e:
-            console.print(
-                f"[red]Failed to parse JSON output:[/red] {e}"
-            )
+            console.print(f"[red]Failed to parse JSON output:[/red] {e}")
 
     @classmethod
-    def create(
-        cls, name: str, verbose: bool = False, **kwargs: Any
-    ) -> None:
+    def create(cls, name: str, verbose: bool = False, **kwargs: Any) -> None:
         """Create a new association.
 
         Uses 'sacctmgr create user' command which creates user associations.
@@ -786,8 +744,7 @@ _slurm_cli_associations_autocomplete() {{
                 args.extend(set_values)
             if not dry_run:
                 console.print(
-                    f"Updating user associations where "
-                    f"{' '.join(where_conditions)}"
+                    f"Updating user associations where " f"{' '.join(where_conditions)}"
                 )
         else:
             args.append("where")
@@ -813,13 +770,9 @@ _slurm_cli_associations_autocomplete() {{
             if result.stdout:
                 console.print(result.stdout)
             if verbose:
-                console.print(
-                    "[green]Association updated successfully.[/green]"
-                )
+                console.print("[green]Association updated successfully.[/green]")
         except subprocess.CalledProcessError as e:
-            console.print(
-                f"[red]Failed to update association:[/red] {e.stderr or e}"
-            )
+            console.print(f"[red]Failed to update association:[/red] {e.stderr or e}")
 
     @classmethod
     def delete(
@@ -837,9 +790,7 @@ _slurm_cli_associations_autocomplete() {{
             force: If True, skip confirmation
         """
         if not conditions:
-            console.print(
-                "[red]No conditions specified for delete[/red]"
-            )
+            console.print("[red]No conditions specified for delete[/red]")
             return
 
         # Build the WHERE clause
@@ -857,15 +808,9 @@ _slurm_cli_associations_autocomplete() {{
         cmd.extend(conditions)
 
         try:
-            result = subprocess.run(
-                cmd, check=True, capture_output=True, text=True
-            )
-            console.print(
-                f"[green]Deleted associations where {where_clause}[/green]"
-            )
+            result = subprocess.run(cmd, check=True, capture_output=True, text=True)
+            console.print(f"[green]Deleted associations where {where_clause}[/green]")
             if result.stdout:
                 console.print(result.stdout)
         except subprocess.CalledProcessError as e:
-            console.print(
-                f"[red]Failed to delete associations:[/red] {e.stderr or e}"
-            )
+            console.print(f"[red]Failed to delete associations:[/red] {e.stderr or e}")

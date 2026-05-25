@@ -69,27 +69,19 @@ class Resource:
             return "jobs", None
         part = cls.cached_resource_list("partitions")
         if name[:4] == "part" or (part and name in part):
-            return "partitions", Resource.cached_resource(
-                "partitions", force_update
-            )
+            return "partitions", Resource.cached_resource("partitions", force_update)
         node = cls.cached_resource_list("nodes")
         if name[:4] == "node" or (node and name in node):
-            return "nodes", Resource.cached_resource(
-                "nodes", force_update
-            )
+            return "nodes", Resource.cached_resource("nodes", force_update)
         user = cls.cached_resource_list("users")
         if name[:4] == "user" or (user and name in user):
-            return "users", Resource.cached_resource(
-                "users", force_update
-            )
+            return "users", Resource.cached_resource("users", force_update)
         qos = cls.cached_resource_list("qos")
         if name[:3] == "qos" or (qos and name in qos):
             return "qos", Resource.cached_resource("qos", force_update)
         account = cls.cached_resource_list("accounts")
         if name[:3] == "acc" or (account and name in account):
-            return "accounts", Resource.cached_resource(
-                "accounts", force_update
-            )
+            return "accounts", Resource.cached_resource("accounts", force_update)
         reservation = cls.cached_resource_list("reservations")
         if name[:3] == "res" or (reservation and name in reservation):
             return "reservations", Resource.cached_resource(
@@ -125,9 +117,7 @@ class Resource:
         # underscores/hyphens), assume it's a user - this handles cases
         # where user isn't in cached list
         if re.match(r"^[a-zA-Z][a-zA-Z0-9_-]*$", name):
-            return "users", Resource.cached_resource(
-                "users", force_update
-            )
+            return "users", Resource.cached_resource("users", force_update)
 
         return "unknown", None
 
@@ -144,19 +134,14 @@ class Resource:
         elif name == "reservations":
             raw_data = cls.run_cmd_json(cls.CACHE_CMD[name])
             if raw_data:
-                raw_data = {
-                    hash.pop("name"): hash
-                    for hash in raw_data["reservations"]
-                }
+                raw_data = {hash.pop("name"): hash for hash in raw_data["reservations"]}
             else:
                 raw_data = {}
                 console.print(f"[red]Failed to fetch reservations data.[/red]")
         elif name == "nodes":
             raw_data = cls.run_cmd_json(cls.CACHE_CMD[name])
             if raw_data:
-                raw_data = {
-                    hash.pop("name"): hash for hash in raw_data["nodes"]
-                }
+                raw_data = {hash.pop("name"): hash for hash in raw_data["nodes"]}
             else:
                 raw_data = {}
                 console.print(f"[red]Failed to fetch nodes data.[/red]")
@@ -259,9 +244,7 @@ class Resource:
             FileNotFoundError,
             ValueError,
         ) as e:
-            console.print(
-                f"[red]Failed to run command '{cmd}':[/red]" f" {e}"
-            )
+            console.print(f"[red]Failed to run command '{cmd}':[/red]" f" {e}")
             if result and result.stderr:
                 console.print(result.stderr)
             if result and result.stdout:
@@ -285,9 +268,7 @@ class Resource:
             )
             return result.stdout
         except subprocess.CalledProcessError as e:
-            console.print(
-                f"[red]Failed to run command '{cmd}':[/red]" f" {e}"
-            )
+            console.print(f"[red]Failed to run command '{cmd}':[/red]" f" {e}")
             if result and result.stderr:
                 console.print(result.stderr)
             if result and result.stdout:

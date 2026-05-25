@@ -15,9 +15,7 @@ sys.path.insert(0, "src")
 from slurm_cli.utils.accounts import Account  # noqa: E402
 
 
-def create_mock_subprocess_result(
-    stdout: str = "", returncode: int = 0
-):
+def create_mock_subprocess_result(stdout: str = "", returncode: int = 0):
     """Create a mock subprocess.CompletedProcess result."""
     mock_result = MagicMock()
     mock_result.stdout = stdout
@@ -77,9 +75,7 @@ class TestAccountCreate:
     def test_create_account_with_kwargs(self):
         """Test account creation with additional arguments."""
         mock_result = create_mock_subprocess_result()
-        with patch.object(
-            subprocess, "run", return_value=mock_result
-        ) as mock_run:
+        with patch.object(subprocess, "run", return_value=mock_result) as mock_run:
             Account.create(
                 "newaccount",
                 description="Test Account",
@@ -129,9 +125,7 @@ class TestAccountUpdate:
     def test_update_account_simple_mode(self):
         """Test account update with simple mode (by name)."""
         mock_result = create_mock_subprocess_result()
-        with patch.object(
-            subprocess, "run", return_value=mock_result
-        ) as mock_run:
+        with patch.object(subprocess, "run", return_value=mock_result) as mock_run:
             Account.update("testaccount", description="Updated")
 
             mock_run.assert_called_once()
@@ -148,9 +142,7 @@ class TestAccountUpdate:
     def test_update_account_simple_mode_multiple_values(self):
         """Test account update with multiple values."""
         mock_result = create_mock_subprocess_result()
-        with patch.object(
-            subprocess, "run", return_value=mock_result
-        ) as mock_run:
+        with patch.object(subprocess, "run", return_value=mock_result) as mock_run:
             Account.update(
                 "testaccount",
                 description="Updated",
@@ -164,9 +156,7 @@ class TestAccountUpdate:
     def test_update_account_where_mode(self):
         """Test account update with WHERE/SET mode."""
         mock_result = create_mock_subprocess_result()
-        with patch.object(
-            subprocess, "run", return_value=mock_result
-        ) as mock_run:
+        with patch.object(subprocess, "run", return_value=mock_result) as mock_run:
             Account.update(
                 "",
                 where_conditions=[
@@ -191,9 +181,7 @@ class TestAccountUpdate:
 
     def test_update_account_failure(self):
         """Test account update failure handling."""
-        error = subprocess.CalledProcessError(
-            1, "sacctmgr", stderr="Permission denied"
-        )
+        error = subprocess.CalledProcessError(1, "sacctmgr", stderr="Permission denied")
         with patch.object(subprocess, "run", side_effect=error):
             output = io.StringIO()
             with redirect_stdout(output):
@@ -208,9 +196,7 @@ class TestAccountUpdate:
         with patch.object(subprocess, "run", return_value=mock_result):
             output = io.StringIO()
             with redirect_stdout(output):
-                Account.update(
-                    "testaccount", verbose=True, description="Updated"
-                )
+                Account.update("testaccount", verbose=True, description="Updated")
 
             result = output.getvalue()
             assert "updated successfully" in result
@@ -244,9 +230,7 @@ class TestAccountShow:
                 },
             ]
         }
-        mock_result = create_mock_subprocess_result(
-            stdout=json.dumps(mock_data)
-        )
+        mock_result = create_mock_subprocess_result(stdout=json.dumps(mock_data))
         with patch.object(subprocess, "run", return_value=mock_result):
             output = io.StringIO()
             with redirect_stdout(output):
@@ -267,9 +251,7 @@ class TestAccountShow:
                 },
             ]
         }
-        mock_result = create_mock_subprocess_result(
-            stdout=json.dumps(mock_data)
-        )
+        mock_result = create_mock_subprocess_result(stdout=json.dumps(mock_data))
         with patch.object(subprocess, "run", return_value=mock_result):
             output = io.StringIO()
             with redirect_stdout(output):
@@ -290,9 +272,7 @@ class TestAccountShow:
                 },
             ]
         }
-        mock_result = create_mock_subprocess_result(
-            stdout=json.dumps(mock_data)
-        )
+        mock_result = create_mock_subprocess_result(stdout=json.dumps(mock_data))
         with patch.object(subprocess, "run", return_value=mock_result):
             output = io.StringIO()
             with redirect_stdout(output):
@@ -315,9 +295,7 @@ class TestAccountShow:
                 },
             ]
         }
-        mock_result = create_mock_subprocess_result(
-            stdout=json.dumps(mock_data)
-        )
+        mock_result = create_mock_subprocess_result(stdout=json.dumps(mock_data))
         with patch.object(subprocess, "run", return_value=mock_result):
             output = io.StringIO()
             with redirect_stdout(output):
@@ -345,9 +323,7 @@ class TestAccountShow:
                 {"name": "account2", "description": "Second"},
             ]
         }
-        mock_result = create_mock_subprocess_result(
-            stdout=json.dumps(mock_data)
-        )
+        mock_result = create_mock_subprocess_result(stdout=json.dumps(mock_data))
         with patch.object(subprocess, "run", return_value=mock_result):
             output = io.StringIO()
             with redirect_stdout(output):
@@ -363,9 +339,7 @@ class TestAccountShow:
                 {"name": "account1", "description": "First"},
             ]
         }
-        mock_result = create_mock_subprocess_result(
-            stdout=json.dumps(mock_data)
-        )
+        mock_result = create_mock_subprocess_result(stdout=json.dumps(mock_data))
         with patch.object(subprocess, "run", return_value=mock_result):
             output = io.StringIO()
             with redirect_stdout(output):
@@ -378,13 +352,10 @@ class TestAccountShow:
         """Test show with zebra striping enabled."""
         mock_data = {
             "accounts": [
-                {"name": f"account{i}", "description": f"Desc{i}"}
-                for i in range(5)
+                {"name": f"account{i}", "description": f"Desc{i}"} for i in range(5)
             ]
         }
-        mock_result = create_mock_subprocess_result(
-            stdout=json.dumps(mock_data)
-        )
+        mock_result = create_mock_subprocess_result(stdout=json.dumps(mock_data))
         with patch.object(subprocess, "run", return_value=mock_result):
             output = io.StringIO()
             with redirect_stdout(output):
@@ -401,15 +372,11 @@ class TestAccountShow:
                 {"name": "account1", "description": "First Account"},
             ]
         }
-        mock_result = create_mock_subprocess_result(
-            stdout=json.dumps(mock_data)
-        )
+        mock_result = create_mock_subprocess_result(stdout=json.dumps(mock_data))
         with patch.object(subprocess, "run", return_value=mock_result):
             output = io.StringIO()
             with redirect_stdout(output):
-                Account.show(
-                    profile_str="[cyan]{name}[/] - {description}"
-                )
+                Account.show(profile_str="[cyan]{name}[/] - {description}")
 
             result = output.getvalue()
             # Template output should contain the data
@@ -417,9 +384,7 @@ class TestAccountShow:
 
     def test_show_subprocess_error(self):
         """Test show with subprocess error."""
-        error = subprocess.CalledProcessError(
-            1, "sacctmgr", stderr="Permission denied"
-        )
+        error = subprocess.CalledProcessError(1, "sacctmgr", stderr="Permission denied")
         with patch.object(subprocess, "run", side_effect=error):
             output = io.StringIO()
             with redirect_stdout(output):
@@ -430,9 +395,7 @@ class TestAccountShow:
 
     def test_show_json_decode_error(self):
         """Test show with invalid JSON response."""
-        mock_result = create_mock_subprocess_result(
-            stdout="invalid json {"
-        )
+        mock_result = create_mock_subprocess_result(stdout="invalid json {")
         with patch.object(subprocess, "run", return_value=mock_result):
             output = io.StringIO()
             with redirect_stdout(output):
@@ -468,9 +431,7 @@ class TestAccountGetColumnConfig:
             template,
             sort_field,
             sort_asc,
-        ) = Account._get_column_config(
-            profile_str="accounts.columns=name,description"
-        )
+        ) = Account._get_column_config(profile_str="accounts.columns=name,description")
         assert "name" in columns
         assert "description" in columns
 
@@ -482,9 +443,7 @@ class TestAccountGetColumnConfig:
             template,
             sort_field,
             sort_asc,
-        ) = Account._get_column_config(
-            profile_str="accounts.columns=name+,description"
-        )
+        ) = Account._get_column_config(profile_str="accounts.columns=name+,description")
         assert columns == ["name", "description"]
         assert sort_field == "name"
         assert sort_asc is True
@@ -584,9 +543,7 @@ class TestAccountFilters:
             {"name": "acc2", "organization": "amd"},
             {"name": "acc3", "organization": "nvidia"},
         ]
-        result = Account._apply_filters(
-            accounts, [("organization", "nvidia")]
-        )
+        result = Account._apply_filters(accounts, [("organization", "nvidia")])
         assert len(result) == 2
         assert all(a["organization"] == "nvidia" for a in result)
 
@@ -596,9 +553,7 @@ class TestAccountFilters:
             {"name": "acc1", "organization": "NVIDIA"},
             {"name": "acc2", "organization": "nvidia"},
         ]
-        result = Account._apply_filters(
-            accounts, [("organization", "NVidia")]
-        )
+        result = Account._apply_filters(accounts, [("organization", "NVidia")])
         assert len(result) == 2
 
     def test_apply_filters_no_match(self):
@@ -606,9 +561,7 @@ class TestAccountFilters:
         accounts = [
             {"name": "acc1", "organization": "nvidia"},
         ]
-        result = Account._apply_filters(
-            accounts, [("organization", "intel")]
-        )
+        result = Account._apply_filters(accounts, [("organization", "intel")])
         assert len(result) == 0
 
 
