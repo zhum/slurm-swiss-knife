@@ -21,6 +21,7 @@ Note: This requires Click's completion support
 which is available in Click 8.0+.
 """
 
+import importlib.metadata
 import json
 import os
 import sys
@@ -880,7 +881,7 @@ def main(
     profile: str,
     profile_str: str,
 ) -> None:
-    """Slurm Swiss Knife - A CLI tool for Slurm cluster management."""
+    """Slurm CLI - A tool for Slurm cluster management."""
     # Handle convenience flags
     if pretty:
         style = "pretty"
@@ -3173,7 +3174,8 @@ def list_resources(
 )
 def version(verbose: bool = False) -> None:
     """Show version information."""
-    console.print("[bold blue]slurm-cli:[/] Slurm Swiss Knife v0.1.0")
+    _version = importlib.metadata.version("slurm-cli")
+    console.print(f"[bold blue]slurm-cli:[/] Slurm CLI v{_version}")
     console.print("A CLI tool for Slurm cluster management")
 
     # Get slurmctld version

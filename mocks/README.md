@@ -81,7 +81,7 @@ To use the mock commands instead of real SLURM commands:
 
 ```bash
 # Add the mocks directory to your PATH
-export PATH="/path/to/slurm-swiss-knife/mocks:$PATH"
+export PATH="/path/to/slurm-cli/mocks:$PATH"
 
 # Now SLURM commands will use the mock scripts
 scontrol show nodes --json

@@ -27,7 +27,7 @@ This will create/update files in the `mocks/` directory with real SLURM outputs.
 
 ```bash
 # Add mocks directory to PATH
-export PATH="/path/to/slurm-swiss-knife/mocks:$PATH"
+export PATH="/path/to/slurm-cli/mocks:$PATH"
 
 # Now use SLURM commands normally
 scontrol show nodes --json
@@ -128,7 +128,7 @@ import subprocess
 import os
 
 # Add mocks to PATH
-project_dir = "/path/to/slurm-swiss-knife"
+project_dir = "/path/to/slurm-cli"
 os.environ["PATH"] = f"{project_dir}/mocks:{os.environ['PATH']}"
 
 # Run command - will use mock
@@ -250,7 +250,7 @@ echo '{"nodes":[]}' > mocks/nodes.json
 echo $PATH
 
 # Ensure mocks directory is first in PATH
-export PATH="/path/to/slurm-swiss-knife/mocks:$PATH"
+export PATH="/path/to/slurm-cli/mocks:$PATH"
 
 # Verify which command is being used
 which scontrol  # Should show project/mocks path

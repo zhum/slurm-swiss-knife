@@ -30,7 +30,7 @@ def test_main_help(runner):
     assert result.exit_code in [0, 2]
     # Check for either the full help or at least the usage line
     assert (
-        "Slurm Swiss Knife" in result.output
+        "Slurm CLI" in result.output
         or "Usage: main [OPTIONS] COMMAND [ARGS]..." in result.output
     )
 
@@ -574,7 +574,7 @@ def test_version_command(runner):
         result = runner.invoke(main, ["version"])
         assert result.exit_code == 0
         assert "slurm-cli" in result.output
-        assert "Slurm Swiss Knife" in result.output
+        assert "Slurm CLI" in result.output
 
 
 def test_version_command_alias(runner):

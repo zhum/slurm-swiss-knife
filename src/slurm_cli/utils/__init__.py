@@ -1,1 +1,1 @@
-"""Utility modules for Slurm Swiss Knife."""
+"""Utility modules for Slurm CLI."""

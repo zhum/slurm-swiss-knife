@@ -143,7 +143,7 @@ def test_cancel_reboot_in_help(runner):
     assert result.exit_code in [0, 2]
     # Check for either the full help or at least the usage line
     assert (
-        "Slurm Swiss Knife" in result.output
+        "Slurm CLI" in result.output
         or "Usage: main [OPTIONS] COMMAND [ARGS]..." in result.output
     )
 

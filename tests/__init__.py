@@ -1,1 +1,1 @@
-"""Test suite for Slurm Swiss Knife."""
+"""Test suite for Slurm CLI."""

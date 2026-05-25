@@ -1,4 +1,4 @@
-"""Configuration constants for Slurm Swiss Knife."""
+"""Configuration constants for Slurm CLI."""
 
 VERBS = {
     "show": ["ls", "list", "get"],
