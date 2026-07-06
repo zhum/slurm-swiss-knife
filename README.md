@@ -80,6 +80,24 @@ _CLICK_COMPLETE=bash_source slurm-cli > \
     ~/.local/share/bash-completion/completions/slurm-cli
 ```
 
+## Claude Code Skill
+
+slurm-cli ships a [Claude Code](https://claude.com/claude-code) skill (`slurm-cli-skill.md`) that teaches Claude how to construct correct `slurm-cli` commands — verbs/resources, filter syntax, output formats, and caching flags.
+
+Install it by copying the file into a skills directory:
+
+```bash
+# Project-local
+mkdir -p .claude/skills
+cp slurm-cli-skill.md .claude/skills/slurm-cli.md
+
+# User-wide (all projects)
+mkdir -p ~/.claude/skills
+cp slurm-cli-skill.md ~/.claude/skills/slurm-cli.md
+```
+
+Then just ask Claude things like "show running jobs for user john" or "drain the gpu partition except reserved nodes" — it will invoke the skill to build the right command. See [docs/user-guide/claude-skill.md](docs/user-guide/claude-skill.md) for details.
+
 ## Development
 
 ### Autocomplete

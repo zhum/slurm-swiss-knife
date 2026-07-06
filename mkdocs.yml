@@ -61,6 +61,7 @@ nav:
       - Coordinators: user-guide/resources/coordinators.md
     - Output Profiles: user-guide/profiles.md
     - Filtering & Formatting: user-guide/filtering.md
+    - Claude Code Skill: user-guide/claude-skill.md
   - Development:
     - Contributing: development/contributing.md
     - Testing: development/testing.md
